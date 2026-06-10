@@ -29,7 +29,9 @@ Cache-Control: no-cache, no-transform
 X-Accel-Buffering: no
 ```
 
-`Cache-Control: no-transform` tells intermediaries not to transform the response, including compression that can buffer small streamed chunks.
+`Cache-Control: no-cache` follows Railway's streaming guidance and prevents caches from reusing a completed streamed response for later requests.
+
+`Cache-Control: no-transform` tells intermediaries not to transform the response, including compression that can buffer small streamed chunks. Railway's example does not include this directive, but it is useful for React HTML streaming because the observed failure involved gzip buffering.
 
 `X-Accel-Buffering: no` tells compatible reverse proxies not to buffer the response before sending it downstream.
 
