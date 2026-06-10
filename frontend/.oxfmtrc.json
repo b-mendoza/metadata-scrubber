@@ -3,6 +3,7 @@
   "ignorePatterns": [
     ".agents/",
     ".claude/",
+    ".output/",
     "coverage/",
     "dist/",
     "src/routeTree.gen.ts"

@@ -21,7 +21,7 @@
       "version": "999.999.999"
     }
   },
-  "ignorePatterns": ["coverage/", "dist/", "src/routeTree.gen.ts"],
+  "ignorePatterns": [".output/", "coverage/", "dist/", "src/routeTree.gen.ts"],
   "rules": {
     "constructor-super": ["error"],
     "for-direction": ["error"],
