@@ -13,5 +13,8 @@
   "search.exclude": {
     "**/routeTree.gen.ts": true
   },
-  "typescript.preferences.autoImportFileExcludePatterns": ["lucide-react"]
+  "typescript.preferences.autoImportFileExcludePatterns": ["lucide-react"],
+  "[dockerfile]": {
+    "editor.defaultFormatter": "ms-azuretools.vscode-containers"
+  }
 }
