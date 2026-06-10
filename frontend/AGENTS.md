@@ -1,7 +1,5 @@
 # Agent Guide
 
-El Salvador-first spend and invoice intelligence app focused on photo OCR, 3-way matching, and DTE automation for SMB workflows.
-
 **Package manager:** `pnpm`
 
 ## Always
