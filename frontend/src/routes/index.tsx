@@ -2,8 +2,16 @@ import { useSuspenseQuery } from "@tanstack/react-query";
 import { createFileRoute } from "@tanstack/react-router";
 import { Suspense } from "react";
 
+import { CACHE_CONTROL_HEADER } from "#/shared/constants/http/headers/headers.mod";
+
 export const Route = createFileRoute("/")({
   component: IndexRoute,
+  headers() {
+    return {
+      [CACHE_CONTROL_HEADER]: "no-cache, no-transform",
+      "X-Accel-Buffering": "no",
+    };
+  },
   loader({ context }) {
     const { queryClient, trpc } = context;
 
