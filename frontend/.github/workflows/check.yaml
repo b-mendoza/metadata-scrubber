@@ -1,0 +1,24 @@
+name: Code Quality Checks
+
+on:
+  pull_request: null
+  push:
+    branches:
+      - main
+
+concurrency:
+  group: "${{ github.workflow }}-${{ github.ref }}"
+  cancel-in-progress: true
+
+jobs:
+  quality-checks:
+    name: Run code quality checks
+    runs-on: blacksmith-4vcpu-ubuntu-2404
+    steps:
+      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
+
+      - name: "Setup Node.js, pnpm and dependencies"
+        uses: ./.github/actions/setup-env
+
+      - name: "Run linting, formatting and type checks"
+        uses: ./.github/actions/code-quality-checks

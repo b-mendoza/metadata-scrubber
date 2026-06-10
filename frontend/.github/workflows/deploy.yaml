@@ -1,0 +1,57 @@
+name: Deploy to Production
+
+on:
+  workflow_dispatch: null
+
+concurrency:
+  group: "${{ github.workflow }}-${{ github.ref }}"
+
+jobs:
+  quality-checks:
+    name: Run code quality checks
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
+
+      - name: "Setup Node.js, pnpm and dependencies"
+        uses: ./.github/actions/setup-env
+
+      - name: "Run linting, formatting and type checks"
+        uses: ./.github/actions/code-quality-checks
+
+  # unit-tests:
+  #   name: Run unit tests
+  #   runs-on: ubuntu-latest
+  #   steps:
+  #     - uses: actions/checkout@1af3b93b6815bc44a9784bd300feb67ff0d1eeb3 # v6.0.0
+
+  #     - name: "Setup Node.js, pnpm and dependencies"
+  #       uses: ./.github/actions/setup-env
+
+  #     - name: Run unit tests
+  #       uses: ./.github/actions/unit-tests
+
+  deploy:
+    name: Deploy to Cloudflare Workers
+    needs:
+      - quality-checks
+      # - unit-tests
+    timeout-minutes: 3
+    runs-on: blacksmith-4vcpu-ubuntu-2404
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
+
+      - name: "Setup Node.js, pnpm and dependencies"
+        uses: ./.github/actions/setup-env
+
+      - name: Build application
+        shell: bash
+        run: pnpm run build
+
+      - name: Deploy to Cloudflare Workers
+        uses: cloudflare/wrangler-action@ebbaa1584979971c8614a24965b4405ff95890e0 # v4.0.0
+        with:
+          apiToken: "${{ secrets.CLOUDFLARE_API_TOKEN }}"
+          accountId: "${{ secrets.CLOUDFLARE_ACCOUNT_ID }}"
+          packageManager: pnpm
