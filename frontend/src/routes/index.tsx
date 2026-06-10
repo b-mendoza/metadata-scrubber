@@ -11,6 +11,15 @@ export const Route = createFileRoute("/")({
       ],
     };
   },
+  loader({ context }) {
+    const { queryClient, trpc } = context;
+
+    queryClient
+      .prefetchQuery(trpc.products.getProducts.queryOptions())
+      .catch(() => null);
+
+    return null;
+  },
 });
 
 function IndexRoute() {
