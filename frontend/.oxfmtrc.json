@@ -5,7 +5,6 @@
     ".claude/",
     ".output/",
     "coverage/",
-    "dist/",
     "src/routeTree.gen.ts"
   ],
   "printWidth": 80,
