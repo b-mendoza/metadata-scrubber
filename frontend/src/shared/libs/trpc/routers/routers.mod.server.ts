@@ -1,5 +1,4 @@
-import { fileUploaderRouter } from "#/domains/file-uploader/routers/file-uploader-router.mod.server";
-import { wizardRouter } from "#/domains/wizard/routers/wizard-router.mod.server";
+import { productsRouter } from "#/domains/products/products-router.mod.server";
 import {
   createCallerFactory,
   createTRPCRequestContext,
@@ -7,8 +6,7 @@ import {
 } from "#/shared/libs/trpc/utils/initializer/initializer.mod.server";
 
 export const appRouter = createTRPCRouter({
-  fileUploader: fileUploaderRouter,
-  wizard: wizardRouter,
+  products: productsRouter,
 });
 
 export type AppRouter = typeof appRouter;
