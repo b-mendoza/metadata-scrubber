@@ -2,14 +2,20 @@ import { useSuspenseQuery } from "@tanstack/react-query";
 import { createFileRoute } from "@tanstack/react-router";
 import { Suspense } from "react";
 
-import { CACHE_CONTROL_HEADER } from "#/shared/constants/http/headers/headers.mod";
+import {
+  CACHE_CONTROL_HEADER,
+  X_ACCEL_BUFFERING_HEADER,
+} from "#/shared/constants/http/headers/headers.mod";
 
 export const Route = createFileRoute("/")({
   component: IndexRoute,
   headers() {
+    // Railway may gzip/buffer streamed HTML unless transforms and proxy
+    // buffering are disabled, which prevents React from flushing Suspense
+    // fallbacks before slow queries resolve.
     return {
       [CACHE_CONTROL_HEADER]: "no-cache, no-transform",
-      "X-Accel-Buffering": "no",
+      [X_ACCEL_BUFFERING_HEADER]: "no",
     };
   },
   loader({ context }) {
