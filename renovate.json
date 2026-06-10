@@ -1,0 +1,30 @@
+{
+  "$schema": "https://docs.renovatebot.com/renovate-schema.json",
+  "extends": [
+    ":automergeMinor",
+    "config:best-practices",
+    ":pinAllExceptPeerDependencies"
+  ],
+  "lockFileMaintenance": {
+    "enabled": true
+  },
+  "packageRules": [
+    {
+      "description": "ai and @ai-sdk/* share types across versions; they break when updated separately",
+      "groupName": "AI SDK packages",
+      "matchPackageNames": ["/^ai$/", "/^@ai-sdk\//"]
+    },
+    {
+      "description": "drizzle's beta tags confuse renovate into proposing downgrades",
+      "enabled": false,
+      "matchPackageNames": ["drizzle-kit", "drizzle-orm"]
+    },
+    {
+      "description": "@cloudflare/vite-plugin checks wrangler's version at startup and fails if they drift",
+      "groupName": "Cloudflare packages",
+      "matchPackageNames": ["@cloudflare/vite-plugin", "wrangler"]
+    }
+  ],
+  "rebaseWhen": "conflicted",
+  "reviewers": ["b-mendoza"]
+}

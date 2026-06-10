@@ -1,0 +1,7 @@
+# Local tool configs
+.mcp.json
+*.bak
+/.bun/
+/.claude/
+/.codex/
+opencode.jsonc
