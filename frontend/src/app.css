@@ -1,0 +1,11 @@
+@import "tailwindcss";
+
+@plugin "tailwindcss-react-aria-components";
+
+@plugin "daisyui" {
+  themes: light;
+}
+
+@utility content-visibility-auto {
+  content-visibility: auto;
+}
