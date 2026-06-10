@@ -1,0 +1,14 @@
+.DS_Store
+/node_modules/
+
+# Test files and folders
+/coverage/
+
+# Generated files and directories
+/.wrangler/
+
+# Artifacts
+/dist/
+
+# Environment
+.env*

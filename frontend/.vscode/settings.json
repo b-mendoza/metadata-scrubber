@@ -1,0 +1,15 @@
+{
+  "editor.defaultFormatter": "oxc.oxc-vscode",
+  "files.readonlyInclude": {
+    "**/routeTree.gen.ts": true
+  },
+  "files.watcherExclude": {
+    "**/routeTree.gen.ts": true
+  },
+  "javascript.preferences.autoImportFileExcludePatterns": ["lucide-react"],
+  "js/ts.preferences.autoImportFileExcludePatterns": ["lucide-react"],
+  "search.exclude": {
+    "**/routeTree.gen.ts": true
+  },
+  "typescript.preferences.autoImportFileExcludePatterns": ["lucide-react"]
+}
