@@ -1,6 +1,6 @@
 import { rm } from "node:fs/promises";
 
-const PATHS = ["coverage/", "dist/", "node_modules/", "pnpm-lock.yaml"];
+const PATHS = [".output/", "coverage/", "node_modules/", "pnpm-lock.yaml"];
 
 await Promise.all(
   PATHS.map(async (path) =>
