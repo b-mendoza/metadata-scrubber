@@ -1,10 +1,10 @@
 # syntax=docker/dockerfile:1
 
 FROM node:24.16.0-alpine AS base
-WORKDIR /app
 ENV PNPM_HOME="/pnpm"
 ENV PATH="$PNPM_HOME:$PATH"
-RUN npm install --global pnpm@11.5.2
+WORKDIR /app
+RUN corepack enable pnpm
 
 FROM base AS dependencies
 COPY package.json pnpm-lock.yaml ./
