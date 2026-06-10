@@ -5,12 +5,10 @@ import * as z from "zod";
 
 import type { Env } from "#/shared/config/env/env.mod.server";
 import { envSchema } from "#/shared/config/env/env.mod.server";
-import type { DrizzleDatabaseClient } from "#/shared/db/db.mod.server";
-import { createDrizzleDatabaseClient } from "#/shared/db/db.mod.server";
 import { invariant } from "#/shared/utils/invariant/invariant.mod";
 
 interface ApplicationBindingsValue {
-  db: DrizzleDatabaseClient;
+  // db: DrizzleDatabaseClient;
   env: Env;
 }
 
@@ -22,13 +20,12 @@ export const applicationBindingsMiddleware = createMiddleware({
 }).server(async (opts) => {
   const safeEnvironmentVariables = z.parse(envSchema, process.env);
 
-  const databaseClient = createDrizzleDatabaseClient(
-    safeEnvironmentVariables.DATABASE_URL,
-  );
+  // const databaseClient = createDrizzleDatabaseClient(
+  //   safeEnvironmentVariables.DATABASE_URL,
+  // );
 
   return ApplicationBindingsStorage.run(
     {
-      db: databaseClient,
       env: safeEnvironmentVariables,
     },
     opts.next,
