@@ -7,7 +7,6 @@
     "build": "vite build",
     "clean:hard": "node scripts/hard-clean.ts",
     "clean:soft": "node scripts/soft-clean.ts",
-    "codegen:cloudflare": "wrangler types",
     "db:generate": "drizzle-kit generate --config=drizzle.config.ts",
     "db:migrate": "drizzle-kit migrate --config=drizzle.config.ts",
     "dev": "vite dev",
@@ -64,7 +63,6 @@
     "zod": "4.4.3"
   },
   "devDependencies": {
-    "@cloudflare/vite-plugin": "1.40.0",
     "@eslint-community/eslint-plugin-eslint-comments": "4.7.2",
     "@eslint-react/eslint-plugin": "5.8.12",
     "@eslint/js": "9.39.4",

@@ -18,11 +18,6 @@
       "description": "drizzle's beta tags confuse renovate into proposing downgrades",
       "enabled": false,
       "matchPackageNames": ["drizzle-kit", "drizzle-orm"]
-    },
-    {
-      "description": "@cloudflare/vite-plugin checks wrangler's version at startup and fails if they drift",
-      "groupName": "Cloudflare packages",
-      "matchPackageNames": ["@cloudflare/vite-plugin", "wrangler"]
     }
   ],
   "rebaseWhen": "conflicted",
