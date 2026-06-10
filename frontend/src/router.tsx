@@ -1,7 +1,6 @@
 import { createRouter } from "@tanstack/react-router";
 import { setupRouterSsrQueryIntegration } from "@tanstack/react-router-ssr-query";
 
-import { ToastNotificationsManager } from "#/domains/notifications/components/toast-notifications-manager/toast-notifications-manager.mod";
 import {
   getBaseTRPCURL,
   getRouterContext,
@@ -32,8 +31,6 @@ export const getRouter = () => {
         queryClient={routerContext.queryClient}
         trpcClient={trpcClient}
       >
-        <ToastNotificationsManager />
-
         {props.children}
       </TRPCProvider>
     ),
