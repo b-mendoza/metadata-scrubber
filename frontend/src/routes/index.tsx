@@ -37,11 +37,9 @@ function IndexRoute() {
 const ProductList = () => {
   const { trpc } = Route.useRouteContext();
 
-  const getProductsQuery = useSuspenseQuery(
+  const { data: products } = useSuspenseQuery(
     trpc.products.getProducts.queryOptions(),
   );
-
-  const products = getProductsQuery.data;
 
   return (
     <>
