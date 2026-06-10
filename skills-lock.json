@@ -43,6 +43,12 @@
       "skillPath": "SKILL.md",
       "computedHash": "0f4d9a7fbd645b9ac77e5f2f7eeac5026fdcc0c5bac9da004aa27762833780b9"
     },
+    "improving-test-suites": {
+      "source": "b-mendoza/agent-skills",
+      "sourceType": "github",
+      "skillPath": "skills/improving-test-suites/SKILL.md",
+      "computedHash": "8bb81034571cda292863deaf6901e52f3c40b9bb26c64779f58a1b045d3ae83c"
+    },
     "pr-creator": {
       "source": "b-mendoza/agent-skills",
       "sourceType": "github",
@@ -61,6 +67,12 @@
       "skillPath": "skills/recency-guard/SKILL.md",
       "computedHash": "c1d6ba7d630503dc1c8115bebe95ec8523a7f4d7547d83e769893fc2d558fc76"
     },
+    "refactoring-code": {
+      "source": "b-mendoza/agent-skills",
+      "sourceType": "github",
+      "skillPath": "skills/refactoring-code/SKILL.md",
+      "computedHash": "ff0a6975a529344dc901a3f3d971f0d7a7bda20bb3621b582b576d20e07cfa34"
+    },
     "responding-to-pr-review-comments": {
       "source": "b-mendoza/agent-skills",
       "sourceType": "github",
@@ -72,6 +84,12 @@
       "sourceType": "github",
       "skillPath": "skills/review-pull-request/SKILL.md",
       "computedHash": "27499266da1af13ee94d60eae884a53c2caebe6561e98f707ccdb7a0d414ab20"
+    },
+    "rewriting-code-strictly": {
+      "source": "b-mendoza/agent-skills",
+      "sourceType": "github",
+      "skillPath": "skills/rewriting-code-strictly/SKILL.md",
+      "computedHash": "73fae385f067829bd76ec47513b4501092a0658bf1ba967c8c130d6b3abf9120"
     },
     "subagent-driven-development": {
       "source": "obra/superpowers",
