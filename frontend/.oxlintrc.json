@@ -22,7 +22,6 @@
     }
   },
   "ignorePatterns": [
-    ".wrangler/",
     "coverage/",
     "dist/",
     "src/routeTree.gen.ts",

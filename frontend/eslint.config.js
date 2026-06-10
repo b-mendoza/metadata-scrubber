@@ -184,7 +184,6 @@ export default defineConfig(
     },
   },
   globalIgnores([
-    ".wrangler/",
     "coverage/",
     "dist/",
     "src/routeTree.gen.ts",
