@@ -7,7 +7,6 @@ import {
   MAX_FILE_SIZE_BYTES,
   UPLOADABLE_MIME_TYPES,
 } from "#/domains/wizard/constants/wizard.mod";
-import { getApplicationBindings } from "#/shared/middlewares/application-bindings/application-bindings.mod";
 
 const uploadedFileSchema = z
   .file()
@@ -25,12 +24,6 @@ export const Route = createFileRoute("/api/upload")({
         const validatedFile = uploadedFileSchema.parse(unsafeFile);
 
         const storageKey = `uploads/${randomUUID()}`;
-
-        const { storage } = getApplicationBindings();
-
-        await storage.put(storageKey, validatedFile.stream(), {
-          contentType: validatedFile.type,
-        });
 
         return Response.json({
           fileName: validatedFile.name,
