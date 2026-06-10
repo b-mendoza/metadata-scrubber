@@ -12,12 +12,12 @@ const productSchema = z.object({
   name: z.string().trim(),
 });
 
-const PRODUCTS = Array.from({
-  length: 2,
-}).map((_, idx) => {
+const SEED_PRODUCT_NAMES = ["Metadata Scrubber", "Privacy Audit Tool"];
+
+const PRODUCTS = SEED_PRODUCT_NAMES.map((name) => {
   return productSchema.parse({
     id: randomUUID(),
-    name: `Product ${idx + 1}`,
+    name,
   });
 });
 
