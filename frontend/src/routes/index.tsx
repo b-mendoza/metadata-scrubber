@@ -4,6 +4,13 @@ import { Suspense } from "react";
 
 export const Route = createFileRoute("/")({
   component: IndexRoute,
+  loader({ context }) {
+    const { queryClient, trpc } = context;
+
+    queryClient
+      .prefetchQuery(trpc.products.getProducts.queryOptions())
+      .catch(() => null);
+  },
   head() {
     return {
       meta: [
@@ -12,15 +19,6 @@ export const Route = createFileRoute("/")({
         },
       ],
     };
-  },
-  loader({ context }) {
-    const { queryClient, trpc } = context;
-
-    queryClient
-      .prefetchQuery(trpc.products.getProducts.queryOptions())
-      .catch(() => null);
-
-    return null;
   },
 });
 
