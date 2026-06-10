@@ -1,5 +1,5 @@
 {
-  "name": "spend-guard",
+  "name": "metadata-scrubber",
   "private": true,
   "type": "module",
   "sideEffects": false,
