@@ -183,12 +183,7 @@ export default defineConfig(
       "vitest/valid-expect": ERROR,
     },
   },
-  globalIgnores([
-    "coverage/",
-    "dist/",
-    "src/routeTree.gen.ts",
-    "worker-configuration.d.ts",
-  ]),
+  globalIgnores(["coverage/", "dist/", "src/routeTree.gen.ts"]),
   oxlint.buildFromOxlintConfigFile("./.oxlintrc.json", {
     typeAware: true,
   }),

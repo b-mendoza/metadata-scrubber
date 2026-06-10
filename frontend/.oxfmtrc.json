@@ -5,8 +5,7 @@
     ".claude/",
     "coverage/",
     "dist/",
-    "src/routeTree.gen.ts",
-    "worker-configuration.d.ts"
+    "src/routeTree.gen.ts"
   ],
   "printWidth": 80,
   "sortPackageJson": {
