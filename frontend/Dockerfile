@@ -8,7 +8,7 @@ RUN corepack enable pnpm
 
 FROM base AS dependencies
 COPY package.json pnpm-lock.yaml ./
-RUN pnpm install --frozen-lockfile
+RUN --mount=type=cache,id=pnpm,target=/pnpm/store pnpm install --frozen-lockfile
 
 FROM dependencies AS build
 COPY . ./
