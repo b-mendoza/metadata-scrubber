@@ -8,6 +8,8 @@
   },
   "javascript.preferences.autoImportFileExcludePatterns": ["lucide-react"],
   "js/ts.preferences.autoImportFileExcludePatterns": ["lucide-react"],
+  "oxc.configPath": "./frontend/.oxlintrc.json",
+  "oxc.path.tsgolint": "./frontend/node_modules/.bin/tsgolint",
   "search.exclude": {
     "**/routeTree.gen.ts": true
   },
