@@ -8,6 +8,8 @@ import (
 	"path/filepath"
 
 	"metadata-scrubber/internal/httpx"
+	"metadata-scrubber/internal/httpx/header"
+	"metadata-scrubber/internal/httpx/mediatype"
 	"metadata-scrubber/internal/scrub"
 )
 
@@ -24,7 +26,7 @@ func Reachability(w http.ResponseWriter, _ *http.Request) {
 func Scrub(w http.ResponseWriter, r *http.Request) {
 	r.Body = http.MaxBytesReader(w, r.Body, maxUploadSize)
 
-	file, header, err := r.FormFile("file")
+	file, fileHeader, err := r.FormFile("file")
 	if err != nil {
 		httpx.WriteError(w, http.StatusBadRequest, "missing or invalid \"file\" form field")
 		return
@@ -38,7 +40,7 @@ func Scrub(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	cleaned, err := scrub.Scrub(header.Filename, src)
+	cleaned, err := scrub.Scrub(fileHeader.Filename, src)
 	if err != nil {
 		if errors.Is(err, scrub.ErrUnsupportedType) {
 			httpx.WriteError(w, http.StatusUnsupportedMediaType, err.Error())
@@ -48,8 +50,8 @@ func Scrub(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	w.Header().Set("Content-Type", "application/octet-stream")
-	w.Header().Set("Content-Disposition", "attachment; filename=\""+filepath.Base(header.Filename)+"\"")
+	w.Header().Set(header.ContentType, mediatype.OctetStream)
+	w.Header().Set(header.ContentDisposition, "attachment; filename=\""+filepath.Base(fileHeader.Filename)+"\"")
 	w.WriteHeader(http.StatusOK)
 	_, _ = w.Write(cleaned)
 }
