@@ -3,6 +3,7 @@ module metadata-scrubber
 go 1.26.4
 
 require (
+	github.com/caarlos0/env/v11 v11.4.1
 	github.com/go-playground/validator/v10 v10.30.3
 	github.com/pdfcpu/pdfcpu v0.12.1
 	github.com/stretchr/testify v1.11.1
