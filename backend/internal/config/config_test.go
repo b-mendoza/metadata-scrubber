@@ -8,24 +8,17 @@ import (
 	"metadata-scrubber/internal/config"
 )
 
-func TestLoadDefaultsPortWhenUnsetOrBlank(t *testing.T) {
-	for name, value := range map[string]string{
-		"unset": "",
-		"blank": "   ",
-	} {
-		t.Run(name, func(t *testing.T) {
-			t.Setenv("PORT", value)
+func TestLoadDefaultsPortWhenEmpty(t *testing.T) {
+	t.Setenv("PORT", "")
 
-			cfg, err := config.Load()
+	cfg, err := config.Load()
 
-			require.NoError(t, err)
-			require.Equal(t, 8080, cfg.Port)
-		})
-	}
+	require.NoError(t, err)
+	require.Equal(t, 8080, cfg.Port)
 }
 
 func TestLoadParsesValidPort(t *testing.T) {
-	t.Setenv("PORT", " 3000 ")
+	t.Setenv("PORT", "3000")
 
 	cfg, err := config.Load()
 
@@ -39,6 +32,7 @@ func TestLoadRejectsInvalidPort(t *testing.T) {
 		"zero":         "0",
 		"negative":     "-1",
 		"out-of-range": "70000",
+		"whitespace":   "  8080  ",
 	} {
 		t.Run(name, func(t *testing.T) {
 			t.Setenv("PORT", value)
