@@ -1,0 +1,37 @@
+# yaml-language-server: $schema=https://taskfile.dev/schema.json
+
+version: "3"
+
+vars:
+  BINARY: metadata-scrubber
+
+tasks:
+  build:
+    desc: Compile the project into a binary
+    cmds:
+      - go build -o {{.BINARY}} .
+
+  run:
+    desc: Run the project
+    cmds:
+      - go run .
+
+  test:
+    desc: Run the test suite
+    cmds:
+      - go test ./...
+
+  vet:
+    desc: Report suspicious constructs with go vet
+    cmds:
+      - go vet ./...
+
+  fmt:
+    desc: Format the source code
+    cmds:
+      - go fmt ./...
+
+  tidy:
+    desc: Add missing and remove unused module dependencies
+    cmds:
+      - go mod tidy
