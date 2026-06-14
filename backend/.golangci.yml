@@ -1,0 +1,12 @@
+# yaml-language-server: $schema=https://golangci-lint.run/jsonschema/golangci.jsonschema.json
+version: "2"
+
+linters:
+  # Start from the default set (errcheck, govet, ineffassign, staticcheck,
+  # unused) and add a curated handful of widely-used, low-noise linters.
+  enable:
+    - bodyclose # checks that HTTP response bodies are closed
+    - errorlint # finds problems with Go 1.13+ error wrapping (errors.Is/As)
+    - misspell # catches commonly misspelled English words in comments/strings
+    - revive # fast, configurable replacement for the deprecated golint
+    - unconvert # flags unnecessary type conversions
