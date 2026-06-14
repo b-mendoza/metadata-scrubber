@@ -4,6 +4,7 @@ package main
 import (
 	"context"
 	"errors"
+	"fmt"
 	"log"
 	"net/http"
 	"os"
@@ -11,6 +12,7 @@ import (
 	"syscall"
 	"time"
 
+	"metadata-scrubber/internal/config"
 	"metadata-scrubber/internal/handler"
 	"metadata-scrubber/internal/httpx"
 	"metadata-scrubber/internal/scrub"
@@ -36,12 +38,12 @@ func main() {
 // which point it attempts a graceful shutdown. It returns the first error
 // encountered, or nil on a clean shutdown.
 func run(ctx context.Context) error {
-	port := os.Getenv("PORT")
-	if port == "" {
-		port = "8080"
+	cfg, err := config.Load()
+	if err != nil {
+		return err
 	}
 
-	addr := ":" + port
+	addr := fmt.Sprintf(":%d", cfg.Port)
 	server := newServer(addr)
 
 	serverErr := make(chan error, 1)
