@@ -16,6 +16,11 @@ formatters:
     - gofumpt # stricter superset of gofmt; owns all non-import formatting
     - gci # deterministic, opinionated import sorting (regroups from scratch)
   settings:
+    gofumpt:
+      # Tell gofumpt this module's path so it groups our own packages in a
+      # separate import block, matching gci's localmodule section below.
+      # Without this, gofumpt and gci disagree on local-import grouping.
+      module-path: metadata-scrubber
     gci:
       sections:
         - standard # standard library
