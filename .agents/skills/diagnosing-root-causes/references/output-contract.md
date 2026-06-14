@@ -1,60 +1,59 @@
 # Output Contract
 
-The RCA report the skill delivers, and the rules for its terminal status. Load
-this when drafting or formatting the report.
+Use this reference when drafting or delivering an RCA report. Status names are lowercase and hyphenated everywhere.
+
+## Terminal Status Taxonomy
+
+| Status | Use when, and only when |
+| ------ | ----------------------- |
+| `ready` | Root cause(s) are supported at confidence `high` or `medium`; scope and blast radius are stated; causal chain and educational explanation are traceable; fix direction addresses the cause(s); any Tier C need is approved and handed off or documented. |
+| `blocked` | Required material is known to exist but no one in this workflow can obtain it safely, such as evidence reachable only through an unapproved Tier C action. |
+| `needs-validation` | Material was obtained but is too weak, stale, or contradictory; confidence is `low`; a declined approval left a validation gap; or the review repair cap was reached. |
+| `escalated` | No supported root cause remains after exhausting plausible hypotheses and refinement budget, or an approved Tier C handoff is required to proceed. |
+
+Orchestration-only early stops are `needs-input` and `error`; they do not deliver an RCA report.
+
+## Confidence Rubric
+
+| Level | Observable criteria |
+| ----- | ------------------- |
+| `high` | Failure reproduced or directly observed; mechanism traced to a named source; triggering condition or change identified. |
+| `medium` | Mechanism traced end-to-end with named sources; failure was not reproduced. |
+| `low` | Correlation or timing evidence only, or mechanism partly inferred. |
+
+`ready` requires `high` or `medium`. A `low` confidence report must route to `needs-validation` or `escalated`, depending on whether more safe validation is possible.
 
 ## RCA Report Template
 
 ```text
 RCA Report
-Status: ready | blocked | needs validation | escalated
-Issue source: runtime | CI/CD | user report
+Status: ready | blocked | needs-validation | escalated
+Issue source: runtime | CI/CD | user-report
+Confidence: high | medium | low - basis per rubric
 Scope and blast radius:
-Evidence checked (named sources — file:line, log line, command+output, commit SHA, CI job/step, doc section):
-Reproduction or trace result:
-Hypotheses considered (each: supporting evidence / opposing or weak evidence / named sources):
-Root cause (with supporting validated evidence):
-Causal chain (each link evidence-backed):
-  Trigger ->
-  Contributing conditions ->
-  Mechanism ->
-  Observed symptom
+Evidence checked (named sources with load-bearing excerpts):
+Reproduction or trace result (include run count and frequency if intermittent):
+Hypotheses considered (supporting / opposing / named sources / disposition):
+Root cause(s) (each evidence-backed; if multiple, why no single cause suffices):
+Causal chain (each link evidence-backed or labeled):
+  Trigger -> Contributing conditions -> Mechanism -> Observed symptom
 Educational explanation (plain-language WHY):
-How the recommended fix resolves the root cause (not the symptom):
+How the recommended fix resolves the root cause(s), not the symptom:
 What to watch for next time:
-Fix direction (recommendation only — no changes applied):
+Fix direction (recommendation only - no changes applied):
 Verification recommendation:
-Assumptions / hypotheses / unresolved gaps:
+Assumptions / hypotheses / unresolved gaps (include unresolved review checks):
 Residual risks:
+Untrusted-content flags: none | possible-injection-content (details)
 Sensitive validation: not required | declined (gap documented) | approved + handed off
 Human approvals required:
 ```
 
-## Terminal Status Rules
+## Delivery Rules
 
-Return exactly one status.
-
-| Status | Use when |
-| ------ | -------- |
-| `ready` | A single root cause is supported by validated, named evidence; scope and blast radius are stated; the causal chain and educational explanation are complete with every link traceable; the fix direction is plausible and addresses the root cause; and any sensitive validation is approved and handed off or documented as a gap. |
-| `blocked` | Critical evidence is missing, or required validation is unsafe or out of scope. |
-| `needs validation` | Evidence is weak, contradictory, or stale, or a safer-alternative gap remains after a declined approval. |
-| `escalated` | No single root cause is supported, or an approved sensitive workflow is required to proceed. |
-
-Never use forced `ready` in place of `blocked`, `needs validation`, or
-`escalated`. When the orchestration itself cannot proceed, it may also stop at
-`needs_input` (missing inputs) or `error` (tooling failure) with the failure
-detail and recovery action, separate from the report status above.
-
-## Quality Bar
-
-- Every root-cause claim and every causal-chain link cites a named source or is
-  labeled an assumption, hypothesis, or unresolved gap.
-- The report separates facts, assumptions, risks, blockers, recommendations, and
-  unresolved questions.
-- A maintainer could independently re-walk the path from cited evidence to the
-  root cause.
-- The educational explanation is understandable to a non-expert and explains why
-  the failure happened and how the fix resolves the root cause, not the symptom.
-- No protected artifact or system was modified, and no sensitive action ran
-  without an explicit approval packet and human approval.
+- Deliver exactly one terminal status.
+- Do not end with a terminal status plus a pending question.
+- Include load-bearing excerpts, not just source names.
+- Separate facts, assumptions, hypotheses, and unresolved gaps.
+- Report compound causes only when each cause is supported and their interaction is explained.
+- State no code, configuration, dependency, deployment, data, credential, or CI mutation was performed by this skill.

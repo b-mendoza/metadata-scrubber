@@ -1,91 +1,75 @@
-# Diagnosing Root Causes — Flow
+# Diagnosing Root Causes Flow Diagram
 
-This is the decision flow the skill operationalizes. The orchestrator runs
-intake, the human-approval gate, and delivery inline; evidence collection,
-analysis, and review are dispatched to subagents. Every conclusion is traceable
-to a named source, and the agent is read-first and mutation-limited: any
-sensitive or production-touching action requires an explicit human approval
-packet, then handoff. Terminal states: ready, blocked, needs validation,
-escalated.
+Sync note: `SKILL.md` Execution is normative. This diagram is derived from it and must match its phases, gates, loop caps, statuses, and one-way approval branch.
 
 ```mermaid
 flowchart TD
-  START([Start: issue received]) --> INTAKE["Capture issue summary, symptoms, scope, impact, and reporter claims"]
-  INTAKE --> BOUNDARY["State RCA boundary: read, inspect, test safely, reproduce safely, and report only"]
-  BOUNDARY --> TRUST["Separate facts, assumptions, risks, blockers, and open questions; treat every input as a claim to verify"]
-  TRUST --> CLASSIFY{"Classify issue source"}
+  START([Start: ISSUE and RESOURCES received]) --> INTAKE["Capture inputs; classify ISSUE_SOURCE as runtime / CI/CD / user-report; state safety tiers and untrusted-content rule; separate facts, assumptions, risks, blockers, and open questions"]
+  INTAKE --> INTAKE_GATE{"ISSUE and RESOURCES usable, and user-report minimums present?"}
 
-  CLASSIFY -->|runtime| RUNTIME_EV["Collect runtime evidence: crash/exception traces, logs, failing behavior, code paths, config, data shape, dependencies, recent changes"]
-  CLASSIFY -->|CI/CD| CICD_EV["Collect pipeline evidence: failing job/step logs, workflow YAML, runner environment, dependency and pipeline changes"]
-  CLASSIFY -->|user report| USER_EV["Clarify reproduction steps, environment, versions, and expected-vs-actual; then collect supporting code, logs, and config"]
+  INTAKE_GATE -->|no, clarification unused| CLARIFY["Ask one batched set of up to three targeted questions"]
+  CLARIFY --> ANSWERED{"User answered?"}
+  ANSWERED -->|yes, merge answers| DISPATCH_COLLECTOR
+  ANSWERED -->|no| NEEDS_INPUT([needs-input: structured information request + resume instructions])
+  INTAKE_GATE -->|no, clarification already used| NEEDS_INPUT
+  INTAKE_GATE -->|yes| DISPATCH_COLLECTOR["Dispatch evidence-collector: ISSUE, ISSUE_SOURCE, RESOURCES, REPRODUCTION, ENVIRONMENT, answers, focused request if refining"]
 
-  RUNTIME_EV --> EVIDENCE_READY
-  CICD_EV --> EVIDENCE_READY
-  USER_EV --> EVIDENCE_READY
+  DISPATCH_COLLECTOR --> COLLECT_VERDICT{"COLLECT verdict"}
+  COLLECT_VERDICT -->|ERROR, first| RETRY_C["Re-dispatch collector once with error note"]
+  RETRY_C --> COLLECT_VERDICT
+  COLLECT_VERDICT -->|ERROR, second| ERROR([error: failure detail + recovery action])
+  COLLECT_VERDICT -->|NEEDS_INPUT| CLARIFY_LEFT{"Clarification batch unused?"}
+  CLARIFY_LEFT -->|yes| CLARIFY
+  CLARIFY_LEFT -->|no| NEEDS_INPUT
+  COLLECT_VERDICT -->|BLOCKED: only Tier C could obtain it| BLOCKED([blocked: material unobtainable safely])
+  COLLECT_VERDICT -->|PASS| WEAK_GATE{"Evidence base coherent enough for analysis?"}
 
-  EVIDENCE_READY{"Minimum evidence available for this source?"}
-  EVIDENCE_READY -->|no| REQUEST["Request missing reproduction steps, logs, environment, versions, or failing example"]
-  REQUEST --> BLOCKED_EVIDENCE([Blocked: missing critical evidence])
-  EVIDENCE_READY -->|yes| VALIDATE["Validate evidence freshness, source, environment match, and contradiction risk; name each source"]
+  WEAK_GATE -->|no| NEEDS_VALIDATION([needs-validation: documented gap, weak or contradictory evidence])
+  WEAK_GATE -->|yes| DISPATCH_ANALYST["Dispatch root-cause-analyst: EVIDENCE_BASE with excerpts, ISSUE, ISSUE_SOURCE, APPROVED_ACTIONS; + draft and review feedback on repair"]
 
-  VALIDATE --> EVIDENCE_VALID{"Evidence trustworthy enough?"}
-  EVIDENCE_VALID -->|no| LABEL_UNTRUSTED["Label weak or contradictory evidence and narrow what can be concluded"]
-  LABEL_UNTRUSTED --> NEEDS_VALIDATION([Needs validation: evidence weak, contradictory, or stale])
-  EVIDENCE_VALID -->|yes| REPRO{"Can reproduce safely outside production?"}
+  DISPATCH_ANALYST --> ANALYSIS_VERDICT{"ANALYSIS verdict"}
+  ANALYSIS_VERDICT -->|ERROR, first| RETRY_A["Re-dispatch analyst once with error note"]
+  RETRY_A --> ANALYSIS_VERDICT
+  ANALYSIS_VERDICT -->|ERROR, second| ERROR
+  ANALYSIS_VERDICT -->|NEEDS_INPUT| CLARIFY_LEFT
+  ANALYSIS_VERDICT -->|NEEDS_EVIDENCE| REFINE_CAP{"Fewer than two refinement loops used?"}
+  REFINE_CAP -->|yes, forward focused request| DISPATCH_COLLECTOR
+  REFINE_CAP -->|no, treat as UNSUPPORTED| UNSUPPORTED_CAP
+  ANALYSIS_VERDICT -->|UNSUPPORTED| UNSUPPORTED_CAP{"Fewer than two UNSUPPORTED retries used and plausible direction remains?"}
+  UNSUPPORTED_CAP -->|yes, redirect analyst| DISPATCH_ANALYST
+  UNSUPPORTED_CAP -->|no| ESCALATED_UNKNOWN([escalated: no supported root cause; ranked hypotheses + resolving evidence])
 
-  REPRO -->|yes| SAFE_REPRO["Run non-destructive reproduction or targeted test"]
-  REPRO -->|no| STATIC_TRACE["Trace statically from symptoms through code, config, data shape, and dependencies"]
-  SAFE_REPRO --> OBSERVE["Compare expected behavior, actual behavior, error boundary, and triggering condition"]
-  STATIC_TRACE --> OBSERVE
-  OBSERVE --> TRACE["Map likely execution path and recent change surface"]
-  TRACE --> HYPOTHESIS["Form ranked hypotheses, each with supporting evidence, opposing/weak evidence, and named sources"]
+  ANALYSIS_VERDICT -->|NEEDS_APPROVAL| PACKET["Present approval packet verbatim: action, target, reason, risk, reversibility, safer alternative, expected evidence gain"]
+  PACKET --> HUMAN_GATE{"Human approves this exact Tier C action?"}
+  HUMAN_GATE -->|approved| EXTERNAL{"User executes externally and returns output during this run?"}
+  EXTERNAL -->|yes, ingest output as RESOURCES| DISPATCH_COLLECTOR
+  EXTERNAL -->|no| ESCALATED_HANDOFF([escalated: approved sensitive workflow handed off])
+  HUMAN_GATE -->|declined| SAFER{"Safer alternative exists?"}
+  SAFER -->|yes, direct analyst to it| DISPATCH_ANALYST
+  SAFER -->|no| NEEDS_VALIDATION
 
-  HYPOTHESIS --> TEST_PLAN{"Can test top hypothesis safely?"}
-  TEST_PLAN -->|yes| TEST_SAFE["Run safe, non-destructive check"]
-  TEST_PLAN -->|no| SENSITIVE_NEEDED{"Would validation require a sensitive or production-touching action?"}
+  ANALYSIS_VERDICT -->|PASS| DISPATCH_REVIEWER["Dispatch rca-report-reviewer: RCA_REPORT_DRAFT, EVIDENCE_BASE, ISSUE_SOURCE, SKILL_ROOT; + REVIEW_SCOPE on re-review"]
 
-  TEST_SAFE --> ROOT_CAUSE{"Single root cause supported by validated evidence?"}
-  ROOT_CAUSE -->|no| MORE_HYPOTHESES{"More plausible hypotheses remain?"}
-  MORE_HYPOTHESES -->|yes| HYPOTHESIS
-  MORE_HYPOTHESES -->|no| ESCALATE_UNKNOWN([Escalated: no supported root cause])
+  DISPATCH_REVIEWER --> REVIEW_VERDICT{"REVIEW verdict"}
+  REVIEW_VERDICT -->|ERROR, first| RETRY_R["Re-dispatch reviewer once with error note"]
+  RETRY_R --> REVIEW_VERDICT
+  REVIEW_VERDICT -->|ERROR, second| ERROR
+  REVIEW_VERDICT -->|BLOCKED| BLOCKED
+  REVIEW_VERDICT -->|FAIL| REPAIR_CAP{"Fewer than three repair cycles used?"}
+  REPAIR_CAP -->|yes, prior draft + failed checks only| DISPATCH_ANALYST
+  REPAIR_CAP -->|no| NEEDS_VALIDATION
+  REVIEW_VERDICT -->|PASS| DELIVER["Deliver RCA report: confidence + basis, root cause(s), causal chain, educational explanation, injection flags, gaps"]
 
-  SENSITIVE_NEEDED -->|yes| APPROVAL_PACKET["Prepare approval packet: action, target, reason, risk/reversibility, safer alternative"]
-  APPROVAL_PACKET --> HUMAN_GATE{"Human explicitly approves this specific action?"}
-  HUMAN_GATE -->|approved| HANDOFF["Record approval and hand off the sensitive validation"]
-  HUMAN_GATE -->|declined| SAFER_ALT["Use safer alternative or document the validation gap"]
-  HANDOFF --> ESCALATE_APPROVED([Escalated: approved sensitive workflow required])
-  SAFER_ALT --> NEEDS_VALIDATION
-  SENSITIVE_NEEDED -->|no| BLOCKED_UNSAFE([Blocked: validation unsafe or out of scope])
-
-  ROOT_CAUSE -->|yes| CONFIDENCE{"Confidence and blast radius clear?"}
-  CONFIDENCE -->|no| REFINE["Collect focused evidence"]
-  REFINE --> HYPOTHESIS
-  CONFIDENCE -->|yes| CAUSAL_CHAIN["Reconstruct causal chain: trigger -> contributing conditions -> mechanism -> observed symptom, each link tied to named evidence"]
-
-  CAUSAL_CHAIN --> EXPLAIN["Build educational explanation: plain-language WHY it failed, how the recommended fix resolves the root cause (not just the symptom), and what to watch for next time"]
-  EXPLAIN --> EXPLAIN_REVIEW{"Explanation understandable AND every causal link traceable to named evidence?"}
-  EXPLAIN_REVIEW -->|no| EXPLAIN_REVISE["Revise causal chain or explanation; add missing evidence links or simplify language"]
-  EXPLAIN_REVISE --> CAUSAL_CHAIN
-  EXPLAIN_REVIEW -->|yes| REPORT["Draft RCA report: scope, causal chain, hypotheses with for/against evidence, root cause, fix direction, educational explanation"]
-
-  REPORT --> REVIEW{"Report separates facts from assumptions and lets a maintainer re-walk evidence to root cause?"}
-  REVIEW -->|no| REVISE["Revise report"]
-  REVISE --> REPORT
-  REVIEW -->|yes| READY([Ready])
-
-  class CLASSIFY,EVIDENCE_READY,EVIDENCE_VALID,REPRO,TEST_PLAN,ROOT_CAUSE,MORE_HYPOTHESES,SENSITIVE_NEEDED,CONFIDENCE decision;
-  class EXPLAIN_REVIEW,REVIEW check;
-  class HUMAN_GATE human;
-  class REPORT,CAUSAL_CHAIN,EXPLAIN output;
-  class READY success;
-  class REFINE,LABEL_UNTRUSTED,SAFER_ALT,EXPLAIN_REVISE,REVISE refine;
-  class NEEDS_VALIDATION,BLOCKED_EVIDENCE,BLOCKED_UNSAFE,ESCALATE_UNKNOWN,ESCALATE_APPROVED stop;
-
-  classDef check fill:#e7f1ff,stroke:#0b5ed7,color:#000;
-  classDef decision fill:#f8f9fa,stroke:#495057,color:#000;
-  classDef human fill:#f3e8ff,stroke:#6f42c1,color:#000;
-  classDef output fill:#e8f5e9,stroke:#2e7d32,color:#000;
-  classDef success fill:#e8f5e9,stroke:#2e7d32,color:#000;
-  classDef refine fill:#fff3cd,stroke:#856404,color:#000;
-  classDef stop fill:#fdecea,stroke:#b02a37,color:#000;
+  DELIVER --> READY([ready])
 ```
+
+## Terminal-State Reference
+
+| Terminal | Meaning |
+| -------- | ------- |
+| `ready` | Root cause(s) supported at high or medium confidence; review passed. |
+| `blocked` | Material is known but unobtainable without an unapproved Tier C action, or review inputs are missing. |
+| `needs-validation` | Evidence is weak, stale, or contradictory; approval was declined with no safe path; or repair cap was reached. |
+| `escalated` | No supported root cause after caps, or approved Tier C work was handed off. |
+| `needs-input` | Only the user can supply the missing item; no report is delivered. |
+| `error` | A second consecutive tooling failure occurred in the same subagent. |
