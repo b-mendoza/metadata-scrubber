@@ -21,17 +21,28 @@ tasks:
     cmds:
       - go test -race -cover ./...
 
+  # Read-only umbrella (CI-safe, writes nothing): lint + verify formatting.
+  # golangci-lint's `run` checks the enabled formatters too, so a single
+  # command covers both — no parallel runner needed like the frontend.
   lint:
-    desc: Lint the source code with golangci-lint (includes go vet; pinned via the go.mod tool directive)
+    desc: Lint and verify formatting without modifying files (read-only)
     cmds:
       - go tool golangci-lint run
 
-  lint:fix:
-    desc: Lint and auto-fix issues where supported
+  # Write umbrella (destructive): apply lint auto-fixes, then format. Format
+  # runs last so the result is always cleanly formatted.
+  fix:
+    desc: Apply lint auto-fixes and format the source code (writes files)
+    cmds:
+      - task: fix:lint
+      - task: fix:fmt
+
+  fix:lint:
+    desc: Apply lint auto-fixes where supported
     cmds:
       - go tool golangci-lint run --fix
 
-  fmt:
+  fix:fmt:
     desc: Format the source code with gofumpt + gci (orchestrated by golangci-lint)
     cmds:
       - go tool golangci-lint fmt
