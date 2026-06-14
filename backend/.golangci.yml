@@ -10,3 +10,14 @@ linters:
     - misspell # catches commonly misspelled English words in comments/strings
     - revive # fast, configurable replacement for the deprecated golint
     - unconvert # flags unnecessary type conversions
+
+formatters:
+  enable:
+    - gofumpt # stricter superset of gofmt; owns all non-import formatting
+    - gci # deterministic, opinionated import sorting (regroups from scratch)
+  settings:
+    gci:
+      sections:
+        - standard # standard library
+        - default # third-party packages
+        - localmodule # this module's own packages (auto-detected from go.mod)
