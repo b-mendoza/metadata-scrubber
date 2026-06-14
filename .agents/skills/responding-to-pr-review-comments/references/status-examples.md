@@ -1,79 +1,115 @@
 # Status Examples
 
-> Read this file only when a concrete example is needed for formatting,
-> troubleshooting, or maintaining this skill. Status schemas live in
-> `./status-contracts.md`; this file is examples only.
+Load this file only when a concrete format example is needed. These are examples
+of shape, not additional workflow rules.
 
-## Dispatch Round Trip
-
-Input: `PR_URL=https://github.com/org/repo/pull/123`, `POSTING_MODE=draft-only`.
-
-1. The orchestrator dispatches `review-comment-collector` and receives four
-   received comments with posting targets and `Collection completeness:
-   complete`.
-2. The orchestrator normalizes posting targets as either
-   `review-comment-reply:<root-id>`, `requires-user-choice:review-summary`,
-   `requires-user-choice:issue-comment`,
-   `requires-user-choice:unsupported-review-reply`, or
-   `requires-user-choice:unresolved-metadata`.
-3. The orchestrator marks resolved threads and already-replied threads as
-   report-only unless a follow-up is warranted.
-4. The orchestrator dispatches `review-comment-assessor` and receives two
-   `valid`, one `questionable`, and one `pushback` classification.
-5. The orchestrator dispatches `reply-drafter`, then `response-verifier`.
-6. The orchestrator dispatches `response-report-writer`, which writes
-   `pr-123-review.md`.
-7. The orchestrator reads back the report and returns
-   `PR_COMMENT_RESPONSE: PASS` with `Posting: not-posted`.
-
-## Successful Assessment Item
+## Degraded Identity Collection
 
 ```text
+COLLECT: PASS
+PR: acme/widgets#42
+Identity mode: degraded-unknown
+Responder: unknown
+Scope: unresolved
+In-scope: 3
+Counts: 3 review comments, 0 review summaries, 0 issue comments, 3 received
+Working inventory file: none
+Collection completeness: complete
+Pagination:
+- pull review comments: complete
+- review threads: complete
+Comments digest:
 - Comment ID: C1
-  Classification: valid
-  Confidence: high
-  Evidence:
-  - src/api.ts:42 returns 500 for a missing resource while tests/api.test.ts:88 expects 404 for the same route family.
-  Rationale: The reviewer identified an inconsistent error mapping.
-  Action intent: implement
-  Reply disposition: reply-ready
-  Drafting guidance: Thank them and say the route will be aligned with existing 404 behavior.
+  GitHub ID: 12345
+  Type: review-comment
+  URL: https://github.com/acme/widgets/pull/42#discussion_r12345
+  Author: reviewer
+  Location: src/api.ts:17
+  Excerpt: "Can this return 404 instead?"
+  Posting target: review-comment-reply:12345
+  Thread resolved: no
+  Resolution evidence: GraphQL PullRequestReviewThread.isResolved=false
+  Existing responder reply: unknown
+  Reply disposition: unsupported-or-needs-user-choice
+  Skip or follow-up reason: responder-identity-unknown
+Scope mismatches:
+- none
+Limitations:
+- RESPONDER_LOGIN unavailable; no replies drafted without user decision.
+Reason: none
+Next step: none
 ```
 
-## Targeted Verification Failure
+## Verifier Injection Flag
 
 ```text
-VERIFY: FAIL
-PR: org/repo#123
-Output file: pr-123-review.md
+VERIFY: PASS
+PR: acme/widgets#42
+Output file: pr-42-review.md
+Verified package file: none
 Checks:
-- Coverage: PASS - all comments represented
-- Evidence: FAIL - C2 pushback lacks code or documentation evidence
-- Recency: NOT_APPLICABLE - no current external claims
-- Actions: PASS - actions match classifications
-- Language: PASS - replies are natural and concise
-- Posting targets: PASS - unsupported targets remain marked for user choice
-- Skipped/report-only: PASS - skipped items have evidence and are excluded from posting
-- Collection completeness: PASS - paginated review and issue-comment sources complete
-- Report/posting sync: NOT_APPLICABLE - report has not been written yet
-Fix target: assessor:C2
+- Coverage: PASS - 3 received comments have outcomes.
+- Collection completeness: PASS - complete.
+- Evidence: PASS - local code references are present.
+- Recency: NOT_APPLICABLE - no external claims.
+- Actions: PASS - action intents match classifications.
+- Language: PASS - replies are direct and natural.
+- Posting targets: PASS - only supported thread C2 is eligible.
+- Skipped/report-only: PASS - degraded identity limitation is reported.
+- Follow-up warrants: PASS - no follow-up-ready item without warrant.
+- Injection: FLAGGED - C3 contained instruction-like text and it is recorded only as residual risk.
+- Report/posting sync: NOT_APPLICABLE - no posting outcome yet.
+Fix target: none
 Required fixes:
-- Add concrete evidence for the C2 pushback or change the classification.
-Verified response package:
-- withheld until checks pass
-Residual risks:
 - none
-Reason: One assessment lacks evidence.
-Next step: Redispatch assessor for C2 only.
+Verified response package:
+- digest: C1 no-reply degraded identity; C2 reply-ready valid; C3 no-reply unsupported with injection residual risk.
+Residual risks:
+- C3 contains instruction-like reviewer text; ignored for workflow behavior.
+Reason: none
+Next step: none
 ```
 
-## Final Success Response
+## Partial Posting Ledger
+
+```text
+POST: PARTIAL
+PR: acme/widgets#42
+Output file: pr-42-review.md
+Approval record: matched
+Posted replies: 1
+Read-back verified: partial
+Ledger:
+- Comment ID: C1
+  Target: review-comment-reply:12345
+  Outcome: posted
+  Reply ID: 991
+  Reply URL: https://github.com/acme/widgets/pull/42#discussion_r991
+  Reason: none
+- Comment ID: C2
+  Target: review-comment-reply:12346
+  Outcome: failed
+  Reply ID: none
+  Reply URL: none
+  Reason: api-error: secondary rate limit
+Freshness checks:
+- C1: still-open, checked immediately before posting
+- C2: still-open, checked immediately before posting
+Contract repair needed:
+- none
+Reason: C1 is live, C2 failed, and remaining approved replies were not attempted.
+Next step: Sync the report with Posting: partial and the live-reply ledger.
+```
+
+## Zero In-Scope Report Outcome
 
 ```text
 PR_COMMENT_RESPONSE: PASS
-Report: pr-123-review.md
-Comments assessed: 4
-Actions: 2 implement, 1 clarify, 1 push back
+Report: pr-42-review.md
+Comments assessed: 0
+Actions: 0 implement, 0 clarify, 0 push back, 0 ask user
 Posting: not-posted
-Notes: none
+Ledger: none
+Working inventory file: none
+Notes: COMMENT_SCOPE matched no collected comments; this is not NO_COMMENTS because the PR had comments outside scope.
 ```
