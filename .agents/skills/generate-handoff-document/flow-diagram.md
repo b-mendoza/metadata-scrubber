@@ -1,93 +1,105 @@
-# Generate Handoff Document
+# Generate Handoff Document Flow Diagram
 
-This workflow is run by the handoff-document orchestrator. The orchestrator
-thinks, decides, and dispatches only; detailed extraction, claim checking,
-assembly, and review are delegated to co-located subagents. Working data lives
-on disk as structured artifacts, while the orchestrator keeps only verdicts,
-paths, counts, warnings, and unresolved questions in context. The workflow may
-write the target handoff and sibling resumability artifacts after path and
-write checks pass; it does not mutate product code.
+The orchestrator thinks, decides, dispatches, and verifies. Working data lives
+on disk as structured artifacts; orchestrator context keeps only verdicts,
+paths, counts, warnings, and rerun targets. User questions pause and resume the
+run instead of ending it. Blocked states are reached only when an answer cannot
+resolve the problem or retries are exhausted.
+
+## Main Flow
 
 ```mermaid
 flowchart TD
-  START(["Start: handoff request"]) --> INTAKE["Collect TARGET_FILE, optional SUBJECT, TRACKING_FILES, CONTEXT_SOURCE, and conversation or transcript"]
+  START(["Start: handoff request"]) --> INTAKE["Collect TARGET_FILE, optional SUBJECT, TRACKING_FILES, CONTEXT_SOURCE, UPDATE_MODE"]
   INTAKE --> TARGET_CLEAR{"TARGET_FILE clear?"}
-  TARGET_CLEAR -->|no| ASK_TARGET["Ask one short target-path clarification"]
-  ASK_TARGET --> BLOCKED_TARGET(["Blocked: unclear target path"])
-  TARGET_CLEAR -->|yes| PATH_VALIDATE["Validate readable inputs, writable target, and sibling artifact locations"]
+  TARGET_CLEAR -->|no| ASK_TARGET["Ask one short target-path question, then WAIT"]
+  ASK_TARGET --> ANSWER_OK{"Answer resolves to a path?"}
+  ANSWER_OK -->|yes| TARGET_CLEAR
+  ANSWER_OK -->|"no / abandoned"| BLOCKED_TARGET(["Blocked: unclear target path"])
+  TARGET_CLEAR -->|yes| PATH_CHECK["Run path-safety checklist: inside working tree, no traversal, not source/config/lockfile, creatable dir, no sibling collisions"]
 
-  PATH_VALIDATE --> WRITE_SAFE{"Path and write checks safe?"}
-  WRITE_SAFE -->|unsafe| BLOCKED_WRITE(["Blocked: unsafe writes or missing readable/writable path"])
-  WRITE_SAFE -->|safe| READ_CONTRACTS["Read bundled data contracts"]
+  PATH_CHECK --> SAFE{"All criteria pass?"}
+  SAFE -->|no| BLOCKED_WRITE(["Blocked: unsafe writes or missing readable/writable path"])
+  SAFE -->|yes| EXISTS{"TARGET_FILE already exists?"}
 
-  READ_CONTRACTS --> LOCAL_SUFFICIENT{"Bundled contracts sufficient and current?"}
-  LOCAL_SUFFICIENT -->|yes| EXT_SKIPPED["Record EXTERNAL: SKIPPED"]
-  LOCAL_SUFFICIENT -->|no| EXT_FETCHABLE{"Can fetch one minimal relevant external source?"}
-  EXT_FETCHABLE -->|yes| FETCH_EXTERNAL["Fetch one minimal primary or current source and record EXTERNAL: USED"]
-  EXT_FETCHABLE -->|no, optional| EXT_UNAVAILABLE["Record EXTERNAL: UNAVAILABLE and continue local-only"]
-  EXT_FETCHABLE -->|no, required| BLOCKED_EXTERNAL(["Blocked: required external dependency unavailable"])
+  EXISTS -->|no| CONTRACTS["Read data-contracts.md and derive sibling paths from extension-agnostic stem"]
+  EXISTS -->|yes| MODE_KNOWN{"UPDATE_MODE supplied?"}
+  MODE_KNOWN -->|yes| BACKUP["Copy existing target to stem.prev.md"]
+  MODE_KNOWN -->|no| ASK_MODE["Ask: overwrite, new path, or update? Then WAIT"]
+  ASK_MODE --> MODE{"User choice?"}
+  MODE -->|"new path"| TARGET_CLEAR
+  MODE -->|overwrite| BACKUP
+  MODE -->|update| BACKUP_U["Copy to stem.prev.md and record PRIOR_HANDOFF_FILE"]
+  MODE -->|abandoned| BLOCKED_TARGET
+  BACKUP --> CONTRACTS
+  BACKUP_U --> CONTRACTS
 
-  EXT_SKIPPED --> DERIVE_PATHS["Derive TARGET_FILE, stem.context.json, stem.insights.json, and optional stem.claims.json"]
-  FETCH_EXTERNAL --> DERIVE_PATHS
-  EXT_UNAVAILABLE --> DERIVE_PATHS
+  CONTRACTS --> SOURCE{"CONTEXT_SOURCE is a readable file?"}
+  SOURCE -->|yes| SIZE["Set TRANSCRIPT_FILE; record line count and CHUNKED flag"]
+  SOURCE -->|"no: live conversation"| SNAPSHOT["Write faithful transcript snapshot to stem.transcript.md"]
+  SNAPSHOT --> SNAP_OK{"Snapshot faithful?"}
+  SNAP_OK -->|yes| SIZE
+  SNAP_OK -->|"no: history lost"| ASK_TRANSCRIPT["Ask for transcript file, then WAIT"]
+  ASK_TRANSCRIPT --> SOURCE
 
-  DERIVE_PATHS --> DISPATCH_CONTEXT["Dispatch context-extractor with CONTEXT_SOURCE and context artifact path"]
-  DISPATCH_CONTEXT --> CONTEXT_STATUS{"context-extractor status?"}
-  CONTEXT_STATUS -->|PASS| DISPATCH_INSIGHTS["Dispatch insight-documenter with CONTEXT_SOURCE and INSIGHTS_FILE"]
-  CONTEXT_STATUS -->|WARN| WARN_CONTEXT["Capture context warning"]
-  WARN_CONTEXT --> DISPATCH_INSIGHTS
-  CONTEXT_STATUS -->|ERROR or FAIL or SKIPPED| BLOCKED_SUBAGENT(["Blocked: subagent error, failure, or unexpected skip"])
+  SIZE --> EXTERNAL{"Bundled contracts sufficient?"}
+  EXTERNAL -->|yes| EXT_SKIP["Record EXTERNAL: SKIPPED"]
+  EXTERNAL -->|"no, optional"| EXT_TRY["Fetch one source; record USED or UNAVAILABLE; continue"]
+  EXTERNAL -->|"no, required and unreachable"| BLOCKED_EXT(["Blocked: required external dependency unavailable"])
+  EXT_SKIP --> S_CONTEXT
+  EXT_TRY --> S_CONTEXT
 
-  DISPATCH_INSIGHTS --> INSIGHTS_STATUS{"insight-documenter status?"}
-  INSIGHTS_STATUS -->|PASS| TRACKING_EXISTS{"TRACKING_FILES provided?"}
-  INSIGHTS_STATUS -->|WARN| WARN_INSIGHTS["Capture insights warning"]
-  WARN_INSIGHTS --> TRACKING_EXISTS
-  INSIGHTS_STATUS -->|ERROR or FAIL or SKIPPED| BLOCKED_SUBAGENT
+  S_CONTEXT["context-extractor via dispatch-verify"] --> C_OK{"Stage outcome?"}
+  C_OK -->|verified PASS/WARN| S_INSIGHTS["insight-documenter via dispatch-verify"]
+  C_OK -->|blocked| BLOCKED_STAGE(["Blocked: subagent error or artifact contract violation"])
 
-  TRACKING_EXISTS -->|yes| DISPATCH_CLAIMS["Dispatch claim-validator with TRACKING_FILES, insights artifact, and claims artifact path"]
-  TRACKING_EXISTS -->|no| CLAIMS_SKIPPED["Record CLAIMS: SKIPPED and warning for independent factual verification"]
+  S_INSIGHTS --> I_OK{"Stage outcome?"}
+  I_OK -->|blocked| BLOCKED_STAGE
+  I_OK -->|verified PASS/WARN| EMPTY{"qa_log and insights empty and mandate trivial?"}
+  EMPTY -->|yes| ASK_EMPTY["Ask: still want a handoff? Then WAIT"]
+  ASK_EMPTY --> EMPTY_ANS{"User answer?"}
+  EMPTY_ANS -->|no| DECLINED(["Completed: handoff declined - empty session"])
+  EMPTY_ANS -->|yes| TRACKING
+  EMPTY -->|no| TRACKING{"TRACKING_FILES provided?"}
 
-  DISPATCH_CLAIMS --> CLAIMS_STATUS{"claim-validator status?"}
-  CLAIMS_STATUS -->|PASS| CLAIMS_READY["Record claims verdict and counts"]
-  CLAIMS_STATUS -->|WARN| WARN_CLAIMS["Capture claims warning"]
-  WARN_CLAIMS --> CLAIMS_READY
-  CLAIMS_STATUS -->|SKIPPED| CLAIMS_SKIPPED
-  CLAIMS_STATUS -->|ERROR or FAIL| BLOCKED_SUBAGENT
+  TRACKING -->|yes| S_CLAIMS["claim-validator via dispatch-verify"]
+  TRACKING -->|no| CLAIMS_SKIP["Record CLAIMS: SKIPPED plus verification warning"]
+  S_CLAIMS --> CL_OK{"Stage outcome?"}
+  CL_OK -->|verified PASS/WARN| S_ASSEMBLE
+  CL_OK -->|intentional SKIPPED| CLAIMS_SKIP
+  CL_OK -->|blocked| BLOCKED_STAGE
+  CLAIMS_SKIP --> S_ASSEMBLE
 
-  CLAIMS_READY --> ASSEMBLE["Dispatch document-assembler with target path and structured artifacts"]
-  CLAIMS_SKIPPED --> ASSEMBLE
-  ASSEMBLE --> ASSEMBLY_STATUS{"document-assembler status?"}
-  ASSEMBLY_STATUS -->|PASS| REVIEW["Dispatch handoff-reviewer with target handoff and structured artifacts"]
-  ASSEMBLY_STATUS -->|WARN| WARN_ASSEMBLY["Capture assembly warning"]
-  WARN_ASSEMBLY --> REVIEW
-  ASSEMBLY_STATUS -->|ERROR or FAIL or SKIPPED| BLOCKED_SUBAGENT
+  S_ASSEMBLE["document-assembler via dispatch-verify"] --> A_OK{"Stage outcome?"}
+  A_OK -->|blocked| BLOCKED_STAGE
+  A_OK -->|verified PASS/WARN| S_REVIEW["handoff-reviewer via dispatch-verify"]
 
-  REVIEW --> REVIEW_STATUS{"handoff-reviewer verdict?"}
-  REVIEW_STATUS -->|PASS| FINAL["Return target path, artifact paths, external status, stage verdicts, review verdict, counts, warnings, and open-question count"]
-  REVIEW_STATUS -->|WARN| WARN_REVIEW["Capture nonblocking review warning"]
-  WARN_REVIEW --> FINAL
-  REVIEW_STATUS -->|ERROR or SKIPPED| BLOCKED_SUBAGENT
-  REVIEW_STATUS -->|FAIL| REPAIR_LIMIT{"Fewer than 3 repair cycles?"}
+  S_REVIEW --> R_OK{"REVIEW verdict?"}
+  R_OK -->|PASS or WARN| FINAL["Report paths, external status, verdicts, counts, warnings, open questions"]
+  R_OK -->|blocked| BLOCKED_STAGE
+  R_OK -->|FAIL| LIMIT{"Fewer than 3 repair cycles used?"}
 
-  REPAIR_LIMIT -->|no| BLOCKED_REPAIR(["Blocked: repair limit exhausted"])
-  REPAIR_LIMIT -->|yes| COUNT_REPAIR["Increment repair cycle count"]
-  COUNT_REPAIR --> PARSE_TARGETS["Parse reviewer rerun targets"]
-  PARSE_TARGETS --> NORMALIZE_RERUN["Normalize one or many targets into canonical rerun set"]
-  NORMALIZE_RERUN --> EARLIEST_STAGE{"Earliest rerun stage?"}
-  EARLIEST_STAGE -->|context| DISPATCH_CONTEXT
-  EARLIEST_STAGE -->|insights| DISPATCH_INSIGHTS
-  EARLIEST_STAGE -->|claims| TRACKING_EXISTS
-  EARLIEST_STAGE -->|assembly| ASSEMBLE
-  EARLIEST_STAGE -->|review only| REVIEW
+  LIMIT -->|no| BLOCKED_REPAIR(["Blocked: repair limit exhausted"])
+  LIMIT -->|yes| COUNT["Increment repair cycle"]
+  COUNT --> PARSE{"Rerun targets parseable?"}
+  PARSE -->|no| DEFAULT_RERUN["Default rerun: assembler then review"]
+  DEFAULT_RERUN --> S_ASSEMBLE
+  PARSE -->|yes| NORM["Normalize to canonical order and pick earliest stage"]
+  NORM --> EARLIEST{"Earliest rerun stage?"}
+  EARLIEST -->|context| S_CONTEXT
+  EARLIEST -->|insights| S_INSIGHTS
+  EARLIEST -->|claims| TRACKING
+  EARLIEST -->|assembly| S_ASSEMBLE
+  EARLIEST -->|"review only"| S_REVIEW
 
   FINAL --> DONE(["Completed: review pass"])
 
-  class TARGET_CLEAR,WRITE_SAFE,LOCAL_SUFFICIENT,EXT_FETCHABLE,CONTEXT_STATUS,INSIGHTS_STATUS,TRACKING_EXISTS,CLAIMS_STATUS,ASSEMBLY_STATUS,REVIEW_STATUS,REPAIR_LIMIT,EARLIEST_STAGE decision;
-  class PATH_VALIDATE,READ_CONTRACTS,FETCH_EXTERNAL,DISPATCH_CONTEXT,DISPATCH_INSIGHTS,DISPATCH_CLAIMS,ASSEMBLE,REVIEW,COUNT_REPAIR,PARSE_TARGETS,NORMALIZE_RERUN check;
-  class ASK_TARGET human;
-  class EXT_SKIPPED,EXT_UNAVAILABLE,DERIVE_PATHS,WARN_CONTEXT,WARN_INSIGHTS,WARN_CLAIMS,WARN_ASSEMBLY,WARN_REVIEW,CLAIMS_READY,CLAIMS_SKIPPED,FINAL output;
-  class DONE success;
-  class BLOCKED_TARGET,BLOCKED_WRITE,BLOCKED_EXTERNAL,BLOCKED_SUBAGENT,BLOCKED_REPAIR stop;
+  class TARGET_CLEAR,ANSWER_OK,SAFE,EXISTS,MODE_KNOWN,MODE,SOURCE,SNAP_OK,EXTERNAL,C_OK,I_OK,EMPTY,EMPTY_ANS,TRACKING,CL_OK,A_OK,R_OK,LIMIT,PARSE,EARLIEST decision;
+  class PATH_CHECK,CONTRACTS,SNAPSHOT,SIZE,EXT_TRY,S_CONTEXT,S_INSIGHTS,S_CLAIMS,S_ASSEMBLE,S_REVIEW,COUNT,NORM,DEFAULT_RERUN check;
+  class ASK_TARGET,ASK_MODE,ASK_TRANSCRIPT,ASK_EMPTY human;
+  class EXT_SKIP,CLAIMS_SKIP,BACKUP,BACKUP_U,FINAL output;
+  class DONE,DECLINED success;
+  class BLOCKED_TARGET,BLOCKED_WRITE,BLOCKED_EXT,BLOCKED_STAGE,BLOCKED_REPAIR stop;
   classDef check fill:#e7f1ff,stroke:#0b5ed7,color:#000;
   classDef decision fill:#f8f9fa,stroke:#495057,color:#000;
   classDef human fill:#f3e8ff,stroke:#6f42c1,color:#000;
@@ -96,8 +108,56 @@ flowchart TD
   classDef stop fill:#fdecea,stroke:#b02a37,color:#000;
 ```
 
-Readiness rule: the workflow is complete only at the completed review-pass
-terminal, or when the orchestrator reports one of the named blocked states:
-unclear target path, unsafe writes, required external dependency unavailable,
-subagent error or failure, or repair-limit exhaustion. If `TRACKING_FILES` are
-absent, completion is allowed with a visible `CLAIMS: SKIPPED` warning.
+## Dispatch-Verify Protocol
+
+```mermaid
+flowchart TD
+  D_START(["Enter stage"]) --> LOAD["Read subagent definition just in time"]
+  LOAD --> DISPATCH["Dispatch with explicit inputs only; bundled paths are absolute"]
+  DISPATCH --> STATUS{"Returned status?"}
+
+  STATUS -->|PASS| VERIFY
+  STATUS -->|WARN| CAPTURE["Capture warning"]
+  CAPTURE --> VERIFY["Verify artifact: exists, non-empty, JSON parses, required keys present; assembler has five sections and no placeholders"]
+  STATUS -->|ERROR| RETRIED{"Already retried once?"}
+  RETRIED -->|no| UPSTREAM{"Error blames an unreadable upstream artifact?"}
+  UPSTREAM -->|yes| RERUN_PRODUCER["Rerun that producer once, then downstream consumers"]
+  RERUN_PRODUCER --> DISPATCH
+  UPSTREAM -->|no| DISPATCH
+  RETRIED -->|yes| D_BLOCK(["Stage outcome: blocked"])
+  STATUS -->|"unexpected FAIL or SKIPPED"| D_BLOCK
+  STATUS -->|"intentional CLAIMS: SKIPPED"| D_SKIP(["Stage outcome: intentional SKIPPED"])
+
+  VERIFY --> V_OK{"Artifact passes checks?"}
+  V_OK -->|yes| D_PASS(["Stage outcome: verified PASS/WARN"])
+  V_OK -->|"no, first failure"| NAME_GAP["Rerun producer once, naming the discrepancy"]
+  NAME_GAP --> DISPATCH
+  V_OK -->|"no, second failure"| D_VIOLATION(["Stage outcome: blocked - artifact contract violation"])
+
+  class STATUS,RETRIED,UPSTREAM,V_OK decision;
+  class LOAD,DISPATCH,VERIFY,NAME_GAP,RERUN_PRODUCER check;
+  class CAPTURE output;
+  class D_PASS,D_SKIP success;
+  class D_BLOCK,D_VIOLATION stop;
+  classDef check fill:#e7f1ff,stroke:#0b5ed7,color:#000;
+  classDef decision fill:#f8f9fa,stroke:#495057,color:#000;
+  classDef output fill:#e8f5e9,stroke:#2e7d32,color:#000;
+  classDef success fill:#e8f5e9,stroke:#2e7d32,color:#000;
+  classDef stop fill:#fdecea,stroke:#b02a37,color:#000;
+```
+
+## Terminal States
+
+| Terminal | Kind | Meaning |
+| -------- | ---- | ------- |
+| `Completed: review pass` | Success | Reviewer returned pass or warn and the full report is delivered |
+| `Completed: handoff declined (empty session)` | Success | User chose not to produce a hollow handoff |
+| `Blocked: unclear target path` | Stop | Target question unanswered or unresolvable |
+| `Blocked: unsafe writes or missing readable/writable path` | Stop | A named path-safety criterion failed |
+| `Blocked: required external dependency unavailable` | Stop | Required current external source is unreachable |
+| `Blocked: subagent error, failure, or unexpected skip` | Stop | Stage error after retry, or unexpected fail/skip |
+| `Blocked: artifact contract violation` | Stop | Artifact verification failed twice for the same producer |
+| `Blocked: repair limit exhausted` | Stop | Three repair cycles were used and review still fails |
+
+Readiness rule: the run is complete only at one of the two success terminals;
+every other exit uses the exact blocked string above.

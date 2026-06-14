@@ -1,125 +1,102 @@
 # Dispatch Example
 
-> Read this file only when an example would clarify dispatch order, expected
-> subagent summaries, warning handling, targeted reruns, or the final response
-> shape returned to the user.
+This example is illustrative. On any mismatch, the subagent contracts and
+[`data-contracts.md`](./data-contracts.md) win. [F-12]
 
-## Example
+## Scenario
 
-Input:
+Inputs:
 
-- `TARGET_FILE=docs/auth-review-handoff.md`
+- `TARGET_FILE=docs/auth-handoff.md`
 - `SUBJECT=Authentication review`
-- `TRACKING_FILES=docs/auth-review-notes.md`
+- `CONTEXT_SOURCE=current conversation`
+- `TRACKING_FILES=docs/auth-plan.md`
+- Existing target found; user chooses `update`
 
-Derived working artifacts (per `./data-contracts.md`):
+The orchestrator copies `docs/auth-handoff.md` to `docs/auth-handoff.prev.md`,
+records `PRIOR_HANDOFF_FILE=docs/auth-handoff.md`, snapshots the conversation to
+`docs/auth-handoff.transcript.md`, resolves bundled reference paths to absolute
+paths, and dispatches stages.
 
-- `docs/auth-review-handoff.context.json`
-- `docs/auth-review-handoff.insights.json`
-- `docs/auth-review-handoff.claims.json`
-
-Dispatch round trip:
-
-1. Validate readable inputs, writable target, and sibling artifact locations.
-2. Record external-source status:
-
-   ```text
-   EXTERNAL: SKIPPED
-   Reason: Bundled contracts were sufficient.
-   ```
-
-3. Dispatch `context-extractor`.
-4. Subagent returns:
-
-   ```text
-   CONTEXT: PASS
-   File: docs/auth-review-handoff.context.json
-   Q&A exchanges: 4
-   ```
-
-5. Dispatch `insight-documenter`.
-6. Subagent returns:
-
-   ```text
-   INSIGHTS: PASS
-   File: docs/auth-review-handoff.insights.json
-   Insights: 6
-   ```
-
-7. Dispatch `claim-validator`.
-8. Subagent returns:
-
-   ```text
-   CLAIMS: WARN
-   File: docs/auth-review-handoff.claims.json
-   Claims checked: 9
-   Unverified: 2
-   Reason: Two claims could not be fully verified.
-   ```
-
-9. Capture the claims warning and dispatch `document-assembler`.
-10. Subagent returns:
-
-   ```text
-   HANDOFF: PASS
-   File: docs/auth-review-handoff.md
-   Open questions: 2
-   ```
-
-11. Dispatch `handoff-reviewer`.
-12. Subagent returns:
-
-   ```text
-   REVIEW: PASS
-   File: docs/auth-review-handoff.md
-   Failed gates: 0
-   Rerun: none
-   Open questions: 2
-   Warnings: 1
-   ```
-
-13. Report to the user:
-
-   ```text
-   Handoff document written to docs/auth-review-handoff.md.
-   Artifacts: docs/auth-review-handoff.context.json,
-   docs/auth-review-handoff.insights.json,
-   docs/auth-review-handoff.claims.json.
-   External: SKIPPED. Stage verdicts: CONTEXT PASS, INSIGHTS PASS,
-   CLAIMS WARN, HANDOFF PASS, REVIEW PASS. Two open questions and two
-   unverified claims remain.
-   ```
-
-The orchestrator keeps only those summaries, warnings, counts, and file paths.
-
-## Skipping Stage 4
-
-When `TRACKING_FILES` is not provided, replace the claim-validation dispatch
-with:
+## Context Extractor Summary
 
 ```text
-CLAIMS: SKIPPED
-Reason: No tracking files supplied; next agent will verify claims independently.
+CONTEXT: PASS
+File: docs/auth-handoff.context.json
+Instruction blocks: 3
+Q&A exchanges: 4
+Amendments: 2
+Reason: Extracted active mandate and carried forward one prior open question.
 ```
 
-`document-assembler` then produces Section 4 with the explicit "no tracking
-files" directive instead of a validation checklist.
+Orchestrator verification: file exists, non-empty, JSON parses, required context
+keys are present.
 
-## Targeted Repair Example
+## Insights Summary With Verification Rerun
 
-If `handoff-reviewer` returns:
+First response:
 
 ```text
-REVIEW: FAIL
-File: docs/auth-review-handoff.md
-Failed gates: 2
-Rerun: insight-documenter, document-assembler
+INSIGHTS: PASS
+File: docs/auth-handoff.insights.json
+Insights: 5
+Critical: 1
+Unverified or partial: 2
+Reason: Extracted evidence-backed decisions and risks.
+```
+
+Mechanical verification fails because `summary` is missing. The orchestrator
+reruns `insight-documenter` once and names the discrepancy.
+
+Second response:
+
+```text
+INSIGHTS: PASS
+File: docs/auth-handoff.insights.json
+Insights: 5
+Critical: 1
+Unverified or partial: 2
+Reason: Rewrote artifact with required top-level summary key.
+```
+
+## Claims Summary
+
+```text
+CLAIMS: WARN
+File: docs/auth-handoff.claims.json
+Claims checked: 8
+Verified: 5
+Refuted: 1
+Partial: 1
+Unverified: 1
+Reason: One referenced tracking file claim had no reachable authoritative source.
+```
+
+Warnings force warn, not pass. [F-10]
+
+## Handoff Summary
+
+```text
+HANDOFF: PASS
+File: docs/auth-handoff.md
+Sections: 5
 Open questions: 2
-Warnings: 0
-Reason: Some insights lack concrete evidence and Section 5 has generic next steps.
+Quality flags: 0
+Reason: Rendered five required sections, working-artifacts manifest, and update-mode resolved history.
 ```
 
-The orchestrator increments the repair counter, normalizes the rerun targets,
-reruns `insight-documenter`, then reruns downstream `document-assembler`, then
-reruns `handoff-reviewer`. If the reviewer still fails after three repair
-cycles, the orchestrator reports `Blocked: repair limit exhausted`.
+## Review Summary
+
+```text
+REVIEW: WARN
+File: docs/auth-handoff.md
+Failed gates: 0
+Rerun: none
+Open questions: 2
+Warnings: 1
+Reason: Claims validation contains one unverified external claim; handoff remains usable.
+```
+
+The orchestrator returns `Completed: review pass` with warn status disclosed in
+the run report, paths to `TARGET_FILE`, transcript, context, insights, claims,
+and `.prev.md`, plus counts and warnings.

@@ -1,76 +1,85 @@
 # Handoff Template
 
-> Use this template only at assembly time, after reading the structured
-> artifacts. Replace every placeholder before writing the final document.
+This template is consumed by `document-assembler`. Placeholder names identify
+their source artifact or deterministic fallback. The assembler must render the
+defined zero-state strings from [`data-contracts.md`](./data-contracts.md) when
+source arrays are empty; no literal `<placeholder>` text may remain.
 
 ```markdown
-# Handoff Document: <SUBJECT>
+# Handoff Document: <SUBJECT from input or fallback>
 
-> **Purpose:** This document preserves the state of an in-progress session so a
-> fresh agent can resume without relying on chat history.
->
-> **Generated:** <timestamp>
-> **Status:** In Progress | Completed
+> Advisory: <only when Sections 2 through 4 are all zero-state; otherwise omit>
 
----
+## Session Metadata
+
+- **Generated:** <UTC timestamp from system clock>
+- **Status:** <Completed when zero open questions remain; otherwise In Progress>
+- **Subject:** <SUBJECT>
+- **Transcript lines:** <context.source_summary.line_count>
+- **Total Q&A exchanges:** <context.source_summary.qa_exchanges>
+- **Total insights documented:** <insights.summary.insights>
+- **Claims validated:** <claims.summary.checked or skipped>
+- **Critical findings:** <insights.summary.critical>
+- **Open questions:** <computed open-question count>
+- **Working artifacts:**
+  - Transcript: `<TRANSCRIPT_FILE or none>`
+  - Context: `<CONTEXT_FILE>`
+  - Insights: `<INSIGHTS_FILE>`
+  - Claims: `<CLAIMS_FILE or none>`
+  - Previous handoff backup: `<PREV_FILE or none>`
 
 ## 1. Original Instructions & Scope
 
-**Fulfills:** Preserve the mandate, scope boundaries, and instruction changes
-that define what this work is trying to accomplish.
+**Fulfills:** Preserve the mandate, scope, constraints, and amendments needed to
+continue the work.
 
-<original instructions from CONTEXT_FILE>
-
-### Instruction Amendments
-
-<amendments from CONTEXT_FILE, or "No amendments were made during the session.">
-
----
+<Render active original instructions and mandate from CONTEXT_FILE. Mark
+superseded or unclear items explicitly. If none exist, render the Section 1
+zero-state string from data-contracts.md.>
 
 ## 2. Q&A Log
 
-**Fulfills:** Preserve the clarifying exchanges that shaped execution.
+**Fulfills:** Preserve clarifications and user decisions in chronological order.
 
-<chronological Q&A log from CONTEXT_FILE>
-
----
+<Render `qa_log` from CONTEXT_FILE with speaker attribution and order. If empty,
+render the Section 2 zero-state string from data-contracts.md.>
 
 ## 3. Observations & Insights
 
-**Fulfills:** Preserve the session's analytical findings with evidence and
-priority.
+**Fulfills:** Transfer evidence-backed findings, decisions, risks, and important
+context for a cold-start reader.
 
-<categorized insights from INSIGHTS_FILE>
-
----
+<Render each insight from INSIGHTS_FILE with title, priority, claim, rationale,
+evidence, verification status, and verification notes. If empty, render the
+Section 3 zero-state string from data-contracts.md.>
 
 ## 4. Unverified Claims & Validation Checklist
 
-**Fulfills:** Prevent the next agent from treating secondary notes or tracking
-documents as ground truth.
+**Fulfills:** Separate verified facts from unverified, partial, or refuted claims
+so the next agent does not inherit false certainty.
 
-<directive and checklist from CLAIMS_FILE, or the explicit "no tracking files"
-note>
-
----
+<Render CLAIMS_FILE claims when available. If claim validation was skipped,
+render the Section 4 zero-state string from data-contracts.md and include the
+independent-verification warning.>
 
 ## 5. Open Questions & Recommended Next Steps
 
-**Fulfills:** Preserve continuity so the next agent knows what remains open
-and what to do next.
+**Fulfills:** Give the next agent concrete actions and unresolved questions.
 
-### Open Questions
+<Render unresolved questions, verification follow-ups, and next steps. Every next
+step must use an action verb and name a concrete file, command, artifact, or
+question. If no open questions remain, render the Section 5 zero-state string
+from data-contracts.md.>
 
-<unresolved questions, or "All questions raised during the session have been resolved.">
+## Resolved Since Last Handoff
 
-### Recommended Next Steps
-
-<ordered, concrete next actions>
-
-### Session Metadata
-
-- **Total Q&A exchanges:** <count>
-- **Total insights documented:** <count>
-- **Claims validated:** <verified count> / <total count or N/A>
-- **Critical findings:** <count>
+<Only in update mode. Summarize resolved questions or superseded items from
+PRIOR_HANDOFF_FILE that should be preserved rather than silently deleted.>
 ```
+
+## Update Mode
+
+When `PRIOR_HANDOFF_FILE` is supplied, merge still-relevant instructions,
+amendments, open questions, and history into the new handoff. Move resolved open
+questions to `Resolved Since Last Handoff`; do not silently drop them. The
+orchestrator creates `<stem>.prev.md` before overwrite. [F-03]

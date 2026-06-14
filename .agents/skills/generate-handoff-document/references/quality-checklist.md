@@ -1,90 +1,56 @@
-# Handoff Quality Checklist
+# Quality Checklist
 
-> Read this file from `handoff-reviewer` after `document-assembler` returns.
-> Keep raw artifact contents inside the reviewer context; return only verdicts,
-> counts, rerun targets, warnings, and a short reason to the orchestrator.
-
-## Contents
-
-- Review Inputs
-- Final Document Gates
-- Review Statuses
-- Targeted Rerun Routing
-- Review Summary Shape
+This checklist is consumed by `handoff-reviewer`. Status semantics, repair
+limit, canonical rerun order, schemas, and zero-state strings live in
+[`data-contracts.md`](./data-contracts.md); do not redefine them here.
 
 ## Review Inputs
 
-`handoff-reviewer` receives these paths from the orchestrator:
+| Input | Required | Purpose |
+| ----- | -------- | ------- |
+| `TARGET_FILE` | Yes | Final handoff document to review |
+| `CONTEXT_FILE` | Yes | Trace source for scope and Q&A |
+| `INSIGHTS_FILE` | Yes | Trace source for insights |
+| `CLAIMS_FILE` | Conditional | Trace source when claim validation ran |
+| `DATA_CONTRACTS_FILE` | Yes | Statuses, schemas, checks, and rerun order |
 
-- `TARGET_FILE` is required.
-- `CONTEXT_FILE`, `INSIGHTS_FILE`, and `CLAIMS_FILE` are optional supporting
-  paths for trace checks.
+## Gates
 
-If `TARGET_FILE` is missing or unreadable, return `REVIEW: ERROR`.
+| Gate | Check | Rerun Target |
+| ---- | ----- | ------------ |
+| Required structure | Exactly five major `## N.` sections, each with `**Fulfills:**` | `document-assembler` |
+| Metadata and artifacts | Session Metadata includes counts and Working Artifacts; listed paths exist or are `none` | `document-assembler` |
+| Scope preservation | Mandate, original instructions, amendments, and update-mode carry-forward match `CONTEXT_FILE` | `context-extractor`, `document-assembler` |
+| Q&A traceability | Q&A items are ordered and attributed; zero-state text is used only when appropriate | `context-extractor`, `document-assembler` |
+| Evidence per insight | Each non-empty insight has rationale and concrete evidence; priority and verification status are rendered | `insight-documenter`, `document-assembler` |
+| Claims caution | Skipped, unverified, partial, and refuted claims are not presented as verified facts | `claim-validator`, `document-assembler` |
+| Open questions | Open questions and next steps are concrete; zero-state text is used when none remain | `document-assembler` |
+| Placeholder cleanup | No `<placeholder>` text or source-only marker remains | `document-assembler` |
+| Vacuity | If Sections 2 through 4 are all zero-state, an advisory banner exists and verdict is at most warn | `document-assembler` |
+| Continuation readiness | All five sub-criteria below pass | Smallest affected producer then `document-assembler` |
 
-## Final Document Gates
+## Continuation Readiness
 
-A valid handoff satisfies every gate:
+Check each sub-criterion and name failures in the review summary. [F-06]
 
-| Gate | Pass condition |
-| ---- | -------------- |
-| Required sections | `TARGET_FILE` contains exactly these five major sections: `Original Instructions & Scope`, `Q&A Log`, `Observations & Insights`, `Unverified Claims & Validation Checklist`, `Open Questions & Recommended Next Steps` |
-| Section purpose | Every major section starts with a `**Fulfills:**` line |
-| Evidence | Each insight includes rationale and concrete evidence |
-| Claims caution | Section 4 includes either the validation directive from `CLAIMS_FILE` or the explicit no-tracking-files note |
-| Open questions | Open questions are listed or explicitly marked resolved |
-| Continuation readiness | A fresh agent can continue from `TARGET_FILE` without prior chat history |
-| Placeholders | No template placeholders remain |
+| Sub-Criterion | Pass Condition |
+| ------------- | -------------- |
+| No deictic references | No sentence relies on `above`, `earlier`, `as discussed`, or similar chat-relative wording without a concrete referent |
+| Named paths exist | Every path in Sections 3 through 5 and Session Metadata exists on disk or is explicitly `none` |
+| Actionable next steps | Every recommended next step uses an action verb and names a concrete target |
+| Artifact manifest | Working Artifacts list is present in Session Metadata |
+| Introduced names | Acronyms and project-specific names are introduced at first use |
 
-## Review Statuses
+## Rerun Mapping
 
-Return exactly one review status:
+Return the smallest rerun set that can repair the failed gate. If no precise
+producer is identifiable, return `document-assembler`. If a source artifact is
+invalid or missing, name the source producer first so the orchestrator can rerun
+it and downstream consumers. [F-04]
 
-| Status | Use when | Orchestrator route |
-| ------ | -------- | ------------------ |
-| `REVIEW: PASS` | Every gate passes with no advisory caveats | Complete |
-| `REVIEW: WARN` | Every gate passes, but nonblocking warnings remain | Capture warning, then complete |
-| `REVIEW: FAIL` | One or more gates fail and targeted rerun can repair them | Enter repair loop |
-| `REVIEW: ERROR` | Required files or checklist cannot be read | Block as subagent error |
+## Reviewer Summary Requirements
 
-`REVIEW: SKIPPED` is not an intentional reviewer output. If it appears, the
-orchestrator treats it as `Blocked: subagent error, failure, or unexpected
-skip`.
-
-## Targeted Rerun Routing
-
-Rerun the smallest stage set that can fix the failed gate:
-
-| Failed gate | Rerun |
-| ----------- | ----- |
-| Missing or unclear scope, amendments, or Q&A | `context-extractor`, then `document-assembler` |
-| Weak, duplicate, or unevidenced insights | `insight-documenter`, optional `claim-validator`, then `document-assembler` |
-| Missing claim statuses or incorrect counts | `claim-validator`, then `document-assembler` |
-| Missing sections, placeholders, or unreadable flow | `document-assembler` only |
-| Multiple upstream artifact problems | Rerun each failed upstream stage, then `document-assembler` |
-
-When several gates fail, return all needed rerun targets in canonical order:
-`context-extractor`, `insight-documenter`, `claim-validator`,
-`document-assembler`. The orchestrator normalizes one or many targets into that
-order, reruns the earliest named upstream stage plus downstream consumers, and
-then reruns `handoff-reviewer`.
-
-Use at most three fix cycles. If the same gate fails after three cycles, stop
-and report the blocker with the latest stage summaries.
-
-## Review Summary Shape
-
-Return a concise review summary to the orchestrator:
-
-```text
-REVIEW: PASS|WARN|FAIL|ERROR
-File: <TARGET_FILE>
-Failed gates: <count>
-Rerun: <comma-separated subagents or none>
-Open questions: <count or unknown>
-Warnings: <count>
-Reason: <short reason>
-```
-
-If web sources were fetched, include one `External sources:` line. If web
-access was unavailable, mention it only when it affected review.
+The summary must include `status`, `File`, `Failed gates`, `Rerun`, `Open
+questions`, `Warnings`, and `Reason`, matching the output contract in
+`subagents/handoff-reviewer.md`. `REVIEW: PASS` is valid only with zero failed
+gates and zero warnings; warnings require `REVIEW: WARN`. [F-10]
