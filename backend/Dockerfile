@@ -19,6 +19,9 @@ RUN addgroup -S -g 10001 app && adduser -S -u 10001 -G app app
 FROM scratch AS runtime
 WORKDIR /app
 ENV PORT=8080
+# pdfcpu resolves a config dir from $HOME; point it at the writable tmpfs so it
+# never tries to mkdir on the read-only rootfs.
+ENV HOME=/tmp
 
 COPY --from=build /etc/passwd /etc/group /etc/
 COPY --from=build --chown=app:app /metadata-scrubber ./metadata-scrubber
