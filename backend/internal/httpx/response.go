@@ -4,11 +4,14 @@ package httpx
 import (
 	"encoding/json"
 	"net/http"
+
+	"metadata-scrubber/internal/httpx/header"
+	"metadata-scrubber/internal/httpx/mediatype"
 )
 
 // WriteJSON writes body as a JSON response with the given status code.
 func WriteJSON(w http.ResponseWriter, status int, body any) {
-	w.Header().Set("Content-Type", "application/json")
+	w.Header().Set(header.ContentType, mediatype.JSON)
 	w.WriteHeader(status)
 	_ = json.NewEncoder(w).Encode(body)
 }
