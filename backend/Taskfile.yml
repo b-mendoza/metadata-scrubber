@@ -32,9 +32,9 @@ tasks:
       - go tool golangci-lint run --fix
 
   fmt:
-    desc: Format the source code
+    desc: Format the source code with gofumpt + gci (orchestrated by golangci-lint)
     cmds:
-      - go fmt ./...
+      - go tool golangci-lint fmt
 
   tidy:
     desc: Add missing and remove unused module dependencies
