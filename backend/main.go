@@ -25,6 +25,18 @@ const maxUploadSize = 25 << 20
 const readHeaderTimeout = 5 * time.Second
 
 func main() {
+	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
+	defer stop()
+
+	if err := run(ctx); err != nil {
+		log.Fatal(err)
+	}
+}
+
+// run starts the HTTP server and blocks until it fails or ctx is cancelled, at
+// which point it attempts a graceful shutdown. It returns the first error
+// encountered, or nil on a clean shutdown.
+func run(ctx context.Context) error {
 	port := os.Getenv("PORT")
 	if port == "" {
 		port = "8080"
@@ -32,8 +44,6 @@ func main() {
 
 	addr := ":" + port
 	server := newServer(addr)
-	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
-	defer stop()
 
 	serverErr := make(chan error, 1)
 	go func() {
@@ -47,18 +57,14 @@ func main() {
 
 	select {
 	case err := <-serverErr:
-		if err != nil {
-			log.Fatal(err)
-		}
+		return err
 	case <-ctx.Done():
 		shutdownCtx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 		defer cancel()
 		if err := server.Shutdown(shutdownCtx); err != nil {
-			log.Fatal(err)
+			return err
 		}
-		if err := <-serverErr; err != nil {
-			log.Fatal(err)
-		}
+		return <-serverErr
 	}
 }
 
