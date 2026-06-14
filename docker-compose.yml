@@ -3,6 +3,7 @@ services:
     build:
       context: ./frontend
       dockerfile: Dockerfile
+      target: runtime
     environment:
       DATABASE_URL: postgres://user:password@localhost:5432/database
     ports:
