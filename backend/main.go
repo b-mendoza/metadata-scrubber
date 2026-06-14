@@ -25,6 +25,11 @@ const maxUploadSize = 25 << 20
 const readHeaderTimeout = 5 * time.Second
 
 func main() {
+	// pdfcpu otherwise tries to create a config dir under $HOME on first use,
+	// which panics on a read-only/scratch rootfs. RemoveProperties needs no
+	// config, so disable it.
+	api.DisableConfigDir()
+
 	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
 	defer stop()
 
