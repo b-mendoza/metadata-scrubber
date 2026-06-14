@@ -5,12 +5,15 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/require"
+
+	"metadata-scrubber/internal/bindings"
+	"metadata-scrubber/internal/config"
 )
 
 func TestNewServerConfiguresAddressAndHandler(t *testing.T) {
 	t.Parallel()
 
-	server := newServer(":0")
+	server := newServer(":0", bindings.Bindings{Env: config.Config{Port: 8080}})
 
 	require.Equal(t, ":0", server.Addr)
 	require.NotNil(t, server.Handler)

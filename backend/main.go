@@ -12,6 +12,7 @@ import (
 	"syscall"
 	"time"
 
+	"metadata-scrubber/internal/bindings"
 	"metadata-scrubber/internal/config"
 	"metadata-scrubber/internal/handler"
 	"metadata-scrubber/internal/httpx"
@@ -44,7 +45,7 @@ func run(ctx context.Context) error {
 	}
 
 	addr := fmt.Sprintf(":%d", cfg.Port)
-	server := newServer(addr)
+	server := newServer(addr, bindings.Bindings{Env: cfg})
 
 	serverErr := make(chan error, 1)
 	go func() {
@@ -69,8 +70,10 @@ func run(ctx context.Context) error {
 	}
 }
 
-// newServer wires the API routes to their handlers and returns the configured server.
-func newServer(addr string) *http.Server {
+// newServer wires the API routes to their handlers and returns the configured
+// server. Request bindings are injected before the routes so handlers read
+// validated config from the request context rather than the environment.
+func newServer(addr string, b bindings.Bindings) *http.Server {
 	mux := http.NewServeMux()
 
 	mux.HandleFunc("GET /api/health", handler.Reachability)
@@ -78,7 +81,7 @@ func newServer(addr string) *http.Server {
 
 	return &http.Server{
 		Addr:              addr,
-		Handler:           httpx.CORS(mux),
+		Handler:           httpx.CORS(bindings.Inject(b)(mux)),
 		ReadHeaderTimeout: readHeaderTimeout,
 	}
 }
