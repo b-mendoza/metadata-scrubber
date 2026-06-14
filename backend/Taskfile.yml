@@ -55,3 +55,4 @@ tasks:
     desc: Add missing and remove unused module dependencies
     cmds:
       - go mod tidy
+      - go -C tools mod tidy
