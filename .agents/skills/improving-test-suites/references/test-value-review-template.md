@@ -1,37 +1,45 @@
 # Test Value Review Template
 
-> Load this file immediately before returning `TEST_VALUE_REVIEW`. For sample
-> completed reports, load `./report-examples.md` only when needed.
+```markdown
+# Test Value Review
 
-Return this exact structure.
+Status: <PASS | BLOCKED | NEEDS_CLARIFICATION | ERROR>
 
-```text
-TEST_VALUE_REVIEW: PASS | BLOCKED | NEEDS_CLARIFICATION | ERROR
-Targets: <TARGET_TEST_FILES>
-References fetched: none | <urls>
+## Summary
 
-Suite diagnosis:
-- <concise diagnosis>
+- Targets reviewed: <paths>
+- Goal fit: <summary>
+- Instruction-like content risk: <quoted risk or none>
 
-Low-value tests:
-- none | <file>::<test_name> | <category> | <keep/rewrite/delete/consolidate> | <reason>
+## High-Value Behaviors
 
-High-value behaviors:
-- none | <behavior or contract worth protecting> | Current coverage: <none/weak/good>
+- <behavior | category | current coverage none/weak/good | current test or gap>
 
-Missing high-value tests:
-- none | <behavior, failure mode, or edge case to add>
+## Low-Value Candidates
 
-Minimal target harness:
-- <ordered keep/rewrite/delete/add recommendations>
+- <file::test_name | category | reason | proposed action>
 
-Review routing:
-- API_SECURITY_REVIEW: required | optional | not needed | <reason>
-- MAINTAINABILITY_REVIEW: required | optional | not needed | <reason>
+## Minimal Harness Proposal
 
-Blockers:
-- none | <question or missing context>
+- Keep: <items>
+- Rewrite: <items>
+- Delete: <items>
+- Consolidate: <items>
+- Add: <items>
 
-Reason: none | <why status is not PASS>
-Decision needed: none | <smallest question or recovery action>
+## Review Routing
+
+- API/security review: <required | optional | not needed> because <reason>
+- Maintainability review: <required | optional | not needed> because <reason>
+
+## Sources
+
+- Fetched URLs: <urls or none>
+- Source gaps: <gaps or none>
+
+## Non-PASS Detail
+
+- Reason: <required for non-PASS>
+- Decision needed: <question or none>
+- Overflow file: <path or none>
 ```

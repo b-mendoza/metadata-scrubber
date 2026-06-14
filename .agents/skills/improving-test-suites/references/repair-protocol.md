@@ -1,62 +1,55 @@
 # Repair Protocol
 
-> Load this file after changed-file validation returns `FAIL`, or while already
-> in a repair cycle after a repair dispatch returns `BLOCKED` or repeated
-> `ERROR`.
+Load only after changed-file validation fails or the conformance check reports a
+repairable mismatch.
 
-Use targeted repair cycles. The orchestrator keeps only the failure summary,
-changed files, decision needed, and retry count in context.
+## Budget
 
-Initial validation `BLOCKED` and initial validation `ERROR` follow the main
-orchestration handoff. They enter this protocol only when they occur during an
-active targeted repair cycle.
+`REPAIR_TOTAL` counts every repair attempt in the run across all failure
+signatures: test edit redispatches, validation retries, and first-error retries.
+Maximum: three. Increment immediately before each attempt. Never reset for a new
+failure signature.
 
-## Targeted Repair Loop
+## Cause-First Routing
 
-1. Identify the smallest failing gate and the likely cause from
-   `TEST_VALIDATION` or the subagent report.
-2. Initialize `REPAIR_COUNT=0` before the first repair attempt if the
-   orchestrator has not already done so for this validation failure.
-3. Before each repair attempt, confirm `REPAIR_COUNT` is under three, then
-   increment it by one.
-4. Redispatch only the subagent that can fix or clarify that failure, or retry
-   only the failing validation command when the likely cause is plausibly
-   command or environment instability.
-5. Pass only the concise failure summary, changed file paths, relevant prior
-   decision, and current `REPAIR_COUNT`.
-6. Re-run only the previously failing validation command or check.
-7. Keep the same `REPAIR_COUNT` through the validation rerun. If validation
-   fails again, evaluate the current count before any next repair attempt.
-8. Stop when `REPAIR_COUNT` is three before another targeted repair attempt and
-   report the remaining blocker.
+| Likely cause | Route |
+| ------------ | ----- |
+| `test refactor regression` | If budget remains, repair through `test-refactorer`; re-enter conformance |
+| `production bug exposed` | Ask for dual authority if a production fix is in scope; declined or out of scope becomes `COMPLETE_PRODUCTION_BUG_EXPOSED` |
+| `pre-existing failure` | `VALIDATION_FAILED_AFTER_REPAIR` with raw-log path and risk summary |
+| `unknown` and retry plausible | If budget remains, retry validation once with same guarded command |
+| `unknown` and retry not plausible | `VALIDATION_FAILED_AFTER_REPAIR` |
+| Conformance mismatch | If budget remains, repair through `test-refactorer`; user-decision mismatches ask and resume at synthesis |
 
-## Validation Failure Routing
+Budget exhausted always routes to `VALIDATION_FAILED_AFTER_REPAIR` unless a
+production bug has been identified, in which case use
+`COMPLETE_PRODUCTION_BUG_EXPOSED`.
 
-| Likely cause | Action |
-| ------------ | ------ |
-| `test refactor regression` | Redispatch `test-refactorer` with the validation failure summary, then rerun `test-validator` |
-| `production bug exposed` and implementation changes are outside scope | Keep the high-signal failing test and report the production bug candidate |
-| `production bug exposed` and implementation changes are in scope | Ask before expanding beyond test-suite improvement unless the user already requested implementation fixes |
-| `pre-existing failure` | Report the validation limitation instead of treating it as a refactor regression |
-| `unknown` | Retry validation once only when command/environment failure is plausible and `REPAIR_COUNT` is under three; otherwise report the blocker |
+## Repair Packet Contract
 
-## Blocked Or Error Routing
+Repair dispatch packets satisfy the receiving subagent's full required-input
+contract. Do not pass only a failure summary.
 
-Use this table only after the workflow has entered the targeted repair protocol.
+For `test-refactorer`, include:
 
-| Status | Action |
-| ------ | ------ |
-| `BLOCKED` | Ask the smallest question or report the missing file, command, tool, or permission |
-| `NEEDS_CLARIFICATION` | Ask one focused question that unlocks the next dispatch |
-| first `ERROR` | Retry the same dispatch once with the same inputs when `REPAIR_COUNT` is under three, counting the retry as the next repair attempt |
-| repeated `ERROR` | Stop the workflow and hand off completed work plus the blocker |
+| Input | Requirement |
+| ----- | ----------- |
+| `RESOLVED_TARGET_SET` | Required |
+| `MINIMAL_HARNESS_DECISION` | Required, approved or amended plan |
+| `TEST_VALUE_REVIEW` | Required |
+| `OTHER_REPORTS` | Optional compact API/security and maintainability reports |
+| `PRODUCTION_EDIT_APPROVAL` | Required, `none` or approved file list |
+| `SCOPE_LIMITS` | Optional |
+| `VALIDATION_FAILURE` | Required during repair |
+| `REPAIR_TOTAL` | Required during repair |
+| `REPORT_TEMPLATE_PATH` | Required |
 
-## Handoff After Repair
+For `test-validator`, include resolved targets, changed files or `none`, command
+candidates, scope limits, template path, raw-log destination guidance, and the
+confirmed guarded command when retrying.
 
-Before the final response, load `./final-handoff-template.md`.
-Include the repair count, final validation result, unresolved blockers, skipped
-optional reviews, and any likely production bug candidate in `Remaining risks`.
-Use `VALIDATION_FAILED_AFTER_REPAIR` when changed-file validation remains
-failing after bounded repair handling. Use
-`COMPLETE_PRODUCTION_BUG_EXPOSED` when the remaining failure is a likely
-production bug outside approved edit scope.
+## Re-entry Points
+
+Test-edit repairs re-enter the conformance check. Validation retries re-enter
+validation status routing. First-error retries return to the exact dispatch that
+errored.

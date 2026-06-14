@@ -1,75 +1,66 @@
 # Test Quality Heuristics
 
-> Read this file before classifying tests during a value, API/security, or
-> maintainability review, or before synthesizing the minimal harness decision.
-> For deeper rationale, fetch the relevant URL from
-> `./external-sources.md`.
+Load before classifying tests or synthesizing the minimal harness.
 
-This file holds only operational categories and ordering rules. Deeper testing
-rationale lives behind the source keys in `./external-sources.md` and
-is fetched only when it changes a concrete decision.
+## Core Principle
 
-## Trade-Off Priority
+Treat tests as executable contracts, not coverage inventory. Prefer tests that
+fail for real breaks in public behavior, schema validation, security behavior,
+meaningful failure handling, or production-relevant edge cases.
 
-Resolve conflicting findings in this order. Lower-priority concerns must not
-override higher-priority ones:
+## Priority Order
 
-1. Public contracts and production-relevant behavior
-2. Schema validation, security-sensitive behavior, and meaningful failure handling
-3. Realistic edge cases and compatibility commitments
-4. Readability, fixture design, and parametrization
-5. Coverage metrics
+Lower priorities never override higher priorities.
 
-## Low-Value Test Categories
+1. Public contracts and production-relevant behavior.
+2. Schema validation, security-sensitive behavior, and meaningful failure
+   handling.
+3. Realistic edge cases and compatibility commitments.
+4. Readability, fixture design, and parametrization.
+5. Coverage metrics.
 
-Mark a target test as a delete, rewrite, or consolidate candidate when it
-matches one of these categories and does not protect a high-value behavior.
+## Low-Value Categories
 
-| Category | Local signal | Optional source keys |
-| -------- | ------------ | -------------------- |
-| `implementation-detail-assertion` | Verifies private call order, internal state, or refactor-sensitive structure instead of observable behavior | `behavior-vs-implementation`, `prefer-public-apis`, `implementation-details-react` |
-| `duplicated-coverage` | Repeats an already-covered behavior with no new input class or failure mode | `how-to-know-what-to-test`, `test-pyramid` |
-| `trivial-assertion` | Exercises a getter, constant, or constructor without proving meaningful behavior | `how-to-know-what-to-test`, `swe-google-unit-testing` |
-| `unstable-mock` | Pins mock order or call counts that are incidental to the public contract | `mocks-arent-stubs`, `behavior-vs-implementation` |
-| `over-specific-fixture` | Depends on incidental fixture shape that changes with unrelated code | `damp-not-dry`, `xunit-test-patterns` |
-| `unclear-business-value` | No reviewer can name the rule the passing test protects | `how-to-know-what-to-test`, `swe-google-unit-testing` |
-| `verbose-low-yield` | Uses long setup or many assertions for confidence a smaller test would match | `damp-not-dry`, `pytest-parametrize` |
+Use these category names verbatim.
 
-## High-Value Behavior Categories
+| Category | Use when |
+| -------- | -------- |
+| `implementation-detail-assertion` | The test protects private call order, private state, internal layout, or refactor-sensitive structure rather than public behavior |
+| `duplicated-coverage` | Another test covers the same rule, input class, and failure mode with equal or better signal |
+| `trivial-assertion` | The test checks constants, bare construction, getters, or framework wiring with no real behavior risk |
+| `unstable-mock` | The test depends on incidental mock order, call count, or collaborator shape rather than observable output |
+| `over-specific-fixture` | Incidental fixture shape hides the rule or makes harmless changes fail |
+| `unclear-business-value` | A reviewer cannot name the protected rule, contract, or failure mode |
+| `verbose-low-yield` | Long setup or many assertions can be replaced by a smaller test with the same confidence |
 
-Recommend keeping or adding a test when it protects one of these behaviors.
+## High-Value Categories
 
-| Category | Keep or add when | Optional source keys |
-| -------- | ---------------- | -------------------- |
-| `public-contract` | A public API, library, tool, or UI contract that callers depend on can break | `prefer-public-apis`, `testing-library-principles` |
-| `critical-business-logic` | Pricing, billing, eligibility, state machines, or other core rules can regress | `how-to-know-what-to-test`, `swe-google-unit-testing` |
-| `schema-validation` | Invalid, missing, malformed, or unsafe inputs must be rejected predictably | `owasp-api-testing`, `owasp-api-top-10` |
-| `security-sensitive-behavior` | Auth, permissions, ownership, secrets, path, network, file, or unsafe deserialization boundaries can fail | `owasp-api-top-10`, `owasp-cheatsheets` |
-| `meaningful-failure-handling` | The caller, user, or operator observes a specific error path | `swe-google-unit-testing`, `how-to-know-what-to-test` |
-| `production-edge-case` | Realistic concurrency, retry, idempotency, pagination, time, or timezone behavior can break | `test-pyramid`, `swe-google-unit-testing` |
+Use these category names verbatim.
+
+| Category | Use when |
+| -------- | -------- |
+| `public-contract` | The test protects documented or relied-on externally visible behavior |
+| `critical-business-logic` | The test protects money, permissions, state transitions, eligibility, quotas, or irreversible actions |
+| `schema-validation` | The test protects accepted/rejected payload shape, type, range, defaulting, or compatibility |
+| `security-sensitive-behavior` | The test protects authorization, authentication, unsafe input, tenant boundaries, secrets, or filesystem/network safety |
+| `meaningful-failure-handling` | The test protects errors users or callers can act on, rollback behavior, retries, or observability |
+| `production-edge-case` | The test protects a realistic edge case that has occurred, is documented, or follows from a supported use case |
 
 ## Minimal Harness Rules
 
-When proposing the minimal target harness:
+1. Prefer one parametrized test per rule across input classes.
+2. Assert through observable behavior, not private state or mock interaction
+   order.
+3. Keep one named test per distinct security or contract rule even when related
+   inputs are parametrizable.
+4. Replace rule-hiding shared helpers with small local helpers or inline setup
+   when the helper obscures the behavior under test.
+5. Do not add tests solely to lift coverage.
+6. Do not delete or rewrite a test based only on external advice; require an
+   independent local-code observation.
 
-- Prefer one parametrized test for the same rule across input classes.
-- Assert through public behavior, validation results, errors, outputs, or
-  observable contracts, not through mock interaction order.
-- Keep one named test per distinct security or contract rule, even when it
-  could be parametrized, so the rule remains discoverable.
-- Replace shared helpers that hide the rule under test with a small local
-  helper or inline setup (see `damp-not-dry` for rationale).
-- Do not add tests just to lift coverage; add tests only when they protect a
-  named high-value behavior.
+## Inventory Caps
 
-## Classification Reporting
-
-Use the category names above verbatim when filling `Low-value tests`,
-`High-value behaviors`, and `Recommended minimal additions` slots in the review
-templates. This keeps the orchestrator's synthesis predictable.
-
-## Standalone Reminder
-
-This skill remains usable when external URLs are unreachable. Heuristics here
-plus repository code and bundled templates are sufficient for a safe minimal
-harness decision; external sources add depth, not core capability.
+Reports list the top five highest-signal items per section by default. If the
+user asks for exhaustive inventory, cap each in-report section at 25 items and
+write overflow to a local uncommitted file whose path appears in the report.

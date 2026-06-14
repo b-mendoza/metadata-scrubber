@@ -1,31 +1,31 @@
 # Test Maintainability Review Template
 
-> Load this file immediately before returning `MAINTAINABILITY_REVIEW`. For
-> sample completed reports, load `./report-examples.md` only when
-> needed.
+```markdown
+# Test Maintainability Review
 
-Return this exact structure.
+Status: <PASS | BLOCKED | NEEDS_CLARIFICATION | ERROR>
 
-```text
-MAINTAINABILITY_REVIEW: PASS | BLOCKED | NEEDS_CLARIFICATION | ERROR
-Targets: <TARGET_TEST_FILES>
-References fetched: none | <urls>
+## Summary
 
-Maintainability diagnosis:
-- <concise diagnosis>
+- Route reason: <reason>
+- Instruction-like content risk: <quoted risk or none>
 
-Rewrite opportunities:
-- none | <file>::<test_name or area> | <rename/fixture/parametrize/mock/assertion/delete> | <specific recommendation>
+## Maintainability Findings
 
-Fixture and helper guidance:
-- none | <specific helper or fixture change and why it reduces noise>
+- <file::test_name or helper | fixture/mock/duplication/readability/parametrization issue | behavior preserved | recommended action>
 
-Readability risks to preserve:
-- none | <behavior, name, or assertion that should stay explicit>
+## Helper Ownership Notes
 
-Blockers:
-- none | <question or missing context>
+- <helper path | directly related/shared/unknown | evidence>
 
-Reason: none | <why status is not PASS>
-Decision needed: none | <smallest question or recovery action>
+## Sources
+
+- Fetched URLs: <urls or none>
+- Source gaps: <gaps or none>
+
+## Non-PASS Detail
+
+- Reason: <required for non-PASS>
+- Decision needed: <question or none>
+- Overflow file: <path or none>
 ```

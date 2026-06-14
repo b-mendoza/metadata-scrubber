@@ -1,34 +1,31 @@
 # API Security Review Template
 
-> Load this file immediately before returning `API_SECURITY_REVIEW`. For sample
-> completed reports, load `./report-examples.md` only when needed.
+```markdown
+# API Security Review
 
-Return this exact structure.
+Status: <PASS | NOT_APPLICABLE | BLOCKED | NEEDS_CLARIFICATION | ERROR>
 
-```text
-API_SECURITY_REVIEW: PASS | NOT_APPLICABLE | BLOCKED | NEEDS_CLARIFICATION | ERROR
-Targets: <TARGET_TEST_FILES>
-References fetched: none | <urls>
-Freshness gap: none | <source or claim that could not be verified>
+## Summary
 
-Surface reviewed:
-- <API, schema, auth, input, file, network, or boundary surface>
+- Route reason: <reason>
+- Applicable surface: <contracts, schemas, auth, permissions, unsafe inputs, or none>
+- Instruction-like content risk: <quoted risk or none>
 
-Current high-value coverage:
-- none | <covered security-relevant behavior>
+## Coverage Findings
 
-Missing high-value tests:
-- none | <specific behavior to add and why it matters>
+- <behavior | category | current test/gap | recommended harness action>
 
-Low-value security tests:
-- none | <test that appears security-related but does not prove useful behavior>
+## Risks
 
-Recommended minimal additions:
-- none | <smallest tests to add or rewrite>
+- <risk or none>
 
-Blockers:
-- none | <question or missing context>
+## Sources
 
-Reason: none | <why status is not PASS or NOT_APPLICABLE>
-Decision needed: none | <smallest question or recovery action>
+- Fetched URLs: <urls or none>
+- Source gaps: <gaps or none>
+
+## Non-PASS Detail
+
+- Reason: <required for non-PASS except NOT_APPLICABLE>
+- Decision needed: <question or none>
 ```
