@@ -1,92 +1,42 @@
-# Report Contract: commit-boundary-planner
+# Boundary Planner Report Contract
 
-> Read this file only when formatting the result of the boundary planner
-> subagent. Return compact facts; never paste raw diffs or full article text.
+Return this exact structure. The plan accounts for every scoped change in a
+group include list or the omissions list.
 
-## Structure
+```markdown
+COMMIT_PLAN: PASS | NEEDS_DECISION | NO_COMMIT_WORTHY_CHANGES | BLOCKED | ERROR
 
-```text
-COMMIT_PLAN: PASS | NEEDS_DECISION | BLOCKED | ERROR
-Plan summary: <one sentence>
-References fetched: none | <urls and one-line conclusions>
+Plan digest: <stable group ids + messages>
 
 Groups:
 - ID: <group-id>
-  Intent: <single reason>
-  Include: <paths or hunk descriptions>
-  Exclude: <related but separate paths/hunks or none>
-  Message: <proposed commit message>
-  Verification: <smallest meaningful check or not-run reason>
-  Staging notes: <file-level staging or exact mixed-hunk caution>
-  Scope gates: none | G_SCOPE_EXPANSION | G_IN_SCOPE_OMISSION | G_SCOPE_EXPANSION, G_IN_SCOPE_OMISSION
-  Risk notes: none | <concise risk>
+  Intent: <one reviewer-facing reason>
+  Message: <candidate commit message>
+  Include: <paths/hunks; name renames old -> new and submodule pointers>
+  Exclude: <paths/hunks protected from this group>
+  Verification: <read-only command or not-run>
+  Verification reason: <why this is valid, or why not-run>
+  Required gates: <none or G_SCOPE_EXPANSION exact paths | G_UNVERIFIED_COMMIT>
+  Risk: <low|medium|high + reason>
 
-Reason: none | <why status is not PASS>
-Decision needed: none | <smallest user decision or orchestrator action>
+Omissions:
+- <path/change> annotation=<generated|formatting-only|out-of-band|other> reason=<why omitted>
+
+Scope expansion candidates: <none or exact paths + reason + safer alternative>
+User decisions applied: <none or compact list>
+Next reference needs: <none or consumer:key list>
+References fetched: <none or URL -> one-line conclusion>
+Reason: <required for non-PASS>
+Decision needed: <required for NEEDS_DECISION>
 ```
 
-A valid group has a single reviewer-facing reason, a specific message, the
-smallest meaningful verification, and a staging note that the executor can act
-on without ambiguity.
+Contract rules:
 
-Use `G_SCOPE_EXPANSION` when a group needs paths outside `CHANGE_PATHS`. Use
-`G_IN_SCOPE_OMISSION` when the plan intentionally leaves meaningful in-scope
-changes uncommitted. When both approvals are needed, encode the value exactly as
-`G_SCOPE_EXPANSION, G_IN_SCOPE_OMISSION` in that fixed order. The orchestrator
-asks the human gate question and adds exact approved paths to
-`APPROVED_COMMIT_SCOPE` before executor dispatch; this planner only names the
-required gates on the group. Reserve `COMMIT_PLAN: NEEDS_DECISION` for ambiguity
-that prevents a safe plan.
-
-## Examples
-
-<example>
-COMMIT_PLAN: PASS
-Plan summary: One atomic fix commit covers retry behavior and its tests.
-References fetched: none
-
-Groups:
-- ID: checkout-retry-fix
-  Intent: Retry transient payment confirmation failures described by JNS-6880.
-  Include: src/checkout/retry.ts; tests/checkout/retry.test.ts
-  Exclude: none
-  Message: fix(checkout): retry failed payment confirmation
-  Verification: npm test -- checkout
-  Staging notes: file-level staging is sufficient
-  Scope gates: none
-  Risk notes: retry behavior changes payment confirmation timing
-
-Reason: none
-Decision needed: none
-</example>
-
-<example>
-COMMIT_PLAN: PASS
-Plan summary: One approved group needs an out-of-scope fixture while leaving a separate scoped cleanup uncommitted.
-References fetched: none
-
-Groups:
-- ID: checkout-retry-fixture
-  Intent: Add retry coverage using the shared checkout fixture.
-  Include: src/checkout/retry.ts; tests/checkout/retry.test.ts; tests/fixtures/shared-checkout.json
-  Exclude: src/checkout/legacy-cleanup.ts
-  Message: test(checkout): cover retry fixture behavior
-  Verification: npm test -- checkout
-  Staging notes: include the listed fixture path only after scope expansion approval
-  Scope gates: G_SCOPE_EXPANSION, G_IN_SCOPE_OMISSION
-  Risk notes: extra fixture path is outside the original scope
-
-Reason: none
-Decision needed: none
-</example>
-
-<example>
-COMMIT_PLAN: NEEDS_DECISION
-Plan summary: Scoped changes contain a behavior fix and a telemetry rename.
-References fetched: https://www.aleksandrhovhannisyan.com/blog/atomic-git-commits/ - atomic commits should have one reason and be independently revertable.
-
-Groups: none
-
-Reason: Telemetry rename may be cleanup or part of the checkout fix; the context does not say.
-Decision needed: Ask whether telemetry naming should be committed separately from retry behavior.
-</example>
+- Every tracked modification, deletion, and untracked file under `CHANGE_PATHS`
+  appears in exactly one `Include` or `Omissions` entry.
+- A non-empty `Omissions` list always triggers orchestrator gate
+  `G_IN_SCOPE_OMISSION`; annotations do not suppress it.
+- Verification must be read-only or explicitly `not-run` with reason.
+- Use `NO_COMMIT_WORTHY_CHANGES` for benign no-commit plans; use `BLOCKED` only
+  for insufficient, inconsistent, or unusable state input.
+- `Next reference needs` must use `consumer:key`.
