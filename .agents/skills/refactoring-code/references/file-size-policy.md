@@ -1,72 +1,57 @@
 # File Size Policy
 
-> Read this file only when the strategist or reviewer must justify, plan, or enforce a file split. Keep counted lines, waivers, and chosen patterns in structured handoffs; do not paste raw file contents back to the orchestrator.
+Default `MAX_LINES` is 250 physical lines, including blanks and comments. Count
+on-disk files after the refactor.
 
-`MAX_LINES` defaults to `250` and is the per-file ceiling for any file the refactor produces or modifies. The rule keeps modules cohesive, reviewable, and editor-friendly. A file above the ceiling indicates that the module is doing more than one job or is mixing concerns at different abstraction levels.
+## Applicability
 
-This policy measures allowed file changes only. Changes to test intent, such as assertion edits, weakened expectations, fixture updates, or snapshot updates, are outside the behavior-preserving refactor boundary; mechanical test import, path, or name updates required by an approved refactor are allowed and size-checked.
+The size rule applies in full to:
 
-## Counting Policy
+- The target file.
+- Files created by the refactor.
+- Files produced by a split.
+- Existing files materially edited by the refactor.
 
-- Count physical lines as reported by the host editor or `wc -l`.
-- Count blank lines and comments. Excluding them invites token-shaving by removing whitespace or notes.
-- Count the file as it sits on disk after the refactor, not the diff size.
+Pre-existing files over `MAX_LINES` that receive only mechanical
+compilation-consequence edits get a recorded `pre-existing-oversized,
+mechanical-edit` exemption. The exemption is not silent: the strategy reports it,
+the implementer records it, and the reviewer verifies the edit is genuinely
+mechanical.
 
-## When The Rule Applies
+## User-Approved Waivers
 
-| Case | Apply rule? |
-| ---- | ----------- |
-| The original target file | Yes |
-| New files produced by a split | Yes |
-| Files modified as a direct compilation consequence | Yes |
-| Files only referenced (no edits) | No |
-| Test files modified only for approved mechanical import, path, or name updates | Yes |
+These waiver categories require user approval before implementation:
 
-## Permitted Waivers
+- Generated code that must remain in one file.
+- Static data that is clearer and safer as one artifact.
+- A single declaration that cannot be split without damaging readability or the
+  public surface.
+- A framework-required single file where splitting would violate project
+  conventions or runtime discovery.
 
-Record any waiver explicitly in `STRATEGY` with the reason. The orchestrator asks for user approval before implementation uses a waiver. Common waivers:
-
-| Waiver | Example |
-| ------ | ------- |
-| Generated code | OpenAPI, GraphQL, Protobuf outputs |
-| Static data | JSON fixtures, lookup tables, snapshot files |
-| Single declaration | An auto-generated type or const block where splitting harms clarity |
-| Framework-required single file | Migrations or schema files the framework loads as one unit |
-
-Anything else requires either a split or a `NEEDS_CLARIFICATION` from the strategist; do not treat it as an implicit approval to exceed `MAX_LINES`.
+Any other oversized material edit requires splitting, a smaller plan, or a
+`BLOCKED`/`NEEDS_CLARIFICATION` stop.
 
 ## Split Decision Tree
 
-1. **Project architecture first.** Use the existing folder shape (e.g., `domain/`, `application/`, `infrastructure/`, feature folders, layered MVC). Place each extracted file where similar concerns already live.
-2. **If no clear architecture exists**, split along these seams in order:
-   - Pure decision logic and predicates.
-   - Side-effect adapters (I/O, persistence, network, time, randomness, env).
-   - Type definitions and contracts.
-   - Orchestration that wires the above.
-3. **Preserve the public surface.** Keep the original entry point and re-export only what existing callers already use.
-4. **Avoid speculative layers.** Do not introduce an interface, factory, or registry just to make the move feel architectural.
+Prefer project architecture first. If the project gives no clear seam, split in
+this order:
 
-## External Support
+1. Pure decision logic away from side-effect orchestration.
+2. Side-effect adapters away from domain logic.
+3. Types, schemas, or value objects that are already named concepts.
+4. Orchestration seams where one function currently coordinates separable steps.
 
-This policy is enough to decide and report size compliance. When a split seam needs article-backed support, use `./refactoring-web-resources.md` to fetch one matching source for cohesion, single responsibility, domain-shaped folders, Functional Core / Imperative Shell, move mechanics, or wrong abstraction risk.
+Avoid speculative layers. A split is justified only when it makes current code
+clearer, keeps names domain-shaped, and preserves the public surface through
+existing entry points or approved mechanical updates.
 
 ## Reporting
 
-In `STRATEGY`, include a size plan:
+Every strategy, implementation, and review report that touches size must name:
 
-```text
-File size plan:
-- <path> -> <projected lines> [keep | split]
-- New file <path> -> <projected lines> [extracted from <path>]
-Waivers: none | <path>: <reason>
-```
-
-In `IMPLEMENTATION`, include the actual sizes:
-
-```text
-File sizes after change:
-- <path>: <lines>
-- <path>: <lines>
-```
-
-In `REFACTOR_REVIEW`, the size check passes only when every changed or created file is at or below `MAX_LINES`, or every overage has a waiver recorded in `STRATEGY`.
+- File path.
+- Line count after change, or current line count for planned splits.
+- `MAX_LINES` used.
+- Compliance result: within limit, approved waiver, or mechanical-edit exemption.
+- Reason and risk for every waiver or exemption.

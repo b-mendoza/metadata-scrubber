@@ -1,150 +1,98 @@
 # Workflow Examples
 
-> Read this file only when the orchestrator or a subagent needs an example of dispatch flow, output shape, or failure handoff.
+Load this file only when the orchestrator or user needs concrete examples of
+dispatch, approval, warning handoffs, or failure cleanup.
 
-Examples live here so the always-loaded skill and dispatched subagents stay compact. Use these examples for format and level of detail; adapt the facts to the code under refactor.
+## Plan Approval Card
+
+```text
+Plan approval required before mutation.
+
+Diagnosis:
+- D1: calculateInvoice mixes discount rules with formatting orchestration.
+
+Ordered steps:
+- S1: Extract private discount calculation helper from calculateInvoice; traces to D1.
+- S2: Update private call sites in the same file; traces to D1.
+
+Files to change or create:
+- Change: src/invoice/calculate.ts
+- Create: none
+
+Size plan:
+- src/invoice/calculate.ts: 214/250, within limit
+
+Validation contract:
+- npm test -- invoice
+- Safety class: safe
+
+Non-goals:
+- Preserve all protected surfaces per `references/protected-surfaces.md`.
+
+Decision: approve, adjust, or decline.
+```
 
 ## Dispatch Round Trip
 
-<example>
-Input: `TARGET_PATH=src/subscriptions/expire-users.ts`, `USER_GOAL="simplify without changing tests"`, `TEST_COMMAND="npm test -- subscriptions"`, `MAX_LINES=250`.
-
-1. Dispatch `behavior-mapper`.
-2. Mapper returns `BEHAVIOR_MAP: PASS` with expiration rules, email side effects, `Date.now()` timing risk, line counts, and `npm test -- subscriptions` as validation.
-3. Orchestrator resolves `REFERENCE_NEED`, records reference status, and asks before any public web fetch if required.
-4. Dispatch `refactor-strategist` with the behavior map, reference status, and reference paths.
-5. Strategist reads `./file-size-policy.md`, fetches one Functional Core / Imperative Shell URL from `./refactoring-web-resources.md` when allowed, and plans a split into decisions and notifications while keeping the original export stable.
-6. Orchestrator blocks any behavior/API/test-intent/scope/state drift, asks for any required file-size waiver, and chooses the validation contract before implementation.
-7. Dispatch `refactor-implementer`.
-8. Implementer creates `expiration-decisions.ts` and `expiration-notifications.ts`, keeps every changed file under 250 lines, runs the approved validation command or records the warning, and reports validation passing.
-9. Dispatch `refactor-reviewer`.
-10. Reviewer returns `REFACTOR_REVIEW: PASS` for behavior preservation, scope control, validation, and size compliance.
-11. Orchestrator returns `PASS` with the final handoff without raw diffs or command logs.
-</example>
-
-## Subagent Output Samples
-
 ```text
-BEHAVIOR_MAP: PASS
-Target: src/subscriptions/expire-users.ts
-Files inspected: src/subscriptions/expire-users.ts, src/subscriptions/expire-users.test.ts
-
-Current behavior:
-- Expires paid users when the expiration date is before or equal to the cutoff.
-
-Inputs and outputs:
-- Input is a cutoff timestamp; output is the count of expired subscriptions.
-
-Dependencies and side effects:
-- Reads subscriptions, writes expiration status, sends email notifications, uses Date.now().
-
-Invariants and edge cases:
-- Free trials are skipped; cutoff equality expires the subscription.
-
-Existing tests and validation:
-- npm test -- subscriptions
-
-File sizes:
-- src/subscriptions/expire-users.ts: 310 [OVERSIZED]
-
-Risk notes:
-- Timing and cutoff equality are most likely to drift.
-
-Clarifying questions:
-- none
+1. Orchestrator dispatches behavior-mapper with TARGET_PATH, USER_GOAL,
+   TEST_COMMAND, SCOPE_LIMITS, and MAX_LINES.
+2. Mapper returns BEHAVIOR_MAP: PASS plus baseline, candidates, file sizes, and
+   risks. Orchestrator keeps only the report fields.
+3. Orchestrator resolves references and dispatches refactor-strategist with the
+   behavior map and resolved reference paths.
+4. Strategist returns STRATEGY: PASS. Orchestrator runs scope, size, validation,
+   safety, and plan-approval gates.
+5. Orchestrator dispatches refactor-implementer with the approved plan.
+6. Implementer returns IMPLEMENTATION: PASS_WITH_WARNINGS because zero tests ran.
+7. Reviewer verifies the warning and returns REFACTOR_REVIEW: PASS.
+8. Orchestrator returns PASS_WITH_WARNINGS, not PASS.
 ```
 
-```text
-STRATEGY: PASS
-Target: src/subscriptions/expire-users.ts
-References fetched: https://www.destroyallsoftware.com/talks/boundaries
-Reference status: fetched
-
-Design diagnosis:
-- Expiration predicates and notification side effects are interleaved.
-
-Minimal plan:
-- Extract pure expiration predicates into expiration-decisions.ts.
-- Extract email payload construction and sending into expiration-notifications.ts.
-- Keep expireUsers as the public orchestration entry point.
-
-File size plan:
-- src/subscriptions/expire-users.ts -> ~140 lines [split]
-- New file src/subscriptions/expiration-decisions.ts -> ~110 lines [extracted from src/subscriptions/expire-users.ts]
-- New file src/subscriptions/expiration-notifications.ts -> ~120 lines [extracted from src/subscriptions/expire-users.ts]
-Waivers: none
-
-Non-goals:
-- Do not change persistence APIs, test expectations, fixtures, snapshots, assertions, or notification semantics.
-
-Implementation constraints:
-- Preserve cutoff equality, the existing exported function name, public API shape, test intent, state behavior, and unrelated worktree changes. Mechanical test import updates are allowed only if the split requires them.
-
-Validation expectations:
-- npm test -- subscriptions passes or reports a clearly pre-existing failure.
-
-Rationale:
-- This is the smallest split that separates decisions from side effects and resolves the size violation.
-```
-
-## Failure Handoff
+## PASS_WITH_WARNINGS Handoff Skeleton
 
 ```text
-REFACTOR_REVIEW: FAIL
-Target: src/subscriptions/expire-users.ts
-References fetched: none
-Reference status: not needed
+Status: PASS_WITH_WARNINGS
 
-Behavior preservation:
-- PASS: cutoff equality and side effects match the behavior map.
+Warning: validation command exited 0 but matched zero tests, so validation is
+recorded as not run.
 
-Test integrity:
-- PASS: test expectations, fixtures, snapshots, and assertions were not weakened or rewritten.
-
-Scope control:
-- FAIL: the diff introduced SubscriptionExpirationService, which was not in STRATEGY.
-
-Abstraction check:
-- FAIL: the new service wraps one helper and increases indirection.
-
-Size check:
-- PASS: all changed files are under 250 lines.
-
-Validation check:
-- PASS: npm test -- subscriptions passed.
-
-Required fixes:
-- Inline SubscriptionExpirationService into plain functions in src/subscriptions/expiration-decisions.ts.
-
-Residual risks:
-- none
+1. Current behavior summary: <summary>
+2. Design diagnosis: <diagnosis>
+3. Code changes made: <files and summaries>
+4. Validation note: command, exit code, coverage evidence, tests not run, and
+   pre-existing failures if any
+5. Review outcome: REFACTOR_REVIEW: PASS; fix cycles used: 0 of 2; residual risks
+6. File-size compliance: per-file lines, waivers, mechanical-edit exemptions
+7. Brief improvement summary: <summary>
+8. Worktree end-state: changed/created files left uncommitted; no commits made;
+   suggested commit boundary versus pre-existing dirty files
+9. Disclosures: dispatch method, AUTO_APPROVE if used, WEB_ACCESS mode, retries
 ```
 
-## Final Handoff Sample
+## Failure Cleanup Block
 
-```markdown
-Status: PASS
+```text
+Worktree state after stop:
+- src/invoice/calculate.ts: edited-from-clean. Refactor-only file; safe manual
+  revert option: git checkout -- src/invoice/calculate.ts
+- src/invoice/config.ts: edited-over-pre-existing. Manual review required before
+  reverting because user changes existed at baseline.
 
-Current behavior summary:
-- `expireUsers` expires paid subscriptions at or before the cutoff and sends the same notification side effects.
+The workflow never auto-reverts. It reports scoped guidance so the user can
+choose the recovery action.
+```
 
-Design diagnosis:
-- Expiration decisions and notification side effects were interleaved in one oversized module.
+## No-Change Confirmation
 
-Code changes made:
-- Split pure expiration predicates into `src/subscriptions/expiration-decisions.ts`.
-- Split notification payload construction into `src/subscriptions/expiration-notifications.ts`.
-- Kept `src/subscriptions/expire-users.ts` as the public entry point.
+```text
+Mapper reports NO_CHANGE_CANDIDATE:
+- Target has one responsibility and is under MAX_LINES.
+- Existing tests cover the requested behavior.
+- The requested simplification would introduce a new abstraction without current
+  pressure.
 
-Validation note:
-- Ran `npm test -- subscriptions`: pass.
-
-Review outcome and remaining risks:
-- `REFACTOR_REVIEW: PASS`; no residual risks.
-
-File-size compliance summary:
-- All changed and created files are under `MAX_LINES=250`.
-
-Improvement summary:
-- The refactor separates decisions from side effects while preserving behavior and the public API.
+Recommended stop: NO_CHANGE.
+If the user wants to proceed anyway, record the explicit objective and continue
+to strategy.
 ```
