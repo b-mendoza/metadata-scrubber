@@ -17,9 +17,19 @@ tasks:
       - go run .
 
   test:
-    desc: Run the test suite
+    desc: Run the test suite with the race detector and coverage
     cmds:
-      - go test ./...
+      - go test -race -cover ./...
+
+  lint:
+    desc: Lint the source code with golangci-lint (pinned via the go.mod tool directive)
+    cmds:
+      - go tool golangci-lint run
+
+  lint:fix:
+    desc: Lint and auto-fix issues where supported
+    cmds:
+      - go tool golangci-lint run --fix
 
   vet:
     desc: Report suspicious constructs with go vet
