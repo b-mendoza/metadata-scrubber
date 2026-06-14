@@ -6,7 +6,6 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
-	"fmt"
 	"io"
 	"log"
 	"net/http"
@@ -23,21 +22,9 @@ import (
 // maxUploadSize caps the size of an uploaded file (25 MB) to keep memory usage bounded.
 const maxUploadSize = 25 << 20
 
-const (
-	healthCheckArg     = "healthcheck"
-	healthCheckPath    = "/api/health"
-	healthCheckTimeout = 2 * time.Second
-	readHeaderTimeout  = 5 * time.Second
-)
+const readHeaderTimeout = 5 * time.Second
 
 func main() {
-	if len(os.Args) > 1 && os.Args[1] == healthCheckArg {
-		if err := runHealthCheck(os.Getenv("PORT")); err != nil {
-			log.Fatal(err)
-		}
-		return
-	}
-
 	port := os.Getenv("PORT")
 	if port == "" {
 		port = "8080"
@@ -78,7 +65,7 @@ func main() {
 func newServer(addr string) *http.Server {
 	mux := http.NewServeMux()
 
-	mux.HandleFunc("GET /api/health", handleHealth)
+	mux.HandleFunc("GET /api/health", handleReachability)
 	mux.HandleFunc("POST /api/scrub", handleScrub)
 
 	return &http.Server{
@@ -88,28 +75,9 @@ func newServer(addr string) *http.Server {
 	}
 }
 
-func runHealthCheck(port string) error {
-	if port == "" {
-		port = "8080"
-	}
-
-	client := http.Client{Timeout: healthCheckTimeout}
-	response, err := client.Get("http://127.0.0.1:" + port + healthCheckPath)
-	if err != nil {
-		return err
-	}
-	defer func() { _ = response.Body.Close() }()
-
-	if response.StatusCode != http.StatusOK {
-		return fmt.Errorf("healthcheck returned status %d", response.StatusCode)
-	}
-	return nil
-}
-
-// handleHealth is a simple sanity-check endpoint the frontend can fetch to
-// confirm the backend is up and reachable.
-func handleHealth(w http.ResponseWriter, _ *http.Request) {
-	writeJSON(w, http.StatusOK, map[string]string{"message": "Hello, World!"})
+// handleReachability gives callers a cheap way to verify the backend HTTP API is reachable.
+func handleReachability(w http.ResponseWriter, _ *http.Request) {
+	writeJSON(w, http.StatusOK, map[string]string{"status": "reachable"})
 }
 
 // handleScrub accepts a multipart upload under the form field "file", removes

@@ -1,10 +1,7 @@
 package main
 
 import (
-	"net"
 	"net/http"
-	"net/http/httptest"
-	"net/url"
 	"testing"
 )
 
@@ -28,29 +25,7 @@ func TestNewServerConfiguresAddressAndHandler(t *testing.T) {
 	server.Handler.ServeHTTP(recorder, request)
 
 	if recorder.status != http.StatusOK {
-		t.Fatalf("health status = %d, want %d", recorder.status, http.StatusOK)
-	}
-}
-
-func TestRunHealthCheckAcceptsHealthyLocalServer(t *testing.T) {
-	t.Parallel()
-
-	testServer := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
-		w.WriteHeader(http.StatusOK)
-	}))
-	defer testServer.Close()
-
-	parsedURL, err := url.Parse(testServer.URL)
-	if err != nil {
-		t.Fatal(err)
-	}
-	_, port, err := net.SplitHostPort(parsedURL.Host)
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	if err := runHealthCheck(port); err != nil {
-		t.Fatalf("runHealthCheck returned error: %v", err)
+		t.Fatalf("reachability status = %d, want %d", recorder.status, http.StatusOK)
 	}
 }
 
