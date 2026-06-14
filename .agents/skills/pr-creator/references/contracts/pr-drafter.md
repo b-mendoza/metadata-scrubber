@@ -1,69 +1,22 @@
-# Output Contract - PR Drafter
+# Contract: pr-drafter
 
-> Load at return time. The orchestrator uses title, body, and source attribution
-> for the preview.
-
-## Template
+Return exactly one status block. The body may be multi-line Markdown; keep it
+grounded in `DIFF_ANALYSIS` or exact overrides.
 
 ```text
-PR_DRAFT: PASS | NEEDS_CHOICE | ERROR
-Title: <title or none>
-Type: <type or needs-choice>
-Scope: none | <scope or needs-choice>
-
+PR_DRAFT: <PASS | NEEDS_CHOICE | ERROR>
+Title: <title | unavailable>
+Title source: <override | generated>
+Body source: <override | generated>
+Type choice: <resolved type | ambiguous | override>
+Scope choice: <resolved scope | ambiguous | none | override>
+Traceability notes:
+- <body/title claim -> diff fact or override>
 Body:
-<body or none>
-
-Sources used:
-- diff analysis
-- title override | body override | none
-
-Reason: none | <why status is not PASS>
-Decision needed: none | <smallest user choice or recovery action>
+<markdown body>
+Reason: <one line>
+Decision needed: <none | choose type | choose scope | choose type and scope | next action>
 ```
 
-## Codes
-
-- `PASS`: grounded title and body are ready for preview.
-- `NEEDS_CHOICE`: type or scope ambiguity needs a user choice.
-- `ERROR`: unexpected drafting failure.
-
-## Orchestrator Routing
-
-On `NEEDS_CHOICE`, the orchestrator asks one focused type or scope question,
-then redispatches only `pr-drafter` with the user's exact `TYPE_CHOICE` or
-`SCOPE_CHOICE`. `ERROR` maps to the `BLOCKED` failure envelope.
-
-## Example
-
-<example>
-PR_DRAFT: PASS
-Title: docs(skills): strengthen pr creation workflow
-Type: docs
-Scope: skills
-
-Body:
-## Summary
-
-This updates the PR creation skill so execution-heavy work is delegated to
-focused subagents. The workflow keeps the user in control of push, preview, and
-create gates while reducing raw git and diff output in the orchestrator.
-
-## Key Changes
-
-- Adds subagent routing for state inspection, preflight, diff analysis,
-  drafting, metadata, and submission.
-- Preserves explicit preview approval before creating the PR.
-
-## Impact
-
-- PR creation runs with clearer phase boundaries and less context pollution.
-- No runtime migration is required for existing skill consumers.
-
-Sources used:
-- diff analysis
-- none
-
-Reason: none
-Decision needed: none
-</example>
+Use `NEEDS_CHOICE` only when the type or scope materially affects the title/body.
+Use `ERROR` when required diff facts are missing or contradictory.

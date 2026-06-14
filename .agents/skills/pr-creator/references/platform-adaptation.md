@@ -1,47 +1,46 @@
 # Platform Adaptation
 
-> Load this file after `REPO_STATE: PASS` when the returned platform is GitLab,
-> Bitbucket, GitHub Enterprise, unknown, or when GitHub tooling cannot
-> authenticate against a GitHub-compatible repository. Fetch exact command or API
-> syntax from `./external-resources.md` only for the active platform.
+Load this file only when the inspected platform is GitLab, Bitbucket, GitHub
+Enterprise, unknown, when a platform adapter flag is set, or when checking PR
+state support.
 
-Non-GitHub flows keep the same safety gates: validate auth, confirm refs on the
-recorded remote name, compare the approved branch range, preview exact fields,
-wait for user approval, create, verify, and return the URL.
+## Shared Fields
 
-## Strategy Map
+| Concept | Required meaning |
+| ------- | ---------------- |
+| Base repository | Repository that receives the PR/MR. |
+| Head repository | Repository that contains the source branch. May differ from base in fork workflows. |
+| Base branch | `TARGET_BRANCH` on `BASE_REMOTE`. |
+| Head branch | `CURRENT_BRANCH` on `HEAD_REMOTE`. |
+| Existing PR check | Query open PRs/MRs for the same base branch and same head branch/repository before drafting and again before create. |
+| Verification | Query the created or found PR/MR and echo platform-returned fields, including body digest evidence. |
 
-| Platform | Local behavior | External source trigger |
-| -------- | -------------- | ----------------------- |
-| GitLab | Use merge-request semantics and the team's installed `glab` or approved API wrapper | Fetch GitLab MR, `glab mr create`, labels, or Code Owners docs when flags or fields are uncertain |
-| Bitbucket | Use the repository's standard CLI or REST wrapper; return `BLOCKED` when no safe create path is discoverable | Fetch Bitbucket create-PR, pull-request API, refs API, or default-reviewer docs |
-| Unknown or self-hosted | Ask which hosting platform and tooling to use before creating anything | Fetch only the docs for the user-named platform or tool |
+## Platform Notes
 
-If platform behavior is still unsafe after this lookup, route to the human gate
-for hosting platform or approved tooling and return `BLOCKED` until the user
-answers.
+| Platform | Create path | Draft support | Fork notes |
+| -------- | ----------- | ------------- | ---------- |
+| GitHub / GitHub Enterprise | Prefer `gh pr create` and verify with `gh pr view --json ...`. Use `--head <owner>:<branch>` for fork heads when needed. | Supported where repository plan/policy permits. | Head and base repositories are distinct; do not assume one remote. |
+| GitLab | Prefer `glab mr create` or GitLab API and verify with MR query. | Draft MRs supported by title/state conventions or CLI flag depending on version. | Source and target project can differ. |
+| Bitbucket Cloud | Use approved CLI/API path if available; otherwise ask for approved tooling. | No native draft PR state. | Source and destination repositories can differ. |
+| Unknown | Fetch one current platform/tooling document or ask the user which platform/tooling to use. | Unknown until confirmed. | Do not create until fields are mappable. |
 
-## Field Mapping
+## State Capability Gate
 
-Reuse the approved preview values exactly:
+When requested `PR_STATE` has no platform equivalent, ask before preview:
 
-- Remote name identifies the local remote whose refs were validated.
-- Target branch maps to base or target branch.
-- Current branch maps to source or head branch.
-- Title and body map to PR or MR title and description.
-- Draft or ready state maps to the platform's equivalent when supported.
-- Reviewers and labels are included only after platform validation.
+```text
+Requested state `<requested>` is not supported on `<platform>`.
+Choose one:
+1. Proceed as `ready` and show `effective: ready` in the preview.
+2. Stop without creating a PR/MR.
+```
 
-## Failure Mapping
+Silent substitution is forbidden. The preview must show both requested and
+effective state.
 
-Use the failure envelope in `./execution-contracts.md`:
+## Unknown Syntax Policy
 
-| Situation | Envelope code |
-| --------- | ------------- |
-| Missing tooling, token, or permission | `AUTH` |
-| Missing target branch | `BASE_BRANCH_MISSING` |
-| Source branch cannot be compared remotely | `HEAD_BRANCH_UNPUSHED` |
-| Empty compare range | `EMPTY_DIFF` |
-| Platform or create workflow cannot be determined safely | `BLOCKED` |
-| User declines a confirmation gate | `CANCELLED` |
-| Creation or verification fails after approval | `CREATE_ERROR` |
+Fetch at most one authoritative source for the active platform/tooling when the
+exact flag, field, or capability changes a concrete command. If the exact path
+remains unsafe after one source, ask the user for the hosting platform or
+approved tooling instead of improvising.

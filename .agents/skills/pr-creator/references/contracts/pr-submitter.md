@@ -1,57 +1,35 @@
-# Output Contract - PR Submitter
+# Contract: pr-submitter
 
-> Load at return time. The orchestrator uses the verified URL and field summary
-> for final output.
-
-## Template
+Return exactly one status block. Echo platform-returned values for orchestrator
+verification; do not rely on inputs as verification evidence.
 
 ```text
-PR_SUBMIT: PASS | BLOCKED | CREATE_ERROR | AUTH | ERROR
-URL: <created PR/MR URL or none>
-Remote name: <remote_name>
-Base: <target_branch>
-Head: <current_branch>
-Title: <title>
-State: draft | ready
-Reviewers: <reviewer list or none>
-Labels: <label list or none>
-Verified fields: url, base, head, title, body, state, reviewers, labels | <partial list>
-Verification: pass | fail | not-run
-
-Reason: none | <why status is not PASS>
-Decision needed: none | <smallest recovery action>
+PR_SUBMIT: <PASS | HEAD_MOVED | CREATE_UNCERTAIN | BLOCKED | CREATE_ERROR | AUTH | ERROR>
+Approval record: <valid | missing | digest-mismatch>
+Frozen head SHA: <sha>
+Remote head SHA before create: <sha | unavailable>
+Existing PR race check: <none | url>
+Create attempted: <yes | no>
+Create retry used: <yes | no>
+URL: <platform-returned url | unavailable>
+Base returned: <platform-returned base | unavailable>
+Head ref returned: <platform-returned head ref | unavailable>
+Head SHA returned: <platform-returned head sha | unavailable>
+Title returned: <platform-returned title | unavailable>
+State returned: <platform-returned state | unavailable>
+Reviewers returned: <platform-returned reviewers | none | unavailable>
+Labels returned: <platform-returned labels | none | unavailable>
+Body first line returned: <line | unavailable>
+Body line count returned: <number | unavailable>
+Approved body digest: <digest>
+Returned body digest: <digest | unavailable>
+Verification: <pass | fail | not-run>
+Mismatched fields: <comma list | none>
+Uncertain check commands: <commands | n/a>
+Reason: <one line>
+Decision needed: <none | rerun diff after head moved | user checks commands | next action>
 ```
 
-## Codes
-
-- `PASS`: approved PR is created and all approved preview fields are verified.
-- `BLOCKED`: approval or a required approved value is missing.
-- `CREATE_ERROR`: creation or verification failed after approval.
-- `AUTH`: platform CLI or credentials are missing or invalid.
-- `ERROR`: unexpected submission failure.
-
-## Orchestrator Routing
-
-The orchestrator dispatches `pr-submitter` only after preview approval and passes
-the frozen approved values. On `PASS`, it verifies URL, base, head, title, body,
-state, reviewers, and labels against the preview before success. `BLOCKED`,
-`CREATE_ERROR`, `AUTH`, and `ERROR` map directly to the failure envelope.
-
-## Example
-
-<example>
-PR_SUBMIT: PASS
-URL: https://github.com/acme/app/pull/42
-Remote name: origin
-Base: main
-Head: docs/pr-creator-skill
-Title: docs(skills): strengthen pr creation workflow
-State: draft
-Reviewers: @docs-team
-Labels: documentation
-Verified fields: url, base, head, title, body, state, reviewers, labels
-Verification: pass
-
-Reason: none
-Decision needed: none
-</example>
+Use `HEAD_MOVED` before create when the remote head SHA no longer matches the
+frozen preview. Use `CREATE_UNCERTAIN` only after querying for the PR/MR and one
+bounded retry still cannot determine the outcome.
