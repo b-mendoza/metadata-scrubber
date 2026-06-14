@@ -3,6 +3,8 @@ package main
 import (
 	"net/http"
 	"testing"
+
+	"github.com/stretchr/testify/require"
 )
 
 func TestNewServerConfiguresAddressAndHandler(t *testing.T) {
@@ -10,23 +12,16 @@ func TestNewServerConfiguresAddressAndHandler(t *testing.T) {
 
 	server := newServer(":0")
 
-	if server.Addr != ":0" {
-		t.Fatalf("server.Addr = %q, want %q", server.Addr, ":0")
-	}
-	if server.Handler == nil {
-		t.Fatal("server.Handler is nil")
-	}
+	require.Equal(t, ":0", server.Addr)
+	require.NotNil(t, server.Handler)
 
 	recorder := &statusRecorder{}
 	request, err := http.NewRequest(http.MethodGet, "/api/health", nil)
-	if err != nil {
-		t.Fatal(err)
-	}
+	require.NoError(t, err)
+
 	server.Handler.ServeHTTP(recorder, request)
 
-	if recorder.status != http.StatusOK {
-		t.Fatalf("reachability status = %d, want %d", recorder.status, http.StatusOK)
-	}
+	require.Equal(t, http.StatusOK, recorder.status)
 }
 
 type statusRecorder struct {
