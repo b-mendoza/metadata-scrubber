@@ -22,7 +22,7 @@ tasks:
       - go test -race -cover ./...
 
   lint:
-    desc: Lint the source code with golangci-lint (pinned via the go.mod tool directive)
+    desc: Lint the source code with golangci-lint (includes go vet; pinned via the go.mod tool directive)
     cmds:
       - go tool golangci-lint run
 
@@ -30,11 +30,6 @@ tasks:
     desc: Lint and auto-fix issues where supported
     cmds:
       - go tool golangci-lint run --fix
-
-  vet:
-    desc: Report suspicious constructs with go vet
-    cmds:
-      - go vet ./...
 
   fmt:
     desc: Format the source code
