@@ -24,8 +24,8 @@ importers:
         specifier: 5.4.0
         version: 5.4.0(react-hook-form@7.77.0(react@19.2.7))
       '@openrouter/ai-sdk-provider':
-        specifier: 2.9.0
-        version: 2.9.0(ai@6.0.201(zod@4.4.3))(zod@4.4.3)
+        specifier: 2.9.1
+        version: 2.9.1(ai@6.0.201(zod@4.4.3))(zod@4.4.3)
       '@tanstack/react-query':
         specifier: 5.101.0
         version: 5.101.0(react@19.2.7)
@@ -979,8 +979,8 @@ packages:
     resolution: {integrity: sha512-hAX0pT/73190NLqBPPWSdBVGtbY6VOhWYK3qqHqtXQ1gK7kS2yz4+ivsN07hpJ6I3aeMtKP6J6npsEKOAzuTLA==}
     engines: {node: '>=20.0'}
 
-  '@openrouter/ai-sdk-provider@2.9.0':
-    resolution: {integrity: sha512-Seva+NCa0WUQnJIUE5GzHsUv1WTIeyqwz0ELl2VtS6NP+eF+77yCXGFVOMbvoCM7QMjlnhv7931e89R+8pJdcQ==}
+  '@openrouter/ai-sdk-provider@2.9.1':
+    resolution: {integrity: sha512-okgq07Vdkro4CB5INbfhwa0e6VR1HS7sidNcfHN/MeXLJvX1JmQCff/vem6tcxwT9r1avyFrXSlfv9B28D/Pag==}
     engines: {node: '>=18'}
     peerDependencies:
       ai: ^6.0.0
@@ -5388,7 +5388,7 @@ snapshots:
 
   '@oozcitak/util@10.0.0': {}
 
-  '@openrouter/ai-sdk-provider@2.9.0(ai@6.0.201(zod@4.4.3))(zod@4.4.3)':
+  '@openrouter/ai-sdk-provider@2.9.1(ai@6.0.201(zod@4.4.3))(zod@4.4.3)':
     dependencies:
       ai: 6.0.201(zod@4.4.3)
       zod: 4.4.3
