@@ -1,15 +1,21 @@
+// Package main serves the metadata scrubber HTTP API.
 package main
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"io"
 	"log"
 	"net/http"
 	"os"
+	"os/signal"
 	"path/filepath"
 	"strings"
+	"syscall"
+	"time"
 
 	"github.com/pdfcpu/pdfcpu/pkg/api"
 )
@@ -17,11 +23,20 @@ import (
 // maxUploadSize caps the size of an uploaded file (25 MB) to keep memory usage bounded.
 const maxUploadSize = 25 << 20
 
-func main() {
-	mux := http.NewServeMux()
+const (
+	healthCheckArg     = "healthcheck"
+	healthCheckPath    = "/api/health"
+	healthCheckTimeout = 2 * time.Second
+	readHeaderTimeout  = 5 * time.Second
+)
 
-	mux.HandleFunc("GET /api/health", handleHealth)
-	mux.HandleFunc("POST /api/scrub", handleScrub)
+func main() {
+	if len(os.Args) > 1 && os.Args[1] == healthCheckArg {
+		if err := runHealthCheck(os.Getenv("PORT")); err != nil {
+			log.Fatal(err)
+		}
+		return
+	}
 
 	port := os.Getenv("PORT")
 	if port == "" {
@@ -29,10 +44,66 @@ func main() {
 	}
 
 	addr := ":" + port
-	log.Printf("metadata-scrubber listening on %s", addr)
-	if err := http.ListenAndServe(addr, withCORS(mux)); err != nil {
-		log.Fatal(err)
+	server := newServer(addr)
+	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
+	defer stop()
+
+	serverErr := make(chan error, 1)
+	go func() {
+		log.Printf("metadata-scrubber listening on %s", addr)
+		if err := server.ListenAndServe(); err != nil && !errors.Is(err, http.ErrServerClosed) {
+			serverErr <- err
+			return
+		}
+		serverErr <- nil
+	}()
+
+	select {
+	case err := <-serverErr:
+		if err != nil {
+			log.Fatal(err)
+		}
+	case <-ctx.Done():
+		shutdownCtx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+		defer cancel()
+		if err := server.Shutdown(shutdownCtx); err != nil {
+			log.Fatal(err)
+		}
+		if err := <-serverErr; err != nil {
+			log.Fatal(err)
+		}
 	}
+}
+
+func newServer(addr string) *http.Server {
+	mux := http.NewServeMux()
+
+	mux.HandleFunc("GET /api/health", handleHealth)
+	mux.HandleFunc("POST /api/scrub", handleScrub)
+
+	return &http.Server{
+		Addr:              addr,
+		Handler:           withCORS(mux),
+		ReadHeaderTimeout: readHeaderTimeout,
+	}
+}
+
+func runHealthCheck(port string) error {
+	if port == "" {
+		port = "8080"
+	}
+
+	client := http.Client{Timeout: healthCheckTimeout}
+	response, err := client.Get("http://127.0.0.1:" + port + healthCheckPath)
+	if err != nil {
+		return err
+	}
+	defer func() { _ = response.Body.Close() }()
+
+	if response.StatusCode != http.StatusOK {
+		return fmt.Errorf("healthcheck returned status %d", response.StatusCode)
+	}
+	return nil
 }
 
 // handleHealth is a simple sanity-check endpoint the frontend can fetch to
@@ -51,7 +122,7 @@ func handleScrub(w http.ResponseWriter, r *http.Request) {
 		writeError(w, http.StatusBadRequest, "missing or invalid \"file\" form field")
 		return
 	}
-	defer file.Close()
+	defer func() { _ = file.Close() }()
 
 	// pdfcpu needs an io.ReadSeeker, so buffer the upload into memory.
 	src, err := io.ReadAll(file)
