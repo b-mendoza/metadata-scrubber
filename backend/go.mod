@@ -2,7 +2,7 @@ module metadata-scrubber
 
 go 1.26.4
 
-require github.com/pdfcpu/pdfcpu v0.13.0
+require github.com/pdfcpu/pdfcpu v0.12.1
 
 require (
 	4d63.com/gocheckcompilerdirectives v1.3.0 // indirect
