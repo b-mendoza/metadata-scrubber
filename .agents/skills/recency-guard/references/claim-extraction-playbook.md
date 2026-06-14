@@ -1,55 +1,56 @@
 # Claim Extraction Playbook
 
-> Read this file when selecting which claims a subagent should review. Use
-> the categories below first; load `external-sources.md` only when a single
-> high-stakes classification is genuinely ambiguous.
+Read this file when building ledger rows or choosing which claims a subagent
+should review. Use the categories below first; load `external-sources.md` only
+for a high-stakes classification that remains genuinely ambiguous.
 
-Both subagents extract claims, but for different purposes. Use the column
-that matches your subagent.
-
-## What To Extract
+## Claim Categories
 
 | For `recency-checker` | For `claim-verifier` |
 | --------------------- | -------------------- |
 | Versions, releases, deprecations | Core recommendations and "best" judgments |
 | Compatibility statements | Comparisons across products or approaches |
 | Pricing, limits, included credits | Quantitative claims with units or percentages |
-| Policy and availability | Causal claims ("X improves Y") |
+| Policy and availability | Causal claims such as "X improves Y" |
 | Rankings, popularity, market share | Generalizations from one workload, region, or team |
-| Benchmark numbers tied to a date | Opinions framed as fact |
+| Benchmark numbers tied to a date | Opinions framed as objective fact |
 
-`recency-checker` aims for completeness across actionable claims.
-`claim-verifier` aims for the **top 3 decision-shaping claims** the user is
-most likely to act on.
+Create a ledger row for every claim involving versions, releases, pricing,
+limits, policies, rankings, benchmarks, popularity, availability,
+compatibility, or actionable recommendations.
 
-## Failure Modes To Test (claim-verifier)
+## Verifier Candidate Enumeration
+
+`claim-verifier` must enumerate all candidate decision-shaping claims it sees.
+It deep-reviews only the highest-impact subset and lists every remaining
+candidate under `Unreviewed candidates`. The orchestrator records those rows as
+`unreviewed` unless it removes or qualifies them.
+
+## Failure Modes To Test
 
 | Failure Mode | What It Looks Like |
 | ------------ | ------------------ |
 | Overstating certainty | Hedged source repackaged as a definite recommendation |
 | Causal leap | Correlation or anecdote framed as cause |
-| Narrow-to-broad generalization | One benchmark, region, or team size used as a universal rule |
+| Narrow-to-broad generalization | One benchmark, region, team size, or use case treated as universal |
 | Single-source anchoring | Vendor or partisan source treated as neutral |
 | Survivorship bias | Visible winners cited without missing losers |
-| Opinion as fact | Personal preference written as objective conclusion |
-
-When a claim implies cause from observational data or names a logical
-fallacy, consult `./external-sources.md` only if the misuse is not already
-obvious.
+| Opinion as fact | Preference written as objective conclusion |
 
 ## Edit Action Vocabulary
 
-Both subagents return a recommended edit per flagged claim. Use one verb
-per claim.
+Use one verb per flagged claim.
 
 | Verb | Use When |
 | ---- | -------- |
-| `No change` | The claim holds as written (claim-verifier only) |
+| `No change` | The claim holds as written, for claim verification only |
 | `Replace` | Current evidence contradicts the claim |
 | `Date-stamp` | The claim is true now but will rot quickly |
-| `Qualify` | The claim is true within bounds the draft does not name |
+| `Qualify` | The claim is true only within bounds the draft does not name |
 | `Reframe` | Wording overstates what the source supports |
 | `Add counterpoint` | A meaningful exception is missing |
 | `Remove` | Evidence is too weak or absent to support the claim |
 
-Prefer the smallest edit that makes the claim safe.
+Prefer the smallest edit that makes the claim safe. A claim that needs any date,
+scope, or uncertainty wording is not clean enough for an unqualified final
+answer.

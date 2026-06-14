@@ -1,87 +1,114 @@
-# Recency Guard
+# Recency Guard Flow Diagram
 
-Recency Guard is a read-only response-validation workflow. The orchestrator may draft or inspect an answer, identify high-risk current or decision-shaping claims, and dispatch only the `recency-checker` and `claim-verifier` subagents for focused read-only verification. It may apply only subagent-flagged wording edits within the repair limits; it may not mutate external systems, post, purchase, deploy, change policy, or perform high-impact actions.
+Recency Guard is a read-only response-validation workflow. The orchestrator
+classifies scope before drafting, maintains a claim ledger, dispatches
+`recency-checker` and `claim-verifier`, screens suggested revisions, and selects
+the terminal outcome from the ledger decision table.
+
+The canonical dispatch-budget numbers live only in
+[`references/repair-and-integration.md`](./references/repair-and-integration.md).
 
 ```mermaid
 flowchart TD
-  START(["Start: USER_REQUEST received"]) --> INPUTS["Collect inputs: USER_REQUEST, optional DRAFT_RESPONSE, optional TODAYS_DATE, optional RECENCY_RISK_HINT"]
-  INPUTS --> DATE{"TODAYS_DATE present?"}
-  DATE -->|yes| DRAFT_CHECK{"DRAFT_RESPONSE present?"}
-  DATE -->|no| SET_DATE["Use runtime current date and label freshness basis"]
-  SET_DATE --> DRAFT_CHECK
+  START(["Start: USER_REQUEST received"]) --> TRIAGE["Phase 0: collect inputs, default TODAYS_DATE, probe verification tools"]
+  TRIAGE --> CLASS{"Request class against high-impact-action list?"}
+  CLASS -->|action| OUT_OF_SCOPE(["Out-of-scope route: action not performed, separate user-approved workflow"])
+  CLASS -->|mixed| SPLIT["Strip action part and record routing disclosure"]
+  CLASS -->|informational| DRAFT_CHECK{"DRAFT_RESPONSE supplied?"}
+  SPLIT --> DRAFT_CHECK
 
-  DRAFT_CHECK -->|yes| INSPECT["Inspect supplied draft answer"]
-  DRAFT_CHECK -->|no| DRAFT["Draft concise answer from USER_REQUEST"]
-  INSPECT --> BOUNDARY["State read-only role, authority, trust model, and freshness scope"]
-  DRAFT --> BOUNDARY
+  DRAFT_CHECK -->|yes| INSPECT["Inspect supplied draft"]
+  DRAFT_CHECK -->|no| DRAFT["Draft concise answer"]
+  INSPECT --> LEDGER["Build claim ledger: one unreviewed row per risky claim"]
+  DRAFT --> LEDGER
 
-  BOUNDARY --> MUTATION{"External mutation or high-impact action requested?"}
-  MUTATION -->|yes| OUT_OF_SCOPE(["Out-of-scope route: separate approved workflow"])
-  MUTATION -->|no| RISK["Identify high-risk current claims and unsupported time-sensitive wording"]
+  LEDGER --> ZERO{"Ledger has rows?"}
+  ZERO -->|no| FASTPATH["Fast path: note no current-fact dependencies"]
+  FASTPATH --> COMPLETE
+  ZERO -->|yes| TOOLS{"Verification tools available?"}
 
-  RISK --> RECENCY_DISPATCH["Dispatch recency-checker with focused read-only verification request"]
-  RECENCY_DISPATCH --> RECENCY_STATUS{"recency-checker status?"}
-  RECENCY_STATUS -->|PASS| CLAIM_DISPATCH["Dispatch claim-verifier with revised draft; subagent selects up to 3 decision-shaping claims"]
-  RECENCY_STATUS -->|FAIL| RECENCY_FIX["Apply only recency-checker flagged edits"]
-  RECENCY_STATUS -->|TOOLS_MISSING| RECENCY_LIMIT["Keep supportable claims and qualify freshness/tool limits"]
-  RECENCY_STATUS -->|ERROR| RECENCY_ERROR{"ERROR retry used?"}
-  RECENCY_FIX --> RECENCY_RERUNS{"Targeted recency reruns used fewer than 2?"}
-  RECENCY_RERUNS -->|yes| RECENCY_DISPATCH
-  RECENCY_RERUNS -->|no| MATERIAL_FINAL
-  RECENCY_ERROR -->|no| RECENCY_RETRY["Retry recency-checker once with same focused request"]
-  RECENCY_ERROR -->|yes| MATERIAL_FINAL
-  RECENCY_RETRY --> RECENCY_DISPATCH
-  RECENCY_LIMIT --> CLAIM_DISPATCH
+  TOOLS -->|no| NOTOOLS["Remove or label time-sensitive claims as unverified model knowledge; mark rows unverifiable"]
+  NOTOOLS --> MAT_TEST
+  TOOLS -->|yes| REC_DISPATCH["Dispatch recency-checker"]
 
-  CLAIM_DISPATCH --> CLAIM_STATUS{"claim-verifier status?"}
-  CLAIM_STATUS -->|PASS| EVIDENCE["Integrate evidence: source conflicts, recency/claim overlap, confidence-to-wording"]
-  CLAIM_STATUS -->|FAIL| CLAIM_FIX["Apply only claim-verifier flagged edits"]
-  CLAIM_STATUS -->|TOOLS_MISSING| CLAIM_LIMIT["Qualify claims by evidence limits and freshness scope"]
-  CLAIM_STATUS -->|ERROR| CLAIM_ERROR{"ERROR retry used?"}
-  CLAIM_FIX --> CLAIM_RERUNS{"Targeted claim reruns used fewer than 2?"}
-  CLAIM_RERUNS -->|yes| CLAIM_DISPATCH
-  CLAIM_RERUNS -->|no| MATERIAL_FINAL
-  CLAIM_ERROR -->|no| CLAIM_RETRY["Retry claim-verifier once with same revised draft"]
-  CLAIM_ERROR -->|yes| MATERIAL_FINAL
-  CLAIM_RETRY --> CLAIM_DISPATCH
-  CLAIM_LIMIT --> EVIDENCE
+  REC_DISPATCH --> REC_CONF{"RECENCY_CHECK conforms?"}
+  REC_CONF -->|no| REC_ERR{"ERROR retry remains?"}
+  REC_CONF -->|yes| REC_STATUS{"RECENCY_CHECK status?"}
+  REC_STATUS -->|PASS| CLAIM_DISPATCH
+  REC_STATUS -->|FAIL| REC_SCREEN["Screen edits, apply accepted changes, update ledger"]
+  REC_STATUS -->|TOOLS_MISSING| REC_TM["Apply no-tools rule to unresolved time-sensitive rows"]
+  REC_STATUS -->|ERROR| REC_ERR
+  REC_SCREEN --> REC_BUDGET{"Recency budget remains?"}
+  REC_BUDGET -->|yes| REC_DISPATCH
+  REC_BUDGET -->|no| REC_OPEN["Mark still-flagged rows unverifiable"]
+  REC_OPEN --> MAT_TEST
+  REC_ERR -->|yes| REC_RETRY["Retry with conformance reminder when malformed"]
+  REC_RETRY --> REC_CONF
+  REC_ERR -->|no| REC_DEAD["Mark open rows unverifiable"]
+  REC_DEAD --> MAT_TEST
+  REC_TM --> TM_CONT{"Claim review plausible?"}
+  TM_CONT -->|yes| CLAIM_DISPATCH
+  TM_CONT -->|no| TM_MARK["Mark decision-shaping candidates unverifiable"]
+  TM_MARK --> INTEGRATE
 
-  EVIDENCE --> CONFIDENCE{"Material uncertainty remains after integration?"}
-  CONFIDENCE -->|yes| MATERIAL_FINAL
-  CONFIDENCE -->|no| COMPLETE{"Completeness, date, scope, and confidence wording present?"}
-  COMPLETE -->|yes| FINAL_REVALIDATE{"Final wording adds a new time-sensitive or decision-shaping claim?"}
-  COMPLETE -->|no| COMPLETE_FIX["Add missing qualifiers, scope, or unresolved uncertainty"]
-  COMPLETE_FIX --> FINAL_REVALIDATE
+  CLAIM_DISPATCH["Dispatch claim-verifier"] --> CLAIM_CONF{"CLAIM_REVIEW conforms?"}
+  CLAIM_CONF -->|no| CLAIM_ERR{"ERROR retry remains?"}
+  CLAIM_CONF -->|yes| CLAIM_STATUS{"CLAIM_REVIEW status?"}
+  CLAIM_STATUS -->|PASS| RECORD_UNREV["Record every unreviewed candidate as ledger row"]
+  CLAIM_STATUS -->|FAIL| CLAIM_SCREEN["Screen edits, apply accepted changes, update ledger"]
+  CLAIM_STATUS -->|TOOLS_MISSING| CLAIM_TM["Mark candidates unverifiable and qualify limits"]
+  CLAIM_STATUS -->|ERROR| CLAIM_ERR
+  CLAIM_SCREEN --> CLAIM_BUDGET{"Claim budget remains?"}
+  CLAIM_BUDGET -->|yes| CLAIM_DISPATCH
+  CLAIM_BUDGET -->|no| CLAIM_OPEN["Mark still-flagged rows unverifiable"]
+  CLAIM_OPEN --> MAT_TEST
+  CLAIM_ERR -->|yes| CLAIM_RETRY["Retry with conformance reminder when malformed"]
+  CLAIM_RETRY --> CLAIM_CONF
+  CLAIM_ERR -->|no| CLAIM_DEAD["Mark open rows unverifiable"]
+  CLAIM_DEAD --> MAT_TEST
+  CLAIM_TM --> INTEGRATE
+  RECORD_UNREV --> INTEGRATE
 
-  FINAL_REVALIDATE -->|no| LIMITS{"Evidence, tool, or freshness limit remains?"}
-  FINAL_REVALIDATE -->|yes| REVERIFY{"Relevant subagent rerun available?"}
-  REVERIFY -->|recency or both| RECENCY_DISPATCH
-  REVERIFY -->|claim only| CLAIM_DISPATCH
-  REVERIFY -->|no cap| MATERIAL_FINAL
+  INTEGRATE["Integrate: stricter overlap, highest-tier conflicts, confidence to wording, qualify or remove unreviewed claims"] --> COMPLETE{"All deliverables and qualifiers covered?"}
+  COMPLETE -->|no| COMPLETE_FIX["Add missing date, scope, evidence, tool-limit, or uncertainty wording"]
+  COMPLETE -->|yes| NEW_RISK{"Final wording adds new risky claim?"}
+  COMPLETE_FIX --> NEW_RISK
 
-  LIMITS -->|yes| LIMITED_FINAL(["Limited final answer: direct answer with date, scope, and evidence/tool limits"])
-  LIMITS -->|no| READY_FINAL(["Ready final answer: direct user-visible answer"])
-  MATERIAL_FINAL(["Material uncertainty final: conservative answer with unresolved uncertainty"])
+  NEW_RISK -->|yes| REVAL_BUDGET{"Relevant subagent budget remains?"}
+  NEW_RISK -->|no| MAT_TEST
+  REVAL_BUDGET -->|yes| REVALIDATE["Single-claim revalidation; fold result into ledger"]
+  REVAL_BUDGET -->|no| REVAL_MARK["Mark new row unverifiable"]
+  REVALIDATE --> MAT_TEST
+  REVAL_MARK --> MAT_TEST
 
-  class DATE,DRAFT_CHECK,MUTATION,RECENCY_STATUS,RECENCY_RERUNS,RECENCY_ERROR,CLAIM_STATUS,CLAIM_RERUNS,CLAIM_ERROR,CONFIDENCE,COMPLETE,FINAL_REVALIDATE,REVERIFY,LIMITS decision;
-  class RISK,RECENCY_DISPATCH,CLAIM_DISPATCH,EVIDENCE check;
-  class BOUNDARY,RECENCY_FIX,RECENCY_LIMIT,CLAIM_FIX,CLAIM_LIMIT,COMPLETE_FIX guard;
-  class SET_DATE,INSPECT,DRAFT,RECENCY_RETRY,CLAIM_RETRY output;
+  MAT_TEST{"Any material uncertainty condition holds?"}
+  MAT_TEST -->|yes| MATERIAL_FINAL(["Material uncertainty final"])
+  MAT_TEST -->|no| LIM_TEST{"Any qualified, unverifiable, unreviewed, tool, freshness, or routing limit?"}
+  LIM_TEST -->|yes| LIMITED_FINAL(["Limited final answer"])
+  LIM_TEST -->|no| READY_FINAL(["Ready final answer"])
+
+  class CLASS,DRAFT_CHECK,ZERO,TOOLS,REC_CONF,REC_STATUS,REC_BUDGET,REC_ERR,TM_CONT,CLAIM_CONF,CLAIM_STATUS,CLAIM_BUDGET,CLAIM_ERR,COMPLETE,NEW_RISK,REVAL_BUDGET,MAT_TEST,LIM_TEST decision;
+  class TRIAGE,REC_DISPATCH,CLAIM_DISPATCH,INTEGRATE,REVALIDATE check;
+  class SPLIT,NOTOOLS,REC_SCREEN,REC_TM,REC_OPEN,REC_DEAD,TM_MARK,CLAIM_SCREEN,CLAIM_TM,CLAIM_OPEN,CLAIM_DEAD,RECORD_UNREV,COMPLETE_FIX,REVAL_MARK guard;
+  class INSPECT,DRAFT,LEDGER,FASTPATH,REC_RETRY,CLAIM_RETRY output;
   class READY_FINAL success;
   class LIMITED_FINAL refine;
   class MATERIAL_FINAL,OUT_OF_SCOPE stop;
 
-  classDef guard fill:#fff3cd,stroke:#856404,color:#000;
-  classDef check fill:#e7f1ff,stroke:#0b5ed7,color:#000;
   classDef decision fill:#f8f9fa,stroke:#495057,color:#000;
+  classDef check fill:#e7f1ff,stroke:#0b5ed7,color:#000;
+  classDef guard fill:#fff3cd,stroke:#856404,color:#000;
   classDef output fill:#e8f5e9,stroke:#2e7d32,color:#000;
   classDef success fill:#e8f5e9,stroke:#2e7d32,color:#000;
   classDef refine fill:#fff3cd,stroke:#856404,color:#000;
   classDef stop fill:#fdecea,stroke:#b02a37,color:#000;
 ```
 
-Readiness rule: Produce the user-visible final answer, not a verification report, unless the user asks for verification details. Final output must include date and scope qualifiers, unresolved material uncertainty, or conservative wording when evidence or tools are limited.
+## Terminal States
 
-Repair limit: Each subagent gets one initial review plus at most two targeted FAIL reruns. An ERROR retry is separate and allowed once per subagent; a second ERROR or exhausted rerun capacity yields a material uncertainty final.
-
-Mutation boundary: External mutations and high-impact actions stay outside Recency Guard and route to a separate approved workflow.
+| Terminal | Meaning |
+| -------- | ------- |
+| Ready final answer | Every risky ledger row is verified or cleanly removed; no recorded limits |
+| Limited final answer | Direct answer naming qualified, unverifiable, unreviewed, tool, freshness, or routing limits |
+| Material uncertainty final | Conservative answer naming the unresolved material item |
+| Out-of-scope route | High-impact action not performed and routed to a separate approved workflow |
