@@ -7,3 +7,12 @@ services:
       DATABASE_URL: postgres://user:password@localhost:5432/database
     ports:
       - "3000:3000"
+
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    environment:
+      PORT: 8080
+    ports:
+      - "8080:8080"
