@@ -25,5 +25,4 @@ COPY --from=build --chown=app:app /metadata-scrubber ./metadata-scrubber
 
 USER app
 EXPOSE 8080
-HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 CMD ["/app/metadata-scrubber", "healthcheck"]
 ENTRYPOINT ["/app/metadata-scrubber"]
