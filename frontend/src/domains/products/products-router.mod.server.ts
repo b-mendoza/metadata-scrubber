@@ -29,9 +29,6 @@ const getMessageResponseSchema = z.object({
 });
 
 export const productsRouter = createTRPCRouter({
-  getProducts: publicProcedure.query(async () =>
-    setTimeout(SLEEP_TIME_MS, PRODUCTS),
-  ),
   getMessage: publicProcedure.query(async () => {
     const { env } = getApplicationBindings();
 
@@ -39,4 +36,7 @@ export const productsRouter = createTRPCRouter({
 
     return getMessageResponseSchema.parse(await response.json());
   }),
+  getProducts: publicProcedure.query(async () =>
+    setTimeout(SLEEP_TIME_MS, PRODUCTS),
+  ),
 });
