@@ -1,0 +1,22 @@
+name: "Backend Quality Checks"
+
+description: "Lints, verifies formatting, and tests the Go backend via the same Task commands developers run locally"
+
+# Assumes the Go toolchain and Task are already on PATH (see backend-setup-env).
+# These steps intentionally mirror local development: a developer or coding agent
+# runs `task lint` and `task test` from backend/, and CI runs exactly the same.
+# There is no separate build step — `task lint` (golangci-lint) and `task test`
+# both compile every package, so a standalone `go build` would only add time
+# without catching anything the other two miss.
+runs:
+  using: composite
+  steps:
+    - name: Lint and verify formatting
+      shell: bash
+      working-directory: backend
+      run: task lint
+
+    - name: Test
+      shell: bash
+      working-directory: backend
+      run: task test
