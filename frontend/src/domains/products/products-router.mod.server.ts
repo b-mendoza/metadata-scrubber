@@ -7,6 +7,7 @@ import {
   createTRPCRouter,
   publicProcedure,
 } from "#/shared/libs/trpc/utils/initializer/initializer.mod.server";
+import { getApplicationBindings } from "#/shared/middlewares/application-bindings/application-bindings.mod";
 
 const SEED_PRODUCT_NAMES = ["Metadata Scrubber", "Privacy Audit Tool"];
 const SLEEP_TIME_MS = 5_000;
@@ -23,8 +24,19 @@ const PRODUCTS = SEED_PRODUCT_NAMES.map((name) => {
   });
 });
 
+const getMessageResponseSchema = z.object({
+  status: z.literal("reachable"),
+});
+
 export const productsRouter = createTRPCRouter({
   getProducts: publicProcedure.query(async () =>
     setTimeout(SLEEP_TIME_MS, PRODUCTS),
   ),
+  getMessage: publicProcedure.query(async () => {
+    const { env } = getApplicationBindings();
+
+    const response = await fetch(`${env.BACKEND_URL}/api/health`);
+
+    return getMessageResponseSchema.parse(await response.json());
+  }),
 });
