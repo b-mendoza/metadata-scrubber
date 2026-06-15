@@ -3,7 +3,8 @@ name: Backend Quality Checks
 on:
   pull_request:
     paths:
-      - .github/actions/go-quality-checks/**
+      - .github/actions/backend-setup-env/**
+      - .github/actions/backend-quality-checks/**
       - .github/workflows/backend-check.yaml
       - backend/**
 
@@ -11,7 +12,8 @@ on:
     branches:
       - main
     paths:
-      - .github/actions/go-quality-checks/**
+      - .github/actions/backend-setup-env/**
+      - .github/actions/backend-quality-checks/**
       - .github/workflows/backend-check.yaml
       - backend/**
 
@@ -21,10 +23,13 @@ concurrency:
 
 jobs:
   quality-checks:
-    name: Build, lint, vet and test the backend
+    name: Lint, vet and test the backend
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
 
-      - name: "Build, lint, vet and test"
-        uses: ./.github/actions/go-quality-checks
+      - name: "Setup Go and Task"
+        uses: ./.github/actions/backend-setup-env
+
+      - name: "Run linting, formatting and tests"
+        uses: ./.github/actions/backend-quality-checks
