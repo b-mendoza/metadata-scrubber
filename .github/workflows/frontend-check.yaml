@@ -1,18 +1,20 @@
-name: Code Quality Checks
+name: Frontend Quality Checks
 
 on:
   pull_request:
     paths:
-      - .github/actions/**
-      - .github/workflows/check.yaml
+      - .github/actions/frontend-setup-env/**
+      - .github/actions/frontend-quality-checks/**
+      - .github/workflows/frontend-check.yaml
       - frontend/**
 
   push:
     branches:
       - main
     paths:
-      - .github/actions/**
-      - .github/workflows/check.yaml
+      - .github/actions/frontend-setup-env/**
+      - .github/actions/frontend-quality-checks/**
+      - .github/workflows/frontend-check.yaml
       - frontend/**
 
 concurrency:
@@ -27,7 +29,7 @@ jobs:
       - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
 
       - name: "Setup Node.js, pnpm and dependencies"
-        uses: ./.github/actions/setup-env
+        uses: ./.github/actions/frontend-setup-env
 
       - name: "Run linting, formatting and type checks"
-        uses: ./.github/actions/code-quality-checks
+        uses: ./.github/actions/frontend-quality-checks
