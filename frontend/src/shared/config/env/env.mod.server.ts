@@ -9,4 +9,4 @@ export const envSchema = z.object({
   }),
 });
 
-export type Env = z.output<typeof envSchema>;
+export interface Env extends z.output<typeof envSchema> {}
