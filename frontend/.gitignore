@@ -6,5 +6,6 @@
 # Artifacts
 /.output/
 
-# Environment
-.env*
+# Environment variables
+.env
+.env.*
