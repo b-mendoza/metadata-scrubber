@@ -13,10 +13,10 @@ runs:
   steps:
     - name: Lint and verify formatting
       shell: bash
-      working-directory: backend
+      working-directory: ./backend
       run: task lint
 
     - name: Test
       shell: bash
-      working-directory: backend
+      working-directory: ./backend
       run: task test

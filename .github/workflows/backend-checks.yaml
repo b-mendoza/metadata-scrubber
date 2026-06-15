@@ -3,17 +3,17 @@ name: Backend Quality Checks
 on:
   pull_request:
     paths:
-      - .github/actions/backend/**
-      - .github/workflows/backend-checks.yaml
-      - backend/**
+      - ./.github/actions/backend/**
+      - ./.github/workflows/backend-checks.yaml
+      - ./backend/**
 
   push:
     branches:
       - main
     paths:
-      - .github/actions/backend/**
-      - .github/workflows/backend-checks.yaml
-      - backend/**
+      - ./.github/actions/backend/**
+      - ./.github/workflows/backend-checks.yaml
+      - ./backend/**
 
 concurrency:
   group: "${{ github.workflow }}-${{ github.ref }}"
