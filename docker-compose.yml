@@ -4,8 +4,7 @@ services:
       context: ./frontend
       dockerfile: Dockerfile
       target: runtime
-    environment:
-      DATABASE_URL: postgres://user:password@localhost:5432/database
+    env_file: .env
     ports:
       - "3000:3000"
     read_only: true
@@ -22,8 +21,7 @@ services:
       context: ./backend
       dockerfile: Dockerfile
       target: runtime
-    environment:
-      PORT: "8080"
+    env_file: .env
     ports:
       - "8080:8080"
     read_only: true
