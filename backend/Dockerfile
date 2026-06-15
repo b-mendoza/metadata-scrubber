@@ -9,8 +9,8 @@ RUN --mount=type=cache,target=/go/pkg/mod go mod download
 COPY . ./
 # CGO is disabled so the binary is fully static and can run on scratch.
 # -ldflags "-s -w" strips the symbol table and debug info to shrink the binary.
-RUN --mount=type=cache,target=/go/pkg/mod \
-    --mount=type=cache,target=/root/.cache/go-build \
+RUN --mount=type=cache,id=s/d082c335-1252-4a79-bf33-5ce99a51a205-/go/pkg/mod,target=/go/pkg/mod \
+    --mount=type=cache,id=s/d082c335-1252-4a79-bf33-5ce99a51a205-/go/cache/build,target=/root/.cache/go-build \
     CGO_ENABLED=0 GOOS=linux go build -trimpath -ldflags="-s -w" -o /metadata-scrubber .
 
 # Create an unprivileged user/group to carry over into the final image.
