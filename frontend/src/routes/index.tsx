@@ -22,11 +22,11 @@ export const Route = createFileRoute("/")({
     const { queryClient, trpc } = context;
 
     queryClient
-      .prefetchQuery(trpc.products.getProducts.queryOptions())
+      .prefetchQuery(trpc.products.getMessage.queryOptions())
       .catch(() => null);
 
     queryClient
-      .prefetchQuery(trpc.products.getMessage.queryOptions())
+      .prefetchQuery(trpc.products.getProducts.queryOptions())
       .catch(() => null);
   },
   head() {
