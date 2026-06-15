@@ -1,2 +1,6 @@
 # Artifacts
 metadata-scrubber
+
+# Environment variables
+.env
+.env.*
