@@ -5,6 +5,9 @@
     "pr": ""
   },
   "disableWorkflows": true,
-  "enabledMcpjsonServers": ["context7"],
+  "enableAllProjectMcpServers": true,
+  "enabledPlugins": {
+    "codex@openai-codex": true
+  },
   "workflowKeywordTriggerEnabled": false
 }
