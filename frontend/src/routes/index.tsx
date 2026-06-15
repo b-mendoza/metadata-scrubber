@@ -24,6 +24,10 @@ export const Route = createFileRoute("/")({
     queryClient
       .prefetchQuery(trpc.products.getProducts.queryOptions())
       .catch(() => null);
+
+    queryClient
+      .prefetchQuery(trpc.products.getMessage.queryOptions())
+      .catch(() => null);
   },
   head() {
     return {
@@ -42,6 +46,10 @@ function IndexRoute() {
       <h1>Hello, world!</h1>
 
       <Suspense fallback={<div>Loading...</div>}>
+        <Message />
+      </Suspense>
+
+      <Suspense fallback={<div>Loading...</div>}>
         <ProductList />
       </Suspense>
     </>
@@ -51,9 +59,11 @@ function IndexRoute() {
 const ProductList = () => {
   const { trpc } = Route.useRouteContext();
 
-  const { data: products } = useSuspenseQuery(
+  const getProductsQueryResult = useSuspenseQuery(
     trpc.products.getProducts.queryOptions(),
   );
+
+  const products = getProductsQueryResult.data;
 
   return (
     <>
@@ -68,4 +78,16 @@ const ProductList = () => {
       </ul>
     </>
   );
+};
+
+const Message = () => {
+  const { trpc } = Route.useRouteContext();
+
+  const getMessageQueryResult = useSuspenseQuery(
+    trpc.products.getMessage.queryOptions(),
+  );
+
+  const message = getMessageQueryResult.data.status;
+
+  return <div>{message}</div>;
 };
