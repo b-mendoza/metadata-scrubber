@@ -6,3 +6,7 @@
 /.bun/
 /.codex/
 opencode.jsonc
+
+# Environment variables
+.env
+.env.*
