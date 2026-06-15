@@ -14,10 +14,10 @@ jobs:
       - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
 
       - name: "Setup Node.js, pnpm and dependencies"
-        uses: ./.github/actions/frontend-setup-env
+        uses: ./.github/actions/frontend/setup-env
 
       - name: "Run linting, formatting and type checks"
-        uses: ./.github/actions/frontend-quality-checks
+        uses: ./.github/actions/frontend/quality-checks
 
   # unit-tests:
   #   name: Run unit tests
@@ -26,7 +26,7 @@ jobs:
   #     - uses: actions/checkout@1af3b93b6815bc44a9784bd300feb67ff0d1eeb3 # v6.0.0
 
   #     - name: "Setup Node.js, pnpm and dependencies"
-  #       uses: ./.github/actions/frontend-setup-env
+  #       uses: ./.github/actions/frontend/setup-env
 
   #     - name: Run unit tests
   #       uses: ./.github/actions/unit-tests
@@ -43,7 +43,7 @@ jobs:
         uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
 
       - name: "Setup Node.js, pnpm and dependencies"
-        uses: ./.github/actions/frontend-setup-env
+        uses: ./.github/actions/frontend/setup-env
 
       - name: Build application
         shell: bash
