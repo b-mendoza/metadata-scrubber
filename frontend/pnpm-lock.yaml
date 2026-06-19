@@ -223,8 +223,8 @@ importers:
         specifier: 17.6.0
         version: 17.6.0
       happy-dom:
-        specifier: 20.10.3
-        version: 20.10.3
+        specifier: 20.10.4
+        version: 20.10.4
       nitro:
         specifier: 3.0.260603-beta
         version: 3.0.260603-beta(chokidar@5.0.0)(drizzle-orm@1.0.0-rc.3(@opentelemetry/api@1.9.1)(postgres@3.4.9)(zod@4.4.3))(jiti@2.7.0)(vite@8.0.16(@types/node@25.9.3)(esbuild@0.27.3)(jiti@2.7.0))
@@ -257,7 +257,7 @@ importers:
         version: 6.1.1(typescript@6.0.3)(vite@8.0.16(@types/node@25.9.3)(esbuild@0.27.3)(jiti@2.7.0))
       vitest:
         specifier: 4.1.9
-        version: 4.1.9(@opentelemetry/api@1.9.1)(@types/node@25.9.3)(@vitest/coverage-istanbul@4.1.9)(happy-dom@20.10.3)(vite@8.0.16(@types/node@25.9.3)(esbuild@0.27.3)(jiti@2.7.0))
+        version: 4.1.9(@opentelemetry/api@1.9.1)(@types/node@25.9.3)(@vitest/coverage-istanbul@4.1.9)(happy-dom@20.10.4)(vite@8.0.16(@types/node@25.9.3)(esbuild@0.27.3)(jiti@2.7.0))
 
 packages:
 
@@ -3159,8 +3159,8 @@ packages:
       crossws:
         optional: true
 
-  happy-dom@20.10.3:
-    resolution: {integrity: sha512-Hjdiy8RziuCcn5z04QI/rlsNuQoG8P0xxjgvsSMpi89cvIXIOcucQtiHS1yHSShxoBcSCeYqAskINmTiy/mlfw==}
+  happy-dom@20.10.4:
+    resolution: {integrity: sha512-bKrsQnFNpcjZG0UPsH7UMN7Oyp3AB42LXk2GuiQmu7l4QFxH7lsw5T1eWEtE2+vbIFrTC45sbNSB2pkB8MTfKA==}
     engines: {node: '>=20.0.0'}
 
   has-bigints@1.1.0:
@@ -6523,7 +6523,7 @@ snapshots:
       magicast: 0.5.3
       obug: 2.1.2
       tinyrainbow: 3.1.0
-      vitest: 4.1.9(@opentelemetry/api@1.9.1)(@types/node@25.9.3)(@vitest/coverage-istanbul@4.1.9)(happy-dom@20.10.3)(vite@8.0.16(@types/node@25.9.3)(esbuild@0.27.3)(jiti@2.7.0))
+      vitest: 4.1.9(@opentelemetry/api@1.9.1)(@types/node@25.9.3)(@vitest/coverage-istanbul@4.1.9)(happy-dom@20.10.4)(vite@8.0.16(@types/node@25.9.3)(esbuild@0.27.3)(jiti@2.7.0))
     transitivePeerDependencies:
       - supports-color
 
@@ -6535,7 +6535,7 @@ snapshots:
     optionalDependencies:
       '@typescript-eslint/eslint-plugin': 8.58.1(@typescript-eslint/parser@8.58.1(eslint@9.39.4(jiti@2.7.0))(typescript@6.0.3))(eslint@9.39.4(jiti@2.7.0))(typescript@6.0.3)
       typescript: 6.0.3
-      vitest: 4.1.9(@opentelemetry/api@1.9.1)(@types/node@25.9.3)(@vitest/coverage-istanbul@4.1.9)(happy-dom@20.10.3)(vite@8.0.16(@types/node@25.9.3)(esbuild@0.27.3)(jiti@2.7.0))
+      vitest: 4.1.9(@opentelemetry/api@1.9.1)(@types/node@25.9.3)(@vitest/coverage-istanbul@4.1.9)(happy-dom@20.10.4)(vite@8.0.16(@types/node@25.9.3)(esbuild@0.27.3)(jiti@2.7.0))
     transitivePeerDependencies:
       - supports-color
 
@@ -7573,7 +7573,7 @@ snapshots:
     optionalDependencies:
       crossws: 0.4.5(srvx@0.11.16)
 
-  happy-dom@20.10.3:
+  happy-dom@20.10.4:
     dependencies:
       '@types/node': 25.9.3
       '@types/whatwg-mimetype': 3.0.2
@@ -9041,7 +9041,7 @@ snapshots:
     optionalDependencies:
       vite: 8.0.16(@types/node@25.9.3)(esbuild@0.27.3)(jiti@2.7.0)
 
-  vitest@4.1.9(@opentelemetry/api@1.9.1)(@types/node@25.9.3)(@vitest/coverage-istanbul@4.1.9)(happy-dom@20.10.3)(vite@8.0.16(@types/node@25.9.3)(esbuild@0.27.3)(jiti@2.7.0)):
+  vitest@4.1.9(@opentelemetry/api@1.9.1)(@types/node@25.9.3)(@vitest/coverage-istanbul@4.1.9)(happy-dom@20.10.4)(vite@8.0.16(@types/node@25.9.3)(esbuild@0.27.3)(jiti@2.7.0)):
     dependencies:
       '@vitest/expect': 4.1.9
       '@vitest/mocker': 4.1.9(vite@8.0.16(@types/node@25.9.3)(esbuild@0.27.3)(jiti@2.7.0))
@@ -9067,7 +9067,7 @@ snapshots:
       '@opentelemetry/api': 1.9.1
       '@types/node': 25.9.3
       '@vitest/coverage-istanbul': 4.1.9(vitest@4.1.9)
-      happy-dom: 20.10.3
+      happy-dom: 20.10.4
     transitivePeerDependencies:
       - msw
 
