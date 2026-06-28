@@ -25,7 +25,7 @@
     "test:watch": "vitest watch"
   },
   "dependencies": {
-    "@ai-sdk/react": "3.0.211",
+    "@ai-sdk/react": "3.0.212",
     "@aws-sdk/client-s3": "3.1075.0",
     "@aws-sdk/s3-request-presigner": "3.1075.0",
     "@date-fns/utc": "2.1.1",
@@ -45,7 +45,7 @@
     "@uppy/dashboard": "5.1.1",
     "@uppy/react": "5.2.0",
     "@uppy/xhr-upload": "5.2.0",
-    "ai": "6.0.209",
+    "ai": "6.0.210",
     "clsx": "2.1.1",
     "date-fns": "4.4.0",
     "devalue": "5.8.1",
