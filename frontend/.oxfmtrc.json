@@ -1,12 +1,6 @@
 {
   "$schema": "./node_modules/oxfmt/configuration_schema.json",
-  "ignorePatterns": [
-    ".agents/",
-    ".claude/",
-    ".output/",
-    "coverage/",
-    "src/routeTree.gen.ts"
-  ],
+  "ignorePatterns": [".output/", "coverage/", "src/routeTree.gen.ts"],
   "printWidth": 80,
   "sortPackageJson": {
     "sortScripts": true
