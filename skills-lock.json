@@ -35,7 +35,7 @@
       "source": "blader/humanizer",
       "sourceType": "github",
       "skillPath": "SKILL.md",
-      "computedHash": "0f4d9a7fbd645b9ac77e5f2f7eeac5026fdcc0c5bac9da004aa27762833780b9"
+      "computedHash": "ee5890d9751e3481da065aaf84b8057678dda3dda72911a3cdf3479ece4ce18e"
     },
     "improving-test-suites": {
       "source": "b-mendoza/agent-skills",
