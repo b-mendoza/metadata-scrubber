@@ -4,8 +4,9 @@
     "commit": "",
     "pr": ""
   },
+  "autoMemoryEnabled": false,
   "disableWorkflows": true,
-  "enableAllProjectMcpServers": true,
+  "enabledMcpjsonServers": ["context7"],
   "enabledPlugins": {
     "codex@openai-codex": true
   },
