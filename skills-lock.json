@@ -25,12 +25,6 @@
       "skillPath": "skills/executing-plans/SKILL.md",
       "computedHash": "b41c919caf1bb07fbacb0e29899ac513f9eb11cd4dd695975ad352c2c03cc4d7"
     },
-    "generate-handoff-document": {
-      "source": "b-mendoza/agent-skills",
-      "sourceType": "github",
-      "skillPath": "skills/generate-handoff-document/SKILL.md",
-      "computedHash": "6d591053098808d2fd4cd3a9373e3e3061c19646b717758872e7857d12f9eafc"
-    },
     "grill-me": {
       "source": "mattpocock/skills",
       "sourceType": "github",
