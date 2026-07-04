@@ -86,7 +86,7 @@
     "@vitest/coverage-istanbul": "4.1.9",
     "@vitest/eslint-plugin": "1.6.20",
     "babel-plugin-react-compiler": "1.0.0",
-    "daisyui": "5.6.6",
+    "daisyui": "5.6.7",
     "drizzle-kit": "1.0.0-rc.3",
     "eslint": "9.39.4",
     "eslint-config-love": "154.0.0",
