@@ -4,10 +4,9 @@ This folder records dependency, tooling, and framework issues that affect local 
 
 ## Active Issues
 
-| Issue                                                                                                                 | Area          | Status                | Workaround                                      |
-| --------------------------------------------------------------------------------------------------------------------- | ------------- | --------------------- | ----------------------------------------------- |
-| [Railway gzip buffering of streamed HTML](./railway-streaming-html-gzip-buffering.md)                                 | Deployment    | Active mitigation     | Disable response transforms and proxy buffering |
-| [`@tanstack/devtools-vite@0.7.0` production build syntax error](./tanstack-devtools-vite-0-7-0-build-syntax-error.md) | Build tooling | Active upstream issue | Pin `@tanstack/devtools-vite` to `0.6.1`        |
+| Issue                                                                                                                 | Area          | Status                | Workaround                               |
+| --------------------------------------------------------------------------------------------------------------------- | ------------- | --------------------- | ---------------------------------------- |
+| [`@tanstack/devtools-vite@0.7.0` production build syntax error](./tanstack-devtools-vite-0-7-0-build-syntax-error.md) | Build tooling | Active upstream issue | Pin `@tanstack/devtools-vite` to `0.6.1` |
 
 ## Adding Entries
 
