@@ -6,7 +6,7 @@
   },
   "autoMemoryEnabled": false,
   "disableWorkflows": true,
-  "enabledMcpjsonServers": ["context7", "vercel", "xapi"],
+  "enabledMcpjsonServers": ["cloudflare", "context7", "vercel", "xapi"],
   "enabledPlugins": {
     "codex@openai-codex": true
   },
