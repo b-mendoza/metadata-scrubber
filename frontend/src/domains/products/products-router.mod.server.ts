@@ -32,7 +32,9 @@ export const productsRouter = createTRPCRouter({
   getMessage: publicProcedure.query(async () => {
     const { env } = getApplicationBindings();
 
-    const response = await fetch(`${env.BACKEND_URL}/api/health`);
+    // Resolve against the base URL so a trailing slash on BACKEND_URL (e.g. a
+    // Vercel binding URL) can't produce a double-slashed path.
+    const response = await fetch(new URL("/api/health", env.BACKEND_URL));
 
     return getMessageResponseSchema.parse(await response.json());
   }),
