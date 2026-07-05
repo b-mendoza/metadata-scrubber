@@ -10,7 +10,8 @@
           "format": "url",
           "env": "BACKEND_URL"
         }
-      ]
+      ],
+      "framework": "tanstack-start"
     },
     "backend": {
       "root": "backend/",
