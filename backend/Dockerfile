@@ -18,7 +18,9 @@ RUN addgroup -S -g 10001 app && adduser -S -u 10001 -G app app
 
 FROM scratch AS runtime
 WORKDIR /app
-ENV PORT=8080
+# PORT is intentionally not pinned here: Vercel injects the port its router
+# forwards to, and the app defaults to 8080 (see internal/config) for local
+# docker-compose/pnpm runs.
 # pdfcpu resolves a config dir from $HOME; point it at the writable tmpfs so it
 # never tries to mkdir on the read-only rootfs.
 ENV HOME=/tmp
