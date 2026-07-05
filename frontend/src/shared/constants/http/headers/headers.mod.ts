@@ -12,6 +12,3 @@ export const COOKIE_HEADER = "Cookie";
 
 /** The Set-Cookie header for setting cookies */
 export const SET_COOKIE_HEADER = "Set-Cookie";
-
-/** The X-Accel-Buffering header for disabling proxy response buffering */
-export const X_ACCEL_BUFFERING_HEADER = "X-Accel-Buffering";
