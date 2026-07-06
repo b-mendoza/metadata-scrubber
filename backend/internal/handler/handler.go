@@ -4,6 +4,7 @@ package handler
 import (
 	"errors"
 	"io"
+	"mime"
 	"net/http"
 	"path/filepath"
 
@@ -22,8 +23,6 @@ const (
 	missingFileError = "missing or invalid \"file\" form field"
 	readFileError    = "could not read uploaded file"
 	scrubFileError   = "could not scrub file: "
-	attachmentPrefix = "attachment; filename=\""
-	attachmentSuffix = "\""
 )
 
 // Reachability gives callers a cheap way to verify the backend HTTP API is reachable.
@@ -50,9 +49,13 @@ func Scrub(w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.Header().Set(header.ContentType, mediatype.OctetStream)
-	w.Header().Set(header.ContentDisposition, attachmentPrefix+filepath.Base(filename)+attachmentSuffix)
+	w.Header().Set(header.ContentDisposition, contentDisposition(filename))
 	w.WriteHeader(http.StatusOK)
 	_, _ = w.Write(cleaned)
+}
+
+func contentDisposition(filename string) string {
+	return mime.FormatMediaType("attachment", map[string]string{"filename": filepath.Base(filename)})
 }
 
 func readUploadedFile(w http.ResponseWriter, r *http.Request) (string, []byte, bool) {
