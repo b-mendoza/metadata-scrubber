@@ -1,6 +1,10 @@
 {
   "$schema": "https://docs.renovatebot.com/renovate-schema.json",
-  "extends": [":automergeMinor", "config:best-practices", ":pinAllExceptPeerDependencies"],
+  "extends": [
+    ":automergeMinor",
+    "config:best-practices",
+    ":pinAllExceptPeerDependencies"
+  ],
   "lockFileMaintenance": {
     "enabled": true
   },
