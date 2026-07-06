@@ -5,7 +5,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"log"
+	"log/slog"
 	"net/http"
 	"os"
 	"os/signal"
@@ -22,6 +22,9 @@ import (
 const readHeaderTimeout = 5 * time.Second
 
 func main() {
+	logger := slog.New(slog.NewJSONHandler(os.Stdout, nil))
+	slog.SetDefault(logger)
+
 	// pdfcpu otherwise tries to create a config dir under $HOME on first use,
 	// which panics on a read-only/scratch rootfs. RemoveProperties needs no
 	// config, so disable it.
@@ -31,7 +34,8 @@ func main() {
 	defer stop()
 
 	if err := run(ctx); err != nil {
-		log.Fatal(err)
+		logger.Error("metadata-scrubber stopped", "error", err)
+		os.Exit(1)
 	}
 }
 
@@ -45,11 +49,12 @@ func run(ctx context.Context) error {
 	}
 
 	addr := fmt.Sprintf(":%d", cfg.Port)
-	server := newServer(addr, bindings.Bindings{Env: cfg})
+	logger := slog.Default()
+	server := newServer(addr, bindings.Bindings{Env: cfg}, logger)
 
 	serverErr := make(chan error, 1)
 	go func() {
-		log.Printf("metadata-scrubber listening on %s", addr)
+		logger.Info("metadata-scrubber listening", "addr", addr)
 		if err := server.ListenAndServe(); err != nil && !errors.Is(err, http.ErrServerClosed) {
 			serverErr <- err
 			return
@@ -73,7 +78,7 @@ func run(ctx context.Context) error {
 // newServer wires the API routes to their handlers and returns the configured
 // server. Request bindings are injected before the routes so handlers read
 // validated config from the request context rather than the environment.
-func newServer(addr string, b bindings.Bindings) *http.Server {
+func newServer(addr string, b bindings.Bindings, logger *slog.Logger) *http.Server {
 	mux := http.NewServeMux()
 
 	mux.HandleFunc("GET /api/health", handler.Reachability)
@@ -81,7 +86,7 @@ func newServer(addr string, b bindings.Bindings) *http.Server {
 
 	return &http.Server{
 		Addr:              addr,
-		Handler:           httpx.CORS(bindings.Inject(b)(mux)),
+		Handler:           httpx.RequestLogger(logger)(httpx.CORS(bindings.Inject(b)(mux))),
 		ReadHeaderTimeout: readHeaderTimeout,
 	}
 }
