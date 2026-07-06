@@ -10,6 +10,8 @@ import (
 	"github.com/pdfcpu/pdfcpu/pkg/api"
 )
 
+const pdfExtension = ".pdf"
+
 // ErrUnsupportedType is returned when a file's extension has no scrubber wired up.
 var ErrUnsupportedType = errors.New("unsupported file type")
 
@@ -24,14 +26,21 @@ func DisableConfigDir() {
 // Today only PDF is wired up; add DOCX/TXT branches here as you build out.
 func Scrub(filename string, src []byte) ([]byte, error) {
 	switch strings.ToLower(filepath.Ext(filename)) {
-	case ".pdf":
-		var out bytes.Buffer
-		// An empty property list tells pdfcpu to remove all document properties.
-		if err := api.RemoveProperties(bytes.NewReader(src), &out, nil, nil); err != nil {
-			return nil, err
-		}
-		return out.Bytes(), nil
+	case pdfExtension:
+		return scrubPDF(src)
 	default:
 		return nil, ErrUnsupportedType
 	}
+}
+
+func scrubPDF(src []byte) ([]byte, error) {
+	var out bytes.Buffer
+	var properties []string
+
+	// An empty property list tells pdfcpu to remove all document properties.
+	if err := api.RemoveProperties(bytes.NewReader(src), &out, properties, nil); err != nil {
+		return nil, err
+	}
+
+	return out.Bytes(), nil
 }
