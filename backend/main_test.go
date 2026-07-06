@@ -7,12 +7,15 @@ import (
 	"io"
 	"log/slog"
 	"net/http"
+	"net/http/httptest"
 	"testing"
 
 	"github.com/stretchr/testify/require"
 
 	"metadata-scrubber/internal/bindings"
 	"metadata-scrubber/internal/config"
+	"metadata-scrubber/internal/httpx/header"
+	"metadata-scrubber/internal/httpx/mediatype"
 )
 
 func TestNewServerConfiguresAddressAndHandler(t *testing.T) {
@@ -21,15 +24,17 @@ func TestNewServerConfiguresAddressAndHandler(t *testing.T) {
 	server := newServer(":0", bindings.Bindings{Env: config.Config{Port: 8080}}, discardLogger())
 
 	require.Equal(t, ":0", server.Addr)
-	require.NotNil(t, server.Handler)
+	require.Equal(t, readHeaderTimeout, server.ReadHeaderTimeout)
 
-	recorder := &statusRecorder{}
-	request, err := http.NewRequest(http.MethodGet, "/api/health", nil)
-	require.NoError(t, err)
+	recorder := httptest.NewRecorder()
+	request := httptest.NewRequest(http.MethodGet, "/api/health", nil)
 
 	server.Handler.ServeHTTP(recorder, request)
 
-	require.Equal(t, http.StatusOK, recorder.status)
+	require.Equal(t, http.StatusOK, recorder.Code)
+	require.Equal(t, mediatype.JSON, recorder.Header().Get(header.ContentType))
+	require.Equal(t, "*", recorder.Header().Get(header.AccessControlAllowOrigin))
+	require.JSONEq(t, `{"status":"reachable"}`, recorder.Body.String())
 }
 
 func TestNewServerLogsRequests(t *testing.T) {
@@ -42,40 +47,46 @@ func TestNewServerLogsRequests(t *testing.T) {
 		slog.New(slog.NewJSONHandler(&logs, nil)),
 	)
 
-	recorder := &statusRecorder{}
-	request, err := http.NewRequest(http.MethodGet, "/api/health", nil)
-	require.NoError(t, err)
+	recorder := httptest.NewRecorder()
+	request := httptest.NewRequest(http.MethodGet, "/api/health", nil)
 
 	server.Handler.ServeHTTP(recorder, request)
 
 	records := readServerJSONLogRecords(t, logs.Bytes())
 	require.Len(t, records, 2)
-	require.Equal(t, "request started", records[0]["msg"])
 	require.Equal(t, "request completed", records[1]["msg"])
+	require.Equal(t, http.MethodGet, records[1]["method"])
+	require.Equal(t, "/api/health", records[1]["path"])
 	require.Equal(t, float64(http.StatusOK), records[1]["status"])
 }
 
-type statusRecorder struct {
-	header http.Header
-	status int
+func TestNewServerHandlesCORSPreflight(t *testing.T) {
+	t.Parallel()
+
+	server := newServer(":0", bindings.Bindings{Env: config.Config{Port: 8080}}, discardLogger())
+	recorder := httptest.NewRecorder()
+	request := httptest.NewRequest(http.MethodOptions, "/api/scrub", nil)
+
+	server.Handler.ServeHTTP(recorder, request)
+
+	require.Equal(t, http.StatusNoContent, recorder.Code)
+	require.Equal(t, "*", recorder.Header().Get(header.AccessControlAllowOrigin))
+	require.Equal(t, "GET, POST, OPTIONS", recorder.Header().Get(header.AccessControlAllowMethods))
+	require.Equal(t, header.ContentType, recorder.Header().Get(header.AccessControlAllowHeaders))
 }
 
-func (r *statusRecorder) Header() http.Header {
-	if r.header == nil {
-		r.header = make(http.Header)
-	}
-	return r.header
-}
+func TestNewServerRoutesScrubUploads(t *testing.T) {
+	t.Parallel()
 
-func (r *statusRecorder) Write(bytes []byte) (int, error) {
-	if r.status == 0 {
-		r.status = http.StatusOK
-	}
-	return len(bytes), nil
-}
+	server := newServer(":0", bindings.Bindings{Env: config.Config{Port: 8080}}, discardLogger())
+	recorder := httptest.NewRecorder()
+	request := httptest.NewRequest(http.MethodPost, "/api/scrub", nil)
 
-func (r *statusRecorder) WriteHeader(statusCode int) {
-	r.status = statusCode
+	server.Handler.ServeHTTP(recorder, request)
+
+	require.Equal(t, http.StatusBadRequest, recorder.Code)
+	require.Equal(t, mediatype.JSON, recorder.Header().Get(header.ContentType))
+	require.JSONEq(t, `{"error":"missing or invalid \"file\" form field"}`, recorder.Body.String())
 }
 
 func discardLogger() *slog.Logger {
