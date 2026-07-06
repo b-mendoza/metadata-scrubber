@@ -35,16 +35,13 @@ func RequestLogger(logger *slog.Logger) func(http.Handler) http.Handler {
 						recorder.status = http.StatusInternalServerError
 					}
 
+					args := requestCompletionLogArgs(r, path, recorder, started)
+					args = append(args, "panicked", true, "panic", fmt.Sprint(recovered))
+
 					logger.ErrorContext(
 						r.Context(),
 						"request completed",
-						"method", r.Method,
-						"path", path,
-						"status", recorder.statusCode(),
-						"bytes", recorder.bytes,
-						"duration_ms", time.Since(started).Milliseconds(),
-						"panicked", true,
-						"panic", fmt.Sprint(recovered),
+						args...,
 					)
 					panic(recovered)
 				}
@@ -52,16 +49,27 @@ func RequestLogger(logger *slog.Logger) func(http.Handler) http.Handler {
 				logger.InfoContext(
 					r.Context(),
 					"request completed",
-					"method", r.Method,
-					"path", path,
-					"status", recorder.statusCode(),
-					"bytes", recorder.bytes,
-					"duration_ms", time.Since(started).Milliseconds(),
+					requestCompletionLogArgs(r, path, recorder, started)...,
 				)
 			}()
 
 			next.ServeHTTP(recorder, r)
 		})
+	}
+}
+
+func requestCompletionLogArgs(
+	r *http.Request,
+	path string,
+	recorder *loggingResponseWriter,
+	started time.Time,
+) []any {
+	return []any{
+		"method", r.Method,
+		"path", path,
+		"status", recorder.statusCode(),
+		"bytes", recorder.bytes,
+		"duration_ms", time.Since(started).Milliseconds(),
 	}
 }
 
