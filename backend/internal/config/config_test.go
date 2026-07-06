@@ -23,13 +23,7 @@ func TestLoadPortValues(t *testing.T) {
 		{name: "accepts maximum port", port: "65535", want: 65535},
 	} {
 		t.Run(tt.name, func(t *testing.T) {
-			if tt.unset {
-				unsetenv(t, "PORT")
-			} else {
-				t.Setenv("PORT", tt.port)
-			}
-
-			cfg, err := config.Load()
+			cfg, err := loadConfig(t, tt.port, tt.unset)
 
 			require.NoError(t, err)
 			require.Equal(t, tt.want, cfg.Port)
@@ -50,14 +44,24 @@ func TestLoadRejectsInvalidPort(t *testing.T) {
 		{name: "whitespace", port: "  8080  ", message: "reading environment"},
 	} {
 		t.Run(tt.name, func(t *testing.T) {
-			t.Setenv("PORT", tt.port)
-
-			_, err := config.Load()
+			_, err := loadConfig(t, tt.port, false)
 
 			require.Error(t, err)
 			require.ErrorContains(t, err, tt.message)
 		})
 	}
+}
+
+func loadConfig(t *testing.T, port string, unset bool) (config.Config, error) {
+	t.Helper()
+
+	if unset {
+		unsetenv(t, "PORT")
+	} else {
+		t.Setenv("PORT", port)
+	}
+
+	return config.Load()
 }
 
 func unsetenv(t *testing.T, key string) {
