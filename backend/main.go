@@ -19,7 +19,10 @@ import (
 	"metadata-scrubber/internal/scrub"
 )
 
-const readHeaderTimeout = 5 * time.Second
+const (
+	readHeaderTimeout       = 5 * time.Second
+	gracefulShutdownTimeout = 10 * time.Second
+)
 
 func main() {
 	logger := slog.New(slog.NewJSONHandler(os.Stdout, nil))
@@ -66,7 +69,7 @@ func run(ctx context.Context) error {
 	case err := <-serverErr:
 		return err
 	case <-ctx.Done():
-		shutdownCtx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+		shutdownCtx, cancel := context.WithTimeout(context.Background(), gracefulShutdownTimeout)
 		defer cancel()
 		if err := server.Shutdown(shutdownCtx); err != nil {
 			return err
