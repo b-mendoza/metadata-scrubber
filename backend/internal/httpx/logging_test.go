@@ -19,28 +19,35 @@ func TestRequestLoggerLogsRequestLifecycle(t *testing.T) {
 
 	var logs bytes.Buffer
 	logger := slog.New(slog.NewJSONHandler(&logs, nil))
+	responseBody := "created-response-secret"
 
 	handler := httpx.RequestLogger(logger)(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
 		w.WriteHeader(http.StatusCreated)
-		_, err := w.Write([]byte("created"))
+		_, err := w.Write([]byte(responseBody))
 		require.NoError(t, err)
 	}))
 
-	handler.ServeHTTP(httptest.NewRecorder(), httptest.NewRequest(http.MethodPost, "/api/scrub?token=secret", nil))
+	request := httptest.NewRequest(http.MethodPost, "/api/scrub?token=query-secret", bytes.NewBufferString("request-body-secret"))
+	handler.ServeHTTP(httptest.NewRecorder(), request)
 
 	records := readJSONLogRecords(t, logs.Bytes())
 	require.Len(t, records, 2)
+	for _, record := range records {
+		require.Equal(t, http.MethodPost, record["method"])
+		require.Equal(t, "/api/scrub", record["path"])
+
+		encoded, err := json.Marshal(record)
+		require.NoError(t, err)
+		require.NotContains(t, string(encoded), "query-secret")
+		require.NotContains(t, string(encoded), "request-body-secret")
+		require.NotContains(t, string(encoded), responseBody)
+	}
 
 	require.Equal(t, "request started", records[0]["msg"])
-	require.Equal(t, http.MethodPost, records[0]["method"])
-	require.Equal(t, "/api/scrub", records[0]["path"])
-	require.NotContains(t, records[0], "query")
 
 	require.Equal(t, "request completed", records[1]["msg"])
-	require.Equal(t, http.MethodPost, records[1]["method"])
-	require.Equal(t, "/api/scrub", records[1]["path"])
 	require.Equal(t, float64(http.StatusCreated), records[1]["status"])
-	require.Equal(t, float64(len("created")), records[1]["bytes"])
+	require.Equal(t, float64(len(responseBody)), records[1]["bytes"])
 	require.Contains(t, records[1], "duration_ms")
 }
 
