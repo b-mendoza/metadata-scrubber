@@ -46,8 +46,9 @@ func TestInjectPreservesRequestContextValues(t *testing.T) {
 		called = true
 		require.Equal(t, wantValue, r.Context().Value(key))
 
-		_, ok := bindings.FromContext(r.Context())
+		gotBindings, ok := bindings.FromContext(r.Context())
 		require.True(t, ok)
+		require.Equal(t, wantBindings, gotBindings)
 	}))
 
 	handler.ServeHTTP(httptest.NewRecorder(), request)
