@@ -17,20 +17,18 @@ import (
 func TestRequestLoggerLogsRequestLifecycle(t *testing.T) {
 	t.Parallel()
 
-	var logs bytes.Buffer
-	logger := slog.New(slog.NewJSONHandler(&logs, nil))
 	responseBody := "created-response-secret"
 
-	handler := httpx.RequestLogger(logger)(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+	handler, readRecords := newLoggedHandler(t, func(w http.ResponseWriter, _ *http.Request) {
 		w.WriteHeader(http.StatusCreated)
 		_, err := w.Write([]byte(responseBody))
 		require.NoError(t, err)
-	}))
+	})
 
 	request := httptest.NewRequest(http.MethodPost, "/api/scrub?token=query-secret", bytes.NewBufferString("request-body-secret"))
 	handler.ServeHTTP(httptest.NewRecorder(), request)
 
-	records := readJSONLogRecords(t, logs.Bytes())
+	records := readRecords()
 	require.Len(t, records, 2)
 	for _, record := range records {
 		require.Equal(t, http.MethodPost, record["method"])
@@ -54,17 +52,14 @@ func TestRequestLoggerLogsRequestLifecycle(t *testing.T) {
 func TestRequestLoggerDefaultsStatusToOKWhenHandlerOnlyWritesBody(t *testing.T) {
 	t.Parallel()
 
-	var logs bytes.Buffer
-	logger := slog.New(slog.NewJSONHandler(&logs, nil))
-
-	handler := httpx.RequestLogger(logger)(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+	handler, readRecords := newLoggedHandler(t, func(w http.ResponseWriter, _ *http.Request) {
 		_, err := w.Write([]byte("ok"))
 		require.NoError(t, err)
-	}))
+	})
 
 	handler.ServeHTTP(httptest.NewRecorder(), httptest.NewRequest(http.MethodGet, "/api/health", nil))
 
-	records := readJSONLogRecords(t, logs.Bytes())
+	records := readRecords()
 	require.Len(t, records, 2)
 	require.Equal(t, float64(http.StatusOK), records[1]["status"])
 	require.Equal(t, float64(len("ok")), records[1]["bytes"])
@@ -73,23 +68,34 @@ func TestRequestLoggerDefaultsStatusToOKWhenHandlerOnlyWritesBody(t *testing.T) 
 func TestRequestLoggerLogsPanickedRequests(t *testing.T) {
 	t.Parallel()
 
-	var logs bytes.Buffer
-	logger := slog.New(slog.NewJSONHandler(&logs, nil))
-
-	handler := httpx.RequestLogger(logger)(http.HandlerFunc(func(_ http.ResponseWriter, _ *http.Request) {
+	handler, readRecords := newLoggedHandler(t, func(_ http.ResponseWriter, _ *http.Request) {
 		panic("boom")
-	}))
+	})
 
 	require.PanicsWithValue(t, "boom", func() {
 		handler.ServeHTTP(httptest.NewRecorder(), httptest.NewRequest(http.MethodGet, "/api/health", nil))
 	})
 
-	records := readJSONLogRecords(t, logs.Bytes())
+	records := readRecords()
 	require.Len(t, records, 2)
 	require.Equal(t, "request completed", records[1]["msg"])
 	require.Equal(t, float64(http.StatusInternalServerError), records[1]["status"])
 	require.Equal(t, true, records[1]["panicked"])
 	require.Equal(t, "boom", records[1]["panic"])
+}
+
+func newLoggedHandler(t *testing.T, next http.HandlerFunc) (http.Handler, func() []map[string]any) {
+	t.Helper()
+
+	var logs bytes.Buffer
+	logger := slog.New(slog.NewJSONHandler(&logs, nil))
+	handler := httpx.RequestLogger(logger)(next)
+
+	return handler, func() []map[string]any {
+		t.Helper()
+
+		return readJSONLogRecords(t, logs.Bytes())
+	}
 }
 
 func readJSONLogRecords(t *testing.T, data []byte) []map[string]any {
