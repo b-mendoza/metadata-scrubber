@@ -19,13 +19,14 @@ func RequestLogger(logger *slog.Logger) func(http.Handler) http.Handler {
 			started := time.Now()
 			path := r.URL.Path
 
-			logger.InfoContext(
+			logger.LogAttrs(
 				r.Context(),
+				slog.LevelInfo,
 				"request started",
-				"method", r.Method,
-				"path", path,
-				"remote_addr", r.RemoteAddr,
-				"user_agent", r.UserAgent(),
+				slog.String("method", r.Method),
+				slog.String("path", path),
+				slog.String("remote_addr", r.RemoteAddr),
+				slog.String("user_agent", r.UserAgent()),
 			)
 
 			recorder := &loggingResponseWriter{ResponseWriter: w}
@@ -35,21 +36,27 @@ func RequestLogger(logger *slog.Logger) func(http.Handler) http.Handler {
 						recorder.status = http.StatusInternalServerError
 					}
 
-					args := requestCompletionLogArgs(r, path, recorder, started)
-					args = append(args, "panicked", true, "panic", fmt.Sprint(recovered))
+					attrs := requestCompletionLogAttrs(r, path, recorder, started)
+					attrs = append(
+						attrs,
+						slog.Bool("panicked", true),
+						slog.String("panic", fmt.Sprint(recovered)),
+					)
 
-					logger.ErrorContext(
+					logger.LogAttrs(
 						r.Context(),
+						slog.LevelError,
 						"request completed",
-						args...,
+						attrs...,
 					)
 					panic(recovered)
 				}
 
-				logger.InfoContext(
+				logger.LogAttrs(
 					r.Context(),
+					slog.LevelInfo,
 					"request completed",
-					requestCompletionLogArgs(r, path, recorder, started)...,
+					requestCompletionLogAttrs(r, path, recorder, started)...,
 				)
 			}()
 
@@ -58,18 +65,18 @@ func RequestLogger(logger *slog.Logger) func(http.Handler) http.Handler {
 	}
 }
 
-func requestCompletionLogArgs(
+func requestCompletionLogAttrs(
 	r *http.Request,
 	path string,
 	recorder *loggingResponseWriter,
 	started time.Time,
-) []any {
-	return []any{
-		"method", r.Method,
-		"path", path,
-		"status", recorder.statusCode(),
-		"bytes", recorder.bytes,
-		"duration_ms", time.Since(started).Milliseconds(),
+) []slog.Attr {
+	return []slog.Attr{
+		slog.String("method", r.Method),
+		slog.String("path", path),
+		slog.Int("status", recorder.statusCode()),
+		slog.Int("bytes", recorder.bytes),
+		slog.Int64("duration_ms", time.Since(started).Milliseconds()),
 	}
 }
 
