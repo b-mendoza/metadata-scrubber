@@ -50,10 +50,10 @@ func TestNewServerLogsRequests(t *testing.T) {
 
 	records := readServerJSONLogRecords(t, logs.Bytes())
 	require.Len(t, records, 2)
-	require.Equal(t, "request completed", records[1]["msg"])
-	require.Equal(t, http.MethodGet, records[1]["method"])
-	require.Equal(t, "/api/health", records[1]["path"])
-	require.Equal(t, float64(http.StatusOK), records[1]["status"])
+	require.Equal(t, "request completed", records[1].Message)
+	require.Equal(t, http.MethodGet, records[1].Method)
+	require.Equal(t, "/api/health", records[1].Path)
+	require.Equal(t, http.StatusOK, records[1].Status)
 }
 
 func TestNewServerHandlesCORSPreflight(t *testing.T) {
@@ -93,13 +93,20 @@ func newTestServer(logger *slog.Logger) *http.Server {
 	return newServer(":0", bindings.Bindings{Env: config.Config{Port: 8080}}, logger)
 }
 
-func readServerJSONLogRecords(t *testing.T, data []byte) []map[string]any {
+type serverLogRecord struct {
+	Message string `json:"msg"`
+	Method  string `json:"method"`
+	Path    string `json:"path"`
+	Status  int    `json:"status"`
+}
+
+func readServerJSONLogRecords(t *testing.T, data []byte) []serverLogRecord {
 	t.Helper()
 
-	var records []map[string]any
+	var records []serverLogRecord
 	scanner := bufio.NewScanner(bytes.NewReader(data))
 	for scanner.Scan() {
-		var record map[string]any
+		var record serverLogRecord
 		require.NoError(t, json.Unmarshal(scanner.Bytes(), &record))
 		records = append(records, record)
 	}
