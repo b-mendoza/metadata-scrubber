@@ -51,13 +51,12 @@ func run(ctx context.Context) error {
 		return err
 	}
 
-	addr := fmt.Sprintf(":%d", cfg.Port)
 	logger := slog.Default()
-	server := newServer(addr, bindings.Bindings{Env: cfg}, logger)
+	server := newServer(cfg, logger)
 
 	serverErr := make(chan error, 1)
 	go func() {
-		logger.Info("metadata-scrubber listening", "addr", addr)
+		logger.Info("metadata-scrubber listening", "addr", server.Addr)
 		if err := server.ListenAndServe(); err != nil && !errors.Is(err, http.ErrServerClosed) {
 			serverErr <- err
 			return
@@ -81,15 +80,15 @@ func run(ctx context.Context) error {
 // newServer wires the API routes to their handlers and returns the configured
 // server. Request bindings are injected before the routes so handlers read
 // validated config from the request context rather than the environment.
-func newServer(addr string, b bindings.Bindings, logger *slog.Logger) *http.Server {
+func newServer(cfg config.Config, logger *slog.Logger) *http.Server {
 	mux := http.NewServeMux()
 
 	mux.HandleFunc("GET /api/health", handler.Reachability)
 	mux.HandleFunc("POST /api/scrub", handler.Scrub)
 
 	return &http.Server{
-		Addr:              addr,
-		Handler:           httpx.RequestLogger(logger)(httpx.CORS(bindings.Inject(b)(mux))),
+		Addr:              fmt.Sprintf(":%d", cfg.Port),
+		Handler:           httpx.RequestLogger(logger)(httpx.CORS(bindings.Inject(bindings.Bindings{Env: cfg})(mux))),
 		ReadHeaderTimeout: readHeaderTimeout,
 	}
 }

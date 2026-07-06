@@ -12,7 +12,6 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	"metadata-scrubber/internal/bindings"
 	"metadata-scrubber/internal/config"
 	"metadata-scrubber/internal/httpx/header"
 	"metadata-scrubber/internal/httpx/mediatype"
@@ -90,7 +89,9 @@ func discardLogger() *slog.Logger {
 }
 
 func newTestServer(logger *slog.Logger) *http.Server {
-	return newServer(":0", bindings.Bindings{Env: config.Config{Port: 8080}}, logger)
+	cfg := config.Config{Port: 0}
+
+	return newServer(cfg, logger)
 }
 
 type serverLogRecord struct {
