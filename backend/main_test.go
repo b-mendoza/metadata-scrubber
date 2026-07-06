@@ -21,7 +21,7 @@ import (
 func TestNewServerConfiguresAddressAndHandler(t *testing.T) {
 	t.Parallel()
 
-	server := newServer(":0", bindings.Bindings{Env: config.Config{Port: 8080}}, discardLogger())
+	server := newTestServer(discardLogger())
 
 	require.Equal(t, ":0", server.Addr)
 	require.Equal(t, readHeaderTimeout, server.ReadHeaderTimeout)
@@ -41,11 +41,7 @@ func TestNewServerLogsRequests(t *testing.T) {
 	t.Parallel()
 
 	var logs bytes.Buffer
-	server := newServer(
-		":0",
-		bindings.Bindings{Env: config.Config{Port: 8080}},
-		slog.New(slog.NewJSONHandler(&logs, nil)),
-	)
+	server := newTestServer(slog.New(slog.NewJSONHandler(&logs, nil)))
 
 	recorder := httptest.NewRecorder()
 	request := httptest.NewRequest(http.MethodGet, "/api/health", nil)
@@ -63,7 +59,7 @@ func TestNewServerLogsRequests(t *testing.T) {
 func TestNewServerHandlesCORSPreflight(t *testing.T) {
 	t.Parallel()
 
-	server := newServer(":0", bindings.Bindings{Env: config.Config{Port: 8080}}, discardLogger())
+	server := newTestServer(discardLogger())
 	recorder := httptest.NewRecorder()
 	request := httptest.NewRequest(http.MethodOptions, "/api/scrub", nil)
 
@@ -78,7 +74,7 @@ func TestNewServerHandlesCORSPreflight(t *testing.T) {
 func TestNewServerRoutesScrubUploads(t *testing.T) {
 	t.Parallel()
 
-	server := newServer(":0", bindings.Bindings{Env: config.Config{Port: 8080}}, discardLogger())
+	server := newTestServer(discardLogger())
 	recorder := httptest.NewRecorder()
 	request := httptest.NewRequest(http.MethodPost, "/api/scrub", nil)
 
@@ -91,6 +87,10 @@ func TestNewServerRoutesScrubUploads(t *testing.T) {
 
 func discardLogger() *slog.Logger {
 	return slog.New(slog.NewTextHandler(io.Discard, nil))
+}
+
+func newTestServer(logger *slog.Logger) *http.Server {
+	return newServer(":0", bindings.Bindings{Env: config.Config{Port: 8080}}, logger)
 }
 
 func readServerJSONLogRecords(t *testing.T, data []byte) []map[string]any {
