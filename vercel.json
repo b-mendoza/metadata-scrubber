@@ -2,21 +2,21 @@
   "$schema": "https://openapi.vercel.sh/vercel.json",
   "services": {
     "frontend": {
-      "root": "frontend/",
       "bindings": [
         {
-          "type": "service",
-          "service": "backend",
+          "env": "BACKEND_URL",
           "format": "url",
-          "env": "BACKEND_URL"
+          "service": "backend",
+          "type": "service"
         }
       ],
-      "framework": "tanstack-start"
+      "framework": "tanstack-start",
+      "root": "frontend/"
     },
     "backend": {
+      "entrypoint": "Dockerfile",
       "root": "backend/",
-      "runtime": "container",
-      "entrypoint": "Dockerfile"
+      "runtime": "container"
     }
   },
   "rewrites": [
