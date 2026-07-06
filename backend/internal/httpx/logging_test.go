@@ -31,22 +31,26 @@ func TestRequestLoggerLogsRequestLifecycle(t *testing.T) {
 	records := readRecords()
 	require.Len(t, records, 2)
 	for _, record := range records {
-		require.Equal(t, http.MethodPost, record["method"])
-		require.Equal(t, "/api/scrub", record["path"])
+		require.Equal(t, http.MethodPost, record.Method)
+		require.Equal(t, "/api/scrub", record.Path)
 
-		encoded, err := json.Marshal(record)
-		require.NoError(t, err)
-		require.NotContains(t, string(encoded), "query-secret")
-		require.NotContains(t, string(encoded), "request-body-secret")
-		require.NotContains(t, string(encoded), responseBody)
+		require.NotContains(t, record.rawJSON, "query-secret")
+		require.NotContains(t, record.rawJSON, "request-body-secret")
+		require.NotContains(t, record.rawJSON, responseBody)
 	}
 
-	require.Equal(t, "request started", records[0]["msg"])
+	started := records[0]
+	completed := records[1]
 
-	require.Equal(t, "request completed", records[1]["msg"])
-	require.Equal(t, float64(http.StatusCreated), records[1]["status"])
-	require.Equal(t, float64(len(responseBody)), records[1]["bytes"])
-	require.Contains(t, records[1], "duration_ms")
+	require.Equal(t, "request started", started.Msg)
+
+	require.Equal(t, "request completed", completed.Msg)
+	require.NotNil(t, completed.Status)
+	require.Equal(t, http.StatusCreated, *completed.Status)
+	require.NotNil(t, completed.Bytes)
+	require.Equal(t, len(responseBody), *completed.Bytes)
+	require.NotNil(t, completed.DurationMilliseconds)
+	require.GreaterOrEqual(t, *completed.DurationMilliseconds, int64(0))
 }
 
 func TestRequestLoggerDefaultsStatusToOKWhenHandlerOnlyWritesBody(t *testing.T) {
@@ -61,8 +65,11 @@ func TestRequestLoggerDefaultsStatusToOKWhenHandlerOnlyWritesBody(t *testing.T) 
 
 	records := readRecords()
 	require.Len(t, records, 2)
-	require.Equal(t, float64(http.StatusOK), records[1]["status"])
-	require.Equal(t, float64(len("ok")), records[1]["bytes"])
+	completed := records[1]
+	require.NotNil(t, completed.Status)
+	require.Equal(t, http.StatusOK, *completed.Status)
+	require.NotNil(t, completed.Bytes)
+	require.Equal(t, len("ok"), *completed.Bytes)
 }
 
 func TestRequestLoggerLogsPanickedRequests(t *testing.T) {
@@ -78,34 +85,50 @@ func TestRequestLoggerLogsPanickedRequests(t *testing.T) {
 
 	records := readRecords()
 	require.Len(t, records, 2)
-	require.Equal(t, "request completed", records[1]["msg"])
-	require.Equal(t, float64(http.StatusInternalServerError), records[1]["status"])
-	require.Equal(t, true, records[1]["panicked"])
-	require.Equal(t, "boom", records[1]["panic"])
+	completed := records[1]
+	require.Equal(t, "request completed", completed.Msg)
+	require.NotNil(t, completed.Status)
+	require.Equal(t, http.StatusInternalServerError, *completed.Status)
+	require.True(t, completed.Panicked)
+	require.Equal(t, "boom", completed.Panic)
 }
 
-func newLoggedHandler(t *testing.T, next http.HandlerFunc) (http.Handler, func() []map[string]any) {
+type logRecord struct {
+	rawJSON string
+
+	Msg                  string `json:"msg"`
+	Method               string `json:"method"`
+	Path                 string `json:"path"`
+	Status               *int   `json:"status"`
+	Bytes                *int   `json:"bytes"`
+	DurationMilliseconds *int64 `json:"duration_ms"`
+	Panicked             bool   `json:"panicked"`
+	Panic                string `json:"panic"`
+}
+
+func newLoggedHandler(t *testing.T, next http.HandlerFunc) (http.Handler, func() []logRecord) {
 	t.Helper()
 
 	var logs bytes.Buffer
 	logger := slog.New(slog.NewJSONHandler(&logs, nil))
 	handler := httpx.RequestLogger(logger)(next)
 
-	return handler, func() []map[string]any {
+	return handler, func() []logRecord {
 		t.Helper()
 
 		return readJSONLogRecords(t, logs.Bytes())
 	}
 }
 
-func readJSONLogRecords(t *testing.T, data []byte) []map[string]any {
+func readJSONLogRecords(t *testing.T, data []byte) []logRecord {
 	t.Helper()
 
-	var records []map[string]any
+	var records []logRecord
 	scanner := bufio.NewScanner(bytes.NewReader(data))
 	for scanner.Scan() {
-		var record map[string]any
-		require.NoError(t, json.Unmarshal(scanner.Bytes(), &record))
+		rawJSON := scanner.Text()
+		record := logRecord{rawJSON: rawJSON}
+		require.NoError(t, json.Unmarshal([]byte(rawJSON), &record))
 		records = append(records, record)
 	}
 	require.NoError(t, scanner.Err())
