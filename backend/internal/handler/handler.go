@@ -13,45 +13,64 @@ import (
 	"metadata-scrubber/internal/scrub"
 )
 
-// maxUploadSize caps the size of an uploaded file (25 MB) to keep memory usage bounded.
-const maxUploadSize = 25 << 20
+const (
+	// maxUploadSize caps the size of an uploaded file (25 MB) to keep memory usage bounded.
+	maxUploadSize    = 25 << 20
+	statusKey        = "status"
+	reachableStatus  = "reachable"
+	fileFormField    = "file"
+	missingFileError = "missing or invalid \"file\" form field"
+	readFileError    = "could not read uploaded file"
+	scrubFileError   = "could not scrub file: "
+	attachmentPrefix = "attachment; filename=\""
+	attachmentSuffix = "\""
+)
 
 // Reachability gives callers a cheap way to verify the backend HTTP API is reachable.
 func Reachability(w http.ResponseWriter, _ *http.Request) {
-	httpx.WriteJSON(w, http.StatusOK, map[string]string{"status": "reachable"})
+	httpx.WriteJSON(w, http.StatusOK, map[string]string{statusKey: reachableStatus})
 }
 
 // Scrub accepts a multipart upload under the form field "file", removes
 // its metadata, and streams the cleaned file back to the client.
 func Scrub(w http.ResponseWriter, r *http.Request) {
+	filename, src, ok := readUploadedFile(w, r)
+	if !ok {
+		return
+	}
+
+	cleaned, err := scrub.Scrub(filename, src)
+	if err != nil {
+		if errors.Is(err, scrub.ErrUnsupportedType) {
+			httpx.WriteError(w, http.StatusUnsupportedMediaType, err.Error())
+			return
+		}
+		httpx.WriteError(w, http.StatusInternalServerError, scrubFileError+err.Error())
+		return
+	}
+
+	w.Header().Set(header.ContentType, mediatype.OctetStream)
+	w.Header().Set(header.ContentDisposition, attachmentPrefix+filepath.Base(filename)+attachmentSuffix)
+	w.WriteHeader(http.StatusOK)
+	_, _ = w.Write(cleaned)
+}
+
+func readUploadedFile(w http.ResponseWriter, r *http.Request) (string, []byte, bool) {
 	r.Body = http.MaxBytesReader(w, r.Body, maxUploadSize)
 
-	file, fileHeader, err := r.FormFile("file")
+	file, fileHeader, err := r.FormFile(fileFormField)
 	if err != nil {
-		httpx.WriteError(w, http.StatusBadRequest, "missing or invalid \"file\" form field")
-		return
+		httpx.WriteError(w, http.StatusBadRequest, missingFileError)
+		return "", nil, false
 	}
 	defer func() { _ = file.Close() }()
 
 	// pdfcpu needs an io.ReadSeeker, so buffer the upload into memory.
 	src, err := io.ReadAll(file)
 	if err != nil {
-		httpx.WriteError(w, http.StatusInternalServerError, "could not read uploaded file")
-		return
+		httpx.WriteError(w, http.StatusInternalServerError, readFileError)
+		return "", nil, false
 	}
 
-	cleaned, err := scrub.Scrub(fileHeader.Filename, src)
-	if err != nil {
-		if errors.Is(err, scrub.ErrUnsupportedType) {
-			httpx.WriteError(w, http.StatusUnsupportedMediaType, err.Error())
-			return
-		}
-		httpx.WriteError(w, http.StatusInternalServerError, "could not scrub file: "+err.Error())
-		return
-	}
-
-	w.Header().Set(header.ContentType, mediatype.OctetStream)
-	w.Header().Set(header.ContentDisposition, "attachment; filename=\""+filepath.Base(fileHeader.Filename)+"\"")
-	w.WriteHeader(http.StatusOK)
-	_, _ = w.Write(cleaned)
+	return fileHeader.Filename, src, true
 }
