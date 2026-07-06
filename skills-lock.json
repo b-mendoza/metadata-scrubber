@@ -114,6 +114,12 @@
       "sourceType": "github",
       "skillPath": "skills/writing-plans/SKILL.md",
       "computedHash": "b73b59d43c34c3fc225bfae419c458bb216af80df25fc0c545dfa7fd2a161722"
+    },
+    "planning-codebase-restructuring": {
+      "source": "b-mendoza/agent-skills",
+      "sourceType": "github",
+      "skillPath": "skills/planning-codebase-restructuring/SKILL.md",
+      "computedHash": "779229ce32e2bc43d4c95428e3e579e871ea1384f449c3eab4bfd8c898cd4bde"
     }
   }
 }
