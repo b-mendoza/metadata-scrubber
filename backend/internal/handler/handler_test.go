@@ -131,3 +131,19 @@ func newMultipartFileRequest(t *testing.T, filename string, body []byte) *http.R
 
 	return request
 }
+
+func assertResponseStatus(t *testing.T, recorder *httptest.ResponseRecorder, want int) {
+	t.Helper()
+
+	if recorder.Code != want {
+		t.Fatalf("Scrub status = %d, want %d; body: %s", recorder.Code, want, recorder.Body.String())
+	}
+}
+
+func assertContentType(t *testing.T, recorder *httptest.ResponseRecorder, want string) {
+	t.Helper()
+
+	if got := recorder.Header().Get(header.ContentType); got != want {
+		t.Fatalf("%s = %q, want %q", header.ContentType, got, want)
+	}
+}
