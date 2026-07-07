@@ -12,9 +12,9 @@ import (
 	"github.com/go-playground/validator/v10"
 )
 
-// validate is shared across calls; the validator caches per-struct reflection
+// configValidator is shared across calls; the validator caches per-struct reflection
 // metadata, so it is created once rather than per Load.
-var validate = validator.New(validator.WithRequiredStructEnabled())
+var configValidator = validator.New(validator.WithRequiredStructEnabled())
 
 // Config is the validated environment configuration. The `env` tags read and
 // coerce values (with defaults) the way zod parses input; the `validate` tags
@@ -35,7 +35,7 @@ func Load() (Config, error) {
 		return Config{}, fmt.Errorf("reading environment: %w", err)
 	}
 
-	if err := validate.Struct(cfg); err != nil {
+	if err := configValidator.Struct(cfg); err != nil {
 		return Config{}, fmt.Errorf("invalid configuration: %w", err)
 	}
 
