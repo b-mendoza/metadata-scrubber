@@ -115,7 +115,7 @@ func readServerCompletionLogRecord(t *testing.T, data []byte) serverLogRecord {
 		}
 	}
 	require.NoError(t, scanner.Err())
-	require.Fail(t, "request completion log record not found")
+	require.FailNow(t, "request completion log record not found")
 
-	return serverLogRecord{}
+	panic("unreachable")
 }
