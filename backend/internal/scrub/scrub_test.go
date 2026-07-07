@@ -2,6 +2,7 @@ package scrub
 
 import (
 	"errors"
+	"os"
 	"testing"
 )
 
@@ -36,4 +37,27 @@ func TestScrubRejectsUnsupportedTypeWithSentinel(t *testing.T) {
 			}
 		})
 	}
+}
+
+func TestScrubDispatchesPDFExtensionCaseInsensitively(t *testing.T) {
+	DisableConfigDir()
+
+	got, err := Scrub("REPORT.PDF", readPDF(t))
+	if err != nil {
+		t.Fatalf("Scrub uppercase PDF: %v", err)
+	}
+	if len(got) == 0 {
+		t.Fatal("Scrub uppercase PDF output is empty")
+	}
+}
+
+func readPDF(t *testing.T) []byte {
+	t.Helper()
+
+	pdf, err := os.ReadFile("../handler/testdata/with-property.pdf")
+	if err != nil {
+		t.Fatalf("read PDF fixture: %v", err)
+	}
+
+	return pdf
 }
