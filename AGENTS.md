@@ -18,3 +18,14 @@ This is doubly true when the next reader is an LLM. Agents reason over the text 
 - **Say what an error came from.** Prefer `removePropertiesErr` over a bare `err` when it aids clarity, so the reader knows which operation failed.
 - **Spell out function arguments too.** An argument named `b` should be `bindings`. The parameter list is part of the function's documentation.
 - **Avoid single letters and abbreviations** unless they are idiomatic (see below). Length is not the enemy; ambiguity is.
+
+## Idiomatic names are fine, but be consistent
+
+Some short names are idiomatic to the language or to our domain, and those are worth keeping:
+
+- `ctx` for a `context.Context`
+- `w http.ResponseWriter` and `r *http.Request` in HTTP handlers
+- `ok` for the comma-ok boolean of a map lookup or type assertion
+- `i`, `j` for loop indices over a plain range
+
+Preserving these is encouraged. What we do not want is mixing conventions: do not write descriptive names in one function and cryptic single letters in the next for no reason. Pick the clear name unless a well-established idiom applies, and apply that choice consistently across the file and package.
