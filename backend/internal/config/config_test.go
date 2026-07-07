@@ -46,23 +46,38 @@ func TestLoadParsesExplicitPorts(t *testing.T) {
 	}
 }
 
-func TestLoadRejectsInvalidPort(t *testing.T) {
+func TestLoadRejectsUnparseablePort(t *testing.T) {
 	for _, tt := range []struct {
-		name                   string
-		port                   string
-		expectedErrorSubstring string
+		name string
+		port string
 	}{
-		{name: "parse rejects non-numeric port", port: "abc", expectedErrorSubstring: "reading environment"},
-		{name: "validation rejects zero port", port: "0", expectedErrorSubstring: "invalid configuration"},
-		{name: "validation rejects negative port", port: "-1", expectedErrorSubstring: "invalid configuration"},
-		{name: "validation rejects out-of-range port", port: "70000", expectedErrorSubstring: "invalid configuration"},
-		{name: "parse rejects whitespace-padded port", port: "  8080  ", expectedErrorSubstring: "reading environment"},
+		{name: "rejects non-numeric port", port: "abc"},
+		{name: "rejects whitespace-padded port", port: "  8080  "},
 	} {
 		t.Run(tt.name, func(t *testing.T) {
 			_, err := loadConfigWithPort(t, tt.port)
 
 			require.Error(t, err)
-			require.ErrorContains(t, err, tt.expectedErrorSubstring)
+			require.ErrorContains(t, err, "reading environment")
+			require.ErrorContains(t, err, "Port")
+		})
+	}
+}
+
+func TestLoadRejectsOutOfRangePort(t *testing.T) {
+	for _, tt := range []struct {
+		name string
+		port string
+	}{
+		{name: "rejects zero port", port: "0"},
+		{name: "rejects negative port", port: "-1"},
+		{name: "rejects port above maximum", port: "70000"},
+	} {
+		t.Run(tt.name, func(t *testing.T) {
+			_, err := loadConfigWithPort(t, tt.port)
+
+			require.Error(t, err)
+			require.ErrorContains(t, err, "invalid configuration")
 			require.ErrorContains(t, err, "Port")
 		})
 	}
