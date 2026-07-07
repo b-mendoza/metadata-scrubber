@@ -12,8 +12,7 @@ const (
 	corsAllowedHeaders = header.ContentType
 )
 
-// CORS allows the frontend dev server to call this API from another origin.
-// Loosen or tighten as needed; it's permissive here purely for local development.
+// CORS applies a permissive, fixed cross-origin policy before dispatching requests.
 func CORS(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set(header.AccessControlAllowOrigin, corsAllowedOrigin)
