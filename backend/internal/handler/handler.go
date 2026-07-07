@@ -25,6 +25,11 @@ const (
 	scrubFileError   = "could not scrub file: "
 )
 
+var (
+	errMissingFile = errors.New(missingFileError)
+	errReadFile    = errors.New(readFileError)
+)
+
 // Reachability gives callers a cheap way to verify the backend HTTP API is reachable.
 func Reachability(w http.ResponseWriter, _ *http.Request) {
 	httpx.WriteJSON(w, http.StatusOK, map[string]string{statusKey: reachableStatus})
@@ -33,8 +38,13 @@ func Reachability(w http.ResponseWriter, _ *http.Request) {
 // Scrub accepts a multipart upload under the form field "file", removes
 // its metadata, and streams the cleaned file back to the client.
 func Scrub(w http.ResponseWriter, r *http.Request) {
-	filename, src, ok := readUploadedFile(w, r)
-	if !ok {
+	filename, src, err := readUploadedFile(w, r)
+	if err != nil {
+		if errors.Is(err, errMissingFile) {
+			httpx.WriteError(w, http.StatusBadRequest, missingFileError)
+			return
+		}
+		httpx.WriteError(w, http.StatusInternalServerError, readFileError)
 		return
 	}
 
@@ -58,22 +68,20 @@ func contentDisposition(filename string) string {
 	return mime.FormatMediaType("attachment", map[string]string{"filename": filepath.Base(filename)})
 }
 
-func readUploadedFile(w http.ResponseWriter, r *http.Request) (string, []byte, bool) {
+func readUploadedFile(w http.ResponseWriter, r *http.Request) (string, []byte, error) {
 	r.Body = http.MaxBytesReader(w, r.Body, maxUploadSize)
 
 	file, fileHeader, err := r.FormFile(fileFormField)
 	if err != nil {
-		httpx.WriteError(w, http.StatusBadRequest, missingFileError)
-		return "", nil, false
+		return "", nil, errMissingFile
 	}
 	defer func() { _ = file.Close() }()
 
 	// pdfcpu needs an io.ReadSeeker, so buffer the upload into memory.
 	src, err := io.ReadAll(file)
 	if err != nil {
-		httpx.WriteError(w, http.StatusInternalServerError, readFileError)
-		return "", nil, false
+		return "", nil, errReadFile
 	}
 
-	return fileHeader.Filename, src, true
+	return fileHeader.Filename, src, nil
 }
