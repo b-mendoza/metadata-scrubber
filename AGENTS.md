@@ -2,14 +2,12 @@
 
 `metadata-scrubber` is a web app that strips metadata from uploaded files: a monorepo with a Go HTTP backend (`backend/`) and a TypeScript/React frontend on TanStack Start + Vite (`frontend/`, package manager `pnpm`).
 
-## Repository layout
+## Documentation model
 
-| Path | Contents |
-| --- | --- |
-| [`backend/`](./backend/) | Go HTTP service (scrubbing, request handling, config). Has its own `AGENTS.md`. |
-| [`frontend/`](./frontend/) | TypeScript/React app on TanStack Start + Vite, managed with `pnpm`. Has its own `AGENTS.md`. |
-| [`docs/`](./docs/) | Cross-cutting notes, including the agent guides linked below. |
-| `docker-compose.yml` | Runs the backend and frontend together locally. |
+This repo keeps two tiers of agent documentation. Maintain the split when you add or edit docs:
+
+- **Long-lived guidance** — `AGENTS.md` files and `docs/agent/` directories. Principles and guidelines with general examples only; no source-code paths or code snippets, so they stay true as the code changes.
+- **Short-lived references** — Markdown files directly under a `docs/` directory (root or service). Current-state descriptions: architecture, file structure and conventions, command references. Each carries a banner saying it must be updated when the code changes.
 
 ## Always
 
@@ -18,8 +16,14 @@
 
 ## Open when relevant
 
+Long-lived guides:
+
 - [Naming conventions](docs/agent/naming-conventions.md) — how to name variables, arguments, and functions, with good/bad examples.
 - [Code design](docs/agent/code-design.md) — boundary validation and dependency injection.
 - [Testing principles](docs/agent/testing.md) — what and how to test, across services.
 - [Workflow and task scoping](docs/agent/workflow.md) — simplicity, issues, and decomposition.
 - [Verifying your work](docs/agent/verification.md) — what "done" requires beyond green tests.
+
+Current-state references (short-lived; verify against the code):
+
+- [Repository architecture](docs/architecture.md) — layout of the monorepo and links to each service's references.
