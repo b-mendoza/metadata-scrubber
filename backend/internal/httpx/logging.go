@@ -21,7 +21,7 @@ func RequestLogger(logger *slog.Logger) func(http.Handler) http.Handler {
 
 			logRequestStarted(logger, r, path)
 
-			recorder := &loggingResponseWriter{ResponseWriter: w}
+			recorder := newLoggingResponseWriter(w)
 			defer func() {
 				if recovered := recover(); recovered != nil {
 					if !recorder.wroteHeader {
@@ -101,6 +101,13 @@ type loggingResponseWriter struct {
 	bytes       int
 	status      int
 	wroteHeader bool
+}
+
+func newLoggingResponseWriter(responseWriter http.ResponseWriter) *loggingResponseWriter {
+	return &loggingResponseWriter{
+		ResponseWriter: responseWriter,
+		status:         http.StatusOK,
+	}
 }
 
 func (w *loggingResponseWriter) Write(bytes []byte) (int, error) {
