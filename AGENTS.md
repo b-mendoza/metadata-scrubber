@@ -19,4 +19,7 @@
 ## Open when relevant
 
 - [Naming conventions](docs/agent/naming-conventions.md) — how to name variables, arguments, and functions, with good/bad examples.
+- [Code design](docs/agent/code-design.md) — boundary validation and dependency injection.
+- [Testing principles](docs/agent/testing.md) — what and how to test, across services.
+- [Workflow and task scoping](docs/agent/workflow.md) — simplicity, issues, and decomposition.
 - [Verifying your work](docs/agent/verification.md) — what "done" requires beyond green tests.
