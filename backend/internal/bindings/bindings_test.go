@@ -21,15 +21,18 @@ func TestInjectMakesBindingsAvailableToHandler(t *testing.T) {
 
 	want := testBindings()
 
+	called := false
 	var got bindings.Bindings
 	var ok bool
 
 	handler := bindings.Inject(want)(http.HandlerFunc(func(_ http.ResponseWriter, r *http.Request) {
+		called = true
 		got, ok = bindings.FromContext(r.Context())
 	}))
 
 	handler.ServeHTTP(httptest.NewRecorder(), httptest.NewRequest(http.MethodGet, "/", nil))
 
+	require.True(t, called)
 	require.True(t, ok)
 	require.Equal(t, want, got)
 }
