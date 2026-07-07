@@ -1,5 +1,7 @@
 # Server Architecture And Bindings
 
+General boundary-validation and dependency-injection principles live in the [root code design guide](../../../docs/agent/code-design.md) and apply here. This file covers the framework-specific mechanisms.
+
 ## Choosing A Server Boundary
 
 - Use server functions for small, direct, single-purpose operations.
@@ -12,11 +14,8 @@
 ## Application Bindings
 
 - Request-scoped dependency injection is implemented with `AsyncLocalStorage`.
-- Server-side code must call `getApplicationBindings()`, which returns `{ db, env, storage }`.
-- Do not import these dependencies as globals.
+- Server-side code calls `getApplicationBindings()`, which returns `{ db, env, storage }`.
 
 ## Boundary Types
 
-- Parse external data at the boundary instead of passing raw strings deeper into the system.
-- Prefer structured return types when they make invalid states unrepresentable.
-- Example: return a `URL` object from `getSignedReadUrl()` rather than a raw `string`.
+- Concrete example of the root "structured return types" rule: return a `URL` object from `getSignedReadUrl()` rather than a raw `string`, so callers cannot misuse it.
