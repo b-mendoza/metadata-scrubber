@@ -40,21 +40,22 @@ func TestLoadPortValues(t *testing.T) {
 
 func TestLoadRejectsInvalidPort(t *testing.T) {
 	for _, tt := range []struct {
-		name    string
-		port    string
-		message string
+		name              string
+		port              string
+		wantErrorContains string
 	}{
-		{name: "non-numeric", port: "abc", message: "reading environment"},
-		{name: "zero", port: "0", message: "invalid configuration"},
-		{name: "negative", port: "-1", message: "invalid configuration"},
-		{name: "out-of-range", port: "70000", message: "invalid configuration"},
-		{name: "whitespace", port: "  8080  ", message: "reading environment"},
+		{name: "parse rejects non-numeric port", port: "abc", wantErrorContains: "reading environment"},
+		{name: "validation rejects zero port", port: "0", wantErrorContains: "invalid configuration"},
+		{name: "validation rejects negative port", port: "-1", wantErrorContains: "invalid configuration"},
+		{name: "validation rejects out-of-range port", port: "70000", wantErrorContains: "invalid configuration"},
+		{name: "parse rejects whitespace-padded port", port: "  8080  ", wantErrorContains: "reading environment"},
 	} {
 		t.Run(tt.name, func(t *testing.T) {
 			_, err := loadConfigWithPort(t, tt.port)
 
 			require.Error(t, err)
-			require.ErrorContains(t, err, tt.message)
+			require.ErrorContains(t, err, tt.wantErrorContains)
+			require.ErrorContains(t, err, "Port")
 		})
 	}
 }
