@@ -90,15 +90,28 @@ type serverLogRecord struct {
 	Status  int    `json:"status"`
 }
 
+type decodedServerLogRecord struct {
+	Message *string `json:"msg"`
+	Path    *string `json:"path"`
+	Status  *int    `json:"status"`
+}
+
 func readServerCompletionLogRecord(t *testing.T, data []byte) serverLogRecord {
 	t.Helper()
 
 	scanner := bufio.NewScanner(bytes.NewReader(data))
 	for scanner.Scan() {
-		var record serverLogRecord
+		var record decodedServerLogRecord
 		require.NoError(t, json.Unmarshal(scanner.Bytes(), &record))
-		if record.Message == "request completed" {
-			return record
+		if record.Message != nil && *record.Message == "request completed" {
+			require.NotNil(t, record.Path)
+			require.NotNil(t, record.Status)
+
+			return serverLogRecord{
+				Message: *record.Message,
+				Path:    *record.Path,
+				Status:  *record.Status,
+			}
 		}
 	}
 	require.NoError(t, scanner.Err())
