@@ -5,7 +5,7 @@
 ## Always
 
 - If Node.js (see `.nvmrc`) or pnpm is missing or on the wrong version, run `scripts/setup-node.sh` before doing anything else.
-- After substantive changes, run `pnpm run lint` (`oxfmt`, `tsc`, `eslint`).
+- After substantive changes, run `pnpm run lint` (`eslint`, `oxfmt`, `oxlint`, `tsc`).
 
 ## Open When Relevant
 
