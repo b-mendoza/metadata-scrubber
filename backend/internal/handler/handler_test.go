@@ -49,12 +49,8 @@ func TestScrubSetsDownloadHeaders(t *testing.T) {
 			recorder := httptest.NewRecorder()
 			Scrub(recorder, newMultipartFileRequest(t, tt.filename, pdf))
 
-			if recorder.Code != http.StatusOK {
-				t.Fatalf("Scrub status = %d, want %d; body: %s", recorder.Code, http.StatusOK, recorder.Body.String())
-			}
-			if got := recorder.Header().Get(header.ContentType); got != mediatype.OctetStream {
-				t.Fatalf("%s = %q, want %q", header.ContentType, got, mediatype.OctetStream)
-			}
+			assertResponseStatus(t, recorder, http.StatusOK)
+			assertContentType(t, recorder, mediatype.OctetStream)
 			if got := recorder.Header().Get(header.ContentDisposition); got != tt.want {
 				t.Fatalf("%s = %q, want %q", header.ContentDisposition, got, tt.want)
 			}
