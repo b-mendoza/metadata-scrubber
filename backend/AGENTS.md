@@ -2,16 +2,17 @@
 
 Go HTTP service that receives uploaded files and returns metadata-free bytes.
 
-**Task runner:** [Task](https://taskfile.dev) — commands live in `Taskfile.yml`. The required Go version is pinned in `go.mod`.
+**Task runner:** [Task](https://taskfile.dev) — `task <target>` is the command interface for this service.
 
 ## Always
 
-- After a substantive change, run `task lint` (runs `golangci-lint` and verifies formatting, read-only and CI-safe).
-- Before committing, run `task test` (runs the suite with the race detector and coverage).
+- After a substantive change, run `task lint` (read-only lint and formatting check, CI-safe).
+- Before committing, run `task test` (suite with the race detector and coverage).
+- The linter configuration is the enforced source of truth for style. Prefer fixing a finding over suppressing it; suppress inline only when the rule is genuinely wrong for the case, and say why.
 
-## Open when relevant
+## Current-state references (short-lived; verify against the code)
 
-- [Commands](docs/agent/commands.md) — full Task reference (build, run, fix, tidy) and how tooling owns generated files.
-- [Conventions](docs/agent/conventions.md) — package layout and the enforced style authority.
+- [Architecture](docs/architecture.md) — package layout and runtime wiring.
+- [Commands](docs/commands.md) — full task-runner reference and how tooling owns generated files.
 
-Naming, code design, testing principles, workflow, and verification are cross-cutting and live in the [root Agent Guide](../AGENTS.md). They apply to this service.
+Cross-cutting long-lived guidance (naming, code design, testing, workflow, verification) lives in the [root Agent Guide](../AGENTS.md) and applies to this service.
