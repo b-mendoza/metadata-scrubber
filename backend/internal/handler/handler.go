@@ -40,11 +40,7 @@ func Reachability(w http.ResponseWriter, _ *http.Request) {
 func Scrub(w http.ResponseWriter, r *http.Request) {
 	filename, src, err := readUploadedFile(w, r)
 	if err != nil {
-		if errors.Is(err, errMissingFile) {
-			httpx.WriteError(w, http.StatusBadRequest, missingFileError)
-			return
-		}
-		httpx.WriteError(w, http.StatusInternalServerError, readFileError)
+		writeUploadError(w, err)
 		return
 	}
 
@@ -84,4 +80,13 @@ func readUploadedFile(w http.ResponseWriter, r *http.Request) (string, []byte, e
 	}
 
 	return fileHeader.Filename, src, nil
+}
+
+func writeUploadError(w http.ResponseWriter, err error) {
+	if errors.Is(err, errMissingFile) {
+		httpx.WriteError(w, http.StatusBadRequest, missingFileError)
+		return
+	}
+
+	httpx.WriteError(w, http.StatusInternalServerError, readFileError)
 }
