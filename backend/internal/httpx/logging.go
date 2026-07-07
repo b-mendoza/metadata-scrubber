@@ -28,28 +28,20 @@ func RequestLogger(logger *slog.Logger) func(http.Handler) http.Handler {
 						recorder.status = http.StatusInternalServerError
 					}
 
-					attrs := requestCompletionLogAttrs(r, path, recorder, started)
-					attrs = append(
-						attrs,
+					logRequestCompleted(
+						logger,
+						r,
+						path,
+						recorder,
+						started,
+						slog.LevelError,
 						slog.Bool("panicked", true),
 						slog.String("panic", fmt.Sprint(recovered)),
-					)
-
-					logger.LogAttrs(
-						r.Context(),
-						slog.LevelError,
-						"request completed",
-						attrs...,
 					)
 					panic(recovered)
 				}
 
-				logger.LogAttrs(
-					r.Context(),
-					slog.LevelInfo,
-					"request completed",
-					requestCompletionLogAttrs(r, path, recorder, started)...,
-				)
+				logRequestCompleted(logger, r, path, recorder, started, slog.LevelInfo)
 			}()
 
 			next.ServeHTTP(recorder, r)
@@ -66,6 +58,26 @@ func logRequestStarted(logger *slog.Logger, r *http.Request, path string) {
 		slog.String("path", path),
 		slog.String("remote_addr", r.RemoteAddr),
 		slog.String("user_agent", r.UserAgent()),
+	)
+}
+
+func logRequestCompleted(
+	logger *slog.Logger,
+	r *http.Request,
+	path string,
+	recorder *loggingResponseWriter,
+	started time.Time,
+	level slog.Level,
+	extraAttrs ...slog.Attr,
+) {
+	attrs := requestCompletionLogAttrs(r, path, recorder, started)
+	attrs = append(attrs, extraAttrs...)
+
+	logger.LogAttrs(
+		r.Context(),
+		level,
+		"request completed",
+		attrs...,
 	)
 }
 
