@@ -14,6 +14,15 @@ This repo keeps two tiers of agent documentation. Maintain the split when you ad
 - Before editing under `backend/` or `frontend/`, read that service's `AGENTS.md` first. It owns the build, lint, and test commands for its tree and may override anything here.
 - Passing tests is a floor, not proof. After a change, run the affected service's checks and confirm they pass before calling the work done; when unsure whether a change is correct, escalate rather than declare success.
 
+## Subagents
+
+Delegating to subagents keeps the main thread's context focused and lets independent work run in parallel. Use them deliberately:
+
+- **When a skill or task tells you to, do it.** If a skill, workflow, or task description states, implies, or steers you to delegate, dispatch, orchestrate, or hand off work to a subagent, follow that direction rather than doing it inline.
+- **Reach for a subagent when the work fits one.** Broad searches or audits across many files, self-contained investigations, and independent subtasks that can run concurrently are good candidates — dispatch them and keep the conclusion, not the intermediate file dumps.
+- **Keep delegation scoped.** Give each subagent a clear objective and a definition of done, and pass along any constraints that bound its work so it does not act beyond the intended scope.
+- **When you are unsure whether to delegate, ask.** If it is not clear that a task should go to a subagent — or which one — check before dispatching rather than guessing.
+
 ## Open when relevant
 
 Long-lived guides:
