@@ -24,9 +24,7 @@ func RequestLogger(logger *slog.Logger) func(http.Handler) http.Handler {
 			recorder := newLoggingResponseWriter(w)
 			defer func() {
 				if recovered := recover(); recovered != nil {
-					if !recorder.wroteHeader {
-						recorder.status = http.StatusInternalServerError
-					}
+					recorder.recordPanicStatus()
 
 					logRequestCompleted(
 						logger,
@@ -133,4 +131,10 @@ func (w *loggingResponseWriter) WriteHeader(statusCode int) {
 
 func (w *loggingResponseWriter) Unwrap() http.ResponseWriter {
 	return w.ResponseWriter
+}
+
+func (w *loggingResponseWriter) recordPanicStatus() {
+	if !w.wroteHeader {
+		w.status = http.StatusInternalServerError
+	}
 }
