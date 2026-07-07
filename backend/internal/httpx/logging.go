@@ -19,15 +19,7 @@ func RequestLogger(logger *slog.Logger) func(http.Handler) http.Handler {
 			started := time.Now()
 			path := r.URL.Path
 
-			logger.LogAttrs(
-				r.Context(),
-				slog.LevelInfo,
-				"request started",
-				slog.String("method", r.Method),
-				slog.String("path", path),
-				slog.String("remote_addr", r.RemoteAddr),
-				slog.String("user_agent", r.UserAgent()),
-			)
+			logRequestStarted(logger, r, path)
 
 			recorder := &loggingResponseWriter{ResponseWriter: w}
 			defer func() {
@@ -63,6 +55,18 @@ func RequestLogger(logger *slog.Logger) func(http.Handler) http.Handler {
 			next.ServeHTTP(recorder, r)
 		})
 	}
+}
+
+func logRequestStarted(logger *slog.Logger, r *http.Request, path string) {
+	logger.LogAttrs(
+		r.Context(),
+		slog.LevelInfo,
+		"request started",
+		slog.String("method", r.Method),
+		slog.String("path", path),
+		slog.String("remote_addr", r.RemoteAddr),
+		slog.String("user_agent", r.UserAgent()),
+	)
 }
 
 func requestCompletionLogAttrs(
