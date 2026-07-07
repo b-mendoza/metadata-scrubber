@@ -1,19 +1,22 @@
-# Agent Guide
+# Agent Guide — frontend
 
 **Package manager:** `pnpm`
 
 ## Always
 
 - If Node.js (see `.nvmrc`) or pnpm is missing or on the wrong version, run `scripts/setup-node.sh` before doing anything else.
-- After substantive changes, run `pnpm run lint` (`eslint`, `oxfmt`, `oxlint`, `tsc`).
-- Before committing, run `pnpm run test` (Vitest).
+- After substantive changes, run `pnpm run lint`.
+- Before committing, run `pnpm run test`.
 
-## Open When Relevant
+## Open when relevant (long-lived)
 
-- [Build and quality commands](docs/agent/build-and-quality.md)
-- [TypeScript and file conventions](docs/agent/code-conventions.md)
-- [Server architecture and bindings](docs/agent/architecture-and-bindings.md)
-- [Database and storage reference](docs/agent/data-and-storage.md)
+- [TypeScript design conventions](docs/agent/code-conventions.md)
 - [Testing — frontend specifics](docs/agent/testing-principles.md)
 
-General naming, code design, testing, workflow, and verification guidance lives in the [root Agent Guide](../AGENTS.md) and applies here.
+## Current-state references (short-lived; verify against the code)
+
+- [Architecture](docs/architecture.md) — framework, source layout, server boundaries, bindings, database, uploads, testing status.
+- [File structure and conventions](docs/conventions.md) — path alias and file naming.
+- [Commands](docs/commands.md) — full command reference.
+
+Cross-cutting long-lived guidance (naming, code design, testing, workflow, verification) lives in the [root Agent Guide](../AGENTS.md) and applies to this service.

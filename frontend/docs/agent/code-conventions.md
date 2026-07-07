@@ -1,27 +1,12 @@
-# TypeScript And File Conventions
+# TypeScript Design Conventions
 
-## Imports
-
-- Use the `#/` path alias for `src/` imports (configured in `tsconfig.app.json`).
-
-## File Naming
-
-- Use `*.mod.ts` for module files.
-- Use `*.mod.server.ts` for server-only modules (env parsing, database, tRPC routers). The `.server` suffix keeps server code out of client bundles.
-- Use `*.test.ts` / `*.test.tsx` for test files.
-
-## Source Layout
-
-- `src/domains/<domain>/` — feature code grouped by domain (`wizard`, `products`), each owning its components, constants, and routers.
-- `src/shared/` — cross-domain code: `config`, `constants`, `db`, `libs` (tRPC), `middlewares`, `utils`.
-- `src/routes/` — TanStack Router file-based routes; API routes under `src/routes/api/`.
+Long-lived guidance for TypeScript code in this service. Current file naming and structure conventions live in the short-lived [conventions reference](../conventions.md).
 
 ## Design
 
-- Prefer factory functions over classes when both are reasonable (for example, `createFooProvider()` over `new FooProvider()`).
+- Prefer factory functions over classes when both are reasonable (for example, `createFooProvider()` over `new FooProvider()`). Factories compose better, avoid `this` pitfalls, and make dependencies explicit through parameters.
 
-## TypeScript
+## Interfaces
 
 - Write interface methods in function property style: `method: (...) => ReturnType`.
-- Avoid shorthand method signatures in interfaces.
-- This is enforced by `@typescript-eslint/method-signature-style`.
+- Avoid shorthand method signatures in interfaces. Function property style makes the member's variance and assignability explicit, and is enforced by the `@typescript-eslint/method-signature-style` lint rule.
