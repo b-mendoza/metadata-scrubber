@@ -1,13 +1,13 @@
 # Agent Guide — metadata-scrubber
 
-`metadata-scrubber` is a web app that strips metadata from uploaded files: a monorepo with a Go HTTP backend (`backend/`) and a TypeScript/React + Vite frontend (`frontend/`, package manager `pnpm`).
+`metadata-scrubber` is a web app that strips metadata from uploaded files: a monorepo with a Go HTTP backend (`backend/`) and a TypeScript/React frontend on TanStack Start + Vite (`frontend/`, package manager `pnpm`).
 
 ## Repository layout
 
 | Path | Contents |
 | --- | --- |
 | [`backend/`](./backend/) | Go HTTP service (scrubbing, request handling, config). Has its own `AGENTS.md`. |
-| [`frontend/`](./frontend/) | TypeScript/React + Vite app, managed with `pnpm`. Has its own `AGENTS.md`. |
+| [`frontend/`](./frontend/) | TypeScript/React app on TanStack Start + Vite, managed with `pnpm`. Has its own `AGENTS.md`. |
 | [`docs/`](./docs/) | Cross-cutting notes, including the agent guides linked below. |
 | `docker-compose.yml` | Runs the backend and frontend together locally. |
 
