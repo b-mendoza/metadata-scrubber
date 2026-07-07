@@ -65,3 +65,13 @@ The pattern to internalize: a bad name describes a value's shape or generic role
 A quick test: read the name out loud and ask "of what?" or "for what?". If the name does not already answer the question, it is too vague.
 
 Idiomatic exceptions still apply here. A bare `err` returned immediately on the next line is fine and conventional; the guidance above is about values that live long enough, or sit far enough from their origin, that the reader loses track of what they mean.
+
+## Verifying your work
+
+Passing tests is a floor, not proof that the change is correct. After a substantive change:
+
+- Run the checks the affected service defines (see its `AGENTS.md` for the exact commands) and confirm they pass before calling the work done.
+- Confirm that any file, path, or symbol you reference actually exists on disk. Do not point documentation or code at something you have not verified.
+- Do not hand-edit generated or tooling-managed files such as lockfiles (`pnpm-lock.yaml`, `go.sum`). Let the managing tool produce those changes.
+
+Where a service has no automated check for something, treat that as a known gap, not as permission to skip verification. When you are unsure whether a change is correct, escalate to the user rather than declaring success.
