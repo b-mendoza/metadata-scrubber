@@ -14,4 +14,4 @@ Go HTTP service that receives uploaded files and returns metadata-free bytes.
 - [Commands](docs/agent/commands.md) — full Task reference (build, run, fix, tidy) and how tooling owns generated files.
 - [Conventions](docs/agent/conventions.md) — package layout and the enforced style authority.
 
-Naming conventions and the general working posture live in the [root Agent Guide](../AGENTS.md) and apply to this service.
+Naming, code design, testing principles, workflow, and verification are cross-cutting and live in the [root Agent Guide](../AGENTS.md). They apply to this service.
