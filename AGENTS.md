@@ -1,4 +1,23 @@
-# Naming conventions
+# Agent Guide — metadata-scrubber
+
+`metadata-scrubber` is a web app that strips metadata from uploaded files. It is a monorepo with a Go HTTP backend under `backend/` and a TypeScript/React (Vite) frontend under `frontend/`.
+
+This root guide holds the conventions and working posture that apply everywhere. Build, lint, test, and architecture details that are specific to one service live in that service's own `AGENTS.md`.
+
+## Repository layout
+
+| Path | Contents |
+| --- | --- |
+| [`backend/`](./backend/) | Go HTTP service. Scrubbing logic, request handling, and config. Has its own `AGENTS.md`. |
+| [`frontend/`](./frontend/) | TypeScript/React app built with Vite, managed with `pnpm`. Has its own `AGENTS.md`. |
+| [`docs/`](./docs/) | Cross-cutting design notes and planning documents. |
+| `docker-compose.yml` | Local orchestration of the backend and frontend together. |
+
+## Working in a service
+
+Before editing files under `backend/` or `frontend/`, read that service's `AGENTS.md` first. It is the source of truth for the tooling, commands, and conventions of that service, and it may override or extend anything here for its own tree. This root guide is the general baseline; the service guides are the specifics.
+
+## Naming conventions
 
 ## The rule
 
