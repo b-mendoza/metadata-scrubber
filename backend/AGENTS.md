@@ -1,27 +1,17 @@
-# Agent Guide
+# Agent Guide — backend
 
-Go HTTP service that receives uploaded files and returns metadata-free bytes. Package layout lives under `internal/` (`scrub`, `handler`, `httpx`, `bindings`, `config`).
+Go HTTP service that receives uploaded files and returns metadata-free bytes.
 
-**Language:** Go (see the `go` directive in `go.mod` for the required version)
-**Task runner:** [Task](https://taskfile.dev) — commands are defined in `Taskfile.yml`
+**Task runner:** [Task](https://taskfile.dev) — commands live in `Taskfile.yml`. The required Go version is pinned in `go.mod`.
 
 ## Always
 
-- After substantive changes, run `task lint`. It runs `golangci-lint` and verifies formatting without modifying files, so it is safe in CI and locally.
-- Before committing, run `task test`. It runs the suite with the race detector and coverage (`go test -race -cover ./...`).
-- Let tooling own generated files: run `task tidy` (`go mod tidy`) to change dependencies, and `task fix` to apply lint auto-fixes and formatting. Do not hand-edit `go.sum` or reformat by hand.
+- After a substantive change, run `task lint` (runs `golangci-lint` and verifies formatting, read-only and CI-safe).
+- Before committing, run `task test` (runs the suite with the race detector and coverage).
 
-## Task reference
+## Open when relevant
 
-| Command | What it does |
-| --- | --- |
-| `task build` | Compile the service into the `metadata-scrubber` binary. |
-| `task run` | Run the service locally (`go run .`). |
-| `task test` | Run the suite with the race detector and coverage. |
-| `task lint` | Lint and verify formatting, read-only (CI-safe). |
-| `task fix` | Apply lint auto-fixes, then format the source (writes files). |
-| `task tidy` | Add missing and remove unused module dependencies. |
+- [Commands](docs/agent/commands.md) — full Task reference (build, run, fix, tidy) and how tooling owns generated files.
+- [Conventions](docs/agent/conventions.md) — package layout and the enforced style authority.
 
-## Conventions
-
-Naming conventions and the general working posture live in the [root Agent Guide](../AGENTS.md). Read that first; it applies to this service. The linter config in `.golangci.yml` is the enforced source of truth for style, so prefer fixing lint findings over suppressing them.
+Naming conventions and the general working posture live in the [root Agent Guide](../AGENTS.md) and apply to this service.
