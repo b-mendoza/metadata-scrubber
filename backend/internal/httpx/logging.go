@@ -90,7 +90,7 @@ func requestCompletionLogAttrs(
 	return []slog.Attr{
 		slog.String("method", r.Method),
 		slog.String("path", path),
-		slog.Int("status", recorder.statusCode()),
+		slog.Int("status", recorder.status),
 		slog.Int("bytes", recorder.bytes),
 		slog.Int64("duration_ms", time.Since(started).Milliseconds()),
 	}
@@ -133,12 +133,4 @@ func (w *loggingResponseWriter) WriteHeader(statusCode int) {
 
 func (w *loggingResponseWriter) Unwrap() http.ResponseWriter {
 	return w.ResponseWriter
-}
-
-func (w *loggingResponseWriter) statusCode() int {
-	if w.status == 0 {
-		return http.StatusOK
-	}
-
-	return w.status
 }
