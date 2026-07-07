@@ -11,6 +11,14 @@ import (
 	"metadata-scrubber/internal/httpx/header"
 )
 
+func requireCORSHeaders(t *testing.T, responseHeaders http.Header) {
+	t.Helper()
+
+	require.Equal(t, "*", responseHeaders.Get(header.AccessControlAllowOrigin))
+	require.Equal(t, "GET, POST, OPTIONS", responseHeaders.Get(header.AccessControlAllowMethods))
+	require.Equal(t, header.ContentType, responseHeaders.Get(header.AccessControlAllowHeaders))
+}
+
 func TestCORSHandlesPreflightWithoutDelegating(t *testing.T) {
 	t.Parallel()
 
@@ -25,9 +33,7 @@ func TestCORSHandlesPreflightWithoutDelegating(t *testing.T) {
 	handler.ServeHTTP(recorder, request)
 
 	require.Equal(t, http.StatusNoContent, recorder.Code)
-	require.Equal(t, "*", recorder.Header().Get(header.AccessControlAllowOrigin))
-	require.Equal(t, "GET, POST, OPTIONS", recorder.Header().Get(header.AccessControlAllowMethods))
-	require.Equal(t, header.ContentType, recorder.Header().Get(header.AccessControlAllowHeaders))
+	requireCORSHeaders(t, recorder.Header())
 	require.False(t, delegated)
 }
 
@@ -45,7 +51,5 @@ func TestCORSAddsHeadersAndDelegatesNonPreflightRequests(t *testing.T) {
 	handler.ServeHTTP(recorder, request)
 
 	require.Equal(t, http.StatusAccepted, recorder.Code)
-	require.Equal(t, "*", recorder.Header().Get(header.AccessControlAllowOrigin))
-	require.Equal(t, "GET, POST, OPTIONS", recorder.Header().Get(header.AccessControlAllowMethods))
-	require.Equal(t, header.ContentType, recorder.Header().Get(header.AccessControlAllowHeaders))
+	requireCORSHeaders(t, recorder.Header())
 }
