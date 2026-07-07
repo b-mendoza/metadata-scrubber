@@ -11,20 +11,28 @@ import (
 
 const portEnvKey = "PORT"
 
-func TestLoadPortValues(t *testing.T) {
+func TestLoadDefaultsPortWhenUnset(t *testing.T) {
 	t.Run("defaults when unset", func(t *testing.T) {
 		cfg, err := loadConfigWithoutPort(t)
 
 		require.NoError(t, err)
 		require.Equal(t, 8080, cfg.Port)
 	})
+}
 
+func TestLoadDefaultsPortWhenEmpty(t *testing.T) {
+	cfg, err := loadConfigWithPort(t, "")
+
+	require.NoError(t, err)
+	require.Equal(t, 8080, cfg.Port)
+}
+
+func TestLoadParsesExplicitPorts(t *testing.T) {
 	for _, tt := range []struct {
 		name string
 		port string
 		want int
 	}{
-		{name: "defaults when empty", want: 8080},
 		{name: "parses valid port", port: "3000", want: 3000},
 		{name: "accepts minimum port", port: "1", want: 1},
 		{name: "accepts maximum port", port: "65535", want: 65535},
