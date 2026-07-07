@@ -82,12 +82,8 @@ func TestScrubRejectsUnsupportedType(t *testing.T) {
 	recorder := httptest.NewRecorder()
 	Scrub(recorder, newMultipartFileRequest(t, "notes.txt", []byte("plain text")))
 
-	if recorder.Code != http.StatusUnsupportedMediaType {
-		t.Fatalf("Scrub status = %d, want %d; body: %s", recorder.Code, http.StatusUnsupportedMediaType, recorder.Body.String())
-	}
-	if got := recorder.Header().Get(header.ContentType); got != mediatype.JSON {
-		t.Fatalf("%s = %q, want %q", header.ContentType, got, mediatype.JSON)
-	}
+	assertResponseStatus(t, recorder, http.StatusUnsupportedMediaType)
+	assertContentType(t, recorder, mediatype.JSON)
 }
 
 func readScrubbablePDF(t *testing.T) []byte {
