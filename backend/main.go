@@ -68,13 +68,17 @@ func run(ctx context.Context) error {
 	case err := <-serverErr:
 		return err
 	case <-ctx.Done():
-		shutdownCtx, cancel := context.WithTimeout(context.Background(), gracefulShutdownTimeout)
-		defer cancel()
-		if err := server.Shutdown(shutdownCtx); err != nil {
-			return err
-		}
-		return <-serverErr
+		return shutdownServer(server, serverErr)
 	}
+}
+
+func shutdownServer(server *http.Server, waitForServer <-chan error) error {
+	shutdownCtx, cancel := context.WithTimeout(context.Background(), gracefulShutdownTimeout)
+	defer cancel()
+	if err := server.Shutdown(shutdownCtx); err != nil {
+		return err
+	}
+	return <-waitForServer
 }
 
 // newServer wires the API routes to their handlers and returns the configured
