@@ -13,5 +13,6 @@
 - [TypeScript and file conventions](docs/agent/code-conventions.md)
 - [Server architecture and bindings](docs/agent/architecture-and-bindings.md)
 - [Database and storage reference](docs/agent/data-and-storage.md)
-- [Testing principles](docs/agent/testing-principles.md)
-- [Task scoping and workflow](docs/agent/workflow-and-decomposition.md)
+- [Testing — frontend specifics](docs/agent/testing-principles.md)
+
+General naming, code design, testing, workflow, and verification guidance lives in the [root Agent Guide](../AGENTS.md) and applies here.
