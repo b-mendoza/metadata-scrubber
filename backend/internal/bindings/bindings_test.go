@@ -12,10 +12,14 @@ import (
 	"metadata-scrubber/internal/config"
 )
 
+func testBindings() bindings.Bindings {
+	return bindings.Bindings{Env: config.Config{Port: 3000}}
+}
+
 func TestInjectMakesBindingsAvailableToHandler(t *testing.T) {
 	t.Parallel()
 
-	want := bindings.Bindings{Env: config.Config{Port: 3000}}
+	want := testBindings()
 
 	var got bindings.Bindings
 	var ok bool
@@ -36,7 +40,7 @@ func TestInjectPreservesRequestContextValues(t *testing.T) {
 	type contextKey struct{}
 	key := contextKey{}
 	const wantValue = "request-id"
-	wantBindings := bindings.Bindings{Env: config.Config{Port: 3000}}
+	wantBindings := testBindings()
 
 	request := httptest.NewRequest(http.MethodGet, "/", nil)
 	request = request.WithContext(context.WithValue(request.Context(), key, wantValue))
@@ -69,8 +73,8 @@ func TestFromContextIgnoresPlainStringKeyCollision(t *testing.T) {
 
 	ctx := context.WithValue( //nolint:revive // Intentionally simulates a caller using a plain string context key.
 		context.Background(),
-		"bindings", //nolint:staticcheck // Intentionally simulates a caller using a plain string context key.
-		bindings.Bindings{Env: config.Config{Port: 3000}},
+		"bindings", //nolint:staticcheck // Intentionally simulates a plain string context key.
+		testBindings(),
 	)
 
 	_, ok := bindings.FromContext(ctx)
