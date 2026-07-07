@@ -30,9 +30,13 @@ var (
 	errReadFile    = errors.New(readFileError)
 )
 
+type reachabilityResponse struct {
+	Status string `json:"status"`
+}
+
 // Reachability gives callers a cheap way to verify the backend HTTP API is reachable.
 func Reachability(w http.ResponseWriter, _ *http.Request) {
-	httpx.WriteJSON(w, http.StatusOK, map[string]string{statusKey: reachableStatus})
+	httpx.WriteJSON(w, http.StatusOK, reachabilityResponse{Status: reachableStatus})
 }
 
 // Scrub accepts a multipart upload under the form field "file", removes
