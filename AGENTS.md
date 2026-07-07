@@ -1,0 +1,1 @@
+Always use human-readable and logical variable names. It's not about writing code that works and passes tests, but about ensuring that future coding agents/LLMs and humans can understand what is going on and why certain decisions were made.
