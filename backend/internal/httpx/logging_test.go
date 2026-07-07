@@ -20,13 +20,19 @@ func TestRequestLoggerLogsRequestLifecycle(t *testing.T) {
 	responseBody := "created-response-secret"
 
 	handler, readRecords := newLoggedHandler(t, func(w http.ResponseWriter, _ *http.Request) {
+		w.Header().Set("X-Scrubbed", "true")
 		w.WriteHeader(http.StatusCreated)
 		_, err := w.Write([]byte(responseBody))
 		require.NoError(t, err)
 	})
 
 	request := httptest.NewRequest(http.MethodPost, "/api/scrub?token=query-secret", bytes.NewBufferString("request-body-secret"))
-	handler.ServeHTTP(httptest.NewRecorder(), request)
+	recorder := httptest.NewRecorder()
+	handler.ServeHTTP(recorder, request)
+
+	require.Equal(t, http.StatusCreated, recorder.Code)
+	require.Equal(t, responseBody, recorder.Body.String())
+	require.Equal(t, "true", recorder.Header().Get("X-Scrubbed"))
 
 	records := readRecords()
 	require.Len(t, records, 2)
@@ -87,6 +93,7 @@ func TestRequestLoggerLogsPanickedRequests(t *testing.T) {
 	require.Len(t, records, 2)
 	completed := records[1]
 	require.Equal(t, "request completed", completed.Msg)
+	require.Equal(t, "ERROR", completed.Level)
 	require.NotNil(t, completed.Status)
 	require.Equal(t, http.StatusInternalServerError, *completed.Status)
 	require.True(t, completed.Panicked)
@@ -97,6 +104,7 @@ type logRecord struct {
 	rawJSON string
 
 	Msg                  string `json:"msg"`
+	Level                string `json:"level"`
 	Method               string `json:"method"`
 	Path                 string `json:"path"`
 	Status               *int   `json:"status"`
