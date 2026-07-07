@@ -12,6 +12,8 @@ import (
 
 const pdfExtension = ".pdf"
 
+type scrubber func([]byte) ([]byte, error)
+
 // ErrUnsupportedType is returned when a file's extension has no scrubber wired up.
 var ErrUnsupportedType = errors.New("unsupported file type")
 
@@ -25,12 +27,25 @@ func DisableConfigDir() {
 // Scrub dispatches on file extension and returns the metadata-free bytes.
 // Today only PDF is wired up; add DOCX/TXT branches here as you build out.
 func Scrub(filename string, src []byte) ([]byte, error) {
-	switch strings.ToLower(filepath.Ext(filename)) {
-	case pdfExtension:
-		return scrubPDF(src)
-	default:
+	scrub, ok := scrubberFor(filename)
+	if !ok {
 		return nil, ErrUnsupportedType
 	}
+
+	return scrub(src)
+}
+
+func scrubberFor(filename string) (scrubber, bool) {
+	switch normalizedExtension(filename) {
+	case pdfExtension:
+		return scrubPDF, true
+	default:
+		return nil, false
+	}
+}
+
+func normalizedExtension(filename string) string {
+	return strings.ToLower(filepath.Ext(filename))
 }
 
 func scrubPDF(src []byte) ([]byte, error) {
