@@ -74,12 +74,8 @@ func TestScrubRejectsMissingFile(t *testing.T) {
 	recorder := httptest.NewRecorder()
 	Scrub(recorder, httptest.NewRequest(http.MethodPost, "/api/scrub", strings.NewReader("not multipart")))
 
-	if recorder.Code != http.StatusBadRequest {
-		t.Fatalf("Scrub status = %d, want %d; body: %s", recorder.Code, http.StatusBadRequest, recorder.Body.String())
-	}
-	if got := recorder.Header().Get(header.ContentType); got != mediatype.JSON {
-		t.Fatalf("%s = %q, want %q", header.ContentType, got, mediatype.JSON)
-	}
+	assertResponseStatus(t, recorder, http.StatusBadRequest)
+	assertContentType(t, recorder, mediatype.JSON)
 }
 
 func TestScrubRejectsUnsupportedType(t *testing.T) {
