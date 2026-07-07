@@ -54,7 +54,7 @@ func TestScrubDispatchesPDFExtensionCaseInsensitively(t *testing.T) {
 func readPDF(t *testing.T) []byte {
 	t.Helper()
 
-	pdf, err := os.ReadFile("../handler/testdata/with-property.pdf")
+	pdf, err := os.ReadFile("testdata/with-property.pdf")
 	if err != nil {
 		t.Fatalf("read PDF fixture: %v", err)
 	}
