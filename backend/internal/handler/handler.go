@@ -50,6 +50,10 @@ func Scrub(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	writeDownload(w, filename, cleaned)
+}
+
+func writeDownload(w http.ResponseWriter, filename string, cleaned []byte) {
 	w.Header().Set(header.ContentType, mediatype.OctetStream)
 	w.Header().Set(header.ContentDisposition, contentDisposition(filename))
 	w.WriteHeader(http.StatusOK)
