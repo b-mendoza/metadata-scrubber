@@ -45,7 +45,9 @@ func TestCORSHandlesPreflightWithoutDelegating(t *testing.T) {
 func TestCORSAddsHeadersAndDelegatesNonPreflightRequests(t *testing.T) {
 	t.Parallel()
 
+	delegatedCalls := 0
 	handler := httpx.CORS(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		delegatedCalls++
 		require.Equal(t, http.MethodPost, r.Method)
 		w.WriteHeader(http.StatusAccepted)
 	}))
@@ -57,4 +59,5 @@ func TestCORSAddsHeadersAndDelegatesNonPreflightRequests(t *testing.T) {
 
 	require.Equal(t, http.StatusAccepted, recorder.Code)
 	requireCORSHeaders(t, recorder.Header())
+	require.Equal(t, 1, delegatedCalls)
 }
