@@ -51,10 +51,8 @@ func TestRequestLoggerLogsRequestLifecycle(t *testing.T) {
 	require.Equal(t, "request started", started.Msg)
 
 	require.Equal(t, "request completed", completed.Msg)
-	require.NotNil(t, completed.Status)
-	require.Equal(t, http.StatusCreated, *completed.Status)
-	require.NotNil(t, completed.Bytes)
-	require.Equal(t, len(responseBody), *completed.Bytes)
+	requireRequiredIntLogField(t, "status", http.StatusCreated, completed.Status)
+	requireRequiredIntLogField(t, "bytes", len(responseBody), completed.Bytes)
 	require.NotNil(t, completed.DurationMilliseconds)
 	require.GreaterOrEqual(t, *completed.DurationMilliseconds, int64(0))
 }
