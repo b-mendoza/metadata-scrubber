@@ -91,22 +91,24 @@ func TestRequestLoggerLogsPanickedRequests(t *testing.T) {
 	require.Equal(t, "request completed", completed.Msg)
 	require.Equal(t, "ERROR", completed.Level)
 	requireRequiredIntLogField(t, "status", http.StatusInternalServerError, completed.Status)
-	require.True(t, completed.Panicked)
-	require.Equal(t, "boom", completed.Panic)
+	require.NotNil(t, completed.Panicked, "missing panicked log field")
+	require.True(t, *completed.Panicked)
+	require.NotNil(t, completed.Panic, "missing panic log field")
+	require.Equal(t, "boom", *completed.Panic)
 }
 
 type logRecord struct {
 	rawJSON string
 
-	Msg                  string `json:"msg"`
-	Level                string `json:"level"`
-	Method               string `json:"method"`
-	Path                 string `json:"path"`
-	Status               *int   `json:"status"`
-	Bytes                *int   `json:"bytes"`
-	DurationMilliseconds *int64 `json:"duration_ms"`
-	Panicked             bool   `json:"panicked"`
-	Panic                string `json:"panic"`
+	Msg                  string  `json:"msg"`
+	Level                string  `json:"level"`
+	Method               string  `json:"method"`
+	Path                 string  `json:"path"`
+	Status               *int    `json:"status"`
+	Bytes                *int    `json:"bytes"`
+	DurationMilliseconds *int64  `json:"duration_ms"`
+	Panicked             *bool   `json:"panicked"`
+	Panic                *string `json:"panic"`
 }
 
 func newLoggedHandler(t *testing.T, next http.HandlerFunc) (http.Handler, func() []logRecord) {
