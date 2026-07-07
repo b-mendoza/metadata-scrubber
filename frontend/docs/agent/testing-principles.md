@@ -4,13 +4,14 @@ General testing principles (what to test, how to assert, how to organize) live i
 
 ## Vitest / TypeScript
 
+- The runner is Vitest (`pnpm run test`), configured in `vitest.config.ts`, with `@testing-library/react` for component tests and shared render helpers under `src/tests/utils/renderers/`.
 - Use `expect.objectContaining` for call assertions, matching only the fields our code controls.
 - Do not use `expectTypeOf` to re-verify contracts TypeScript's annotations already enforce. If it compiles, the type is correct.
 
-## Constants and configuration as tests
+## High-value targets in this service
 
-Some constants in this service carry outsized risk and warrant intentionally brittle tests:
+Per the root guide's risk-based coverage rule, the logic most worth testing here today:
 
-- **Model ID (`CATEGORIZATION_MODEL`):** a model change can 10x API cost or silently degrade output quality. Assert the exact model string via the imported constant. Without agent evals, this test is the only line of defense against model behavior regression.
-- **System prompt (`CATEGORIZATION_SYSTEM_PROMPT`):** defines the classification taxonomy. Assert it is passed to the AI provider via the imported constant; this catches accidental deletion without breaking on intentional prompt edits.
-- **Gateway URL / API key wiring:** assert configuration is forwarded correctly to the provider factory. This is legitimate wiring verification.
+- Upload validation in `src/routes/api/upload.ts` — size and MIME acceptance/rejection branches.
+- Environment parsing and the bindings invariant in `src/shared/middlewares/application-bindings/application-bindings.mod.ts`.
+- Wizard constants wiring (`MAX_FILE_SIZE_BYTES`, `UPLOADABLE_MIME_TYPES`) — import the production constants in assertions rather than duplicating the values.
