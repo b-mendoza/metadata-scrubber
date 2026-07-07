@@ -9,6 +9,7 @@ import (
 const (
 	corsAllowedOrigin  = "*"
 	corsAllowedMethods = http.MethodGet + ", " + http.MethodPost + ", " + http.MethodOptions
+	corsAllowedHeaders = header.ContentType
 )
 
 // CORS allows the frontend dev server to call this API from another origin.
@@ -17,7 +18,7 @@ func CORS(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set(header.AccessControlAllowOrigin, corsAllowedOrigin)
 		w.Header().Set(header.AccessControlAllowMethods, corsAllowedMethods)
-		w.Header().Set(header.AccessControlAllowHeaders, header.ContentType)
+		w.Header().Set(header.AccessControlAllowHeaders, corsAllowedHeaders)
 		if r.Method == http.MethodOptions {
 			w.WriteHeader(http.StatusNoContent)
 			return
