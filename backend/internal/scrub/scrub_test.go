@@ -59,6 +59,19 @@ func TestScrubRemovesPDFPropertiesForUppercaseExtension(t *testing.T) {
 	}
 }
 
+func TestScrubRejectsInvalidPDFWithNoOutput(t *testing.T) {
+	DisableConfigDir()
+
+	got, err := Scrub("report.pdf", []byte("not a pdf"))
+
+	if err == nil {
+		t.Fatal("Scrub invalid PDF error = nil, want error")
+	}
+	if got != nil {
+		t.Fatalf("Scrub invalid PDF output = %q, want nil", got)
+	}
+}
+
 func readPDF(t *testing.T) []byte {
 	t.Helper()
 
