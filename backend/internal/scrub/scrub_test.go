@@ -1,9 +1,12 @@
 package scrub
 
 import (
+	"bytes"
 	"errors"
 	"os"
 	"testing"
+
+	"github.com/pdfcpu/pdfcpu/pkg/api"
 )
 
 func TestScrubRejectsUnsupportedTypeWithSentinel(t *testing.T) {
@@ -39,15 +42,20 @@ func TestScrubRejectsUnsupportedTypeWithSentinel(t *testing.T) {
 	}
 }
 
-func TestScrubDispatchesPDFExtensionCaseInsensitively(t *testing.T) {
+func TestScrubRemovesPDFPropertiesForUppercaseExtension(t *testing.T) {
 	DisableConfigDir()
 
-	got, err := Scrub("REPORT.PDF", readPDF(t))
+	pdf := readPDF(t)
+	if properties := pdfProperties(t, pdf); len(properties) == 0 {
+		t.Fatal("fixture PDF properties are empty before scrub")
+	}
+
+	got, err := Scrub("REPORT.PDF", pdf)
 	if err != nil {
 		t.Fatalf("Scrub uppercase PDF: %v", err)
 	}
-	if len(got) == 0 {
-		t.Fatal("Scrub uppercase PDF output is empty")
+	if properties := pdfProperties(t, got); len(properties) != 0 {
+		t.Fatalf("scrubbed PDF properties = %v, want none", properties)
 	}
 }
 
@@ -60,4 +68,15 @@ func readPDF(t *testing.T) []byte {
 	}
 
 	return pdf
+}
+
+func pdfProperties(t *testing.T, pdf []byte) map[string]string {
+	t.Helper()
+
+	properties, err := api.Properties(bytes.NewReader(pdf), nil)
+	if err != nil {
+		t.Fatalf("read PDF properties: %v", err)
+	}
+
+	return properties
 }
