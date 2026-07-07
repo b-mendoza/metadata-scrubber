@@ -128,6 +128,13 @@ func newLoggedHandler(t *testing.T, next http.HandlerFunc) (http.Handler, func()
 	}
 }
 
+func requireRequiredIntLogField(t *testing.T, name string, expected int, actual *int) {
+	t.Helper()
+
+	require.NotNil(t, actual, "missing %s log field", name)
+	require.Equal(t, expected, *actual)
+}
+
 func readJSONLogRecords(t *testing.T, data []byte) []logRecord {
 	t.Helper()
 
