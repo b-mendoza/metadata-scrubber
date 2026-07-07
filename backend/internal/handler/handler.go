@@ -46,11 +46,7 @@ func Scrub(w http.ResponseWriter, r *http.Request) {
 
 	cleaned, err := scrub.Scrub(filename, src)
 	if err != nil {
-		if errors.Is(err, scrub.ErrUnsupportedType) {
-			httpx.WriteError(w, http.StatusUnsupportedMediaType, err.Error())
-			return
-		}
-		httpx.WriteError(w, http.StatusInternalServerError, scrubFileError+err.Error())
+		writeScrubError(w, err)
 		return
 	}
 
@@ -89,4 +85,13 @@ func writeUploadError(w http.ResponseWriter, err error) {
 	}
 
 	httpx.WriteError(w, http.StatusInternalServerError, readFileError)
+}
+
+func writeScrubError(w http.ResponseWriter, err error) {
+	if errors.Is(err, scrub.ErrUnsupportedType) {
+		httpx.WriteError(w, http.StatusUnsupportedMediaType, err.Error())
+		return
+	}
+
+	httpx.WriteError(w, http.StatusInternalServerError, scrubFileError+err.Error())
 }
