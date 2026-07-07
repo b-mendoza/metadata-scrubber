@@ -8,7 +8,7 @@ import (
 
 const (
 	corsAllowedOrigin  = "*"
-	corsAllowedMethods = "GET, POST, OPTIONS"
+	corsAllowedMethods = http.MethodGet + ", " + http.MethodPost + ", " + http.MethodOptions
 )
 
 // CORS allows the frontend dev server to call this API from another origin.
