@@ -34,6 +34,11 @@ type reachabilityResponse struct {
 	Status string `json:"status"`
 }
 
+type uploadedFile struct {
+	filename string
+	content  []byte
+}
+
 // Reachability gives callers a cheap way to verify the backend HTTP API is reachable.
 func Reachability(w http.ResponseWriter, _ *http.Request) {
 	httpx.WriteJSON(w, http.StatusOK, reachabilityResponse{Status: reachableStatus})
@@ -42,19 +47,19 @@ func Reachability(w http.ResponseWriter, _ *http.Request) {
 // Scrub accepts a multipart upload under the form field "file", removes
 // its metadata, and streams the cleaned file back to the client.
 func Scrub(w http.ResponseWriter, r *http.Request) {
-	filename, src, err := readUploadedFile(w, r)
+	upload, err := readUploadedFile(w, r)
 	if err != nil {
 		writeUploadError(w, err)
 		return
 	}
 
-	cleaned, err := scrub.Scrub(filename, src)
+	cleaned, err := scrub.Scrub(upload.filename, upload.content)
 	if err != nil {
 		writeScrubError(w, err)
 		return
 	}
 
-	writeDownload(w, filename, cleaned)
+	writeDownload(w, upload.filename, cleaned)
 }
 
 func writeDownload(w http.ResponseWriter, filename string, cleaned []byte) {
@@ -68,22 +73,25 @@ func contentDisposition(filename string) string {
 	return mime.FormatMediaType("attachment", map[string]string{"filename": filepath.Base(filename)})
 }
 
-func readUploadedFile(w http.ResponseWriter, r *http.Request) (string, []byte, error) {
+func readUploadedFile(w http.ResponseWriter, r *http.Request) (uploadedFile, error) {
 	r.Body = http.MaxBytesReader(w, r.Body, maxUploadSize)
 
 	file, fileHeader, err := r.FormFile(fileFormField)
 	if err != nil {
-		return "", nil, errMissingFile
+		return uploadedFile{}, errMissingFile
 	}
 	defer func() { _ = file.Close() }()
 
 	// pdfcpu needs an io.ReadSeeker, so buffer the upload into memory.
 	src, err := io.ReadAll(file)
 	if err != nil {
-		return "", nil, errReadFile
+		return uploadedFile{}, errReadFile
 	}
 
-	return fileHeader.Filename, src, nil
+	return uploadedFile{
+		filename: fileHeader.Filename,
+		content:  src,
+	}, nil
 }
 
 func writeUploadError(w http.ResponseWriter, err error) {
