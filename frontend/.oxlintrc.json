@@ -415,6 +415,7 @@
     "sonarjs/todo-tag": "warn",
     "sonarjs/no-case-label-in-switch": "error",
     "sonarjs/no-parameter-reassignment": "error",
+    "sonarjs/no-floating-point-equality": "error",
     "sonarjs/prefer-while": "error",
     "sonarjs/no-small-switch": "error",
     "sonarjs/no-hardcoded-ip": "error",
