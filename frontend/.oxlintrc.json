@@ -402,7 +402,6 @@
     "jsx-a11y/scope": "error",
     "jsx-a11y/tabindex-no-positive": "error",
     "sonarjs/class-name": "error",
-    "sonarjs/no-commented-code": "warn",
     "sonarjs/no-fallthrough": "error",
     "sonarjs/no-equals-in-for-termination": "error",
     "sonarjs/no-extra-arguments": "error",
@@ -622,6 +621,7 @@
         ]
       }
     ],
+    "sonarjs/no-commented-code": "warn",
     "class-methods-use-this": [
       "error",
       {
