@@ -3,6 +3,15 @@
 Read this file before the first dispatch and whenever a stage output needs
 interpretation, a retry is required, or the final report contract is needed.
 Apply the trust boundary from `./trust-boundary.md` while using this protocol.
+Execution routing follows `../flow-diagram.md` and `../state-machine.md`.
+
+## Operational Definitions
+
+| Term | Operational meaning |
+| ---- | ------------------- |
+| `ORIGIN_CONTEXT` adequate | The text states a user-request outcome (what to build or change) without requiring inference from the plan. Missing, empty, or plan-only restatements are inadequate. |
+| core audit remains viable | `SNAPSHOT_PATH` exists with `SNAPSHOT: PASS`, numbered requirements exist with `REQUIREMENTS: PASS`, and discovery payloads exist for `TRACEABILITY: PASS`, `YAGNI: PASS`, and `ASSUMPTIONS: PASS`. |
+| decision-relevant | Resolving the assumption or question could change the final `AUDIT: PASS \| FAIL \| BLOCKED \| ERROR` outcome or could raise or lower a finding between `critical` and `warning`. |
 
 ## Status Codes
 
@@ -26,10 +35,15 @@ shape are present.
 | Traceability audit | `TRACEABILITY: PASS` | JSON object with `req_annotations`, `requirement_gaps`, and `coverage_summary` |
 | Scope audit | `YAGNI: PASS` | JSON array of scope findings with smaller alternatives |
 | Assumptions audit | `ASSUMPTIONS: PASS` | Discovery or resolution JSON matching the assumptions contract |
-| Report assembly | `AUDIT: PASS / FAIL / BLOCKED / ERROR` | Completion handoff plus written `OUTPUT_PATH` when applicable |
+| Report assembly | `REPORT: PASS` | Written `OUTPUT_PATH` with all required sections present (use `None.` for empty sections) |
 
 Malformed JSON, missing required fields, wrong status labels, or payloads that
 cite unauthorized evidence are failed stage contracts.
+
+The annotator returns `REPORT: PASS` only for a successful write. The
+orchestrator alone maps final `AUDIT: PASS | FAIL | BLOCKED | ERROR` after
+severity aggregation and hard-gate checks. Annotator blockers use
+`REPORT: BLOCKED` or `REPORT: ERROR` (not final `AUDIT:*`).
 
 ## Hard And Optional Gates
 
@@ -37,11 +51,11 @@ cite unauthorized evidence are failed stage contracts.
 | ---- | ---- | -------- |
 | `PLAN_PATH` access by `plan-snapshotter` | Hard | Return `AUDIT: BLOCKED` or retry on transient error |
 | Artifact write authorization | Hard | Ask for overwrite approval or alternate path |
-| `ORIGIN_CONTEXT` baseline | Hard | Ask one baseline question |
+| `ORIGIN_CONTEXT` baseline | Hard | Ask one baseline question; continue only when adequate |
 | Snapshot creation | Hard | Retry snapshot branch only |
 | Requirement extraction | Hard | Retry requirements branch only |
 | Technical evidence review | Optional | Retry, then record an evidence gap when core audit remains viable |
-| Traceability, YAGNI, assumptions discovery | Hard | Retry the named auditor branch only |
+| Traceability, YAGNI, assumptions discovery | Hard | Retry the named auditor branch only (re-enter dispatch) |
 | Assumption resolution for decision-relevant questions | Hard | Ask user; unresolved decision questions block |
 | Report assembly | Hard | Retry report branch only |
 
@@ -52,7 +66,7 @@ artifact action:
 
 - `create`: path does not exist.
 - `overwrite-approved`: path exists and the user approved replacement.
-- `blocked-existing`: path exists without approval; writer returns `BLOCKED`.
+- `blocked-existing`: path exists without approval; writer returns stage `BLOCKED`.
 
 The source plan is never overwritten. Retries reuse the same artifact policy
 unless the user explicitly changes it.
@@ -68,7 +82,8 @@ unless the user explicitly changes it.
 ## Retry Loop
 
 1. Name the contract mismatch or failed condition.
-2. Re-dispatch only the subagent branch that failed.
+2. Re-dispatch only the subagent branch that failed (auditor recovery re-enters
+   `DispatchAuditors` for that branch only).
 3. Preserve the same trust limits: no widened paths, no new raw `PLAN_PATH`
    access outside `plan-snapshotter`, and no project-specific external website
    evidence.
@@ -77,8 +92,7 @@ unless the user explicitly changes it.
 6. Escalate to the user when a hard gate remains unresolved.
 
 Optional local technical evidence failures can be recorded in the final report
-as evidence gaps when snapshot, requirements, and core auditor branches remain
-usable.
+as evidence gaps when core audit remains viable.
 
 ## Annotation Shape
 
@@ -110,7 +124,7 @@ Technical evidence findings use:
 
 Final artifact path: `OUTPUT_PATH`
 
-Required sections, in order:
+Required sections, in order (count = 9; empty sections use `None.`):
 
 - `## Audit Scope`
 - `## Source Requirements`
@@ -122,7 +136,8 @@ Required sections, in order:
 - `## Open Questions`
 - `## Sensitive Content Handling`
 
-Use `None.` for empty sections rather than omitting a required section.
+`Sections covered` in the completion handoff is the count of required headings
+present (always `9` when the report contract is met).
 
 Completion handoff:
 
@@ -136,6 +151,9 @@ Reason: <one line>
 ```
 
 ## Final Status Mapping
+
+Sole prose source of truth for final outcomes (orchestrator applies after
+`REPORT: PASS`):
 
 - `AUDIT: PASS`: report written, required sections present, no critical
   findings, no unresolved hard gate, and no decision-relevant open question.
