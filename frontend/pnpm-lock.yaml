@@ -217,8 +217,8 @@ importers:
         specifier: 7.16.2
         version: 7.16.2(eslint@9.39.4(jiti@2.7.0))(typescript@6.0.3)
       eslint-plugin-zod:
-        specifier: 4.7.0
-        version: 4.7.0(eslint@9.39.4(jiti@2.7.0))(oxlint@1.72.0(oxlint-tsgolint@0.24.0))(typescript@6.0.3)(zod@4.4.3)
+        specifier: 4.7.1
+        version: 4.7.1(eslint@9.39.4(jiti@2.7.0))(oxlint@1.72.0(oxlint-tsgolint@0.24.0))(typescript@6.0.3)(zod@4.4.3)
       globals:
         specifier: 17.7.0
         version: 17.7.0
@@ -2813,8 +2813,8 @@ packages:
     peerDependencies:
       eslint: ^8.57.0 || ^9.0.0 || ^10.0.0
 
-  eslint-plugin-zod@4.7.0:
-    resolution: {integrity: sha512-unziYvD8FGxhfL6rYuC3Cjdx/K3yMWSTv6t5uB9KEgzMajDXuQcp67/WDxdUiEFhGY1LlXJs03xQc+Pg6+vqrw==}
+  eslint-plugin-zod@4.7.1:
+    resolution: {integrity: sha512-6lUVKH5lwXWTojUWAJ+Cq11bLrnk5Oc8uUEEowN8pNxSSrYTJP147nOdScoHK2Q3/xouPAtESqDxNpEebuKUcQ==}
     engines: {node: ^20 || ^22 || >=24}
     peerDependencies:
       eslint: ^9 || ^10
@@ -7054,7 +7054,7 @@ snapshots:
       - supports-color
       - typescript
 
-  eslint-plugin-zod@4.7.0(eslint@9.39.4(jiti@2.7.0))(oxlint@1.72.0(oxlint-tsgolint@0.24.0))(typescript@6.0.3)(zod@4.4.3):
+  eslint-plugin-zod@4.7.1(eslint@9.39.4(jiti@2.7.0))(oxlint@1.72.0(oxlint-tsgolint@0.24.0))(typescript@6.0.3)(zod@4.4.3):
     dependencies:
       '@eslint-zod/utils': 2.3.0(eslint@9.39.4(jiti@2.7.0))(typescript@6.0.3)
       '@typescript-eslint/utils': 8.62.1(eslint@9.39.4(jiti@2.7.0))(typescript@6.0.3)
