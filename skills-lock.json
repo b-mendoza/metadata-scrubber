@@ -11,13 +11,13 @@
       "source": "b-mendoza/agent-skills",
       "sourceType": "github",
       "skillPath": "skills/committing-scoped-changes/SKILL.md",
-      "computedHash": "1fb93ae6004488e182af54fb255a5a11cdf6ba1e74f03ad746c94449ed17a9fc"
+      "computedHash": "713f2a023add8a5b956b412d5b3c017e77b15b584033303ac3563ec5eb218d82"
     },
     "diagnosing-root-causes": {
       "source": "b-mendoza/agent-skills",
       "sourceType": "github",
       "skillPath": "skills/diagnosing-root-causes/SKILL.md",
-      "computedHash": "bfc3cb4543eca4c4ef43abd843c9632eedee955b189d7ee60aa2164048db57af"
+      "computedHash": "06de33910aa3f3a5ad2b8ff3ba5d33aa183316fb95e25af049c20f393ffa4f44"
     },
     "executing-plans": {
       "source": "obra/superpowers",
@@ -47,13 +47,19 @@
       "source": "b-mendoza/agent-skills",
       "sourceType": "github",
       "skillPath": "skills/improving-test-suites/SKILL.md",
-      "computedHash": "586dd5f5a024106bdd38a7ce568b935b255cdd86864dd55e1b5ed270d185fc97"
+      "computedHash": "38ae1f88a4272570f34005e313be27aa6dcea9d903130a9e5c2687033aa9bc74"
+    },
+    "planning-codebase-restructuring": {
+      "source": "b-mendoza/agent-skills",
+      "sourceType": "github",
+      "skillPath": "skills/planning-codebase-restructuring/SKILL.md",
+      "computedHash": "a053f4793e3743ff0c8e819e5ceb113e0f8225fb6593ce3210b01f7cfc362050"
     },
     "pr-creator": {
       "source": "b-mendoza/agent-skills",
       "sourceType": "github",
       "skillPath": "skills/pr-creator/SKILL.md",
-      "computedHash": "3f650074d795dddd362ed758b2b560af747bb4a6d55e332e1be1d5f68ca22514"
+      "computedHash": "9da8e4b7f5842286964f57b49f4f811ff79cd429811bfd26717aa3855e7ca82a"
     },
     "receiving-code-review": {
       "source": "obra/superpowers",
@@ -65,31 +71,31 @@
       "source": "b-mendoza/agent-skills",
       "sourceType": "github",
       "skillPath": "skills/recency-guard/SKILL.md",
-      "computedHash": "e846a8b726c30d71331176bc9fcc592af67a2c953124e9a7846f3361d61bb8de"
+      "computedHash": "093ae00ea0f1f4a36c2b3d855e05e37fb82e2a35ee263931f750b91e78996ce6"
     },
     "refactoring-code": {
       "source": "b-mendoza/agent-skills",
       "sourceType": "github",
       "skillPath": "skills/refactoring-code/SKILL.md",
-      "computedHash": "ffb747d651aecfb71216037dd6943960546d22bcc9348affe73f30653d177b2c"
+      "computedHash": "ec6be32d3e068e8d2fabf8f58c3a3d95fa2c3575b6c758010d6fde06a3d64c3e"
     },
     "responding-to-pr-review-comments": {
       "source": "b-mendoza/agent-skills",
       "sourceType": "github",
       "skillPath": "skills/responding-to-pr-review-comments/SKILL.md",
-      "computedHash": "a014c6d270606753f4a5a1a8c4addd454ef92176742f9da5d729fdfa67502383"
+      "computedHash": "e8bd726334d8e0f4318a10fcf008e81c6a76bc54c472ff4d5fe20503f6072b55"
     },
     "review-pull-request": {
       "source": "b-mendoza/agent-skills",
       "sourceType": "github",
       "skillPath": "skills/review-pull-request/SKILL.md",
-      "computedHash": "27499266da1af13ee94d60eae884a53c2caebe6561e98f707ccdb7a0d414ab20"
+      "computedHash": "a0aebc534f6320270721b822e74a7c7a1a180473e500f3bec71ac727f3be9495"
     },
     "rewriting-code-strictly": {
       "source": "b-mendoza/agent-skills",
       "sourceType": "github",
       "skillPath": "skills/rewriting-code-strictly/SKILL.md",
-      "computedHash": "73fae385f067829bd76ec47513b4501092a0658bf1ba967c8c130d6b3abf9120"
+      "computedHash": "eb13c689e71fee485ce912eb51f2312a157594cdb2619e5b81b7c8c83780f64d"
     },
     "subagent-driven-development": {
       "source": "obra/superpowers",
@@ -107,19 +113,13 @@
       "source": "b-mendoza/agent-skills",
       "sourceType": "github",
       "skillPath": "skills/validate-implementation-plan/SKILL.md",
-      "computedHash": "493ecd0baed4796d3f2b8a1b2d58119bcbb57e2b0c89a0a08fae075635907fba"
+      "computedHash": "b9c4118af23b87805dc5819cb59b7969c5ed9d0cb33eeec6e5184665d2cdf417"
     },
     "writing-plans": {
       "source": "obra/superpowers",
       "sourceType": "github",
       "skillPath": "skills/writing-plans/SKILL.md",
       "computedHash": "b73b59d43c34c3fc225bfae419c458bb216af80df25fc0c545dfa7fd2a161722"
-    },
-    "planning-codebase-restructuring": {
-      "source": "b-mendoza/agent-skills",
-      "sourceType": "github",
-      "skillPath": "skills/planning-codebase-restructuring/SKILL.md",
-      "computedHash": "779229ce32e2bc43d4c95428e3e579e871ea1384f449c3eab4bfd8c898cd4bde"
     }
   }
 }
