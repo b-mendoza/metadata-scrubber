@@ -20,7 +20,7 @@ an explicit user-confirmed `none`, and labels the platform confirms exist.
 | `CHANGED_PATHS` | Yes | `skills/pr-creator/SKILL.md` |
 | `REVIEWERS` | No | `alice,bob` or `none` |
 | `LABELS_OVERRIDE` | No | `documentation,enhancement` |
-| `CONTRACT_PATH` | Yes | `./references/contracts/review-metadata-suggester.md` |
+| `CONTRACT_PATH` | Yes | `./references/review-metadata-suggester-contract.md` |
 
 ## Instructions
 
@@ -45,7 +45,7 @@ an explicit user-confirmed `none`, and labels the platform confirms exist.
 ## Output Format
 
 Return exactly one `REVIEW_METADATA` block using
-`./references/contracts/review-metadata-suggester.md`. Include reviewer list or
+`./references/review-metadata-suggester-contract.md`. Include reviewer list or
 `none (user-confirmed)`, reviewer source, solo-repo signal, labels, invalid
 labels, CODEOWNERS source, reason, and decision needed.
 

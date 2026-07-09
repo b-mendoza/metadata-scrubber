@@ -16,7 +16,7 @@ to route safely; do not draft, push, fetch broad history, or create anything.
 | `PR_STATE` | No | `draft` |
 | `HEAD_REMOTE` | No | `origin` |
 | `BASE_REMOTE` | No | `upstream` |
-| `CONTRACT_PATH` | Yes | `./references/contracts/repo-state-inspector.md` |
+| `CONTRACT_PATH` | Yes | `./references/repo-state-inspector-contract.md` |
 
 ## Instructions
 
@@ -38,7 +38,7 @@ to route safely; do not draft, push, fetch broad history, or create anything.
 ## Output Format
 
 Return exactly one `REPO_STATE` block using
-`./references/contracts/repo-state-inspector.md`. Include all remotes, resolved
+`./references/repo-state-inspector-contract.md`. Include all remotes, resolved
 or ambiguous topology, target branch input, target branch candidate, current
 branch, platform adapter flag, uncommitted-work summary, reason, and decision
 needed.

@@ -19,7 +19,7 @@ status block without leaking full patches into the orchestrator.
 | `BASE_SHA` | Yes | `abc1234` |
 | `HEAD_SHA` | Yes | `def5678` |
 | `LARGE_PR_APPROVED` | No | `true` |
-| `CONTRACT_PATH` | Yes | `./references/contracts/diff-analyzer.md` |
+| `CONTRACT_PATH` | Yes | `./references/diff-analyzer-contract.md` |
 
 ## Instructions
 
@@ -44,7 +44,7 @@ status block without leaking full patches into the orchestrator.
 ## Output Format
 
 Return exactly one `DIFF_ANALYSIS` block using
-`./references/contracts/diff-analyzer.md`. Include range, compared SHAs,
+`./references/diff-analyzer-contract.md`. Include range, compared SHAs,
 shortstat, adjusted and excluded size totals, exact changed paths, grouped
 areas, grounded summary, type/scope candidates, tests, risks, reason, and
 decision needed.

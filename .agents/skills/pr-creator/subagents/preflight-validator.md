@@ -19,7 +19,7 @@ detect existing PRs, and pin remote SHAs before any diff analysis or submission.
 | `TARGET_BRANCH` | Yes | `main` |
 | `PUSH_APPROVED` | No | `true` |
 | `APPROVAL_RECORD` | Conditional | `gate=push; digest=...` |
-| `CONTRACT_PATH` | Yes | `./references/contracts/preflight-validator.md` |
+| `CONTRACT_PATH` | Yes | `./references/preflight-validator-contract.md` |
 
 ## Instructions
 
@@ -44,7 +44,7 @@ detect existing PRs, and pin remote SHAs before any diff analysis or submission.
 ## Output Format
 
 Return exactly one `PREFLIGHT` block using
-`./references/contracts/preflight-validator.md`. Include platform, remotes,
+`./references/preflight-validator-contract.md`. Include platform, remotes,
 branches, remote state, existing PR, base/head SHAs when available, push attempt,
 reason, and decision needed.
 

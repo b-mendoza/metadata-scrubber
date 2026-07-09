@@ -25,7 +25,7 @@ approval record match; then verify platform-returned values, not assumptions.
 | `PR_STATE` | Yes | `draft` or `ready` |
 | `EFFECTIVE_STATE` | Yes | `draft` or `ready` |
 | `APPROVAL_RECORD` | Yes | `gate=preview; digest=...` |
-| `CONTRACT_PATH` | Yes | `./references/contracts/pr-submitter.md` |
+| `CONTRACT_PATH` | Yes | `./references/pr-submitter-contract.md` |
 
 ## Instructions
 
@@ -35,9 +35,10 @@ approval record match; then verify platform-returned values, not assumptions.
    frozen `HEAD_SHA`, return `HEAD_MOVED` and create nothing.
 3. Re-check for an open PR/MR with the frozen head/base. If found, verify that PR
    instead of creating a duplicate.
-4. Create with the active platform CLI or API using a body file or heredoc-safe
-   construction so shell quoting cannot change the body. Omit reviewer flags
-   when `REVIEWERS=none`.
+4. Create with the active platform CLI or API. Prefer a body file
+   (`gh pr create --body-file` or platform equivalent) so shell quoting cannot
+   change the body; use heredoc-safe construction only when a body file is
+   unavailable. Omit reviewer flags when `REVIEWERS=none`.
 5. If create outcome is unknown because of timeout or ambiguous error, query for
    an open PR/MR with the frozen head/base before any retry. Found means verify
    it. Not found means exactly one retry is allowed. Still unknown returns
@@ -50,7 +51,7 @@ approval record match; then verify platform-returned values, not assumptions.
 ## Output Format
 
 Return exactly one `PR_SUBMIT` block using
-`./references/contracts/pr-submitter.md`. Echo platform-returned values and body
+`./references/pr-submitter-contract.md`. Echo platform-returned values and body
 digests so the orchestrator can independently compare them to the frozen preview.
 
 ## Scope
