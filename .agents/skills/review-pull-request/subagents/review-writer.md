@@ -21,10 +21,11 @@ local Markdown artifact the user can read, keep, or approve for posting.
 
 ## Instructions
 
-1. Load `../references/review-file-template.md` only while assembling the file.
+1. Load `../assets/review-file-template.md` only while assembling the file.
 2. Treat `OUTPUT_FILE` as the already-normalized, safe workspace-relative
-   Markdown path from `GATE_INPUT_NORMALIZATION`; return `WRITE: ERROR` if it is
-   missing, absolute, outside the workspace, or not a Markdown file.
+   Markdown path from `GateInputNormalization` (relative `.md`, no `..`, not
+   under `.git/`, inside the workspace); return `WRITE: ERROR` if it is missing
+   or fails that checklist.
 3. Write `OUTPUT_FILE` as a findings-first review that stands alone without the
    conversation context.
 4. Preserve verified finding IDs, severities, file/line references, evidence,

@@ -34,8 +34,9 @@ body.
 ## Instructions
 
 1. Choose the posting method: REST `pulls/reviews` for batched line comments
-   plus a review event, or `gh pr review` or the GitHub review API for
-   summary-only reviews such as no-finding approvals.
+   plus a review event, or `../scripts/post-pr-review.sh` (summary-only via
+   `gh api`) for no-finding / body-only reviews. Prefer the script when the
+   review has zero line comments and `gh` is available.
 2. Load `../references/external-review-resources.md`, fetch the exact GitHub
    docs for the chosen method, and apply the documented fields.
 3. Before posting, confirm `PREVIEW_APPROVED=true` and `REVIEW_DECISION` is

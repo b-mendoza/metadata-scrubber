@@ -2,13 +2,14 @@
 
 > Read this file after input normalization. Keep only status summaries in the
 > orchestrator context; raw diffs, command output, API payloads, and fetched web
-> pages stay inside the subagent that produced them.
+> pages stay inside the subagent that produced them. Authoritative states and
+> transitions live in [`../state-machine.md`](../state-machine.md).
 
 ## Phase Sequence
 
 | Phase | Owner | Continue on |
 | ----- | ----- | ----------- |
-| Intake | Inline | `GATE_INPUT_NORMALIZATION` passes |
+| Intake | Inline (`NormalizeInputs` → gates) | `GateInputNormalization` passes |
 | Context | `pr-context-collector` | `CONTEXT: PASS` |
 | Findings | `finding-reviewer` | `FINDINGS: PASS` or `FINDINGS: NO_FINDINGS` |
 | Comments | `comment-drafter` | `COMMENTS: PASS` or skipped after the no-finding decision checkpoint |
@@ -24,21 +25,29 @@ Carry this compact state between phases:
 Inputs: PR_URL, OUTPUT_FILE, POSTING_MODE, LANGUAGE_STYLE, REVIEW_FOCUS
 Latest status: <CONTEXT | FINDINGS | COMMENTS | VERIFY | WRITE | POST block>
 Review decision candidate: none | comment | approve
+  (NO_FINDINGS path only; approve only if residual risks are non-blocking)
+Review decision (post-verify): comment | request changes | approve
 Posting: skipped | pending-confirmation | preflight-ready | posted | cancelled | failed
 Repair cycles: <0-2>
 ```
 
+`request changes` is never a `REVIEW_DECISION_CANDIDATE` value. It appears only
+after findings exist, via `comment-drafter` recommendation and verifier output.
+
 ## Execution Rules
 
-1. Run `GATE_INPUT_NORMALIZATION` before dispatching subagents: require exactly
+1. Run `GateInputNormalization` before dispatching subagents: require exactly
    one parseable GitHub PR URL, valid `POSTING_MODE` and `REVIEW_FOCUS` values,
-   and a safe workspace-relative Markdown `OUTPUT_FILE`. If multiple PR URLs are
-   present, use `HUMAN_GATE_CHOOSE_ONE_PR`; if a valid single PR is not chosen,
-   route to `PR_REVIEW: NEEDS_CONTEXT`.
+   and a safe workspace-relative Markdown `OUTPUT_FILE`. Safe means: relative
+   path, `.md` suffix, no `..` segment, not under `.git/`, resolves inside the
+   workspace. If multiple PR URLs are present, use `GateChoosePr`
+   (`HUMAN_GATE_CHOOSE_ONE_PR`); if a valid single PR is not chosen, route to
+   `PR_REVIEW: NEEDS_CONTEXT`.
 2. On `CONTEXT: LARGE_REVIEW_CONFIRMATION_REQUIRED`, use
-   `HUMAN_GATE_LARGE_REVIEW`: show shortstat, changed-file groups, the trigger
-   criterion, scope, risk, and the safer draft-only alternative. Re-dispatch
-   context collection with `LARGE_REVIEW_APPROVED=true` only if approved.
+   `GateLargeReview` (`HUMAN_GATE_LARGE_REVIEW`): show shortstat, changed-file
+   groups, the trigger criterion, scope, risk, and the safer draft-only
+   alternative. Re-dispatch context collection with `LARGE_REVIEW_APPROVED=true`
+   only if approved.
 3. Route each context status explicitly: `CONTEXT: AUTH` to `PR_REVIEW: AUTH`,
    `CONTEXT: NOT_FOUND` to `PR_REVIEW: NOT_FOUND`, `CONTEXT: NEEDS_CONTEXT` to
    `PR_REVIEW: NEEDS_CONTEXT`, and `CONTEXT: ERROR` to `PR_REVIEW: REVIEW_ERROR`.
@@ -48,7 +57,7 @@ Repair cycles: <0-2>
    to `PR_REVIEW: NEEDS_CONTEXT`; route retry `FINDINGS: ERROR` to
    `PR_REVIEW: REVIEW_ERROR`. If the narrow context collection returns
    `CONTEXT: LARGE_REVIEW_CONFIRMATION_REQUIRED`, use
-   `HUMAN_GATE_NARROW_LARGE_REVIEW` with the narrow request scope and re-dispatch
+   `GateNarrowLargeReview` with the narrow request scope and re-dispatch
    the narrow request with `LARGE_REVIEW_APPROVED=true` only if approved.
 6. On `FINDINGS: NO_FINDINGS`, skip `comment-drafter`, set
    `REVIEW_DECISION_CANDIDATE`, and pass it to `review-verifier`: `approve` only
@@ -58,7 +67,7 @@ Repair cycles: <0-2>
 8. On `COMMENTS: NEEDS_METADATA`, collect only the requested line metadata and
    retry comment drafting once. Route retry `COMMENTS: NEEDS_METADATA` or
    `COMMENTS: ERROR` to `PR_REVIEW: REVIEW_ERROR`.
-9. On `VERIFY: FAIL`, use `GATE_VERIFY_REPAIR` and stop after two verification
+9. On `VERIFY: FAIL`, use `GateVerifyRepair` and stop after two verification
    repair cycles with `PR_REVIEW: VERIFY_FAIL`. The verifier must name exactly
    one `Fix target`; route repairs this way:
    - `orchestrator-decision`: reset `REVIEW_DECISION_CANDIDATE` from verifier
@@ -74,14 +83,16 @@ Repair cycles: <0-2>
    `VERIFY: ERROR` to `PR_REVIEW: REVIEW_ERROR`.
 10. Dispatch `review-writer` only after `VERIFY: PASS`; route `WRITE: ERROR` to
     `PR_REVIEW: WRITE_ERROR`.
-11. If `POSTING_MODE=post-after-confirmation`, use `GATE_POSTING_MODE` to build
+11. If `POSTING_MODE=post-after-confirmation`, use `GatePostingMode` to build
     a posting preflight packet with the exact verified preview,
     `REVIEW_DECISION`, verified comments, verified metadata, and
-    `PREVIEW_APPROVED=false`. Then use `HUMAN_GATE_FINAL_PREVIEW_APPROVAL` to ask
-    for approval to post that exact preview to the target PR.
+    `PREVIEW_APPROVED=false`. Then use `GatePreviewApproval`
+    (`HUMAN_GATE_FINAL_PREVIEW_APPROVAL`) to ask for approval to post that exact
+    preview to the target PR.
 12. Dispatch `review-poster` only when the posting packet is complete and
-    `PREVIEW_APPROVED=true`. If the user declines, keep the verified draft saved
-    locally and set posting to `cancelled`.
+    `PREVIEW_APPROVED=true`. Prefer `../scripts/post-pr-review.sh` when posting
+    via `gh`. If the user declines, keep the verified draft saved locally and
+    set posting to `cancelled`.
 13. Route `POST: PASS` to posted success. Route `POST: PREVIEW_REQUIRED`,
      `POST: AUTH`, `POST: METADATA_INVALID`, and `POST: ERROR` to
      `PR_REVIEW: POST_ERROR` with the poster's `Reason` and `Next step`.
