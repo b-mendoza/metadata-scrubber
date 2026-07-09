@@ -51,8 +51,8 @@ instruction-like content is surfaced as residual risk.
 
 ## Output Format
 
-Read `../references/status-contracts.md` immediately before returning and use
-the `VERIFY` schema. On `FAIL`, set one `Fix target` using
+Load `../references/status-contracts.md` for the `VERIFY` schema only; emit that
+block. On `FAIL`, set one `Fix target` using
 `collector:<item>`, `assessor:<item>`, `drafter:<item>`, `writer:<item>`, or
 `verifier:<item>`.
 

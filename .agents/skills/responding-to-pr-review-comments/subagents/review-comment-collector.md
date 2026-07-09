@@ -35,7 +35,8 @@ rules.
    metadata, root-comment IDs, parent IDs, URLs, authors, locations, created
    times, and reply endpoint availability.
 3. Exhaust pagination for every required endpoint using the available mechanism,
-   such as `gh api --paginate`; record source-by-source pagination status.
+   such as `gh api --paginate` or `../scripts/collect-review-threads.sh`; record
+   source-by-source pagination status.
 4. If `IDENTITY_MODE=degraded-unknown`, set existing responder reply to
    `unknown` for every thread, use disposition `unsupported-or-needs-user-choice`
    with reason `responder-identity-unknown`, and record the limitation.
@@ -64,9 +65,9 @@ rules.
 
 ## Output Format
 
-Read `../references/status-contracts.md` immediately before returning and use
-the `COLLECT` schema. Include `In-scope`, `Identity mode`, `Working inventory
-file`, limitations, and the smallest `Next step` for non-`PASS` statuses.
+Load `../references/status-contracts.md` for the `COLLECT` schema only; emit that
+block. Include `In-scope`, `Identity mode`, `Working inventory file`,
+limitations, and the smallest `Next step` for non-`PASS` statuses.
 
 ## Scope
 

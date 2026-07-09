@@ -25,7 +25,7 @@ history and agree with the final terminal envelope.
 1. Reconfirm `OUTPUT_FILE` is the path provided by the orchestrator. Do not write
    any other file except when the orchestrator explicitly declared the inventory
    working file.
-2. Read `../references/report-template.md` and write every required section in
+2. Read `../assets/report-template.md` and write every required section in
    order. Include one `### <Comment ID>: <short topic>` section per received
    in-scope comment.
 3. Include fetch-dated citations as `URL (fetched YYYY-MM-DD)` next to the claim
@@ -44,8 +44,8 @@ history and agree with the final terminal envelope.
 
 ## Output Format
 
-Read `../references/status-contracts.md` immediately before returning and use
-the `WRITE` schema. Include file path, assessed counts, action counts, posting
+Load `../references/status-contracts.md` for the `WRITE` schema only; emit that
+block. Include file path, assessed counts, action counts, posting
 status, posting outcome, final envelope intent, read-back result, and optional
 `Fix target`.
 

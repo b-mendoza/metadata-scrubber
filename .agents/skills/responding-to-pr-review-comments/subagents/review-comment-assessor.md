@@ -47,9 +47,9 @@ approval state, or mutation boundaries.
 
 ## Output Format
 
-Read `../references/status-contracts.md` immediately before returning and use
-the `ASSESS` schema. Every assessed item needs classification, confidence,
-evidence, rationale, action intent, disposition, and drafting guidance.
+Load `../references/status-contracts.md` for the `ASSESS` schema only; emit that
+block. Every assessed item needs classification, confidence, evidence,
+rationale, action intent, disposition, and drafting guidance.
 
 ## Scope
 

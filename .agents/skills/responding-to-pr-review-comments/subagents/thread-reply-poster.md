@@ -35,7 +35,8 @@ returned for repair, not improvised.
    latest replies. If the thread is resolved or newly answered since collection,
    skip that reply with ledger reason `stale-thread`.
 5. Post serially using the existing GitHub review-comment reply endpoint and the
-   root top-level review-comment ID. Respect rate-limit guidance from
+   root top-level review-comment ID (or `../scripts/post-review-reply.sh` with a
+   body file that matches the approval record). Respect rate-limit guidance from
    `../references/external-sources.md` when needed.
 6. After each successful post, read back the created reply and record ID and URL.
    If a post or read-back fails, record `failed` with reason, stop further posts,
@@ -46,8 +47,8 @@ returned for repair, not improvised.
 
 ## Output Format
 
-Read `../references/status-contracts.md` immediately before returning and use
-the `POST` schema. The ledger is required for all statuses.
+Load `../references/status-contracts.md` for the `POST` schema only; emit that
+block. The ledger is required for all statuses.
 
 ## Scope
 

@@ -16,7 +16,7 @@ approval state, or mutation boundaries.
 | `gh-graphql-review-thread` | <https://docs.github.com/en/graphql/reference/objects#pullrequestreviewthread> | `isResolved`, root comment, thread state, and freshness checks |
 | `gh-rest-pagination` | <https://docs.github.com/en/rest/using-the-rest-api/using-pagination-in-the-rest-api> | Collector-owned pagination completeness |
 | `gh-rest-best-practices` | <https://docs.github.com/en/rest/using-the-rest-api/best-practices-for-using-the-rest-api> | Serial mutative requests and secondary-rate-limit handling |
-| `gh-cli-api` | <https://cli.github.com/manual/gh_api> | `gh api --paginate` and GraphQL calls |
+| `gh-cli-api` | <https://cli.github.com/manual/gh_api> | `gh api --paginate` and GraphQL calls; optional helpers `../scripts/collect-review-threads.sh` and `../scripts/post-review-reply.sh` |
 | `gh-cli-pr-view` | <https://cli.github.com/manual/gh_pr_view> | Compact PR metadata |
 | `github-about-reviews` | <https://docs.github.com/en/pull-requests/collaborating-with-pull-requests/reviewing-changes-in-pull-requests/about-pull-request-reviews> | User-facing distinction between review comments, review summaries, and conversation comments |
 

@@ -21,9 +21,12 @@ excerpts.
 - Collection completeness: `complete`, `limited`, or `incomplete`. `PASS` may
   use only `complete` or `limited`.
 - Counter fields: `questions.pr-url`, `questions.output-path`,
-  `questions.product`, `questions.target`, `questions.wording`,
-  `preview-decision`, `preview-repair`, `contract-repair`,
-  `verify.context.<item>`, `verify.fix.<item>`.
+  `questions.posting-mode`, `questions.product`, `questions.target`,
+  `questions.wording`, `preview-decision`, `preview-repair`,
+  `contract-repair`, `verify.context.<item>`, `verify.fix.<item>`.
+- `POSTING_MODE` allowed values: `draft-only`, `post-after-confirmation` only.
+  Unknown or ambiguous values use `questions.posting-mode` (cap 3), then
+  `PR_COMMENT_RESPONSE: NEEDS_USER_DECISION`.
 
 ## Collector Output
 
