@@ -13,7 +13,7 @@ Status: <CHANGED_PASS | COMPLETE_NO_SAFE_CHANGE | COMPLETE_PRODUCTION_BUG_EXPOSE
 - Resolved target set: <paths>
 - User goal: <goal or none>
 - Scope limits: <scope or none>
-- AUTO_APPROVE: <true/false and reason recorded>
+- AUTO_APPROVE: <true/false; if true, record that only the plan gate was bypassed>
 
 ## Outcome
 

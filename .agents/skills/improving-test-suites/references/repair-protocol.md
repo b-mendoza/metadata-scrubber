@@ -1,7 +1,8 @@
 # Repair Protocol
 
-Load only after changed-file validation fails or the conformance check reports a
-repairable mismatch.
+Load from the `Repair` state after changed-file validation fails or the
+conformance check reports a repairable mismatch. Terminal names follow
+[`../state-machine.md`](../state-machine.md).
 
 ## Budget
 
@@ -15,15 +16,14 @@ failure signature.
 | Likely cause | Route |
 | ------------ | ----- |
 | `test refactor regression` | If budget remains, repair through `test-refactorer`; re-enter conformance |
-| `production bug exposed` | Ask for dual authority if a production fix is in scope; declined or out of scope becomes `COMPLETE_PRODUCTION_BUG_EXPOSED` |
-| `pre-existing failure` | `VALIDATION_FAILED_AFTER_REPAIR` with raw-log path and risk summary |
+| `production bug exposed` | Ask dual authority if a production fix is in scope; declined or out of scope → `TerminalBug` |
+| `pre-existing failure` | `TerminalFailed` with raw-log path and risk summary |
 | `unknown` and retry plausible | If budget remains, retry validation once with same guarded command |
-| `unknown` and retry not plausible | `VALIDATION_FAILED_AFTER_REPAIR` |
-| Conformance mismatch | If budget remains, repair through `test-refactorer`; user-decision mismatches ask and resume at synthesis |
+| `unknown` and retry not plausible | `TerminalFailed` |
+| Conformance mismatch | If budget remains, repair through `test-refactorer`; user-decision mismatches ask and resume at `Synthesis` |
 
-Budget exhausted always routes to `VALIDATION_FAILED_AFTER_REPAIR` unless a
-production bug has been identified, in which case use
-`COMPLETE_PRODUCTION_BUG_EXPOSED`.
+Budget exhausted always routes to `TerminalFailed` unless a production bug has
+been identified, in which case use `TerminalBug`.
 
 ## Repair Packet Contract
 

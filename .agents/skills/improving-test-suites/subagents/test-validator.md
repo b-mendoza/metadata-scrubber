@@ -27,10 +27,12 @@ debugging without flooding the orchestrator context.
 2. Select the narrowest relevant command from supplied, suggested, then inferred
    candidates. Widen to consuming suites when approved shared-helper edits may
    affect non-target tests.
-3. Apply the test-command guard. Run only commands matching known test runners
-   such as `pytest`, `python -m pytest`, `go test`, `npm test`, `yarn test`,
-   `pnpm test`, `npx vitest`, `npx jest`, `cargo test`, `mvn test`,
-   `./gradlew test`, `rspec`, or `mix test`; otherwise require the user to
+3. Apply the test-command guard. Prefer running
+   `../scripts/check-test-command.sh "<candidate>"` (exit 0 = allow). The
+   allowlist covers `pytest`, `python -m pytest`, `go test`, `npm test`,
+   `yarn test`, `pnpm test`, `npx vitest`, `npx jest`, `cargo test`,
+   `mvn test`, `./gradlew test`, `rspec`, and `mix test`. If the script is
+   unavailable, apply the same allowlist inline. Otherwise require the user to
    confirm the exact command verbatim in this run.
 4. Do not run deploy, destructive, shell-piped, package-publish, network-write,
    or non-test commands.
