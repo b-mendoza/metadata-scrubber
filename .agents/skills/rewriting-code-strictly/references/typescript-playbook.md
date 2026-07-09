@@ -12,15 +12,18 @@
 - Keep assertions local; replace them with narrowing, guards, or runtime schemas when feasible.
 - Avoid deep generic machinery unless it removes real duplication or captures a stable public contract.
 
-Anything not listed above defers to project evidence or to the external source
-map in `./external-sources.md`.
+Anything not listed above defers to project evidence. When a concrete checker,
+validator, or syntax decision still needs current external docs, the strategist
+loads the Progressive Loading Map row for `./references/external-sources.md`
+(from the subagent: `../references/external-sources.md`) — do not chain-load it
+from this playbook.
 
 ## When To Fetch External Sources
 
-Load `./external-sources.md` only for current annotation syntax,
-narrowing behavior, strict `tsconfig` flags, `typescript-eslint` diagnostics,
-Zod API choices, or unsoundness rationale that affects the rewrite and is
-covered by `REFERENCE_NEED`, `EXTERNAL_FETCH_APPROVAL`, or a required
+Ask the strategist to load `external-sources.md` only for current annotation
+syntax, narrowing behavior, strict `tsconfig` flags, `typescript-eslint`
+diagnostics, Zod API choices, or unsoundness rationale that affects the rewrite
+and is covered by `REFERENCE_NEED`, `EXTERNAL_FETCH_APPROVAL`, or a required
 project-local source.
 
 ## Boundary Validation

@@ -29,8 +29,9 @@ Flow:
 ## Approval Gate Handling
 
 1. Strategist returns `STRICT_STRATEGY: PASS`, but the smallest safe plan would add Pydantic to a project that does not already use it.
-2. Orchestrator stops before implementation and asks one approval question naming the dependency, target file, reason, risk, reversibility, and safer no-dependency alternative.
-3. If the user declines or scope forbids dependencies, strategist revises to the safer local alternative or returns `NO_CHANGE` when no useful strict rewrite remains.
+2. After `CheckGates` pass, `GateExpansion` detects the dependency expansion. Orchestrator enters `AskApproval` with one question naming the dependency, target file, reason, risk, reversibility, and safer no-dependency alternative.
+3. If the user **approves**, resume `DispatchImplement` with the expanded `MUTATION_LIMITS` / scope — do not terminal-stop.
+4. If the user **declines**, stop as `TerminalBlocked` (or re-plan only when the user supplies a revised in-limits goal). Unanswered → `TerminalNeedsClarification`.
 
 ## Validation Warning Handling
 
