@@ -1,8 +1,10 @@
 # Claim Extraction Playbook
 
 Read this file when building ledger rows or choosing which claims a subagent
-should review. Use the categories below first; load `external-sources.md` only
-for a high-stakes classification that remains genuinely ambiguous.
+should review. Use the categories below first. For optional methodology
+background on a high-stakes classification that remains genuinely ambiguous,
+ask the orchestrator to load `./references/external-sources.md` from the skill
+progressive-disclosure map (do not chain-load sibling references from here).
 
 ## Claim Categories
 
@@ -39,17 +41,19 @@ candidate under `Unreviewed candidates`. The orchestrator records those rows as
 
 ## Edit Action Vocabulary
 
-Use one verb per flagged claim.
+Use one verb per claim. Report templates and the ledger use the same tokens.
+Ledger field `edit` stores these values; use `none` only when the claim needs
+no wording change (equivalent to a claim-verifier `none` action).
 
-| Verb | Use When |
-| ---- | -------- |
-| `No change` | The claim holds as written, for claim verification only |
-| `Replace` | Current evidence contradicts the claim |
-| `Date-stamp` | The claim is true now but will rot quickly |
-| `Qualify` | The claim is true only within bounds the draft does not name |
-| `Reframe` | Wording overstates what the source supports |
-| `Add counterpoint` | A meaningful exception is missing |
-| `Remove` | Evidence is too weak or absent to support the claim |
+| Verb | Who may emit | Use When |
+| ---- | ------------ | -------- |
+| `none` | `claim-verifier` (and ledger after PASS) | The claim holds as written |
+| `Replace` | `recency-checker` | Current evidence contradicts the claim |
+| `Date-stamp` | `recency-checker` | The claim is true now but will rot quickly |
+| `Qualify` | both | The claim is true only within bounds the draft does not name |
+| `Reframe` | `claim-verifier` | Wording overstates what the source supports |
+| `Add counterpoint` | `claim-verifier` | A meaningful exception is missing |
+| `Remove` | both | Evidence is too weak or absent to support the claim |
 
 Prefer the smallest edit that makes the claim safe. A claim that needs any date,
 scope, or uncertainty wording is not clean enough for an unqualified final

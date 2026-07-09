@@ -67,8 +67,8 @@ Best source: <source> | Tier <n> | <date or "undated">
 Counterexample: None found | <brief exception or alternative view>
 Failure modes: None | <comma-separated list>
 Confidence: High | Med | Low
-Action: No change | Qualify | Reframe | Add counterpoint | Remove
-Suggested revision: "<only when action is not No change>"
+Action: none | Qualify | Reframe | Add counterpoint | Remove
+Suggested revision: "<only when action is not none>"
 
 Unreviewed candidates:
 - None | "<candidate claim>" - <why not deep-reviewed>
@@ -78,7 +78,7 @@ Summary:
 - Unresolved risks: <only if any remain, otherwise None>
 ```
 
-Use `Action: No change` only when the claim is acceptable as written. If a claim
+Use `Action: none` only when the claim is acceptable as written. If a claim
 needs a caveat, softer framing, counterpoint, or removal, return `FAIL` and give
 a suggested revision. Always include `Unreviewed candidates`; write `None` only
 when every candidate was deep-reviewed.

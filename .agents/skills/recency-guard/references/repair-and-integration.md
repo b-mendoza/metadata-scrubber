@@ -17,7 +17,7 @@ Maintain one compact internal table for the entire run. One row per risky claim:
 | `status` | `unreviewed`, `verified`, `qualified`, `removed`, or `unverifiable` |
 | `evidence` | Best source, tier, and source date when reviewed |
 | `confidence` | `High`, `Med`, or `Low` when reviewed |
-| `edit` | `none`, `Replace`, `Date-stamp`, `Qualify`, `Reframe`, `Add counterpoint`, or `Remove` |
+| `edit` | `none`, `Replace`, `Date-stamp`, `Qualify`, `Reframe`, `Add counterpoint`, or `Remove` (same tokens as the claim-extraction playbook; `none` means no wording change) |
 
 Fold every conforming subagent report into the ledger, then the report itself
 may be discarded. Retain the ledger plus the latest concise verdict until the
@@ -72,6 +72,15 @@ instead, and record the rejection in the ledger.
 | `FAIL` | Screen and apply only flagged edits, update the ledger, and rerun within budget when open flags remain |
 | `TOOLS_MISSING` | Mark affected time-sensitive or decision-shaping rows `unverifiable` unless they are stable, non-current knowledge; qualify or remove affected wording |
 | `ERROR` | Use the bounded ERROR retry; if exhausted, mark affected open rows `unverifiable` |
+
+### `claim_review_warranted` (after recency `TOOLS_MISSING`)
+
+Continue to `ClaimAudit` only when the ledger still has at least one
+`decision-shaping` or `both` row in `unreviewed` or otherwise open status that
+is not solely a time-sensitive fact already marked `unverifiable`. If that
+guard is false, mark remaining decision-shaping candidates that needed current
+sources `unverifiable`, skip `ClaimAudit`, and enter `IntegrateEvidence` (or
+`SelectOutcome` when integration has nothing left to fold).
 
 With no verification tools, a time-sensitive claim is never supportable from
 model knowledge alone. Remove it or label it explicitly as unverified model

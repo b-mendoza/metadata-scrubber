@@ -53,5 +53,7 @@ Apply these rules:
 | Unsupported additions | Do not introduce URLs, products, instructions, recommendations, or claims absent from the cited evidence |
 | Tier 6 material | Use as a search lead only, not as support for a final claim |
 
-When a source is hard to classify, load `./external-sources.md` and fetch one
-methodology URL only if the classification materially affects the answer.
+When a source is hard to classify and the classification materially affects the
+answer, ask the orchestrator to load `./references/external-sources.md` from the
+skill progressive-disclosure map and fetch one methodology URL. Do not
+chain-load sibling references from this file.
