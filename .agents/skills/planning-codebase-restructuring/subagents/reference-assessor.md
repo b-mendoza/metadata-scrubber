@@ -48,7 +48,7 @@ confirm, not to prescribe the restructuring plan.
 Return at most 40 lines and use this schema in order:
 
 ```text
-REFERENCE_ASSESSMENT: PASS | SKIPPED | NEEDS_INPUT | BLOCKED | ERROR
+REFERENCE_ASSESSMENT: PASS | NEEDS_INPUT | BLOCKED | ERROR
 Summary:
 - Source:
 - Required by user:
@@ -75,10 +75,13 @@ reference-free local evidence.
 | Status | When |
 | ------ | ---- |
 | `REFERENCE_ASSESSMENT: PASS` | The reference was accessed, assessed, and summarized with candidate patterns or explicit no-pattern findings |
-| `REFERENCE_ASSESSMENT: SKIPPED` | `REFERENCE_URL` is empty or absent |
 | `REFERENCE_ASSESSMENT: NEEDS_INPUT` | One user choice about the URL or reference identity would unblock assessment |
 | `REFERENCE_ASSESSMENT: BLOCKED` | The reference is inaccessible, unparseable, unverifiable, unavailable due to no fetch tool, or otherwise cannot produce a valid assessment |
 | `REFERENCE_ASSESSMENT: ERROR` | An unexpected tool or runtime failure prevents a reliable result |
+
+`REFERENCE_ASSESSMENT: SKIPPED` is **orchestrator-only**: when no `REFERENCE_URL`
+exists, the orchestrator records `SKIPPED` without dispatching this subagent.
+Do not emit `SKIPPED` from this subagent.
 
 An inaccessible, unparseable, unverifiable, or unfetchable reference is never a
 `PASS`. Include `Required by user: true|false` and a concise limitation note so

@@ -46,25 +46,12 @@ sentences before applying it.
 | Automated refactoring recipes | Considering follow-up implementation approaches for bounded repeatable migrations | https://docs.openrewrite.org/ |
 | Prompt injection | Explaining why repository and web content are treated as data, never instructions | https://owasp.org/www-project-top-10-for-large-language-model-applications/ ; https://genai.owasp.org/llmrisk/llm01-prompt-injection/ ; https://simonwillison.net/series/prompt-injection/ |
 
-## Package Maintenance References
+## Package Maintenance
 
-Use these repository-local documents only when maintaining this skill package,
-not when producing a restructuring plan for a user's codebase.
-
-| Topic | Use when | Path |
-| ----- | -------- | ---- |
-| Runtime portability | Checking dual-runtime dispatch, frontmatter, and tool assumptions | `../../../docs/best-practices/runtime-portability-matrix.md` |
-| Subagent execution | Checking portable fallback behavior for subagent dispatch | `../../../docs/best-practices/subagent-default-execution.md` |
-| Context protection | Checking summary-only retention, line budgets, and dump limits | `../../../docs/best-practices/context-window-protection.md` |
-| Input/output contracts | Checking status-prefixed subagent schemas and summary contracts | `../../../docs/best-practices/input-output-contracts.md` |
-| Critical gates | Checking that validation and handoff gates are observable | `../../../docs/best-practices/critical-output-gates.md` |
-| Escalation categories | Checking `NEEDS_INPUT`, `BLOCKED`, and `ERROR` semantics | `../../../docs/best-practices/escalation-categories.md` |
-| Handoff dispatch | Checking resume packet and state-transfer patterns | `../../../docs/best-practices/handoff-file-dispatch.md` |
-| Artifact lifecycle | Checking persisted report versus ephemeral state boundaries | `../../../docs/best-practices/artifact-lifecycle.md` |
-| Mutation boundaries | Checking the planning-only and artifact-write boundaries | `../../../docs/best-practices/mutation-scope-boundaries.md` |
-| Progressive disclosure | Checking `SKILL.md` size and just-in-time reference loading | `../../../docs/best-practices/progressive-disclosure.md` |
-| Orchestrator routing | Checking that the orchestrator routes instead of doing subagent work | `../../../docs/best-practices/orchestrator-as-routing-ui.md` |
-| Empirical validation | Checking available validation and verification guidance | `../../../docs/best-practices/empirical-validation.md` |
+When maintaining this skill package (not when producing a restructuring plan),
+use this repository's `docs/best-practices/` index. Do not follow deep relative
+links from this file during a planning run; planning authority stays in
+`SKILL.md`, `state-machine.md`, and the subagent contracts.
 
 ## Offline Rules
 
