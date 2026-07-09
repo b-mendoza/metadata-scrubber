@@ -6,10 +6,10 @@ Use this reference when drafting or delivering an RCA report. Status names are l
 
 | Status | Use when, and only when |
 | ------ | ----------------------- |
-| `ready` | Root cause(s) are supported at confidence `high` or `medium`; scope and blast radius are stated; causal chain and educational explanation are traceable; fix direction addresses the cause(s); any Tier C need is approved and handed off or documented. |
+| `ready` | Root cause(s) are supported at confidence `high` or `medium`; scope and blast radius are stated; causal chain and educational explanation are traceable; fix direction addresses the cause(s). Approved Tier C handoff alone is never `ready`. |
 | `blocked` | Required material is known to exist but no one in this workflow can obtain it safely, such as evidence reachable only through an unapproved Tier C action. |
 | `needs-validation` | Material was obtained but is too weak, stale, or contradictory; confidence is `low`; a declined approval left a validation gap; or the review repair cap was reached. |
-| `escalated` | No supported root cause remains after exhausting plausible hypotheses and refinement budget, or an approved Tier C handoff is required to proceed. |
+| `escalated` | No supported root cause remains after exhausting plausible hypotheses and refinement budget, or an approved Tier C action was handed off for external execution (with or without returned output that did not complete a supported diagnosis). |
 
 Orchestration-only early stops are `needs-input` and `error`; they do not deliver an RCA report.
 

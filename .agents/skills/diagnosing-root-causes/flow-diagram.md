@@ -1,75 +1,94 @@
-# Diagnosing Root Causes Flow Diagram
+# Flow Diagram
 
-Sync note: `SKILL.md` Execution is normative. This diagram is derived from it and must match its phases, gates, loop caps, statuses, and one-way approval branch.
+Canonical execution model: finite state machine. Guards, loop caps, and
+terminals are tabulated in [`state-machine.md`](./state-machine.md).
+`SKILL.md` Execution must match this diagram.
 
 ```mermaid
-flowchart TD
-  START([Start: ISSUE and RESOURCES received]) --> INTAKE["Capture inputs; classify ISSUE_SOURCE as runtime / CI/CD / user-report; state safety tiers and untrusted-content rule; separate facts, assumptions, risks, blockers, and open questions"]
-  INTAKE --> INTAKE_GATE{"ISSUE and RESOURCES usable, and user-report minimums present?"}
+stateDiagram-v2
+  [*] --> Intake
 
-  INTAKE_GATE -->|no, clarification unused| CLARIFY["Ask one batched set of up to three targeted questions"]
-  CLARIFY --> ANSWERED{"User answered?"}
-  ANSWERED -->|yes, merge answers| DISPATCH_COLLECTOR
-  ANSWERED -->|no| NEEDS_INPUT([needs-input: structured information request + resume instructions])
-  INTAKE_GATE -->|no, clarification already used| NEEDS_INPUT
-  INTAKE_GATE -->|yes| DISPATCH_COLLECTOR["Dispatch evidence-collector: ISSUE, ISSUE_SOURCE, RESOURCES, REPRODUCTION, ENVIRONMENT, answers, focused request if refining"]
+  Intake --> CollectEvidence: inputs usable
+  Intake --> Clarify: needs clarify and clarify_token
+  Intake --> TermNeedsInput: needs clarify and no token
 
-  DISPATCH_COLLECTOR --> COLLECT_VERDICT{"COLLECT verdict"}
-  COLLECT_VERDICT -->|ERROR, first| RETRY_C["Re-dispatch collector once with error note"]
-  RETRY_C --> COLLECT_VERDICT
-  COLLECT_VERDICT -->|ERROR, second| ERROR([error: failure detail + recovery action])
-  COLLECT_VERDICT -->|NEEDS_INPUT| CLARIFY_LEFT{"Clarification batch unused?"}
-  CLARIFY_LEFT -->|yes| CLARIFY
-  CLARIFY_LEFT -->|no| NEEDS_INPUT
-  COLLECT_VERDICT -->|BLOCKED: only Tier C could obtain it| BLOCKED([blocked: material unobtainable safely])
-  COLLECT_VERDICT -->|PASS| WEAK_GATE{"Evidence base coherent enough for analysis?"}
+  Clarify --> CollectEvidence: user answered
+  Clarify --> TermNeedsInput: declined or silent
 
-  WEAK_GATE -->|no| NEEDS_VALIDATION([needs-validation: documented gap, weak or contradictory evidence])
-  WEAK_GATE -->|yes| DISPATCH_ANALYST["Dispatch root-cause-analyst: EVIDENCE_BASE with excerpts, ISSUE, ISSUE_SOURCE, APPROVED_ACTIONS; + draft and review feedback on repair"]
+  CollectEvidence --> CoherenceCheck: COLLECT PASS
+  CollectEvidence --> Clarify: NEEDS_INPUT and clarify_token
+  CollectEvidence --> TermNeedsInput: NEEDS_INPUT and no token
+  CollectEvidence --> TermBlocked: COLLECT BLOCKED
+  CollectEvidence --> RetryCollect: COLLECT ERROR first
+  CollectEvidence --> TermError: COLLECT ERROR second
 
-  DISPATCH_ANALYST --> ANALYSIS_VERDICT{"ANALYSIS verdict"}
-  ANALYSIS_VERDICT -->|ERROR, first| RETRY_A["Re-dispatch analyst once with error note"]
-  RETRY_A --> ANALYSIS_VERDICT
-  ANALYSIS_VERDICT -->|ERROR, second| ERROR
-  ANALYSIS_VERDICT -->|NEEDS_INPUT| CLARIFY_LEFT
-  ANALYSIS_VERDICT -->|NEEDS_EVIDENCE| REFINE_CAP{"Fewer than two refinement loops used?"}
-  REFINE_CAP -->|yes, forward focused request| DISPATCH_COLLECTOR
-  REFINE_CAP -->|no, treat as UNSUPPORTED| UNSUPPORTED_CAP
-  ANALYSIS_VERDICT -->|UNSUPPORTED| UNSUPPORTED_CAP{"Fewer than two UNSUPPORTED retries used and plausible direction remains?"}
-  UNSUPPORTED_CAP -->|yes, redirect analyst| DISPATCH_ANALYST
-  UNSUPPORTED_CAP -->|no| ESCALATED_UNKNOWN([escalated: no supported root cause; ranked hypotheses + resolving evidence])
+  RetryCollect --> CollectEvidence: redispatch with error note
 
-  ANALYSIS_VERDICT -->|NEEDS_APPROVAL| PACKET["Present approval packet verbatim: action, target, reason, risk, reversibility, safer alternative, expected evidence gain"]
-  PACKET --> HUMAN_GATE{"Human approves this exact Tier C action?"}
-  HUMAN_GATE -->|approved| EXTERNAL{"User executes externally and returns output during this run?"}
-  EXTERNAL -->|yes, ingest output as RESOURCES| DISPATCH_COLLECTOR
-  EXTERNAL -->|no| ESCALATED_HANDOFF([escalated: approved sensitive workflow handed off])
-  HUMAN_GATE -->|declined| SAFER{"Safer alternative exists?"}
-  SAFER -->|yes, direct analyst to it| DISPATCH_ANALYST
-  SAFER -->|no| NEEDS_VALIDATION
+  CoherenceCheck --> Analyze: coherent and fresh enough
+  CoherenceCheck --> TermNeedsValidation: contradictory or stale beyond affected version
 
-  ANALYSIS_VERDICT -->|PASS| DISPATCH_REVIEWER["Dispatch rca-report-reviewer: RCA_REPORT_DRAFT, EVIDENCE_BASE, ISSUE_SOURCE, SKILL_ROOT; + REVIEW_SCOPE on re-review"]
+  Analyze --> Review: ANALYSIS PASS
+  Analyze --> PresentApproval: NEEDS_APPROVAL
+  Analyze --> CollectEvidence: NEEDS_EVIDENCE and refine_loops under 2
+  Analyze --> Analyze: UNSUPPORTED or refine over cap and unsupported under 2
+  Analyze --> TermEscalated: UNSUPPORTED or refine over cap and unsupported exhausted
+  Analyze --> Clarify: NEEDS_INPUT and clarify_token
+  Analyze --> TermNeedsInput: NEEDS_INPUT and no token
+  Analyze --> RetryAnalyze: ANALYSIS ERROR first
+  Analyze --> TermError: ANALYSIS ERROR second
 
-  DISPATCH_REVIEWER --> REVIEW_VERDICT{"REVIEW verdict"}
-  REVIEW_VERDICT -->|ERROR, first| RETRY_R["Re-dispatch reviewer once with error note"]
-  RETRY_R --> REVIEW_VERDICT
-  REVIEW_VERDICT -->|ERROR, second| ERROR
-  REVIEW_VERDICT -->|BLOCKED| BLOCKED
-  REVIEW_VERDICT -->|FAIL| REPAIR_CAP{"Fewer than three repair cycles used?"}
-  REPAIR_CAP -->|yes, prior draft + failed checks only| DISPATCH_ANALYST
-  REPAIR_CAP -->|no| NEEDS_VALIDATION
-  REVIEW_VERDICT -->|PASS| DELIVER["Deliver RCA report: confidence + basis, root cause(s), causal chain, educational explanation, injection flags, gaps"]
+  RetryAnalyze --> Analyze: redispatch with error note
 
-  DELIVER --> READY([ready])
+  PresentApproval --> AwaitExternal: approved Tier C packet
+  PresentApproval --> Analyze: declined and safer alternative
+  PresentApproval --> TermNeedsValidation: declined and no safer path
+
+  AwaitExternal --> CollectEvidence: external output returned
+  AwaitExternal --> TermEscalated: handoff only
+
+  Review --> Deliver: REVIEW PASS
+  Review --> RepairAnalyze: FAIL and repair_cycles under 3
+  Review --> TermNeedsValidation: FAIL and repair cap
+  Review --> TermBlocked: REVIEW BLOCKED
+  Review --> RetryReview: REVIEW ERROR first
+  Review --> TermError: REVIEW ERROR second
+
+  RetryReview --> Review: redispatch with error note
+  RepairAnalyze --> Review: repaired draft plus REVIEW_SCOPE
+
+  Deliver --> TermReady: status ready
+  Deliver --> TermBlocked: status blocked
+  Deliver --> TermNeedsValidation: status needs-validation
+  Deliver --> TermEscalated: status escalated
+
+  TermReady --> [*]
+  TermBlocked --> [*]
+  TermNeedsValidation --> [*]
+  TermEscalated --> [*]
+  TermNeedsInput --> [*]
+  TermError --> [*]
 ```
 
-## Terminal-State Reference
+## Gate And Branch Summary
+
+| Gate | Guard | Pass path | Stop / alternate |
+| ---- | ----- | --------- | ---------------- |
+| Intake usability | `ISSUE`/`RESOURCES` usable; `user-report` minimums when applicable | `CollectEvidence` | `Clarify` if token left; else `TermNeedsInput` |
+| Clarify budget | `clarify_token` unused | One batch ≤3 questions | Later `NEEDS_INPUT` → `TermNeedsInput` |
+| Collect verdict | `COLLECT: PASS` | `CoherenceCheck` | `Clarify` / `TermNeedsInput` / `TermBlocked` / retry / `TermError` |
+| Coherence | Not mutually contradictory **and** not stale beyond affected version | `Analyze` | `TermNeedsValidation` |
+| Analyze verdict | `ANALYSIS: PASS` | `Review` | Approval branch, refine, unsupported, clarify, retry, or terminal |
+| Approval (conditional) | `ANALYSIS: NEEDS_APPROVAL` only | `AwaitExternal` if approved | Safer alternative → `Analyze`; else `TermNeedsValidation` |
+| Tier C rule | Never execute Tier C | Handoff packet only | `TermEscalated` unless external output ingested |
+| Review verdict | `REVIEW: PASS` | `Deliver` | Repair (cap 3), `TermNeedsValidation`, `TermBlocked`, retry, or `TermError` |
+
+## Terminal States
 
 | Terminal | Meaning |
 | -------- | ------- |
-| `ready` | Root cause(s) supported at high or medium confidence; review passed. |
-| `blocked` | Material is known but unobtainable without an unapproved Tier C action, or review inputs are missing. |
-| `needs-validation` | Evidence is weak, stale, or contradictory; approval was declined with no safe path; or repair cap was reached. |
-| `escalated` | No supported root cause after caps, or approved Tier C work was handed off. |
-| `needs-input` | Only the user can supply the missing item; no report is delivered. |
-| `error` | A second consecutive tooling failure occurred in the same subagent. |
+| `TermReady` | Root cause(s) at high or medium confidence; review passed. |
+| `TermBlocked` | Material unobtainable without unapproved Tier C, or review inputs missing. |
+| `TermNeedsValidation` | Contradictory/stale evidence; declined approval with no safe path; or repair cap. |
+| `TermEscalated` | No supported root cause after caps, or approved Tier C handed off. |
+| `TermNeedsInput` | Only the user can supply the missing item; no RCA report. |
+| `TermError` | Second consecutive tooling failure in the same subagent; no RCA report. |
