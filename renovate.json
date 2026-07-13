@@ -13,11 +13,6 @@
       "description": "ai and @ai-sdk/* share types across versions; they break when updated separately",
       "groupName": "AI SDK packages",
       "matchPackageNames": ["/^ai$/", "/^@ai-sdk\//"]
-    },
-    {
-      "description": "drizzle's beta tags confuse renovate into proposing downgrades",
-      "enabled": false,
-      "matchPackageNames": ["drizzle-kit", "drizzle-orm"]
     }
   ],
   "rebaseWhen": "conflicted",
