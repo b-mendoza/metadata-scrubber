@@ -49,7 +49,7 @@
     "clsx": "2.1.1",
     "date-fns": "4.4.0",
     "devalue": "5.8.1",
-    "drizzle-orm": "1.0.0-rc.4",
+    "drizzle-orm": "1.0.0-rc.4-5d5b77c",
     "isbot": "5.2.0",
     "lucide-react": "1.24.0",
     "postgres": "3.4.9",
