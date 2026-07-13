@@ -87,7 +87,7 @@
     "@vitest/eslint-plugin": "1.6.22",
     "babel-plugin-react-compiler": "1.0.0",
     "daisyui": "5.6.16",
-    "drizzle-kit": "1.0.0-rc.4",
+    "drizzle-kit": "1.0.0-rc.4-ca0f029",
     "eslint": "9.39.4",
     "eslint-config-love": "154.0.0",
     "eslint-plugin-jsx-a11y": "6.10.2",
