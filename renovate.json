@@ -15,8 +15,8 @@
       "matchPackageNames": ["/^ai$/", "/^@ai-sdk\//"]
     },
     {
-      "description": "Keep Go Docker image and go.mod go directive in lockstep",
-      "groupName": "Go toolchain",
+      "description": "Renovate updates the golang Docker image and the go.mod go directive through different managers. Group them so one pull request bumps both to the same Go release.",
+      "groupName": "Go Docker image and go.mod",
       "matchDepTypes": ["golang"],
       "matchManagers": ["dockerfile", "gomod"],
       "matchPackageNames": ["golang", "go"]
