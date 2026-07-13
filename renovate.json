@@ -13,6 +13,13 @@
       "description": "ai and @ai-sdk/* share types across versions; they break when updated separately",
       "groupName": "AI SDK packages",
       "matchPackageNames": ["/^ai$/", "/^@ai-sdk\//"]
+    },
+    {
+      "description": "Keep Go Docker image and go.mod go directive in lockstep",
+      "groupName": "Go toolchain",
+      "matchDepTypes": ["golang"],
+      "matchManagers": ["dockerfile", "gomod"],
+      "matchPackageNames": ["golang", "go"]
     }
   ],
   "rebaseWhen": "conflicted",
