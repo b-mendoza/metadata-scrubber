@@ -132,6 +132,12 @@
       "sourceType": "github",
       "skillPath": "skills/idea-refine/SKILL.md",
       "computedHash": "9fc0ae5d8a074872a636d22f9c6fe71e041b86cddc9fe5af90ef654f5032ec5d"
+    },
+    "interview-me": {
+      "source": "addyosmani/agent-skills",
+      "sourceType": "github",
+      "skillPath": "skills/interview-me/SKILL.md",
+      "computedHash": "efded91ac7f7626239b338ce8622afeb557151b86532b632f3c9eb5b2ff9048f"
     }
   }
 }
