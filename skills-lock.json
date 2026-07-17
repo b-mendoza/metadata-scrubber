@@ -25,12 +25,6 @@
       "skillPath": "skills/executing-plans/SKILL.md",
       "computedHash": "08604f93f2e38dd3575e5503c79cda5c623c78a8df0e472457ac5ef7a33f22b8"
     },
-    "humanizer": {
-      "source": "blader/humanizer",
-      "sourceType": "github",
-      "skillPath": "SKILL.md",
-      "computedHash": "71a65e340e413dc6828da29eff38d9e2c6868e93898303bd062a06bed9f95102"
-    },
     "improving-test-suites": {
       "source": "b-mendoza/agent-skills",
       "sourceType": "github",
