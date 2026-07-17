@@ -114,6 +114,12 @@
       "sourceType": "github",
       "skillPath": "skills/api-security-best-practices/SKILL.md",
       "computedHash": "5b1d15e3795922ff0fcc6fbf9f9b4c9f58df3fadca5c1899019004e1700ec093"
+    },
+    "architecture-patterns": {
+      "source": "wshobson/agents",
+      "sourceType": "github",
+      "skillPath": "plugins/backend-development/skills/architecture-patterns/SKILL.md",
+      "computedHash": "a66aaa5aa49b75bec12b6270dcde8794b1f0cc75fbb9ecb999e43f8b723b461f"
     }
   }
 }
