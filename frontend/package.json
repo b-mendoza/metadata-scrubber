@@ -89,7 +89,7 @@
     "daisyui": "5.6.18",
     "drizzle-kit": "1.0.0-rc.4",
     "eslint": "9.39.5",
-    "eslint-config-love": "154.0.0",
+    "eslint-config-love": "154.1.0",
     "eslint-plugin-jsx-a11y": "6.10.2",
     "eslint-plugin-oxlint": "1.73.0",
     "eslint-plugin-react-hooks": "7.1.1",
