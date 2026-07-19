@@ -217,8 +217,8 @@ importers:
         specifier: 7.16.2
         version: 7.16.2(eslint@9.39.5(jiti@2.7.0))(typescript@6.0.3)
       eslint-plugin-zod:
-        specifier: 4.7.1
-        version: 4.7.1(eslint@9.39.5(jiti@2.7.0))(oxlint@1.74.0(oxlint-tsgolint@0.24.0))(typescript@6.0.3)(zod@4.4.3)
+        specifier: 4.8.0
+        version: 4.8.0(eslint@9.39.5(jiti@2.7.0))(oxlint@1.74.0(oxlint-tsgolint@0.24.0))(typescript@6.0.3)(zod@4.4.3)
       globals:
         specifier: 17.7.0
         version: 17.7.0
@@ -679,8 +679,8 @@ packages:
       eslint: '*'
       typescript: '*'
 
-  '@eslint-zod/utils@2.3.0':
-    resolution: {integrity: sha512-6XEQLA5lDOOLnX05bgzDT3DyxlCGgLDFX3q0wYSSUSyVJj5WD+8wdlIAFY8kjatSDHWJQ+qFI/BdiDh9o50nBQ==}
+  '@eslint-zod/utils@2.4.0':
+    resolution: {integrity: sha512-UQGDEATF4LqKTArqc0/Z/hGln7I8rAwpEL4GzttZt9qvaMbt5HYu4rdTSooHz2UwVn7LdNI2Fszjf/cy3xPUJQ==}
     engines: {node: ^20 || ^22 || >=24}
 
   '@eslint/config-array@0.21.2':
@@ -2887,8 +2887,8 @@ packages:
     peerDependencies:
       eslint: ^8.57.0 || ^9.0.0 || ^10.0.0
 
-  eslint-plugin-zod@4.7.1:
-    resolution: {integrity: sha512-6lUVKH5lwXWTojUWAJ+Cq11bLrnk5Oc8uUEEowN8pNxSSrYTJP147nOdScoHK2Q3/xouPAtESqDxNpEebuKUcQ==}
+  eslint-plugin-zod@4.8.0:
+    resolution: {integrity: sha512-qXgMYXXsjufPMXNA+vk+U7Gipuu0vHfRvdy/Zas0nq+hfKxntrfayTL+pYB4glZgDlG6G4CuDlLNqPh6CZtnVA==}
     engines: {node: ^20 || ^22 || >=24}
     peerDependencies:
       eslint: ^9 || ^10
@@ -5112,9 +5112,9 @@ snapshots:
     transitivePeerDependencies:
       - supports-color
 
-  '@eslint-zod/utils@2.3.0(eslint@9.39.5(jiti@2.7.0))(typescript@6.0.3)':
+  '@eslint-zod/utils@2.4.0(eslint@9.39.5(jiti@2.7.0))(typescript@6.0.3)':
     dependencies:
-      '@typescript-eslint/utils': 8.62.1(eslint@9.39.5(jiti@2.7.0))(typescript@6.0.3)
+      '@typescript-eslint/utils': 8.64.0(eslint@9.39.5(jiti@2.7.0))(typescript@6.0.3)
       esquery: 1.7.0
     transitivePeerDependencies:
       - eslint
@@ -7230,10 +7230,10 @@ snapshots:
       - supports-color
       - typescript
 
-  eslint-plugin-zod@4.7.1(eslint@9.39.5(jiti@2.7.0))(oxlint@1.74.0(oxlint-tsgolint@0.24.0))(typescript@6.0.3)(zod@4.4.3):
+  eslint-plugin-zod@4.8.0(eslint@9.39.5(jiti@2.7.0))(oxlint@1.74.0(oxlint-tsgolint@0.24.0))(typescript@6.0.3)(zod@4.4.3):
     dependencies:
-      '@eslint-zod/utils': 2.3.0(eslint@9.39.5(jiti@2.7.0))(typescript@6.0.3)
-      '@typescript-eslint/utils': 8.62.1(eslint@9.39.5(jiti@2.7.0))(typescript@6.0.3)
+      '@eslint-zod/utils': 2.4.0(eslint@9.39.5(jiti@2.7.0))(typescript@6.0.3)
+      '@typescript-eslint/utils': 8.64.0(eslint@9.39.5(jiti@2.7.0))(typescript@6.0.3)
     optionalDependencies:
       eslint: 9.39.5(jiti@2.7.0)
       oxlint: 1.74.0(oxlint-tsgolint@0.24.0)
