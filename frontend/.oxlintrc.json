@@ -231,6 +231,7 @@
     ],
     "no-lone-blocks": ["error"],
     "no-lonely-if": ["error"],
+    "no-loop-func": ["error"],
     "no-multi-assign": [
       "error",
       {
@@ -638,7 +639,6 @@
         "max": 4
       }
     ],
-    "no-loop-func": ["error"],
     "no-magic-numbers": [
       "error",
       {
