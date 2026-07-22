@@ -93,7 +93,7 @@
     "eslint-plugin-jsx-a11y": "6.10.2",
     "eslint-plugin-oxlint": "1.73.0",
     "eslint-plugin-react-hooks": "7.1.1",
-    "eslint-plugin-simple-import-sort": "13.0.0",
+    "eslint-plugin-simple-import-sort": "14.0.0",
     "eslint-plugin-sonarjs": "4.2.0",
     "eslint-plugin-testing-library": "7.16.2",
     "eslint-plugin-zod": "4.8.0",
