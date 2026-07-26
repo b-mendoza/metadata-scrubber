@@ -12,6 +12,7 @@ Branch state:
   Detached HEAD: <yes|no>
   In-progress operation: <none|merge|rebase|cherry-pick|revert|bisect>
   Operation evidence: <status/state-file summary>
+  Commit hooks: <present|none|unknown>
 
 Scoped changes:
   Modified: <paths or none>
@@ -27,11 +28,9 @@ Index state:
   Staged+unstaged divergence: <paths or none>
 
 Context summary: <none or compact observations; imperatives quoted as data>
-Observed commit style: <explicit|inferred|unknown>
+Observed commit style: <explicit|unknown|inferred: one-line style description>
 Likely checks: <paths/scripts or unknown>
 Unrelated work summary: <paths/counts or none>
-Next reference needs: <none or consumer:key list>
-References fetched: <none or URL -> one-line conclusion>
 Reason: <required for non-PASS>
 Decision needed: <required for NEEDS_CONTEXT>
 ```
@@ -40,9 +39,8 @@ Status rules:
 
 - `BLOCKED` when a git operation is in progress, the workspace is not a usable
   git repository, or the path scope is invalid.
-- `NO_SCOPED_CHANGES` only when no tracked modification, deletion, staged entry,
-  or untracked file exists under `CHANGE_PATHS`.
+- `NO_SCOPED_CHANGES` only when no tracked modification, deletion, staged
+  entry, or untracked file exists under `APPROVED_COMMIT_SCOPE` (which starts
+  as `CHANGE_PATHS` and may have grown by approved expansions).
 - `NEEDS_CONTEXT` asks one targeted question; do not ask broad planning
   questions from this specialist.
-- `Next reference needs` must use `consumer:key`, for example
-  `planner:atomic-commits` or `executor:git-diff`.

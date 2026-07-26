@@ -20,7 +20,6 @@ evidence rather than assertions.
 | `VERIFICATION_HINT` | No | `npm test -- checkout` |
 | `COMMIT_REQUEST_CONFIRMED` | Yes | `true` |
 | `UNVERIFIED_COMMIT_APPROVED` | No | `group-2 approved by user` |
-| `REFERENCE_URLS` | No | URLs selected from `../references/external-sources.md` |
 
 `APPROVED_COMMIT_SCOPE` is strictly required. There is no fallback to
 `CHANGE_PATHS`. `COMMIT_REQUEST_CONFIRMED=true` means the orchestrator recorded
@@ -33,18 +32,20 @@ a verbatim user request and approved this exact group for execution.
 2. Reinspect worktree and index. Confirm the group still exists and every path
    satisfies path-membership against `APPROVED_COMMIT_SCOPE`, including both
    sides of renames and submodule pointer changes.
-3. Record a pre-attempt index digest before changing staging. Use either a
-   patch-id of `git diff --cached` or per-path index blob OIDs; report the
-   method and value.
+3. Record a pre-attempt index digest before changing staging, covering only
+   the preserved entries — staged paths outside this group. Use either a
+   patch-id of `git diff --cached -- <preserved paths>` or per-path index
+   blob OIDs for those paths; report the method and value. Group paths are
+   excluded because committing them legitimately changes their index state.
 4. Identify unrelated pre-existing staged entries. If any preserved path has a
    worktree version that differs from its index version, do not use naive
    unstage-then-restage. Use an index-preserving method that restores the exact
    index version or return `BLOCKED` naming the path.
 5. Stage only files or non-interactive hunks from `GROUP_PLAN.Include`. Return
    `BLOCKED` when safe separation requires unresolved interactive selection.
-6. Review the staged diff against `GROUP_PLAN.Intent`, `Include`, and `Exclude`.
-   Report `Staged paths` and `Plan match: exact` or `mismatch:<detail>`. On
-   mismatch, clean up attempt-added staging, report digest evidence, and stop.
+6. Review the staged diff against `GROUP_PLAN.Intent` and `Include`. Report
+   `Staged paths` and `Plan match: exact` or `mismatch:<detail>`. On mismatch,
+   clean up attempt-added staging, report digest evidence, and stop.
 7. Run the planned verification or the more specific `VERIFICATION_HINT` only
    when it satisfies the valid-verification definition: read-only tests,
    linters, type checks, or builds writing only to ignored output directories.
@@ -57,12 +58,17 @@ a verbatim user request and approved this exact group for execution.
    same-scope retry safely depends on keeping it. Return `VERIFY_FAILED` with an
    exclusive recovery classification. `same-scope-same-group-retry` is valid
    only when you state what will differ next time, such as a cleared transient
-   condition or observed flake.
-10. Commit with `GROUP_PLAN.Message`, verify the commit exists, recompute the
-    index digest, and compare before/after for preserved entries. Report both
-    digest values and whether they match.
-11. Fetch `REFERENCE_URLS` only when exact command behavior can change safe
-    execution. Return URL plus one-line conclusion, never copied page text.
+   condition or observed flake. A group may run at most 3 times in total: the
+   initial attempt plus 2 retries.
+10. Commit with `GROUP_PLAN.Message`. Never pass `--no-verify` or otherwise
+    bypass hooks, and never amend. If a hook rejects the commit, restore
+    attempt-added staging, recompute and report the preservation digests,
+    and return `COMMIT_ERROR` with a one-line hook summary.
+11. Verify the commit exists, recompute the index digest, and compare
+    before/after for preserved entries. Report both digest values and whether
+    they match. If the digests mismatch because hooks modified staged files,
+    classify the result as `hook-mutation`, do not retry, and return
+    `BLOCKED` with `Decision needed` for the user.
 
 ## Output Format
 

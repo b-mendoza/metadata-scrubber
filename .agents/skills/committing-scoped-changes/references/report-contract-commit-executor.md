@@ -16,12 +16,12 @@ Scope check:
   Scope result: <inside|blocked:detail>
 
 Index preservation:
-  Digest method: <patch-id|index-blob-oids>
+  Digest method: <patch-id|index-blob-oids> (preserved entries only)
   Pre-attempt digest: <value>
   Isolation method: <not-needed or exact method>
   Diverged preserved paths: <none or paths>
   Post-attempt digest: <value or unavailable>
-  Preservation result: <matched|not-needed|blocked|mismatch>
+  Preservation result: <matched|not-needed|blocked|mismatch|hook-mutation>
 
 Staged diff evidence:
   Staged paths: <paths>
@@ -33,11 +33,10 @@ Verification:
   Result: <pass|fail|not-run>
   Output summary: <bounded one-line summary>
 
+Hook outcome: <none|passed|rejected:<one-line summary>|mutated-staged-files>
 Recovery classification: <none|same-scope-same-group-retry|needs-user-decision|terminal>
 Retry delta: <required for same-scope-same-group-retry>
 Attempt cleanup: <not-started|not-needed|restored with digest evidence|blocked>
-Next reference needs: <none or consumer:key list>
-References fetched: <none or URL -> one-line conclusion>
 Reason: <required for non-PASS>
 Decision needed: <required for VERIFY_FAILED needs-user-decision or BLOCKED needing user input>
 ```
@@ -50,6 +49,9 @@ Contract rules:
 - Preservation claims require before/after digest values or `not-needed`.
 - Naive unstage/restage is forbidden for preserved paths whose worktree differs
   from the index version.
-- `same-scope-same-group-retry` requires `Retry delta`; otherwise use
+- `same-scope-same-group-retry` requires `Retry delta`; a group runs at most
+  3 times in total (1 initial attempt + 2 retries); otherwise use
   `needs-user-decision` or `terminal`.
 - Verification `not-run` requires group-level `UNVERIFIED_COMMIT_APPROVED`.
+- Hook rejection is `COMMIT_ERROR`, never bypassed or amended; hook-mutated
+  staging is reported as `hook-mutation`, never retried silently.

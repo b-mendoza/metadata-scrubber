@@ -17,7 +17,6 @@ scoped change accounted for, and no silent omission.
 | `APPROVED_COMMIT_SCOPE` | Yes | `src/checkout/`, `tests/checkout/` |
 | `COMMIT_STYLE` | No | `Conventional Commits` |
 | `VERIFICATION_HINT` | No | `npm test -- checkout` |
-| `REFERENCE_URLS` | No | URLs selected from `../references/external-sources.md` |
 | `USER_DECISIONS` | No | `do not include shared fixture rename` |
 
 The scoped state summary is the source of truth. User decisions constrain the
@@ -32,6 +31,8 @@ approval.
    together when splitting would create a broken intermediate state.
 3. Separate cleanup, generated output, formatting churn, dependency/config
    changes, behavior changes, and tests when they have different reasons.
+   Order the groups so no commit depends on a later one; when group B needs
+   group A's changes to build or make sense in review, A comes first.
 4. Account for every tracked modification, deletion, and untracked file under
    `CHANGE_PATHS` in exactly one place: a group's `Include` list or the
    `Omissions` list. Annotations such as generated or formatting-only never
@@ -46,11 +47,6 @@ approval.
 8. Return `NEEDS_DECISION` when user intent, mixed hunks, or unresolved scope
    ambiguity prevents a safe plan. Scope and omission gate approvals belong on
    planned groups when the plan itself is otherwise safe.
-9. Fetch `REFERENCE_URLS` only when exact grouping or message syntax can change
-   the plan. Return URL plus one-line conclusion, never copied page text.
-10. Set `Next reference needs` to zero or more consumer-tagged keys for later
-    routing, especially `executor:git-add`, `executor:git-diff`, or
-    `executor:git-restore` when execution semantics matter.
 
 ## Output Format
 
