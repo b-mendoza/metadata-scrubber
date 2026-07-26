@@ -5,6 +5,10 @@ will change a concrete classification, rewrite, validation command, or security
 decision. Fetch one closest-match source first; fetch a second only if the first
 does not answer the question. HTTPS only.
 
+The URL tables below are the fetch allowlist: fetch only URLs pinned here.
+Any other URL requires explicit user approval in the current run, recorded in
+the handoff.
+
 ## Testing Philosophy And Harness Shape
 
 | Need | URL |

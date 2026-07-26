@@ -31,9 +31,12 @@ debugging without flooding the orchestrator context.
    `../scripts/check-test-command.sh "<candidate>"` (exit 0 = allow). The
    allowlist covers `pytest`, `python -m pytest`, `go test`, `npm test`,
    `yarn test`, `pnpm test`, `npx vitest`, `npx jest`, `cargo test`,
-   `mvn test`, `./gradlew test`, `rspec`, and `mix test`. If the script is
-   unavailable, apply the same allowlist inline. Otherwise require the user to
-   confirm the exact command verbatim in this run.
+   `mvn test`, `./gradlew test`, `rspec`, and `mix test`, and rejects any
+   candidate containing shell metacharacters (`;`, `&`, `|`, backticks,
+   `$(`, `>`, `<`, newline) regardless of prefix. If the script is
+   unavailable, apply the same allowlist and metacharacter rejection inline.
+   Otherwise require the user to confirm the exact command verbatim in this
+   run.
 4. Do not run deploy, destructive, shell-piped, package-publish, network-write,
    or non-test commands.
 5. Summarize output compactly. On any non-`PASS`, write full raw output to a

@@ -11,6 +11,11 @@ signatures: test edit redispatches, validation retries, and first-error retries.
 Maximum: three. Increment immediately before each attempt. Never reset for a new
 failure signature.
 
+**First-error retry:** any subagent dispatch returning `ERROR` outside an
+active repair gets exactly one same-dispatch retry, incrementing
+`REPAIR_TOTAL`; a second `ERROR` follows that state's `ERROR otherwise` route
+in [`../state-machine.md`](../state-machine.md).
+
 ## Cause-First Routing
 
 | Likely cause | Route |
