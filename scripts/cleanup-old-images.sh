@@ -15,6 +15,14 @@ images_newest_first=$("${VERCEL_COMMAND[@]}" image ls "$VCR_REPOSITORY" \
   --limit 100 |
   jq '.images | sort_by(.createdAt) | reverse')
 
+# A failed listing yields empty or non-JSON output, which would otherwise
+# coerce to a count of zero and report a successful no-op cleanup.
+if ! jq -e 'type == "array"' >/dev/null 2>&1 <<<"$images_newest_first"; then
+  printf 'Failed to list images in %s; aborting without deleting anything.\n' \
+    "$VCR_REPOSITORY" >&2
+  exit 1
+fi
+
 image_count=$(jq 'length' <<<"$images_newest_first")
 retained_count=$((image_count < IMAGE_RETENTION_LIMIT ? image_count : IMAGE_RETENTION_LIMIT))
 cleanup_count=$((image_count - retained_count))
