@@ -14,13 +14,15 @@ The size rule applies in full to:
 
 Pre-existing files over `MAX_LINES` that receive only mechanical
 compilation-consequence edits get a recorded `pre-existing-oversized,
-mechanical-edit` exemption. The exemption is not silent: the strategy reports it,
-the implementer records it, and the reviewer verifies the edit is genuinely
+mechanical-edit` exemption. The exemption is not silent: the plan card reports
+it, the implementer records it, and the reviewer verifies the edit is genuinely
 mechanical.
 
 ## User-Approved Waivers
 
-These waiver categories require user approval before implementation:
+These waiver categories require user approval before implementation. The
+orchestrator batches every needed waiver into the plan-approval card — waivers
+are decided with the plan, not through separate asks:
 
 - Generated code that must remain in one file.
 - Static data that is clearer and safer as one artifact.
@@ -48,7 +50,8 @@ existing entry points or approved mechanical updates.
 
 ## Reporting
 
-Every strategy, implementation, and review report that touches size must name:
+Every plan card, implementation report, and review report that touches size
+must name:
 
 - File path.
 - Line count after change, or current line count for planned splits.

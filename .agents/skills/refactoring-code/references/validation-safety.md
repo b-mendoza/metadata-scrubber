@@ -29,6 +29,11 @@ The implementer may run only the selected contract. If the selected command's
 safety class changes on re-check, stop `BLOCKED` and ask the orchestrator to
 re-gate.
 
+When the contract command is classed `safe`, the implementer runs it once
+before any edit as a baseline checkpoint. A baseline failure is pre-existing
+evidence for the pre-existing-failure rule below — record it and continue;
+do not treat it as a stop or attribute it to the refactor.
+
 ## Evidence Requirements
 
 Validation evidence must include:
@@ -43,6 +48,21 @@ Validation evidence must include:
 Zero tests executed is `not run` even when exit code is 0. A refactor with any
 validation warning can complete only as `PASS_WITH_WARNINGS`, never bare `PASS`.
 
-Pre-existing failures must be identified by evidence from before the refactor or
-by a rerun that demonstrates the same failure is unrelated. If that evidence is
-missing, report the validation result as warning or fail, not pass.
+Pre-existing failures must be identified by evidence from before the refactor
+(the baseline checkpoint when one ran) or by a rerun that demonstrates the same
+failure is unrelated. If that evidence is missing, report the validation result
+as warning or fail, not pass.
+
+## Claim-to-Evidence Rule
+
+Every completion claim must be backed by evidence produced fresh in this run —
+never a recollection of an earlier run:
+
+- "tests pass" → this run's output showing exit code and a nonzero tests-run
+  count (zero tests executed is `not run`);
+- "behavior preserved" → the contracted command exercising the target, or an
+  explicit warning that it was not exercised;
+- "simplified" → the reviewer's measured net lines, duplication, and
+  reuse-rung check, not the plan's expectation.
+
+A claim without its evidence is reported as the warning it actually is.
