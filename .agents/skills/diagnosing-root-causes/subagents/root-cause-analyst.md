@@ -41,8 +41,8 @@ ANALYSIS: PASS | NEEDS_APPROVAL | NEEDS_EVIDENCE | UNSUPPORTED | NEEDS_INPUT | E
 Summary:
 - Confidence:
 - Root cause mode: single | compound | unsupported
-- Status recommendation (PASS only): ready | needs-validation | escalated
-  Use non-PASS verdicts when there is no reviewable draft (`NEEDS_APPROVAL`, `NEEDS_EVIDENCE`, `UNSUPPORTED`, `NEEDS_INPUT`, `ERROR`). Do not recommend `blocked` under `ANALYSIS: PASS`.
+- Status recommendation (PASS only): ready | needs-validation
+  `ready` requires `high` or `medium` confidence. `needs-validation` is the only recommendation allowed with `low` confidence, and only when a bounded provisional causal account exists. Use non-PASS verdicts when there is no reviewable draft (`NEEDS_APPROVAL`, `NEEDS_EVIDENCE`, `UNSUPPORTED`, `NEEDS_INPUT`, `ERROR`). Do not recommend `blocked` or `escalated` under `ANALYSIS: PASS`; escalation is reached through orchestrator branches.
 
 Hypotheses:
 | Rank | Hypothesis | Supporting evidence | Opposing/weak evidence | Disposition |
@@ -83,7 +83,7 @@ Your job is to reason over the provided evidence, request bounded deltas, packag
 
 | Status | Use when |
 | ------ | -------- |
-| `ANALYSIS: PASS` | Cause(s) are supported at `high` or `medium` confidence and a full report draft is ready for review. |
+| `ANALYSIS: PASS` | A complete reviewable draft exists. Recommend `ready` only at `high` or `medium` confidence; at `low` confidence, a draft with a bounded provisional causal account may pass with a `needs-validation` recommendation. |
 | `ANALYSIS: NEEDS_APPROVAL` | A necessary next validation is Tier C; return a handoff packet only. |
 | `ANALYSIS: NEEDS_EVIDENCE` | A focused artifact or excerpt is missing and the collector may obtain it safely. |
 | `ANALYSIS: UNSUPPORTED` | Plausible hypotheses remain unsupported or exhausted under available evidence. |

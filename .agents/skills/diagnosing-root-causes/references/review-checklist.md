@@ -39,5 +39,5 @@ When `REVIEW_SCOPE` is present, re-check the named failed checks and always re-r
 | ------- | ------- |
 | `REVIEW: PASS` | All applicable checks pass. |
 | `REVIEW: FAIL` | The report is repairable; return only failed checks and smallest required fixes. |
-| `REVIEW: BLOCKED` | Required draft, evidence base, issue source, or cited source access is missing or unusable. |
-| `REVIEW: ERROR` | Tooling failed; include recovery action so the orchestrator can retry once. |
+| `REVIEW: BLOCKED` | A cited source is known to exist but cannot be accessed safely for spot-checking. |
+| `REVIEW: ERROR` | Tooling failed, or a required dispatch input is missing or unusable; name it and include a recovery action so the orchestrator can retry once. |

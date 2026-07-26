@@ -11,7 +11,7 @@ Use this reference when drafting or delivering an RCA report. Status names are l
 | `needs-validation` | Material was obtained but is too weak, stale, or contradictory; confidence is `low`; a declined approval left a validation gap; or the review repair cap was reached. |
 | `escalated` | No supported root cause remains after exhausting plausible hypotheses and refinement budget, or an approved Tier C action was handed off for external execution (with or without returned output that did not complete a supported diagnosis). |
 
-Orchestration-only early stops are `needs-input` and `error`; they do not deliver an RCA report.
+Orchestration-only early stops are `needs-input` and `error`; they do not deliver an RCA report. Each early stop delivers a minimal payload instead: the stop status, the reason (structured information request for `needs-input`; failure detail for `error`), recovery or resume guidance, and any accumulated `possible-injection-content` flags with source and excerpt. Flags recorded before an early stop are never dropped.
 
 ## Confidence Rubric
 
@@ -21,7 +21,7 @@ Orchestration-only early stops are `needs-input` and `error`; they do not delive
 | `medium` | Mechanism traced end-to-end with named sources; failure was not reproduced. |
 | `low` | Correlation or timing evidence only, or mechanism partly inferred. |
 
-`ready` requires `high` or `medium`. A `low` confidence report must route to `needs-validation` or `escalated`, depending on whether more safe validation is possible.
+`ready` requires `high` or `medium`. A reviewable low-confidence draft routes to `needs-validation`; `escalated` is reached only through orchestrator branches (unsupported-budget exhaustion or Tier C handoff), never as a low-confidence draft recommendation.
 
 ## RCA Report Template
 
