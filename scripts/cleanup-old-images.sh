@@ -35,10 +35,16 @@ printf '\nCleaning up %d images:\n' "$cleanup_count"
 jq -r --argjson retained_count "$retained_count" \
   '.[$retained_count:][] | "  \(.id) (tags: \(.tags | join(", ")))"' <<<"$images_newest_first"
 
-jq -r --argjson retained_count "$retained_count" '.[$retained_count:][] | .id' <<<"$images_newest_first" |
-  while read -r image_id; do
-    printf 'Deleting %s...\n' "$image_id"
-    "${VERCEL_COMMAND[@]}" image rm "$VCR_REPOSITORY" "$image_id" \
-      "${VERCEL_TARGET_ARGS[@]}" \
-      --yes
-  done
+cleanup_ids=$(jq -r --argjson retained_count "$retained_count" \
+  '.[$retained_count:][] | .id' <<<"$images_newest_first")
+
+while read -r image_id; do
+  [[ -z "$image_id" ]] && continue
+  printf 'Deleting %s...\n' "$image_id"
+  if ! "${VERCEL_COMMAND[@]}" image rm "$VCR_REPOSITORY" "$image_id" \
+    "${VERCEL_TARGET_ARGS[@]}" \
+    --yes; then
+    printf 'Failed to delete %s; aborting with images remaining.\n' "$image_id" >&2
+    exit 1
+  fi
+done <<<"$cleanup_ids"
