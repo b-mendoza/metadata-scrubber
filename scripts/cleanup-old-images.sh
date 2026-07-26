@@ -1,5 +1,7 @@
 #!/usr/bin/env bash
 
+set -euo pipefail
+
 VERCEL_SCOPE="bryan-mendozas-projects"
 VERCEL_PROJECT="metadata-scrubber"
 VCR_REPOSITORY="backend"
