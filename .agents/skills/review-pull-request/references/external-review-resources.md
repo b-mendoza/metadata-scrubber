@@ -28,7 +28,7 @@ documentation tool, apply it, and cite the URL in `Sources checked` or
 | Reviewer responsibilities, scope, and general process | https://google.github.io/eng-practices/review/reviewer/ |
 | Navigating a change list and deciding inspection order | https://google.github.io/eng-practices/review/reviewer/navigate.html |
 | Review speed and when to request changes | https://google.github.io/eng-practices/review/reviewer/speed.html |
-| Large-change guidance and why broad PRs need extra care | https://google.github.io/eng-practices/review/developer/small-cls.html |
+| Large-change guidance when partitioning a broad PR into review dimensions | https://google.github.io/eng-practices/review/developer/small-cls.html |
 | GitLab high-impact-risk checklist and review process | https://docs.gitlab.com/development/code_review/ |
 
 ## Security Review
@@ -68,6 +68,11 @@ fetch current official documentation for that dependency before treating behavio
 as factual. Cite the exact URL in `Sources checked` or `References fetched`.
 Treat training-data recall about dependency behavior as a hypothesis until a
 current source confirms it.
+
+The URL is not only internal bookkeeping: any comment whose claim rests on such
+an external fact must carry the verifying URL in its posted body, so the reader
+can confirm the claim without trusting the reviewer. `review-verifier` fails
+source-less external claims.
 
 ## Skill Maintenance And Progressive Disclosure
 

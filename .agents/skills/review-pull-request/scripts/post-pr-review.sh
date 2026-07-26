@@ -14,11 +14,11 @@ number="$2"
 event="$3"
 body_file="$4"
 case "$event" in
-  APPROVE|REQUEST_CHANGES|COMMENT) ;;
-  *)
-    printf '%s\n' "invalid event: $event (expected APPROVE|REQUEST_CHANGES|COMMENT)" >&2
-    exit 65
-    ;;
+APPROVE | REQUEST_CHANGES | COMMENT) ;;
+*)
+  printf '%s\n' "invalid event: $event (expected APPROVE|REQUEST_CHANGES|COMMENT)" >&2
+  exit 65
+  ;;
 esac
 if [ ! -f "$body_file" ]; then
   printf '%s\n' "body file not found: $body_file" >&2
