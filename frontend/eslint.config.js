@@ -188,10 +188,9 @@ export default defineConfig(
     rules: {
       ...vitest.configs.recommended.rules,
 
-      // Custom Vitest ESLint rule overrides inspired by Epic Web's configuration
-      //
-      // These rules override and add to the spread recommended rules above to enforce
-      // best practices like preferring specific matchers and warning about focused tests
+      // Overrides on top of the recommended rules spread above: prefer the
+      // matcher that names the assertion, and flag focused tests so a `.only`
+      // left behind does not silence the rest of the suite.
       //
       // Source: https://github.com/epicweb-dev/config/blob/main/eslint.js
       "vitest/no-focused-tests": [
