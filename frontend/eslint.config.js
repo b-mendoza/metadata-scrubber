@@ -54,9 +54,6 @@ export default defineConfig(
   eslintPluginZod.configs.recommended,
   {
     languageOptions: {
-      globals: {
-        ...globals.worker,
-      },
       parserOptions: {
         projectService: true,
         tsconfigRootDir: import.meta.dirname,
