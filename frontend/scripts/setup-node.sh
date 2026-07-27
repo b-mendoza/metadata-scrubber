@@ -35,6 +35,4 @@ pnpm run test
 pnpm run test:coverage
 pnpm run build
 
-# AI AGENT NOTE:
-# If this script exits successfully (exit code 0), tell the user all setup and smoke tests passed.
 echo "Setup complete and smoke tests passed."
