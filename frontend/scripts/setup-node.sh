@@ -26,7 +26,6 @@ fnm use --install-if-missing
 corepack enable pnpm
 corepack install
 
-# Install project dependencies before running package scripts.
 pnpm install --frozen-lockfile
 
 # Run smoke tests: lint, autofix, tests, coverage, and production build.
