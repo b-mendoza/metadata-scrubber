@@ -1001,6 +1001,35 @@
       "jsPlugins": ["eslint-plugin-zod"]
     },
     {
+      "files": ["src/**/*.ts?(x)", "lucide.d.ts"],
+      "globals": {
+        "AsyncDisposableStack": "readonly",
+        "DisposableStack": "readonly",
+        "SuppressedError": "readonly"
+      },
+      "env": {
+        "browser": true,
+        "node": true
+      }
+    },
+    {
+      "files": [
+        "drizzle.config.ts",
+        "eslint.config.js",
+        "scripts/**/*.ts",
+        "vite.config.ts",
+        "vitest.config.ts"
+      ],
+      "globals": {
+        "AsyncDisposableStack": "readonly",
+        "DisposableStack": "readonly",
+        "SuppressedError": "readonly"
+      },
+      "env": {
+        "node": true
+      }
+    },
+    {
       "files": ["src/**/*.test.ts?(x)"],
       "rules": {
         "testing-library/await-async-events": [
