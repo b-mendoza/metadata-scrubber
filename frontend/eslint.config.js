@@ -150,6 +150,38 @@ export default defineConfig(
       "sonarjs/todo-tag": WARN,
     },
   },
+  /**
+   * Environment globals are scoped to mirror the `tsconfig.app.json` /
+   * `tsconfig.node.json` split.
+   *
+   * The app tree is full-stack: the same files hold browser components and
+   * server-only code, so it needs the union of both environments rather than
+   * `shared-node-browser` (which is their *intersection*, and so is missing
+   * `window`/`document` as well as `process`/`Buffer`).
+   */
+  {
+    files: ["src/**/*.ts?(x)", "lucide.d.ts"],
+    languageOptions: {
+      globals: {
+        ...globals.browser,
+        ...globals.node,
+      },
+    },
+  },
+  {
+    files: [
+      "drizzle.config.ts",
+      "eslint.config.js",
+      "scripts/**/*.ts",
+      "vite.config.ts",
+      "vitest.config.ts",
+    ],
+    languageOptions: {
+      globals: {
+        ...globals.node,
+      },
+    },
+  },
   {
     files: ["src/**/*.test.ts?(x)"],
     ...testingLibrary.configs["flat/react"],
