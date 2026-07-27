@@ -13,8 +13,7 @@
     "typeAware": true
   },
   "env": {
-    "builtin": true,
-    "worker": true
+    "builtin": true
   },
   "settings": {
     "react": {
