@@ -188,26 +188,40 @@ export default defineConfig(
     rules: {
       ...vitest.configs.recommended.rules,
 
-      // Overrides on top of the recommended rules spread above: prefer the
-      // matcher that names the assertion, and flag focused tests so a `.only`
-      // left behind does not silence the rest of the suite.
+      // Additive on top of the `recommended` rules spread above. Rules that
+      // `recommended` already sets to the same severity are deliberately not
+      // repeated here.
       //
-      // Source: https://github.com/epicweb-dev/config/blob/main/eslint.js
+      // This list began as a copy of `@epicweb-dev/config`, whose vitest block
+      // stood alone rather than extending `recommended`. That package has
+      // since dropped ESLint support altogether, so the list is ours to
+      // maintain.
+
+      // Off for the reason upstream gave: a testing-library query that matches
+      // nothing throws by itself, so a test body with no literal `expect` is
+      // not necessarily a test that asserts nothing.
+      "vitest/expect-expect": OFF,
+
+      // Warn rather than error, and never autofix: a stray `.only` should be
+      // surfaced, not silently rewritten out from under whoever is mid-debug.
       "vitest/no-focused-tests": [
         WARN,
         {
           fixable: false,
         },
       ],
-      "vitest/no-import-node-test": ERROR,
+
+      // Prefer the matcher that names the assertion, so the failure message
+      // says what was being checked.
       "vitest/prefer-comparison-matcher": ERROR,
       "vitest/prefer-equality-matcher": ERROR,
-      "vitest/prefer-import-in-mock": ERROR,
       "vitest/prefer-to-be": ERROR,
       "vitest/prefer-to-contain": ERROR,
       "vitest/prefer-to-have-length": ERROR,
-      "vitest/valid-expect-in-promise": ERROR,
-      "vitest/valid-expect": ERROR,
+
+      // Not from upstream: keeps `vi.mock` factories importing the module they
+      // replace rather than closing over an out-of-scope binding.
+      "vitest/prefer-import-in-mock": ERROR,
     },
   },
   globalIgnores([".output/", "coverage/", "src/routeTree.gen.ts"]),
