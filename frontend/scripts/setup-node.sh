@@ -2,10 +2,9 @@
 # Bootstrap Node tooling and run the project smoke test suite.
 set -euo pipefail
 
-# Resolve the repository root from this script location so it can be run from anywhere.
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-REPO_ROOT="$(cd "${SCRIPT_DIR}/.." && pwd)"
-cd "${REPO_ROOT}"
+# Resolve the frontend root from this script location so it can be run from anywhere.
+FRONTEND_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+cd "${FRONTEND_ROOT}"
 
 # Ensure fnm's install directory is on PATH (idempotent – avoids duplicate entries).
 FNM_PATH="${FNM_PATH:-$HOME/.local/share/fnm}"
