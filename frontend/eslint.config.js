@@ -188,22 +188,20 @@ export default defineConfig(
     rules: {
       ...vitest.configs.recommended.rules,
 
-      // Additive on top of the `recommended` rules spread above. Rules that
-      // `recommended` already sets to the same severity are deliberately not
-      // repeated here.
+      // Additive on top of the `recommended` rules spread above. We omit any
+      // rule that `recommended` already sets to the same severity.
       //
-      // This list began as a copy of `@epicweb-dev/config`, whose vitest block
-      // stood alone rather than extending `recommended`. That package has
-      // since dropped ESLint support altogether, so the list is ours to
-      // maintain.
+      // We copied this list from `@epicweb-dev/config`, whose vitest block
+      // replaced `recommended` instead of extending it. That package dropped
+      // ESLint support, so the list is ours now.
 
-      // Off for the reason upstream gave: a testing-library query that matches
-      // nothing throws by itself, so a test body with no literal `expect` is
-      // not necessarily a test that asserts nothing.
+      // Upstream turned this off because a testing-library query throws when
+      // it matches nothing, so a test with no literal `expect` can still
+      // assert something.
       "vitest/expect-expect": OFF,
 
-      // Warn rather than error, and never autofix: a stray `.only` should be
-      // surfaced, not silently rewritten out from under whoever is mid-debug.
+      // Warn instead of error, and no autofix: we want a leftover `.only`
+      // visible in review, and a fix would delete it while someone debugs.
       "vitest/no-focused-tests": [
         WARN,
         {
@@ -211,16 +209,16 @@ export default defineConfig(
         },
       ],
 
-      // Prefer the matcher that names the assertion, so the failure message
-      // says what was being checked.
+      // Use the matcher that names the assertion, so the failure message says
+      // which comparison broke.
       "vitest/prefer-comparison-matcher": ERROR,
       "vitest/prefer-equality-matcher": ERROR,
       "vitest/prefer-to-be": ERROR,
       "vitest/prefer-to-contain": ERROR,
       "vitest/prefer-to-have-length": ERROR,
 
-      // Not from upstream: keeps `vi.mock` factories importing the module they
-      // replace rather than closing over an out-of-scope binding.
+      // Our addition: a `vi.mock` factory must import the module it replaces,
+      // since Vitest hoists the factory above outer bindings.
       "vitest/prefer-import-in-mock": ERROR,
     },
   },
