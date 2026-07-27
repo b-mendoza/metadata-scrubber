@@ -148,13 +148,12 @@ export default defineConfig(
     },
   },
   /**
-   * Environment globals are scoped to mirror the `tsconfig.app.json` /
-   * `tsconfig.node.json` split.
+   * These two blocks mirror the `tsconfig.app.json` / `tsconfig.node.json`
+   * split.
    *
-   * The app tree is full-stack: the same files hold browser components and
-   * server-only code, so it needs the union of both environments rather than
-   * `shared-node-browser` (which is their *intersection*, and so is missing
-   * `window`/`document` as well as `process`/`Buffer`).
+   * A file under `src` can hold browser code and server code at once, so it
+   * needs `browser` plus `node`. `shared-node-browser` holds only the globals
+   * common to both, so it defines neither `window` nor `process`.
    */
   {
     files: ["src/**/*.ts?(x)", "lucide.d.ts"],
