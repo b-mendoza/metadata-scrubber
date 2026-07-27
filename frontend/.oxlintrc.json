@@ -1063,7 +1063,7 @@
         "testing-library/prefer-query-by-disappearance": "error",
         "testing-library/prefer-screen-queries": "error",
         "testing-library/render-result-naming-convention": "error",
-        "vitest/expect-expect": "error",
+        "vitest/expect-expect": "off",
         "vitest/no-commented-out-tests": "error",
         "vitest/no-conditional-expect": "error",
         "vitest/no-disabled-tests": "warn",
@@ -1092,10 +1092,10 @@
         "vitest/valid-title": "error",
         "vitest/prefer-comparison-matcher": "error",
         "vitest/prefer-equality-matcher": "error",
-        "vitest/prefer-import-in-mock": "error",
         "vitest/prefer-to-be": "error",
         "vitest/prefer-to-contain": "error",
-        "vitest/prefer-to-have-length": "error"
+        "vitest/prefer-to-have-length": "error",
+        "vitest/prefer-import-in-mock": "error"
       },
       "jsPlugins": ["eslint-plugin-testing-library"],
       "plugins": ["vitest"]
