@@ -990,6 +990,7 @@
         "zod/prefer-loose-object": "error",
         "zod/prefer-meta": "error",
         "zod/prefer-meta-last": "error",
+        "zod/prefer-nullish": "error",
         "zod/prefer-strict-object": "error",
         "zod/prefer-top-level-string-formats": "error",
         "zod/prefer-string-schema-with-trim": "error",
