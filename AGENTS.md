@@ -32,7 +32,7 @@ Long-lived guides:
 - [Naming conventions](docs/agent/naming-conventions.md) — how to name variables, arguments, and functions, with good/bad examples.
 - [Code design](docs/agent/code-design.md) — contracts at the boundaries, failing loudly, comments, and dependency injection.
 - [Testing principles](docs/agent/testing.md) — what and how to test, across services.
-- [Workflow and task scoping](docs/agent/workflow.md) — simplicity, issues, and decomposition.
+- [Workflow and task scoping](docs/agent/workflow.md) — simplicity, scope discipline, issues, and decomposition.
 - [Verifying your work](docs/agent/verification.md) — what "done" requires beyond green tests.
 
 Current-state references (short-lived; verify against the code):
