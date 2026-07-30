@@ -24,12 +24,7 @@ The maintainer's instructions are a baseline to build on, not a spec to execute 
 
 ## Subagents
 
-Delegating to subagents keeps the main thread's context focused and lets independent work run in parallel. Use them deliberately:
-
-- **When a skill or task tells you to, do it.** If a skill, workflow, or task description states, implies, or steers you to delegate, dispatch, orchestrate, or hand off work to a subagent, follow that direction rather than doing it inline.
-- **Reach for a subagent when the work fits one.** Broad searches or audits across many files, self-contained investigations, and independent subtasks that can run concurrently are good candidates — dispatch them and keep the conclusion, not the intermediate file dumps.
-- **Keep delegation scoped.** Give each subagent a clear objective and a definition of done, and pass along any constraints that bound its work so it does not act beyond the intended scope.
-- **When you are unsure whether to delegate, ask.** If it is not clear that a task should go to a subagent — or which one — check before dispatching rather than guessing.
+Subagents keep the main thread's context focused and let independent work run in parallel. Delegate when a skill or task directs it, and for work that fits one — broad searches or audits across many files, self-contained investigations, subtasks that can run concurrently — keeping the conclusion, not the intermediate file dumps. Give each subagent a bounded objective, a definition of done, and the constraints that scope its work; when unsure whether (or to which subagent) to delegate, ask before dispatching.
 
 ## Open when relevant
 
