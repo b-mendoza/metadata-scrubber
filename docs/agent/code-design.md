@@ -12,6 +12,10 @@ Every entry point into a service — an HTTP endpoint, a server function, a CLI 
 - **Fail loudly, never quietly.** A contract violation is an error: surface it immediately with an error response and an error-level log, and never coerce, default, or silently drop invalid data to keep a request limping along. Loud failure at the boundary is what makes a broken contract visible and actionable without relying on external tooling or client reports.
 - **Prefer types over repeated checks.** Structured types that make invalid states unrepresentable beat scattering runtime checks through every layer. For example, return a parsed URL value rather than a raw string. Validate once at the boundary, pass parsed values inward, and do not re-validate the same data downstream.
 
+## Comments
+
+- Comment to explain *why* — a constraint, a trade-off, a non-obvious invariant the code cannot express — never to narrate *what* the code does or that it changed. Comments describing the change itself ("removed X", "now uses Y instead") belong in the commit message, not the source.
+
 ## Dependency injection
 
 - Read injected dependencies (database, configuration, storage) from the request-scoped application bindings the service provides. Do not reach for them as module-level globals.
