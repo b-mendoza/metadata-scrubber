@@ -4,15 +4,9 @@ These apply to every service, in any language. Test tooling and gotchas specific
 
 ## What to test
 
-- **Test our code's decisions, not upstream contracts.** Assert on branching logic, routing, configuration wiring, and the transformations our code performs. Do not test behavior owned by a dependency (a constructor throwing on invalid input, an SDK raising its own error type).
-- **Test current behavior, not hypothetical future logic.** If production code passes a value through unchanged, do not assert on that value. Add the test when the transformation is added.
-- **Apply risk-based coverage.** Core business logic (routing, classification, selection) deserves thorough testing. Simple pass-throughs, getters, and guarantees the type system already enforces need little or none.
-
-## What not to test
-
-- **Mock pass-through.** If a test sets a mock return value and asserts the result equals it, it tests `return input`, not business logic. Remove these.
-- **Dependency internals.** Do not build test infrastructure (schemas, parsers) that mirrors a third-party library's internal shape. It breaks with confusing errors when the library changes internals, even though production behavior is unchanged.
-- **Configuration files.** Do not write tests that assert the contents of a configuration file consumed by an external tool (CI workflows, linter configs, deployment manifests). Such a test restates the file without proving what actually matters — that the consumer accepts it: it can pass while the file has unsupported fields, missing required ones, or invalid values. If the consuming tool ships a validator (a lint, check, or dry-run command), run that; otherwise the file is verified by the behavior it produces, not by a test mirroring its text. Tests exist to pin our system's behavior, not to transcribe someone else's input format.
+- **Test the system's behavior: the decisions our code makes.** Assert on branching logic, routing, wiring, and the transformations our code performs, in proportion to risk — core logic deserves thorough coverage; pass-throughs, getters, and guarantees the type system already enforces need little or none.
+- **Test what exists today.** Assert on current behavior, not hypothetical future logic. If code passes a value through unchanged, add the test when the transformation is added.
+- **What we don't own proves itself elsewhere.** A dependency's contracts and internals are its maintainers' responsibility; a mock's return value asserted back is a test of `return input`; test infrastructure mirroring a library's internal shape breaks when internals change though behavior did not; and a configuration file consumed by an external tool is proven by that tool's own validator (a lint, check, or dry-run command) or by the behavior it produces — never by a test transcribing its contents.
 
 ## How to assert
 
