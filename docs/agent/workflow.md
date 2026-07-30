@@ -9,7 +9,7 @@
 
 ## Scope discipline
 
-- **The diff contains only what the task requires.** A reviewer must be able to map every hunk to the stated goal: no unrelated refactors or reformatting, and no new files (documentation, helper scripts, abstractions, test files) when the task doesn't require them and extending the canonical file will do. Record unrelated bugs and cleanup opportunities as an issue or a note instead of silently folding them in.
+- **The diff contains only what the task requires.** A reviewer must be able to map every hunk to the stated goal: no unrelated refactors or reformatting, and no new files (documentation, helper scripts, abstractions, test files) when the task doesn't require them and extending the canonical file will do. Record unrelated bugs and cleanup opportunities as a note to the maintainer instead of silently folding them in.
 - **Build for real consumers only.** Compatibility shims, deprecation paths, and "just in case" fallbacks exist solely for actual contracts — a published API, persisted data, deployed clients. Otherwise make the change cleanly and delete the old path.
 
 ## Task management
