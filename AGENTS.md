@@ -15,6 +15,7 @@ This repo keeps two tiers of agent documentation. Maintain the split when you ad
 - After a substantive change, run the affected service's lint check; before committing, run its test suite. Each service's `AGENTS.md` names the exact commands.
 - Passing tests is a floor, not proof. Confirm the service's checks pass before calling the work done; when unsure whether a change is correct, escalate rather than declare success.
 - The linter configuration is the enforced source of truth for style in every service. Prefer fixing a finding over suppressing it; suppress inline only when the rule is genuinely wrong for the case, and say why.
+- Editing is not permission to publish. Do not commit, push, open a pull request, or create an issue unless explicitly asked; when committing, stage only the paths the task touched.
 
 ## Subagents
 
