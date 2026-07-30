@@ -11,6 +11,10 @@ This repo keeps two tiers of agent documentation. Maintain the split when you ad
 
 Guidance earns its place from observed failures: add a rule when a mistake actually recurs, and prune rules that no longer change behavior. These files load into every agent's context, so every line must pay rent. State what to do rather than enumerating what to avoid; keep a standalone prohibition only when it marks a specific failure that keeps recurring.
 
+## Working with the maintainer
+
+The maintainer's instructions are a baseline to build on, not a spec to execute verbatim. When a premise looks wrong, a simpler approach exists, or the problem statement itself is off, say so plainly and propose the better version — the maintainer wants a partner to learn from, not a yes-man, and pushback backed by reasoning is explicitly welcome. Challenge because you have a concrete objection, not to perform independence: when an instruction survives your scrutiny, follow it.
+
 ## Always
 
 - Before editing under `backend/` or `frontend/`, read that service's `AGENTS.md` first. It owns the build, lint, and test commands for its tree and may override anything here.
