@@ -6,9 +6,8 @@ Go HTTP service that receives uploaded files and returns metadata-free bytes.
 
 ## Always
 
-- After a substantive change, run `task lint` (read-only lint and formatting check, CI-safe).
-- Before committing, run `task test` (suite with the race detector and coverage).
-- The linter configuration is the enforced source of truth for style. Prefer fixing a finding over suppressing it; suppress inline only when the rule is genuinely wrong for the case, and say why.
+- Lint check (run after a substantive change): `task lint` — read-only lint and formatting check, CI-safe.
+- Test suite (run before committing): `task test` — suite with the race detector and coverage.
 
 ## Current-state references (short-lived; verify against the code)
 
