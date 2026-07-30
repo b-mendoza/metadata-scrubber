@@ -12,6 +12,7 @@ These apply to every service, in any language. Test tooling and gotchas specific
 
 - **Mock pass-through.** If a test sets a mock return value and asserts the result equals it, it tests `return input`, not business logic. Remove these.
 - **Dependency internals.** Do not build test infrastructure (schemas, parsers) that mirrors a third-party library's internal shape. It breaks with confusing errors when the library changes internals, even though production behavior is unchanged.
+- **Configuration files.** Do not write tests that assert the contents of a configuration file consumed by an external tool (CI workflows, linter configs, deployment manifests). Such a test restates the file without proving what actually matters — that the consumer accepts it: it can pass while the file has unsupported fields, missing required ones, or invalid values. If the consuming tool ships a validator (a lint, check, or dry-run command), run that; otherwise the file is verified by the behavior it produces, not by a test mirroring its text. Tests exist to pin our system's behavior, not to transcribe someone else's input format.
 
 ## How to assert
 
