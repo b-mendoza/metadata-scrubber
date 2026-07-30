@@ -5,8 +5,8 @@
 ## Always
 
 - If Node.js (see `.nvmrc`) or pnpm is missing or on the wrong version, run `scripts/setup-node.sh` before doing anything else.
-- After substantive changes, run `pnpm run lint`.
-- Before committing, run `pnpm run test`.
+- Lint check (run after a substantive change): `pnpm run lint`.
+- Test suite (run before committing): `pnpm run test`.
 
 ## Open when relevant (long-lived)
 
