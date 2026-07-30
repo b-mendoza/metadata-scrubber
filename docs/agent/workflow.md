@@ -9,9 +9,7 @@
 
 ## Scope discipline
 
-- Keep the diff bounded to the task at hand. Do not refactor, reformat, or "improve" code unrelated to the change, even when it looks easy — a reviewer must be able to map every hunk in the diff to the stated goal.
-- When you notice an unrelated bug or cleanup opportunity mid-task, record it (an issue, or a note to the user) instead of silently folding the fix into the current change.
-- Do not create files nobody asked for — documentation, helper scripts, new abstractions, or new test files — unless the task requires them or repository convention does. Prefer extending the existing canonical file.
+- **The diff contains only what the task requires.** A reviewer must be able to map every hunk to the stated goal: no unrelated refactors or reformatting, and no new files (documentation, helper scripts, abstractions, test files) when the task doesn't require them and extending the canonical file will do. Record unrelated bugs and cleanup opportunities as an issue or a note instead of silently folding them in.
 - Do not add compatibility shims, deprecation paths, or "just in case" fallbacks for hypothetical consumers. Preserve compatibility only where a real contract exists — a published API, persisted data, or deployed clients — and delete the old path otherwise.
 
 ## Task management
