@@ -12,13 +12,6 @@ Names are the cheapest documentation you have. A well-named variable explains it
 
 This is doubly true when the next reader is an LLM. Agents reason over the text of the code. A name that states its purpose gives the model reliable signal; a name like `b` gives it almost nothing and invites wrong guesses.
 
-## How to name well
-
-- **Name the thing, not its type or role in the abstract.** Prefer `filePropertyList` over `properties`, `inputBytes` over `src`, `outputBytes` over `out`. Ask yourself "`properties` of what? `out` of what?" and put the answer in the name.
-- **Say what an error came from.** Prefer `removePropertiesErr` over a bare `err` when it aids clarity, so the reader knows which operation failed.
-- **Spell out function arguments too.** An argument named `b` should be `bindings`. The parameter list is part of the function's documentation.
-- **Avoid single letters and abbreviations** unless they are idiomatic (see below). Length is not the enemy; ambiguity is.
-
 ## Idiomatic names are fine, but be consistent
 
 Some short names are idiomatic to the language or to our domain, and those are worth keeping:
