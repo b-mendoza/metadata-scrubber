@@ -17,11 +17,9 @@ These apply to every service, in any language. Test tooling and gotchas specific
 
 ## When tests fail
 
-- **Never buy green by weakening the suite.** Do not delete, skip, or loosen the assertions of a failing test to make it pass. Fix the code; if the test itself is wrong, say so explicitly and change the test as its own deliberate, explained step.
-- **Never paper over flakiness.** Do not fix a racy or flaky test with sleeps, arbitrary timeouts, or blind retries. Fix the underlying synchronization, or report the flake if the cause is out of scope.
-- **A bug-fix test must fail without the fix.** Before trusting a regression test, confirm it fails against the unfixed code; a test that passes both with and without the change proves nothing about the bug.
-- **Missing prerequisites are failures, not skips.** If a test needs a tool, service, or configuration that is absent, fail with an actionable error rather than silently skipping — a skipped test reads as green while covering nothing.
-- **Disclose coverage gaps.** If part of a change cannot be exercised by the suite, state that gap plainly rather than letting green checks imply full coverage.
+- **Earn green by fixing the cause.** Deleting, skipping, or loosening a failing test, sleeping or blindly retrying a flaky one, and skipping on a missing prerequisite all convert a signal into silence. Fix the code or the synchronization; fail with an actionable error when the environment lacks a prerequisite; and when the test itself is wrong, change it as its own explicit, explained step.
+- **A bug-fix test must fail without the fix.** Confirm the regression test fails against the unfixed code; a test that passes both with and without the change proves nothing about the bug.
+- **Disclose what the suite cannot see.** If part of a change cannot be exercised, say so plainly rather than letting green checks imply full coverage.
 
 ## How to organize
 
