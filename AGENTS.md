@@ -18,7 +18,7 @@ The maintainer's instructions are a baseline to build on, not a spec to execute 
 ## Always
 
 - Before editing under `backend/` or `frontend/`, read that service's `AGENTS.md` first. It owns the build, lint, and test commands for its tree and may override anything here.
-- After a substantive change, run the affected service's lint check; before committing, run its test suite. Each service's `AGENTS.md` names the exact commands.
+- After a substantive change, run the affected service's lint check; before committing, run its test suite. Each service's `AGENTS.md` names the exact commands. Passing checks are a floor, not proof — when unsure whether a change is correct, escalate rather than declare success.
 - The linter configuration is the enforced source of truth for style in every service. Prefer fixing a finding over suppressing it; suppress inline only when the rule is genuinely wrong for the case, and say why.
 - Editing is not permission to publish. Do not commit, push, open a pull request, or create an issue unless explicitly asked; when committing, stage only the paths the task touched.
 
