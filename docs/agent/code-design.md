@@ -1,6 +1,6 @@
 # Code design
 
-Principles that apply across services and languages. Framework-specific mechanisms (how a given service implements these) live in that service's `docs/agent/`.
+Principles that apply across services and languages. Framework-specific mechanisms (how a given service implements these) live in that service's own guides.
 
 ## Contracts at the boundaries
 

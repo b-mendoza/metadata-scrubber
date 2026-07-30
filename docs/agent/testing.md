@@ -1,6 +1,6 @@
 # Testing principles
 
-These apply to every service, in any language. Test tooling and gotchas specific to one service live in that service's `docs/agent/`.
+These apply to every service, in any language. Test tooling and gotchas specific to one service live in that service's own guides.
 
 ## What to test
 
