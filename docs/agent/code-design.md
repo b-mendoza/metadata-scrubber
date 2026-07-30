@@ -17,5 +17,4 @@ Every entry point into a service — an HTTP endpoint, a server function, a CLI 
 
 ## Dependency injection
 
-- Read injected dependencies (database, configuration, storage) from the request-scoped application bindings the service provides. Do not reach for them as module-level globals.
-- Both services carry a request-scoped "bindings" concept; the mechanism differs (each service's short-lived architecture reference under its `docs/` directory describes its implementation), but the rule is the same — get dependencies from the bindings, not from globals.
+- Read injected dependencies (database, configuration, storage) from the request-scoped application bindings the service provides, never from module-level globals. Both services carry a bindings concept; each service's short-lived architecture reference under its `docs/` directory describes its mechanism.
