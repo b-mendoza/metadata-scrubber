@@ -21,6 +21,12 @@ These apply to every service, in any language. Test tooling and gotchas specific
 - **Give outsized-risk constants intentionally brittle tests.** When a single constant can silently change cost, behavior, or a contract (an AI model ID, a system prompt, a rate limit, a pricing tier), assert its exact wiring via the imported constant. The brittleness is the point: the suite may be the only line of defense against that regression.
 - **Use inline literals for simple test data.** Reach for builders or factories only when several tests share non-trivial setup; otherwise they add indirection without value.
 
+## When tests fail
+
+- **Never buy green by weakening the suite.** Do not delete, skip, or loosen the assertions of a failing test to make it pass. Fix the code; if the test itself is wrong, say so explicitly and change the test as its own deliberate, explained step.
+- **Never paper over flakiness.** Do not fix a racy or flaky test with sleeps, arbitrary timeouts, or blind retries. Fix the underlying synchronization, or report the flake if the cause is out of scope.
+- **Disclose coverage gaps.** If part of a change cannot be exercised by the suite, state that gap plainly rather than letting green checks imply full coverage.
+
 ## How to organize
 
 - **Group by behavior domain, not arbitrary codes.** Use descriptive group names (a `describe` block, a `t.Run` subtest): "MIME routing", "error handling" — not "Group A".
