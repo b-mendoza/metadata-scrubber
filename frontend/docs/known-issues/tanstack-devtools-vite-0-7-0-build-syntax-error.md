@@ -4,7 +4,7 @@
 
 ## Summary
 
-`@tanstack/devtools-vite` is pinned to `0.6.1` because version `0.7.0` can break `pnpm run build` by producing invalid JSX while removing devtools code from production bundles.
+**Resolved.** `@tanstack/devtools-vite` is now on `0.8.3`, where `pnpm run build` completes cleanly (verified 2026-07-30: devtools code is stripped from `src/routes/__root.tsx` without the invalid-JSX regression). Version `0.7.0` broke the build by producing invalid JSX while removing devtools code from production bundles; the project pinned `0.6.1` until the fix landed.
 
 The failure was reproduced in this repository after upgrading to `@tanstack/devtools-vite@0.7.0`.
 
@@ -58,21 +58,8 @@ That issue reports the same regression class: `@tanstack/devtools-vite@0.7.0` st
 
 ## Local Mitigation
 
-Pin `@tanstack/devtools-vite` to `0.6.1`.
-
-This keeps the Vite devtools integration available while avoiding the `0.7.0` production build transform regression.
+Historical: the project pinned `0.6.1` until upstream fixed the regression; the pin was lifted at `0.8.3`.
 
 ## Revisit Criteria
 
-Re-evaluate this pin when one of the following is true:
-
-- A newer `@tanstack/devtools-vite` version is published with a fix for TanStack/devtools#444.
-- The local root shell no longer renders `<TanStackDevtools />` inside a conditional JSX expression that can be partially stripped.
-- The project disables production devtools stripping with `removeDevtoolsOnBuild: false` and accepts the resulting bundle behavior.
-
-After changing the pin or mitigation, verify with:
-
-```bash
-pnpm run build
-pnpm run lint
-```
+Met — a fixed version was published and adopted (`0.8.3`); the pin is lifted.

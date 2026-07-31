@@ -8,7 +8,7 @@ This folder records dependency, tooling, and framework issues that affect local 
 
 | Issue                                                                                                                 | Area          | Status                | Workaround                               |
 | --------------------------------------------------------------------------------------------------------------------- | ------------- | --------------------- | ---------------------------------------- |
-| [`@tanstack/devtools-vite@0.7.0` production build syntax error](./tanstack-devtools-vite-0-7-0-build-syntax-error.md) | Build tooling | Active upstream issue | Pin `@tanstack/devtools-vite` to `0.6.1` |
+| [`@tanstack/devtools-vite@0.7.0` production build syntax error](./tanstack-devtools-vite-0-7-0-build-syntax-error.md) | Build tooling | Resolved — fixed upstream; `0.8.3` installed | None (historical: pin `0.6.1`) |
 
 ## Adding Entries
 
