@@ -1,5 +1,7 @@
 # Known Issues
 
+> **Short-lived reference.** This file describes the current state of the code and must be updated whenever that state changes. If this file and the code disagree, the code wins — fix this file.
+
 This folder records dependency, tooling, and framework issues that affect local development or production builds.
 
 ## Active Issues
