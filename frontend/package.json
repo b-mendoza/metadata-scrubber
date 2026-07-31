@@ -100,7 +100,7 @@
     "globals": "17.8.0",
     "happy-dom": "20.11.1",
     "nitro": "3.0.260610-beta",
-    "npm-run-all2": "9.0.2",
+    "npm-run-all2": "9.0.3",
     "oxfmt": "0.61.0",
     "oxlint": "1.76.0",
     "oxlint-tsgolint": "7.0.2001",
