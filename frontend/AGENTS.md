@@ -18,5 +18,6 @@
 - [Architecture](docs/architecture.md) — framework, source layout, server boundaries, bindings, database, uploads, testing status.
 - [File structure and conventions](docs/conventions.md) — path alias and file naming.
 - [Commands](docs/commands.md) — full command reference.
+- [Known issues](docs/known-issues/README.md) — dependency and tooling issues affecting builds, with workarounds.
 
 Cross-cutting long-lived guidance (naming, code design, testing, workflow, verification) lives in the [root Agent Guide](../AGENTS.md) and applies to this service.
