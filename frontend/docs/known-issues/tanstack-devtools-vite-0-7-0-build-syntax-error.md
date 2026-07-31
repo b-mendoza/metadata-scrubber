@@ -1,5 +1,7 @@
 # `@tanstack/devtools-vite@0.7.0` Production Build Syntax Error
 
+> **Short-lived reference.** This file describes the current state of the code and must be updated whenever that state changes. If this file and the code disagree, the code wins — fix this file.
+
 ## Summary
 
 `@tanstack/devtools-vite` is pinned to `0.6.1` because version `0.7.0` can break `pnpm run build` by producing invalid JSX while removing devtools code from production bundles.
