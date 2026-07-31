@@ -20,6 +20,7 @@ export default defineConfig({
     },
     environment: "happy-dom",
     include: ["./src/**/*.test.{ts,tsx}"],
+    passWithNoTests: true,
     restoreMocks: true,
     setupFiles: ["./src/tests/setup-test-env.ts"],
   },
