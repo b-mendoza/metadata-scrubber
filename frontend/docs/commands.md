@@ -4,7 +4,7 @@
 
 ## Bootstrap
 
-- If Node.js (see `.nvmrc`) or pnpm is missing or on the wrong version, run `scripts/setup-node.sh`.
+- `scripts/setup-node.sh` — bootstrap and smoke test: installs the pinned Node.js (see `.nvmrc`) and pnpm via fnm/corepack, installs dependencies, then runs lint, fix, test, coverage, and a production build. When to run it is governed by the `Always` section in [`AGENTS.md`](../AGENTS.md).
 
 ## Core commands
 
