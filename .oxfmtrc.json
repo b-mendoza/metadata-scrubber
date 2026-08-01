@@ -1,6 +1,6 @@
 {
   "$schema": "./frontend/node_modules/oxfmt/configuration_schema.json",
-  "ignorePatterns": [".agents/", ".claude/"],
+  "ignorePatterns": [".agents/", ".claude/", "!.claude/settings.local.json"],
   "printWidth": 80,
   "proseWrap": "never"
 }
