@@ -1,5 +1,6 @@
 {
   "$schema": "./frontend/node_modules/oxfmt/configuration_schema.json",
   "ignorePatterns": [".agents/", ".claude/"],
-  "printWidth": 80
+  "printWidth": 80,
+  "proseWrap": "never"
 }
