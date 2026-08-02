@@ -48,7 +48,7 @@
     "ai": "7.0.42",
     "clsx": "2.1.1",
     "date-fns": "4.4.0",
-    "devalue": "5.8.2",
+    "devalue": "5.9.0",
     "drizzle-orm": "1.0.0-rc.4",
     "isbot": "5.2.1",
     "lucide-react": "1.28.0",
