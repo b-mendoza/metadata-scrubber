@@ -7,7 +7,7 @@
 This repo keeps two tiers of agent documentation. Maintain the split when you add or edit docs:
 
 - **Long-lived guidance** — `AGENTS.md` files and `docs/agent/` directories. Principles and guidelines with general examples only; no source-code paths or code snippets, so they stay true as the code changes.
-- **Short-lived references** — Markdown files directly under a `docs/` directory (root or service). Current-state descriptions: architecture, file structure and conventions, command references. Each carries a banner saying it must be updated when the code changes.
+- **Short-lived references** — Markdown files under a `docs/` directory (root or service), outside `docs/agent/`; related references may be grouped in a subdirectory. Current-state descriptions: architecture, file structure and conventions, command references. Each carries a banner saying it must be updated when the code changes.
 
 Guidance earns its place from observed failures: add a rule when a mistake actually recurs, and prune rules that no longer change behavior. These files load into every agent's context, so every line must pay rent. State what to do rather than enumerating what to avoid; keep a standalone prohibition only when it marks a specific failure that keeps recurring.
 
