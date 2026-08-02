@@ -10,8 +10,8 @@
 
 ## Open when relevant (long-lived)
 
-- [TypeScript design conventions](docs/agent/code-conventions.md)
-- [Testing — frontend specifics](docs/agent/testing-principles.md)
+- [TypeScript design conventions](docs/agent/code-conventions.md) — design guidance such as preferring factory functions over classes.
+- [Testing — frontend specifics](docs/agent/testing-principles.md) — Vitest assertion practices and shared render helpers for component tests.
 
 ## Current-state references (short-lived; verify against the code)
 
