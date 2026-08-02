@@ -14,7 +14,7 @@
 
 ## Task management
 
-- Propose a GitHub issue for any multi-step or non-trivial task; creating one still requires an explicit ask.
+- Propose a GitHub issue for any multi-step or non-trivial task; per the root guide's Always rules, creating one still requires an explicit ask.
 
 ## Task decomposition
 
