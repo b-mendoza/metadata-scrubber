@@ -1,6 +1,6 @@
 # Verifying your work
 
-Passing tests is a floor, not proof that the change is correct. After a substantive change:
+Passing tests is a floor, not proof that the change is correct (the root guide's Always rules own this bar). After a substantive change:
 
 - Use exactly the commands the service's `AGENTS.md` documents — never invented or guessed ones. If a documented command is missing or broken, say so instead of improvising a substitute.
 - Report a check as passing only when you ran it against the current state of the change and saw it pass. Report results as they are — failures and warnings included — rather than summarizing them into a cleaner story.
