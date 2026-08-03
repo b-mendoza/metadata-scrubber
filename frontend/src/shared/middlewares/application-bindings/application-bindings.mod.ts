@@ -1,7 +1,7 @@
 import { AsyncLocalStorage } from "node:async_hooks";
 
 import { createMiddleware, createServerOnlyFn } from "@tanstack/react-start";
-import * as z from "zod";
+import { Effect, Schema } from "effect";
 
 import type { Env } from "#/shared/config/env/env.mod.server";
 import { envSchema } from "#/shared/config/env/env.mod.server";
@@ -18,7 +18,13 @@ const ApplicationBindingsStorage =
 export const applicationBindingsMiddleware = createMiddleware({
   type: "request",
 }).server(async (opts) => {
-  const safeEnvironmentVariables = z.parse(envSchema, process.env);
+  const parseEnvironmentVariables = Schema.decodeUnknownEffect(envSchema)(
+    process.env,
+  );
+  // TanStack middleware is Promise-based, so execute the Effect at this boundary.
+  const safeEnvironmentVariables = await Effect.runPromise(
+    parseEnvironmentVariables,
+  );
 
   // const databaseClient = createDrizzleDatabaseClient(
   //   safeEnvironmentVariables.DATABASE_URL,
