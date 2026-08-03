@@ -1,7 +1,6 @@
 import { randomUUID } from "node:crypto";
-import { setTimeout } from "node:timers/promises";
 
-import * as z from "zod";
+import { Data, Effect, Schema } from "effect";
 
 import {
   createTRPCRouter,
@@ -12,21 +11,27 @@ import { getApplicationBindings } from "#/shared/middlewares/application-binding
 const SEED_PRODUCT_NAMES = ["Metadata Scrubber", "Privacy Audit Tool"];
 const SLEEP_TIME_MS = 5_000;
 
-const productSchema = z.object({
-  id: z.uuid(),
-  name: z.string().trim(),
+const productSchema = Schema.Struct({
+  id: Schema.String.check(Schema.isUUID()),
+  name: Schema.Trim,
 });
 
 const PRODUCTS = SEED_PRODUCT_NAMES.map((name) => {
-  return productSchema.parse({
+  return Schema.decodeUnknownSync(productSchema)({
     id: randomUUID(),
     name,
   });
 });
 
-const getMessageResponseSchema = z.object({
-  status: z.literal("reachable"),
+const getMessageResponseSchema = Schema.Struct({
+  status: Schema.Literal("reachable"),
 });
+
+class BackendHealthCheckError extends Data.TaggedError(
+  "BackendHealthCheckError",
+)<{
+  readonly cause: unknown;
+}> {}
 
 export const productsRouter = createTRPCRouter({
   getMessage: publicProcedure.query(async () => {
@@ -34,11 +39,34 @@ export const productsRouter = createTRPCRouter({
 
     // Resolve against the base URL so a trailing slash on BACKEND_URL (e.g. a
     // Vercel binding URL) can't produce a double-slashed path.
-    const response = await fetch(new URL("/api/health", env.BACKEND_URL));
+    const backendHealthUrl = new URL("/api/health", env.BACKEND_URL);
 
-    return getMessageResponseSchema.parse(await response.json());
+    const backendHealthCheck = Effect.gen(function* () {
+      const response = yield* Effect.tryPromise({
+        try: async () => fetch(backendHealthUrl),
+        catch: (cause) => new BackendHealthCheckError({ cause }),
+      });
+      const responseBody = yield* Effect.tryPromise<
+        unknown,
+        BackendHealthCheckError
+      >({
+        try: async () => response.json(),
+        catch: (cause) => new BackendHealthCheckError({ cause }),
+      });
+
+      return yield* Schema.decodeUnknownEffect(getMessageResponseSchema)(
+        responseBody,
+      );
+    });
+
+    return Effect.runPromise(backendHealthCheck);
   }),
-  getProducts: publicProcedure.query(async () =>
-    setTimeout(SLEEP_TIME_MS, PRODUCTS),
-  ),
+  getProducts: publicProcedure.query(async () => {
+    const productsAfterDelay = Effect.gen(function* () {
+      yield* Effect.sleep(SLEEP_TIME_MS);
+      return PRODUCTS;
+    });
+
+    return Effect.runPromise(productsAfterDelay);
+  }),
 });
