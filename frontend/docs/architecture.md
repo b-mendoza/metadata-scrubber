@@ -21,8 +21,8 @@
 ## Application bindings
 
 - Request-scoped dependency injection is implemented with `AsyncLocalStorage` in `src/shared/middlewares/application-bindings/application-bindings.mod.ts`.
-- Server-side code calls `getApplicationBindings()`. It currently returns `{ env }` — the parsed, Zod-validated environment. A `db` binding is scaffolded but commented out until the database client is wired in.
-- The middleware parses `process.env` against `envSchema` on every request, so environment access downstream is always validated.
+- Server-side code calls `getApplicationBindings()`. It currently returns `{ env }` — the parsed, Effect Schema-validated environment. A `db` binding is scaffolded but commented out until the database client is wired in.
+- The middleware decodes `process.env` against `envSchema` (an Effect Schema; the decode Effect runs via `Effect.runPromise` at the middleware boundary) on every request, so environment access downstream is always validated.
 
 ## Database
 
@@ -32,7 +32,7 @@
 
 ## File uploads
 
-- `src/routes/api/upload.ts` accepts a `POST` with form data, validates the file with a Zod schema against `MAX_FILE_SIZE_BYTES` and `UPLOADABLE_MIME_TYPES` from `src/domains/wizard/constants/wizard.mod.ts`, and returns file metadata plus a generated `storageKey`.
+- `src/routes/api/upload.ts` accepts a `POST` with form data, validates the file with an Effect Schema (`Schema.File` plus size/MIME filters) against `MAX_FILE_SIZE_BYTES` and `UPLOADABLE_MIME_TYPES` from `src/domains/wizard/constants/wizard.mod.ts`, and returns file metadata plus a generated `storageKey`. The handler body is an Effect program executed with `Effect.runPromise` at the route boundary.
 - **No storage backend is implemented yet.** The route does not persist the file. S3 SDK dependencies and `@uppy/react` are installed in anticipation, but there is no storage module under `src/`.
 
 ## Testing status
