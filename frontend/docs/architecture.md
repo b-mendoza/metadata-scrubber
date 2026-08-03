@@ -24,6 +24,11 @@
 - Server-side code calls `getApplicationBindings()`. It currently returns `{ env }` — the parsed, Effect Schema-validated environment. A `db` binding is scaffolded but commented out until the database client is wired in.
 - The middleware decodes `process.env` against `envSchema` (an Effect Schema; the decode Effect runs via `Effect.runPromise` at the middleware boundary) on every request, so environment access downstream is always validated.
 
+## Validation
+
+- Server-side boundaries validate with Effect Schema (environment parsing in the application-bindings middleware, the upload route's form-data checks). Client-side code validates with Zod (the wizard `FileUploader` parses Uppy upload responses with Zod schemas).
+- This split is deliberate: Effect must never ship in the client bundle. The rule and rationale live in the [validation-libraries convention](./agent/code-conventions.md).
+
 ## Database
 
 - PostgreSQL via Drizzle ORM; config in `drizzle.config.ts`, migration commands in [commands](./commands.md).
