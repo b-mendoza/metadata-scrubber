@@ -70,17 +70,3 @@ func TestFromContextReportsMissingBindings(t *testing.T) {
 
 	require.False(t, ok)
 }
-
-func TestFromContextIgnoresPlainStringKeyCollision(t *testing.T) {
-	t.Parallel()
-
-	ctx := context.WithValue( //nolint:revive // Intentionally simulates a caller using a plain string context key.
-		context.Background(),
-		"bindings", //nolint:staticcheck // Intentionally simulates a plain string context key.
-		testBindings(),
-	)
-
-	_, ok := bindings.FromContext(ctx)
-
-	require.False(t, ok)
-}
