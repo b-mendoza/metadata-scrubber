@@ -10,7 +10,7 @@ The goal is not code that merely works and passes tests. The goal is code that a
 
 Names are the cheapest documentation you have. A well-named variable explains itself at every place it is used, so the reader never has to scroll back to the declaration or trace the data flow to figure out what it holds. A vague name like `out` or `src` forces that work onto every future reader, and the cost is paid again on every edit.
 
-This is doubly true when the next reader is an LLM. Agents reason over the text of the code. A name that states its purpose gives the model reliable signal; a name like `b` gives it almost nothing and invites wrong guesses.
+This is doubly true when the next reader is an LLM. Agents reason over the text of the code. A name that states its purpose gives the model a reliable signal; a name like `b` gives it almost nothing and invites wrong guesses.
 
 ## Idiomatic names are fine, but be consistent
 
