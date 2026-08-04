@@ -13,16 +13,14 @@ type Bindings struct {
 	Env config.Config
 }
 
-// contextKey is private to avoid collisions with values set by other packages.
-type contextKey string
+// contextKey is unexported, so no other package can forge the bindings key.
+type contextKey struct{}
 
-const bindingsContextKey contextKey = "bindings"
-
-// Inject returns middleware that attaches b to every request context.
-func Inject(b Bindings) func(http.Handler) http.Handler {
+// Inject returns middleware that attaches bindings to every request context.
+func Inject(bindings Bindings) func(http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			ctx := context.WithValue(r.Context(), bindingsContextKey, b)
+			ctx := context.WithValue(r.Context(), contextKey{}, bindings)
 			next.ServeHTTP(w, r.WithContext(ctx))
 		})
 	}
@@ -31,6 +29,6 @@ func Inject(b Bindings) func(http.Handler) http.Handler {
 // FromContext returns the application bindings carried by ctx. The bool is false
 // when Inject has not attached bindings.
 func FromContext(ctx context.Context) (Bindings, bool) {
-	b, ok := ctx.Value(bindingsContextKey).(Bindings)
+	b, ok := ctx.Value(contextKey{}).(Bindings)
 	return b, ok
 }
