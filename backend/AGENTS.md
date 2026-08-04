@@ -6,8 +6,8 @@ Go HTTP service that receives uploaded files and returns metadata-free bytes.
 
 ## Always
 
-- Lint check (run after a substantive change): `task lint` — read-only lint and formatting check, CI-safe.
-- Test suite (run before committing): `task test` — suite with the race detector and coverage.
+- Lint check (run after a substantive change): `task lint`.
+- Test suite (run before committing): `task test`.
 
 ## Current-state references (short-lived; verify against the code)
 
