@@ -28,9 +28,6 @@ func main() {
 	logger := slog.New(slog.NewJSONHandler(os.Stdout, nil))
 	slog.SetDefault(logger)
 
-	// pdfcpu otherwise tries to create a config dir under $HOME on first use,
-	// which panics on a read-only/scratch rootfs. RemoveProperties needs no
-	// config, so disable it.
 	scrub.DisableConfigDir()
 
 	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
