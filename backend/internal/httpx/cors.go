@@ -9,7 +9,6 @@ import (
 const (
 	corsAllowedOrigin  = "*"
 	corsAllowedMethods = http.MethodGet + ", " + http.MethodPost + ", " + http.MethodOptions
-	corsAllowedHeaders = header.ContentType
 )
 
 // CORS applies a permissive, fixed cross-origin policy before dispatching requests.
@@ -17,7 +16,7 @@ func CORS(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set(header.AccessControlAllowOrigin, corsAllowedOrigin)
 		w.Header().Set(header.AccessControlAllowMethods, corsAllowedMethods)
-		w.Header().Set(header.AccessControlAllowHeaders, corsAllowedHeaders)
+		w.Header().Set(header.AccessControlAllowHeaders, header.ContentType)
 		if r.Method == http.MethodOptions {
 			w.WriteHeader(http.StatusNoContent)
 			return

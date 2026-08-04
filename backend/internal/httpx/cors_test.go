@@ -3,7 +3,6 @@ package httpx_test
 import (
 	"net/http"
 	"net/http/httptest"
-	"strings"
 	"testing"
 
 	"github.com/stretchr/testify/require"
@@ -12,16 +11,12 @@ import (
 	"metadata-scrubber/internal/httpx/header"
 )
 
-func expectedAllowedMethodsHeader() string {
-	return strings.Join([]string{http.MethodGet, http.MethodPost, http.MethodOptions}, ", ")
-}
-
 func requireCORSHeaders(t *testing.T, responseHeaders http.Header) {
 	t.Helper()
 
 	require.Equal(t, "*", responseHeaders.Get(header.AccessControlAllowOrigin))
-	require.Equal(t, expectedAllowedMethodsHeader(), responseHeaders.Get(header.AccessControlAllowMethods))
-	require.Equal(t, header.ContentType, responseHeaders.Get(header.AccessControlAllowHeaders))
+	require.Equal(t, "GET, POST, OPTIONS", responseHeaders.Get(header.AccessControlAllowMethods))
+	require.Equal(t, "Content-Type", responseHeaders.Get(header.AccessControlAllowHeaders))
 }
 
 func TestCORSHandlesPreflightWithoutDelegating(t *testing.T) {
