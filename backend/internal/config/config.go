@@ -2,7 +2,8 @@
 // startup, exposing a sanitized, typed view the rest of the backend can trust
 // instead of calling os.Getenv directly. It mirrors the frontend's centralized
 // env module (frontend/src/shared/config/env/env.mod.server.ts), using
-// go-playground/validator for constraint checks the way the frontend uses zod.
+// go-playground/validator for constraint checks the way the frontend uses
+// Effect's Schema.
 package config
 
 import (
@@ -17,9 +18,9 @@ import (
 var configValidator = validator.New(validator.WithRequiredStructEnabled())
 
 // Config is the validated environment configuration. The `env` tags read and
-// coerce values (with defaults) the way zod parses input; the `validate` tags
-// enforce constraints the way zod refines it. Every field is guaranteed to
-// satisfy its tags once Load returns without error.
+// coerce values (with defaults) the way Effect Schema decodes input; the
+// `validate` tags enforce constraints the way Schema checks refine it. Every
+// field is guaranteed to satisfy its tags once Load returns without error.
 type Config struct {
 	// Port is the TCP port the HTTP server listens on.
 	Port int `env:"PORT" envDefault:"8080" validate:"gte=1,lte=65535"`
