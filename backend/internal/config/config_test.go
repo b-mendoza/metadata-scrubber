@@ -12,12 +12,10 @@ import (
 const portEnvKey = "PORT"
 
 func TestLoadDefaultsPortWhenUnset(t *testing.T) {
-	t.Run("defaults when unset", func(t *testing.T) {
-		cfg, err := loadConfigWithoutPort(t)
+	cfg, err := loadConfigWithoutPort(t)
 
-		require.NoError(t, err)
-		require.Equal(t, 8080, cfg.Port)
-	})
+	require.NoError(t, err)
+	require.Equal(t, 8080, cfg.Port)
 }
 
 func TestLoadDefaultsPortWhenEmpty(t *testing.T) {
