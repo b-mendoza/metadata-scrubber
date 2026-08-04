@@ -8,4 +8,4 @@ Passing tests is a floor, not proof that the change is correct (the root guide's
 - Generated and tooling-managed files (lockfiles such as `pnpm-lock.yaml` and `go.sum` among them) are owned by their tools: change the source or generator and regenerate, letting the tool produce the diff.
 - If the change alters a service's architecture, file conventions, or commands, update the matching short-lived reference doc under that service's `docs/` directory in the same change. Short-lived docs describe what exists on disk — never aspirations.
 
-Where a service has no automated check for something, treat that as a known gap, not as permission to skip verification.
+Disclose what the checks cannot see. Where part of a change cannot be exercised, or a service has no automated check for something, say so plainly and treat it as a known gap — not as permission to skip verification or to let green output imply coverage it lacks.

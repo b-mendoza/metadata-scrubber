@@ -19,7 +19,6 @@ These apply to every service, in any language. Test tooling and gotchas specific
 
 - **Earn green by fixing the cause.** Deleting, skipping, or loosening a failing test, sleeping or blindly retrying a flaky one, and skipping on a missing prerequisite all convert a signal into silence. Fix the code or the synchronization; fail with an actionable error when the environment lacks a prerequisite; and when the test itself is wrong, change it as its own explicit, explained step.
 - **A bug-fix test must fail without the fix.** Confirm the regression test fails against the unfixed code; a test that passes both with and without the change proves nothing about the bug.
-- **Disclose what the suite cannot see.** If part of a change cannot be exercised, say so plainly rather than letting green checks imply full coverage.
 
 ## How to organize
 
