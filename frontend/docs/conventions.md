@@ -1,4 +1,4 @@
-# Frontend File Structure And Conventions (current state)
+# Frontend File Structure and Conventions (current state)
 
 > **Short-lived reference.** This file describes the current state of the code and must be updated whenever that state changes. If this file and the code disagree, the code wins — fix this file.
 
