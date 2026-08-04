@@ -39,10 +39,12 @@ func normalizedExtension(filename string) string {
 
 func scrubPDF(src []byte) ([]byte, error) {
 	var out bytes.Buffer
-	var properties []string
 
-	// An empty property list tells pdfcpu to remove all document properties.
-	if err := api.RemoveProperties(bytes.NewReader(src), &out, properties, nil); err != nil {
+	// A nil property list tells pdfcpu to remove every document property and the
+	// catalog XMP metadata, rather than a named subset.
+	var allProperties []string
+
+	if err := api.RemoveProperties(bytes.NewReader(src), &out, allProperties, nil); err != nil {
 		return nil, err
 	}
 
