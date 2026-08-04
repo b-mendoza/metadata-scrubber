@@ -92,22 +92,10 @@ func loadConfigWithPort(t *testing.T, port string) (config.Config, error) {
 func loadConfigWithoutPort(t *testing.T) (config.Config, error) {
 	t.Helper()
 
-	unsetenv(t, portEnvKey)
+	// t.Setenv first so the testing package registers the restore of the
+	// original value; os.Unsetenv then removes the variable for this test.
+	t.Setenv(portEnvKey, "")
+	require.NoError(t, os.Unsetenv(portEnvKey))
 
 	return config.Load()
-}
-
-func unsetenv(t *testing.T, key string) {
-	t.Helper()
-
-	value, ok := os.LookupEnv(key)
-	require.NoError(t, os.Unsetenv(key))
-	t.Cleanup(func() {
-		if ok {
-			require.NoError(t, os.Setenv(key, value))
-			return
-		}
-
-		require.NoError(t, os.Unsetenv(key))
-	})
 }
