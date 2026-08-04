@@ -1,6 +1,6 @@
 # TypeScript Design Conventions
 
-Long-lived guidance for TypeScript code in this service. Current file naming and structure conventions live in the short-lived [conventions reference](../conventions.md).
+Long-lived guidance for TypeScript code in this service. Current file-naming and structure conventions are documented in the short-lived [conventions reference](../conventions.md).
 
 ## Design
 
