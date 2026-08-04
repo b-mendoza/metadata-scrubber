@@ -2,6 +2,7 @@ package handler
 
 import (
 	"bytes"
+	"encoding/json"
 	"io"
 	"mime/multipart"
 	"net/http"
@@ -66,12 +67,32 @@ func TestContentDispositionEncodesControlBytes(t *testing.T) {
 	require.Equal(t, want, contentDisposition(filename), "contentDisposition(%q)", filename)
 }
 
+func TestReachabilityReportsReachableStatus(t *testing.T) {
+	recorder := httptest.NewRecorder()
+	Reachability(recorder, httptest.NewRequest(http.MethodGet, "/api/health", nil))
+
+	require.Equal(t, http.StatusOK, recorder.Code, "Reachability status")
+	require.Equal(t, mediatype.JSON, recorder.Header().Get(header.ContentType), header.ContentType)
+	require.JSONEq(t, `{"status":"reachable"}`, recorder.Body.String(), "Reachability body")
+}
+
 func TestScrubRejectsMissingFile(t *testing.T) {
 	recorder := httptest.NewRecorder()
 	Scrub(recorder, httptest.NewRequest(http.MethodPost, "/api/scrub", strings.NewReader("not multipart")))
 
 	require.Equal(t, http.StatusBadRequest, recorder.Code, "Scrub status; body: %s", recorder.Body.String())
 	require.Equal(t, mediatype.JSON, recorder.Header().Get(header.ContentType), header.ContentType)
+	require.Equal(t, `missing or invalid "file" form field`, errorMessage(t, recorder), "Scrub error message")
+}
+
+func TestScrubRejectsOversizedUpload(t *testing.T) {
+	// The upload cap trips inside FormFile, so an oversized upload collapses
+	// into the missing-file response rather than a 413.
+	recorder := httptest.NewRecorder()
+	Scrub(recorder, newMultipartFileRequest(t, "report.pdf", make([]byte, maxUploadSize+1)))
+
+	require.Equal(t, http.StatusBadRequest, recorder.Code, "Scrub status; body: %s", recorder.Body.String())
+	require.Equal(t, `missing or invalid "file" form field`, errorMessage(t, recorder), "Scrub error message")
 }
 
 func TestScrubRejectsUnsupportedType(t *testing.T) {
@@ -80,6 +101,18 @@ func TestScrubRejectsUnsupportedType(t *testing.T) {
 
 	require.Equal(t, http.StatusUnsupportedMediaType, recorder.Code, "Scrub status; body: %s", recorder.Body.String())
 	require.Equal(t, mediatype.JSON, recorder.Header().Get(header.ContentType), header.ContentType)
+	require.Equal(t, "unsupported file type", errorMessage(t, recorder), "Scrub error message")
+}
+
+func TestScrubReportsScrubFailure(t *testing.T) {
+	recorder := httptest.NewRecorder()
+	Scrub(recorder, newMultipartFileRequest(t, "report.pdf", []byte("not a pdf")))
+
+	require.Equal(t, http.StatusInternalServerError, recorder.Code, "Scrub status; body: %s", recorder.Body.String())
+	require.Equal(t, mediatype.JSON, recorder.Header().Get(header.ContentType), header.ContentType)
+
+	message := errorMessage(t, recorder)
+	require.True(t, strings.HasPrefix(message, "could not scrub file: "), "Scrub error message = %q", message)
 }
 
 func readScrubbablePDF(t *testing.T) []byte {
@@ -108,4 +141,15 @@ func newMultipartFileRequest(t *testing.T, filename string, body []byte) *http.R
 	request.Header.Set(header.ContentType, writer.FormDataContentType())
 
 	return request
+}
+
+func errorMessage(t *testing.T, recorder *httptest.ResponseRecorder) string {
+	t.Helper()
+
+	var body struct {
+		Error string `json:"error"`
+	}
+	require.NoError(t, json.Unmarshal(recorder.Body.Bytes(), &body), "decode error body")
+
+	return body.Error
 }
