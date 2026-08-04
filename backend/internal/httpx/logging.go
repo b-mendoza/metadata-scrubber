@@ -16,7 +16,7 @@ func RequestLogger(logger *slog.Logger) func(http.Handler) http.Handler {
 
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			started := time.Now()
+			startedAt := time.Now()
 			path := r.URL.Path
 
 			logRequestStarted(logger, r, path)
@@ -31,7 +31,7 @@ func RequestLogger(logger *slog.Logger) func(http.Handler) http.Handler {
 						r,
 						path,
 						recorder,
-						started,
+						startedAt,
 						slog.LevelError,
 						slog.Bool("panicked", true),
 						slog.String("panic", fmt.Sprint(recovered)),
@@ -39,7 +39,7 @@ func RequestLogger(logger *slog.Logger) func(http.Handler) http.Handler {
 					panic(recovered)
 				}
 
-				logRequestCompleted(logger, r, path, recorder, started, slog.LevelInfo)
+				logRequestCompleted(logger, r, path, recorder, startedAt, slog.LevelInfo)
 			}()
 
 			next.ServeHTTP(recorder, r)
@@ -64,11 +64,17 @@ func logRequestCompleted(
 	r *http.Request,
 	path string,
 	recorder *loggingResponseWriter,
-	started time.Time,
+	startedAt time.Time,
 	level slog.Level,
 	extraAttrs ...slog.Attr,
 ) {
-	attrs := requestCompletionLogAttrs(r, path, recorder, started)
+	attrs := []slog.Attr{
+		slog.String("method", r.Method),
+		slog.String("path", path),
+		slog.Int("status", recorder.status),
+		slog.Int("bytes", recorder.bytesWritten),
+		slog.Int64("duration_ms", time.Since(startedAt).Milliseconds()),
+	}
 	attrs = append(attrs, extraAttrs...)
 
 	logger.LogAttrs(
@@ -79,42 +85,27 @@ func logRequestCompleted(
 	)
 }
 
-func requestCompletionLogAttrs(
-	r *http.Request,
-	path string,
-	recorder *loggingResponseWriter,
-	started time.Time,
-) []slog.Attr {
-	return []slog.Attr{
-		slog.String("method", r.Method),
-		slog.String("path", path),
-		slog.Int("status", recorder.status),
-		slog.Int("bytes", recorder.bytes),
-		slog.Int64("duration_ms", time.Since(started).Milliseconds()),
-	}
-}
-
 type loggingResponseWriter struct {
 	http.ResponseWriter
-	bytes       int
-	status      int
-	wroteHeader bool
+	bytesWritten int
+	status       int
+	wroteHeader  bool
 }
 
-func newLoggingResponseWriter(responseWriter http.ResponseWriter) *loggingResponseWriter {
+func newLoggingResponseWriter(w http.ResponseWriter) *loggingResponseWriter {
 	return &loggingResponseWriter{
-		ResponseWriter: responseWriter,
+		ResponseWriter: w,
 		status:         http.StatusOK,
 	}
 }
 
-func (w *loggingResponseWriter) Write(bytes []byte) (int, error) {
+func (w *loggingResponseWriter) Write(body []byte) (int, error) {
 	if !w.wroteHeader {
 		w.WriteHeader(http.StatusOK)
 	}
 
-	n, err := w.ResponseWriter.Write(bytes)
-	w.bytes += n
+	n, err := w.ResponseWriter.Write(body)
+	w.bytesWritten += n
 
 	return n, err
 }
