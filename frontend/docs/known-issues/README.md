@@ -10,9 +10,9 @@ This folder records dependency, tooling, and framework issues that affect local 
 | --- | --- | --- | --- |
 | [`@tanstack/devtools-vite@0.7.0` production build syntax error](./tanstack-devtools-vite-0-7-0-build-syntax-error.md) | Build tooling | Resolved — fixed upstream; `0.8.3` installed | None (historical: pin `0.6.1`) |
 
-## Adding Entries
+## Entry format
 
-Each issue entry should include:
+Each entry in this folder records:
 
 - The affected command or workflow.
 - The observed symptom and error message.
