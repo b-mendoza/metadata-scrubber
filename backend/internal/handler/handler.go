@@ -17,7 +17,6 @@ import (
 const (
 	// maxUploadSize caps the size of an uploaded file (25 MB) to keep memory usage bounded.
 	maxUploadSize    = 25 << 20
-	statusKey        = "status"
 	reachableStatus  = "reachable"
 	fileFormField    = "file"
 	missingFileError = "missing or invalid \"file\" form field"
