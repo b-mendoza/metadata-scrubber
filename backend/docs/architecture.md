@@ -11,7 +11,7 @@ Application code lives under `internal/`:
 | `scrub` | Removes metadata from uploaded file bytes. |
 | `handler` | HTTP handlers for the service's endpoints. |
 | `httpx` | HTTP helpers shared across handlers (CORS, logging, media types, responses). |
-| `bindings` | Request-scoped values attached to the context. |
+| `bindings` | Middleware that attaches the validated config to every request context; no handler reads it yet. |
 | `config` | Environment-driven service configuration (e.g. `PORT`). |
 
 ## Runtime

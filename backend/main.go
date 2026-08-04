@@ -82,8 +82,8 @@ func shutdownServer(server *http.Server, waitForServer <-chan error) error {
 }
 
 // newServer wires the API routes to their handlers and returns the configured
-// server. Request bindings are injected before the routes so handlers read
-// validated config from the request context rather than the environment.
+// server. Bindings are injected ahead of the routes so a handler can read
+// validated config from the request context; no handler reads them yet.
 func newServer(cfg config.Config, logger *slog.Logger) *http.Server {
 	mux := http.NewServeMux()
 
