@@ -5,7 +5,6 @@
     "pr": ""
   },
   "autoMemoryEnabled": false,
-  "disableWorkflows": true,
   "enabledMcpjsonServers": ["cloudflare", "context7", "vercel", "xapi"],
-  "workflowKeywordTriggerEnabled": false
+  "workflowSizeGuideline": "medium"
 }
