@@ -1,18 +1,11 @@
 import react from "@vitejs/plugin-react";
-import tsconfigPaths from "vite-tsconfig-paths";
 import { defineConfig } from "vitest/config";
 
 export default defineConfig({
   css: {
     transformer: "lightningcss",
   },
-  plugins: [
-    tsconfigPaths({
-      projectDiscovery: "lazy",
-      projects: ["./tsconfig.json"],
-    }),
-    react(),
-  ],
+  plugins: [react()],
   test: {
     coverage: {
       include: ["src/**/*.{ts,tsx}"],
