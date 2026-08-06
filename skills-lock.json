@@ -156,6 +156,12 @@
       "sourceType": "github",
       "skillPath": "skills/creating-work-item-children/SKILL.md",
       "computedHash": "99eb2afdb7054ff625421bbd9c7c89fbbc3e8e34971f2793fc31daa9c3bd78ef"
+    },
+    "executing-work-item-task": {
+      "source": "b-mendoza/agent-skills",
+      "sourceType": "github",
+      "skillPath": "skills/executing-work-item-task/SKILL.md",
+      "computedHash": "7fe6c15a1f3f006717ffefa7ebd90ebb0b541cf39396b35f83f6e86ad50fedfa"
     }
   }
 }
