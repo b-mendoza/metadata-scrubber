@@ -180,6 +180,12 @@
       "sourceType": "github",
       "skillPath": "skills/planning-task-execution/SKILL.md",
       "computedHash": "daeeb659ee8338410df65c8ffe512fe4e987e02fbb0a61b4753dbaf0e78ad787"
+    },
+    "planning-work-item-tasks": {
+      "source": "b-mendoza/agent-skills",
+      "sourceType": "github",
+      "skillPath": "skills/planning-work-item-tasks/SKILL.md",
+      "computedHash": "a74b90a693e01f221844bb60588dd944980eb23aaf5d6eca84951f74a4e51dba"
     }
   }
 }
