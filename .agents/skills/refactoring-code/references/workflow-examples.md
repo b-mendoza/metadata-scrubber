@@ -1,12 +1,10 @@
 # Workflow Examples
 
-Load this file only when the orchestrator or user needs concrete examples of
-dispatch, the plan card, warning handoffs, or failure cleanup.
+Load this file only when the orchestrator or user needs concrete examples of dispatch, the plan card, warning handoffs, or failure cleanup.
 
 ## Plan Approval Card
 
-All user decisions — steps, waivers, non-`safe` commands, conflicts,
-unanalyzed dimensions — are batched into this single card.
+All user decisions — steps, waivers, non-`safe` commands, conflicts, unanalyzed dimensions — are batched into this single card.
 
 ```text
 Plan approval required before mutation.
