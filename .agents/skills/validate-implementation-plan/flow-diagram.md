@@ -1,8 +1,6 @@
 # validate-implementation-plan
 
-Audit an implementation plan without overwriting the source plan. Execution is
-a finite-state machine. Companion transition table:
-[`state-machine.md`](./state-machine.md).
+Audit an implementation plan without overwriting the source plan. Execution is a finite-state machine. Companion transition table: [`state-machine.md`](./state-machine.md).
 
 ```mermaid
 stateDiagram-v2

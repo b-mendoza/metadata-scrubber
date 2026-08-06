@@ -1,14 +1,11 @@
 # State Machine — validate-implementation-plan
 
-Finite-state execution model for this skill. Mermaid SoT:
-[`flow-diagram.md`](./flow-diagram.md). This table is the authoritative list of
-states, transitions, guards, and terminals. Normative status and report wording
-lives in [`references/audit-protocol.md`](./references/audit-protocol.md).
+Finite-state execution model for this skill. Mermaid SoT: [`flow-diagram.md`](./flow-diagram.md). This table is the authoritative list of states, transitions, guards, and terminals. Normative status and report wording lives in [`references/audit-protocol.md`](./references/audit-protocol.md).
 
 ## States
 
 | State | Kind | Role |
-| ----- | ---- | ---- |
+| --- | --- | --- |
 | `LoadContracts` | active | Load trust-boundary and audit-protocol |
 | `NormalizeInputs` | active | Confirm `PLAN_PATH`; derive `SNAPSHOT_PATH` / `OUTPUT_PATH` |
 | `AuthorizeArtifacts` | active | Apply artifact create/overwrite policy |
@@ -42,7 +39,7 @@ lives in [`references/audit-protocol.md`](./references/audit-protocol.md).
 ## Transitions
 
 | From | To | Guard / event |
-| ---- | -- | ------------- |
+| --- | --- | --- |
 | `[*]` | `LoadContracts` | run start |
 | `LoadContracts` | `NormalizeInputs` | trust-boundary and audit-protocol loaded |
 | `NormalizeInputs` | `TerminalBlocked` | `PLAN_PATH` missing or unreadable |
@@ -109,7 +106,7 @@ lives in [`references/audit-protocol.md`](./references/audit-protocol.md).
 Defined in [`references/audit-protocol.md`](./references/audit-protocol.md):
 
 | Term | Meaning |
-| ---- | ------- |
+| --- | --- |
 | `ORIGIN_CONTEXT` adequate | States a user-request outcome without requiring inference from the plan |
 | core audit remains viable | Snapshot + numbered requirements + all three discovery auditor payloads exist |
 | decision-relevant | Resolving it could change final `AUDIT:*` or a finding’s `critical`/`warning` severity |
@@ -121,7 +118,7 @@ Exactly one of: `AUDIT: PASS`, `AUDIT: FAIL`, `AUDIT: BLOCKED`, `AUDIT: ERROR`.
 ## Reachability and dead-state checks
 
 | Property | Result |
-| -------- | ------ |
+| --- | --- |
 | Every active state reachable from `LoadContracts` | yes |
 | Every terminal reachable | yes (`TerminalPass`/`Fail` via `MapFinalStatus`; `Blocked`/`Error` via intake, retries, and gates) |
 | Dead states (no outgoing, non-terminal) | none |

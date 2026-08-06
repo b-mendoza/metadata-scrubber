@@ -137,7 +137,7 @@
       "source": "b-mendoza/agent-skills",
       "sourceType": "github",
       "skillPath": "skills/validate-implementation-plan/SKILL.md",
-      "computedHash": "b9c4118af23b87805dc5819cb59b7969c5ed9d0cb33eeec6e5184665d2cdf417"
+      "computedHash": "a9358f80310fb6f3ed115342795b3bccda7ee6355d00f2987c66e2ad553a04fd"
     },
     "writing-plans": {
       "source": "obra/superpowers",
