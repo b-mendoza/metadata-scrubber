@@ -12,7 +12,7 @@ Execution is a finite state machine. Canonical tables: [`state-machine.md`](./st
 ## Inputs
 
 | Input | Required | Example |
-| ----- | -------- | ------- |
+| --- | --- | --- |
 | `ISSUE` | Yes | "Deploy job fails after dependency update" |
 | `RESOURCES` | Yes | `logs/build-42.txt`, repo paths, CI URL, commit range |
 | `ISSUE_SOURCE` | No | `runtime`, `CI/CD`, or `user-report` |
@@ -23,7 +23,7 @@ Execution is a finite state machine. Canonical tables: [`state-machine.md`](./st
 ## Pipeline Overview
 
 | Phase | Mode | Result |
-| ----- | ---- | ------ |
+| --- | --- | --- |
 | 1. Intake | Inline | Classify source; state safety and trust rules; clarify if required (`Clarify` wait) |
 | 2. Evidence | Dispatch `evidence-collector` | Cited evidence base; then `CoherenceCheck` |
 | 3. Analysis | Dispatch `root-cause-analyst` | Draft RCA, or bounded evidence/input request, or **conditional** `PresentApproval` on `NEEDS_APPROVAL` only |
@@ -35,7 +35,7 @@ Approval is not an always-entered phase. It is reachable only from `Analyze` via
 ## Subagent Registry
 
 | Subagent | Path | Purpose |
-| -------- | ---- | ------- |
+| --- | --- | --- |
 | `evidence-collector` | `./subagents/evidence-collector.md` | Builds the auditable evidence base without concluding root cause |
 | `root-cause-analyst` | `./subagents/root-cause-analyst.md` | Turns evidence into supported cause(s), causal chain, and report draft |
 | `rca-report-reviewer` | `./subagents/rca-report-reviewer.md` | Independently rejects ungrounded, unsafe, unclear, or mis-statused reports |
@@ -43,7 +43,7 @@ Approval is not an always-entered phase. It is reachable only from `Analyze` via
 ## Progressive Loading Map
 
 | Need | Load |
-| ---- | ---- |
+| --- | --- |
 | Evidence selection, source classification, intermittent failures | `./references/investigation-guide.md` |
 | Action boundaries and approval-packet rules | `./references/safety-tiers.md` |
 | Terminal statuses, confidence rubric, report template | `./references/output-contract.md` |

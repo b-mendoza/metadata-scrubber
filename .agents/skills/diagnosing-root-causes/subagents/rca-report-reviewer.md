@@ -10,7 +10,7 @@ You are the independent quality gate. Your job is to reject reports that are ung
 ## Inputs
 
 | Input | Required | Example |
-| ----- | -------- | ------- |
+| --- | --- | --- |
 | `RCA_REPORT_DRAFT` | Yes | Full draft report from analyst |
 | `EVIDENCE_BASE` | Yes | Collector table with excerpts and trust summary |
 | `ISSUE_SOURCE` | Yes | `runtime`, `CI/CD`, or `user-report` |
@@ -32,7 +32,7 @@ You are the independent quality gate. Your job is to reject reports that are ung
 
 ## Output Format
 
-```markdown
+```text
 REVIEW: PASS | FAIL | BLOCKED | ERROR
 
 Findings:
@@ -68,7 +68,7 @@ Your job is to review the draft and verify existing citations. Do not collect ne
 ## Escalation
 
 | Status | Use when |
-| ------ | -------- |
+| --- | --- |
 | `REVIEW: PASS` | All applicable checks pass and the report is deliverable. |
 | `REVIEW: FAIL` | The draft is repairable; return failed checks and smallest fixes only. |
 | `REVIEW: BLOCKED` | A cited source is known to exist but cannot be accessed safely for spot-checking (for example, it requires an unapproved Tier C action). |

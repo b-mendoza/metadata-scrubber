@@ -5,7 +5,7 @@ Use this reference when reviewing an RCA draft. Status names must match the taxo
 ## Checks
 
 | Check | Pass condition |
-| ----- | -------------- |
+| --- | --- |
 | Source classification | Issue source is `runtime`, `CI/CD`, or `user-report`, and any uncertainty or revision is explained. |
 | Evidence grounding | Every load-bearing claim cites a named source and the evidence base includes a supporting excerpt. |
 | Citation spot-check | Up to five cited sources, when opened read-only, exist and support the cited claim. |
@@ -24,7 +24,7 @@ Use this reference when reviewing an RCA draft. Status names must match the taxo
 ## Failure Severity
 
 | Severity | Use when |
-| -------- | -------- |
+| --- | --- |
 | `high` | The draft could deliver a wrong cause, unsafe claim, wrong status, or untraceable conclusion. |
 | `medium` | The draft is probably correct but unclear, under-evidenced, or missing a required status or gap detail. |
 | `low` | The issue is wording, formatting, or minor incompleteness that does not change the conclusion. |
@@ -36,7 +36,7 @@ When `REVIEW_SCOPE` is present, re-check the named failed checks and always re-r
 ## Reviewer Verdicts
 
 | Verdict | Meaning |
-| ------- | ------- |
+| --- | --- |
 | `REVIEW: PASS` | All applicable checks pass. |
 | `REVIEW: FAIL` | The report is repairable; return only failed checks and smallest required fixes. |
 | `REVIEW: BLOCKED` | A cited source is known to exist but cannot be accessed safely for spot-checking. |

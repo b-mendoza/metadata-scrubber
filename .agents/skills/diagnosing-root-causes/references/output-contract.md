@@ -5,7 +5,7 @@ Use this reference when drafting or delivering an RCA report. Status names are l
 ## Terminal Status Taxonomy
 
 | Status | Use when, and only when |
-| ------ | ----------------------- |
+| --- | --- |
 | `ready` | Root cause(s) are supported at confidence `high` or `medium`; scope and blast radius are stated; causal chain and educational explanation are traceable; fix direction addresses the cause(s). Approved Tier C handoff alone is never `ready`. |
 | `blocked` | Required material is known to exist but no one in this workflow can obtain it safely, such as evidence reachable only through an unapproved Tier C action. |
 | `needs-validation` | Material was obtained but is too weak, stale, or contradictory; confidence is `low`; a declined approval left a validation gap; or the review repair cap was reached. |
@@ -16,7 +16,7 @@ Orchestration-only early stops are `needs-input` and `error`; they do not delive
 ## Confidence Rubric
 
 | Level | Observable criteria |
-| ----- | ------------------- |
+| --- | --- |
 | `high` | Failure reproduced or directly observed; mechanism traced to a named source; triggering condition or change identified. |
 | `medium` | Mechanism traced end-to-end with named sources; failure was not reproduced. |
 | `low` | Correlation or timing evidence only, or mechanism partly inferred. |

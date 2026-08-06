@@ -1,13 +1,11 @@
 # State Machine — diagnosing-root-causes
 
-Finite-state execution model for this skill. This table and the `SKILL.md`
-Execution section are the only normative representations; they must match each
-other's states, guards, loop caps, and terminals.
+Finite-state execution model for this skill. This table and the `SKILL.md` Execution section are the only normative representations; they must match each other's states, guards, loop caps, and terminals.
 
 ## Run-scoped variables
 
 | Variable | Initial | Rules |
-| -------- | ------- | ----- |
+| --- | --- | --- |
 | `clarify_token` | available | One batched ask (≤3 questions). Consumed on first ask. Later `NEEDS_INPUT` cannot ask again. |
 | `refine_loops` | 0 | Increment on each re-collect, whether triggered by `ANALYSIS: NEEDS_EVIDENCE` or by external-output ingestion from `AwaitExternal`. Cap 2; over cap treat as `UNSUPPORTED` (or, from `AwaitExternal`, terminate at `TermEscalated`). |
 | `unsupported_retries` | 0 | Increment on each `ANALYSIS: UNSUPPORTED` redirect. Cap 2; over cap → `TermEscalated`. |
@@ -19,7 +17,7 @@ other's states, guards, loop caps, and terminals.
 ## States
 
 | State | Kind | Phase | Actor |
-| ----- | ---- | ----- | ----- |
+| --- | --- | --- | --- |
 | `Intake` | active | 1 — Intake | Orchestrator |
 | `Clarify` | wait | 1 — Intake | Orchestrator → user |
 | `CollectEvidence` | active | 2 — Evidence | `evidence-collector` (one dispatch, or one bounded fan-out batch per `SKILL.md` Evidence rules) |
@@ -43,7 +41,7 @@ other's states, guards, loop caps, and terminals.
 ## Transitions
 
 | From | To | Guard / event |
-| ---- | -- | ------------- |
+| --- | --- | --- |
 | `[*]` | `Intake` | Skill invoked |
 | `Intake` | `CollectEvidence` | Inputs usable; `user-report` minimums present when applicable |
 | `Intake` | `Clarify` | Inputs unusable or `user-report` incomplete ∧ `clarify_token` available |
@@ -97,18 +95,11 @@ other's states, guards, loop caps, and terminals.
 
 ## Reachability
 
-Every listed state is reachable from `Intake` via documented guards. All six
-terminals exit to `[*]`. There are no dead states: wait states resume or stop;
-retries return to their subagent state; `RepairAnalyze` returns to `Review`;
-over-cap paths terminate honestly.
+Every listed state is reachable from `Intake` via documented guards. All six terminals exit to `[*]`. There are no dead states: wait states resume or stop; retries return to their subagent state; `RepairAnalyze` returns to `Review`; over-cap paths terminate honestly.
 
 ## Notes
 
-- Approval is **not** an always-entered phase; it is reachable only via
-  `ANALYSIS: NEEDS_APPROVAL` (`PresentApproval`).
-- Approved Tier C never executes inside this skill; terminal is `TermEscalated`
-  (handoff) unless external output is ingested and diagnosis continues.
-- `ready` requires evidence-supported cause(s) at `high` or `medium` confidence
-  after `REVIEW: PASS`. Approved Tier C handoff alone is never `ready`.
-- CoherenceCheck predicates are exactly: mutually contradictory **or** stale
-  beyond the affected version (not a vague "weak evidence" stop).
+- Approval is **not** an always-entered phase; it is reachable only via `ANALYSIS: NEEDS_APPROVAL` (`PresentApproval`).
+- Approved Tier C never executes inside this skill; terminal is `TermEscalated` (handoff) unless external output is ingested and diagnosis continues.
+- `ready` requires evidence-supported cause(s) at `high` or `medium` confidence after `REVIEW: PASS`. Approved Tier C handoff alone is never `ready`.
+- CoherenceCheck predicates are exactly: mutually contradictory **or** stale beyond the affected version (not a vague "weak evidence" stop).

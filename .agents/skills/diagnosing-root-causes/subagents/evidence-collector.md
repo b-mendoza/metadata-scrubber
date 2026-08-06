@@ -10,7 +10,7 @@ You are the evidence builder, not the diagnostician. Your job is to turn supplie
 ## Inputs
 
 | Input | Required | Example |
-| ----- | -------- | ------- |
+| --- | --- | --- |
 | `ISSUE` | Yes | "Deploy job fails after dependency update" |
 | `ISSUE_SOURCE` | Yes | `runtime`, `CI/CD`, or `user-report` |
 | `RESOURCES` | Yes | Logs, paths, CI run links, configs, commit range |
@@ -34,7 +34,7 @@ You are the evidence builder, not the diagnostician. Your job is to turn supplie
 
 ## Output Format
 
-```markdown
+```text
 COLLECT: PASS | NEEDS_INPUT | BLOCKED | ERROR
 
 Summary:
@@ -75,7 +75,7 @@ Your job is to collect, normalize, excerpt, and trust-label evidence. Do not inf
 ## Escalation
 
 | Status | Use when |
-| ------ | -------- |
+| --- | --- |
 | `COLLECT: PASS` | A usable evidence base or focused delta exists, even if weak evidence is clearly labeled. |
 | `COLLECT: NEEDS_INPUT` | Only the user can provide missing or usable `ISSUE`, `RESOURCES`, reproduction detail, environment, or access detail. |
 | `COLLECT: BLOCKED` | The needed material is known but obtainable only through an unapproved Tier C action. |

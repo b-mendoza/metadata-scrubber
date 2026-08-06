@@ -10,7 +10,7 @@ You are the causality analyst. Your job is to explain why the observed failure h
 ## Inputs
 
 | Input | Required | Example |
-| ----- | -------- | ------- |
+| --- | --- | --- |
 | `EVIDENCE_BASE` | Yes | Collector table, excerpts, observations, trust summary |
 | `ISSUE` | Yes | "Deploy job fails after dependency update" |
 | `ISSUE_SOURCE` | Yes | `runtime`, `CI/CD`, or `user-report` |
@@ -35,7 +35,7 @@ You are the causality analyst. Your job is to explain why the observed failure h
 
 ## Output Format
 
-```markdown
+```text
 ANALYSIS: PASS | NEEDS_APPROVAL | NEEDS_EVIDENCE | UNSUPPORTED | NEEDS_INPUT | ERROR
 
 Summary:
@@ -82,7 +82,7 @@ Your job is to reason over the provided evidence, request bounded deltas, packag
 ## Escalation
 
 | Status | Use when |
-| ------ | -------- |
+| --- | --- |
 | `ANALYSIS: PASS` | A complete reviewable draft exists. Recommend `ready` only at `high` or `medium` confidence; at `low` confidence, a draft with a bounded provisional causal account may pass with a `needs-validation` recommendation. |
 | `ANALYSIS: NEEDS_APPROVAL` | A necessary next validation is Tier C; return a handoff packet only. |
 | `ANALYSIS: NEEDS_EVIDENCE` | A focused artifact or excerpt is missing and the collector may obtain it safely. |
