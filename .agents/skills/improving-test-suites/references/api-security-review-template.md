@@ -1,6 +1,6 @@
 # API Security Review Template
 
-```markdown
+```text
 # API Security Review
 
 Status: <PASS | NOT_APPLICABLE | BLOCKED | NEEDS_CLARIFICATION | ERROR>

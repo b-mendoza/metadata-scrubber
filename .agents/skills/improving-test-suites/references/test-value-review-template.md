@@ -1,6 +1,6 @@
 # Test Value Review Template
 
-```markdown
+```text
 # Test Value Review
 
 Status: <PASS | BLOCKED | NEEDS_CLARIFICATION | ERROR>

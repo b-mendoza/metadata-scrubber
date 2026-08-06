@@ -1,15 +1,11 @@
 # State Machine — improving-test-suites
 
-Finite-state execution model for this skill. **This file is the sole normative
-source for states, transitions, guards, loops, and terminals.** The Mermaid
-diagram at the end is illustrative only and must not introduce behavior.
-Subagent status detail:
-[`references/orchestration-protocol.md`](./references/orchestration-protocol.md).
+Finite-state execution model for this skill. **This file is the sole normative source for states, transitions, guards, loops, and terminals.** The Mermaid diagram at the end is illustrative only and must not introduce behavior. Subagent status detail: [`references/orchestration-protocol.md`](./references/orchestration-protocol.md).
 
 ## States
 
 | State | Kind | Role |
-| ----- | ---- | ---- |
+| --- | --- | --- |
 | `Intake` | active | Normalize inputs; choose resume vs fresh |
 | `Resume` | active | Restore packet; jump to its named next step |
 | `ResolveTargets` | active | Expand `TARGET_TEST_FILES` to existing files |
@@ -44,11 +40,10 @@ Subagent status detail:
 
 ## Transitions
 
-Guards are evaluated top-to-bottom per source state; the first matching row
-wins.
+Guards are evaluated top-to-bottom per source state; the first matching row wins.
 
 | From | To | Guard / event |
-| ---- | -- | ------------- |
+| --- | --- | --- |
 | `[*]` | `Intake` | run start |
 | `Intake` | `Resume` | `RESUME_PACKET` present |
 | `Intake` | `ResolveTargets` | fresh run |
@@ -125,25 +120,16 @@ wins.
 
 ## Concurrency
 
-`ReviewFanout` dispatches every routed review at the same time when the runtime
-supports concurrent subagents; a runtime without them runs the same dispatches
-serially inline. Join semantics are identical either way: `ReviewJoin` acts
-only after every dispatched review has a report, and the outcome must not
-depend on completion order. A dispatch that crashes or returns nothing is
-treated as `ERROR` for that review. First-error retries of a review redispatch
-only that review.
+`ReviewFanout` dispatches every routed review at the same time when the runtime supports concurrent subagents; a runtime without them runs the same dispatches serially inline. Join semantics are identical either way: `ReviewJoin` acts only after every dispatched review has a report, and the outcome must not depend on completion order. A dispatch that crashes or returns nothing is treated as `ERROR` for that review. First-error retries of a review redispatch only that review.
 
 ## Resume Targets
 
-`Resume` may jump only to: `ResolveTargets`, `ValueReview`, `ReviewFanout`,
-`Synthesis`, `DualAuthority`, `WorkspaceRisk`, `PlanApproval`, `Refactor`,
-`Conformance`, `Validate`, `Repair`. This list is stated only here. A packet
-naming any other state is invalid; re-enter at the nearest earlier target.
+`Resume` may jump only to: `ResolveTargets`, `ValueReview`, `ReviewFanout`, `Synthesis`, `DualAuthority`, `WorkspaceRisk`, `PlanApproval`, `Refactor`, `Conformance`, `Validate`, `Repair`. This list is stated only here. A packet naming any other state is invalid; re-enter at the nearest earlier target.
 
 ## Repair Loop
 
 | Attribute | Value |
-| --------- | ----- |
+| --- | --- |
 | Counter | `REPAIR_TOTAL` |
 | Owner | Orchestrator |
 | Initial value | `0` at `Intake` (restored from packet on resume) |
@@ -154,7 +140,7 @@ naming any other state is invalid; re-enter at the nearest earlier target.
 ## Guards (load-bearing)
 
 | Guard | Definition |
-| ----- | ---------- |
+| --- | --- |
 | Safe edit justified | `MINIMAL_HARNESS_DECISION` contains ≥1 keep/rewrite/delete/consolidate/add item eligible for file mutation |
 | Dirty targets | Version control reports uncommitted changes in files the run may edit (checked via `git status --porcelain` on resolved targets) |
 | No VCS | No version-control metadata for the workspace |
@@ -165,19 +151,18 @@ naming any other state is invalid; re-enter at the nearest earlier target.
 
 ## Terminals
 
-| State | Handoff status |
-| ----- | -------------- |
-| `TerminalChanged` | `CHANGED_PASS` |
-| `TerminalNoChange` | `COMPLETE_NO_SAFE_CHANGE` |
-| `TerminalBug` | `COMPLETE_PRODUCTION_BUG_EXPOSED` |
-| `TerminalFailed` | `VALIDATION_FAILED_AFTER_REPAIR` |
-| `TerminalError` | `COMPLETE_ERROR` |
-| `TerminalBlocked` | `COMPLETE_BLOCKED` |
+| State              | Handoff status                    |
+| ------------------ | --------------------------------- |
+| `TerminalChanged`  | `CHANGED_PASS`                    |
+| `TerminalNoChange` | `COMPLETE_NO_SAFE_CHANGE`         |
+| `TerminalBug`      | `COMPLETE_PRODUCTION_BUG_EXPOSED` |
+| `TerminalFailed`   | `VALIDATION_FAILED_AFTER_REPAIR`  |
+| `TerminalError`    | `COMPLETE_ERROR`                  |
+| `TerminalBlocked`  | `COMPLETE_BLOCKED`                |
 
 ## Illustrative Diagram (non-normative)
 
-This diagram visualizes the table above. If they ever disagree, the table
-wins.
+This diagram visualizes the table above. If they ever disagree, the table wins.
 
 ```mermaid
 stateDiagram-v2

@@ -1,6 +1,6 @@
 # Test Maintainability Review Template
 
-```markdown
+```text
 # Test Maintainability Review
 
 Status: <PASS | BLOCKED | NEEDS_CLARIFICATION | ERROR>

@@ -2,7 +2,7 @@
 
 Use this template once exactly one terminal status has been selected.
 
-```markdown
+```text
 # Improving Test Suites Handoff
 
 Status: <CHANGED_PASS | COMPLETE_NO_SAFE_CHANGE | COMPLETE_PRODUCTION_BUG_EXPOSED | VALIDATION_FAILED_AFTER_REPAIR | COMPLETE_ERROR | COMPLETE_BLOCKED>

@@ -1,6 +1,6 @@
 # Test Refactorer Report Template
 
-```markdown
+```text
 # Test Refactorer Report
 
 Status: <PASS | BLOCKED | NEEDS_CLARIFICATION | FAIL | ERROR>

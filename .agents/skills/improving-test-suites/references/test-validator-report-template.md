@@ -1,6 +1,6 @@
 # Test Validator Report Template
 
-```markdown
+```text
 # Test Validator Report
 
 Status: <PASS | FAIL | BLOCKED | ERROR>
