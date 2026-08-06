@@ -1,11 +1,8 @@
 # Recency Guard Flow Diagram
 
-Control-flow source of truth for `recency-guard` as a finite-state machine
-(`stateDiagram-v2`). Companion transition table:
-[`state-machine.md`](./state-machine.md).
+Control-flow source of truth for `recency-guard` as a finite-state machine (`stateDiagram-v2`). Companion transition table: [`state-machine.md`](./state-machine.md).
 
-Canonical dispatch-budget numbers live only in
-[`references/repair-and-integration.md`](./references/repair-and-integration.md).
+Canonical dispatch-budget numbers live only in [`references/repair-and-integration.md`](./references/repair-and-integration.md).
 
 ```mermaid
 stateDiagram-v2
@@ -49,7 +46,7 @@ stateDiagram-v2
 ## Terminal States
 
 | Terminal | Meaning |
-| -------- | ------- |
+| --- | --- |
 | `TerminalReady` | Every risky ledger row is verified or cleanly removed; no recorded limits |
 | `TerminalLimited` | Direct answer naming qualified, unverifiable, unreviewed, tool, freshness, or routing limits |
 | `TerminalMaterial` | Conservative answer naming the unresolved material item |

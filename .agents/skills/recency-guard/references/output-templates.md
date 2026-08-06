@@ -1,8 +1,6 @@
 # Output Templates
 
-Read this file when assembling a structured subagent report. Use the matching
-template as written and do not add fields outside it. Examples are compact by
-design; they illustrate shape, not source authority.
+Read this file when assembling a structured subagent report. Use the matching template as written and do not add fields outside it. Examples are compact by design; they illustrate shape, not source authority.
 
 ## RECENCY_CHECK Template
 
@@ -26,9 +24,7 @@ Unresolved risks:
 - <only if any remain, otherwise None>
 ```
 
-If no claims are flagged, write `Flagged claims: None.` A `PASS` report means no
-claim needs any wording change, including light date context. If a claim needs a
-date stamp, status is `FAIL` and the claim appears under `Flagged claims`.
+If no claims are flagged, write `Flagged claims: None.` A `PASS` report means no claim needs any wording change, including light date context. If a claim needs a date stamp, status is `FAIL` and the claim appears under `Flagged claims`.
 
 ## RECENCY_CHECK Example
 
@@ -78,10 +74,7 @@ Summary:
 - Unresolved risks: <only if any remain, otherwise None>
 ```
 
-Use `Action: none` only when the claim is acceptable as written. If a claim
-needs a caveat, softer framing, counterpoint, or removal, return `FAIL` and give
-a suggested revision. Always include `Unreviewed candidates`; write `None` only
-when every candidate was deep-reviewed.
+Use `Action: none` only when the claim is acceptable as written. If a claim needs a caveat, softer framing, counterpoint, or removal, return `FAIL` and give a suggested revision. Always include `Unreviewed candidates`; write `None` only when every candidate was deep-reviewed.
 
 ## CLAIM_REVIEW Example
 
@@ -109,8 +102,7 @@ Summary:
 
 ## TOOLS_MISSING / ERROR Status Block
 
-Use this block in either subagent when work cannot complete normally. Replace
-`<REPORT_NAME>` with `RECENCY_CHECK` or `CLAIM_REVIEW`.
+Use this block in either subagent when work cannot complete normally. Replace `<REPORT_NAME>` with `RECENCY_CHECK` or `CLAIM_REVIEW`.
 
 ```text
 <REPORT_NAME>: TOOLS_MISSING | ERROR

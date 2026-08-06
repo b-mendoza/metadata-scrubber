@@ -1,16 +1,13 @@
 # State Machine — recency-guard
 
-Finite-state execution model for this skill. Mermaid SoT:
-[`flow-diagram.md`](./flow-diagram.md). This table is the authoritative list of
-states, transitions, guards, and terminals.
+Finite-state execution model for this skill. Mermaid SoT: [`flow-diagram.md`](./flow-diagram.md). This table is the authoritative list of states, transitions, guards, and terminals.
 
-Canonical dispatch-budget numbers live only in
-[`references/repair-and-integration.md`](./references/repair-and-integration.md).
+Canonical dispatch-budget numbers live only in [`references/repair-and-integration.md`](./references/repair-and-integration.md).
 
 ## States
 
 | State | Kind | Role |
-| ----- | ---- | ---- |
+| --- | --- | --- |
 | `ScopeTriage` | active | Collect inputs; default `TODAYS_DATE`; classify request; probe verification tools |
 | `DraftLedger` | active | Inspect or draft answer; build claim ledger |
 | `NoToolsQualify` | active | Remove or label time-sensitive claims; mark rows `unverifiable` |
@@ -28,7 +25,7 @@ Canonical dispatch-budget numbers live only in
 ## Guards
 
 | Guard | Operational definition |
-| ----- | ---------------------- |
+| --- | --- |
 | `request_class=action` | Entire request is a high-impact action (purchase, post, publish, send, deploy, delete/modify external systems, account/policy change, financial/legal/medical transaction) |
 | `request_class=mixed` | Informational plus high-impact action; strip action, record routing limit, continue informational |
 | `request_class=informational` | No high-impact action to perform |
@@ -47,7 +44,7 @@ Canonical dispatch-budget numbers live only in
 ## Transitions
 
 | From | To | Guard / event |
-| ---- | -- | ------------- |
+| --- | --- | --- |
 | `[*]` | `ScopeTriage` | run start |
 | `ScopeTriage` | `TerminalOutOfScope` | `request_class=action` |
 | `ScopeTriage` | `DraftLedger` | `request_class=informational` or `request_class=mixed` |
@@ -81,13 +78,12 @@ Canonical dispatch-budget numbers live only in
 
 ## Terminal decisions
 
-Exactly one user-visible outcome per run: `Out-of-scope route`, `Ready final answer`,
-`Limited final answer`, or `Material uncertainty final`.
+Exactly one user-visible outcome per run: `Out-of-scope route`, `Ready final answer`, `Limited final answer`, or `Material uncertainty final`.
 
 ## Reachability and dead-state checks
 
 | Property | Result |
-| -------- | ------ |
+| --- | --- |
 | Every active state reachable from `ScopeTriage` | yes |
 | Every terminal reachable | yes |
 | Dead states (no outgoing, non-terminal) | none |
