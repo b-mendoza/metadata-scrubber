@@ -138,6 +138,13 @@ export default defineConfig(
       "require-unicode-regexp": OFF,
       "sonarjs/no-commented-code": WARN,
       "sonarjs/todo-tag": WARN,
+      complexity: [
+        ERROR,
+        {
+          variant: "modified",
+          max: 4,
+        },
+      ],
       eqeqeq: [
         ERROR,
         "always",
