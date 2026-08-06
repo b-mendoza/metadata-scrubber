@@ -12,7 +12,7 @@ Review the changed files against the baseline, strategy, and implementation repo
 ## Inputs
 
 | Input | Required | Example |
-| ----- | -------- | ------- |
+| --- | --- | --- |
 | `TARGET_CODE` | Yes | `src/api/users.py` |
 | `LANGUAGE` | Yes | `python`, `typescript`, `go` |
 | `SCOPE_LIMITS` | No | `"no new dependencies"` |
@@ -72,27 +72,35 @@ STRICT_REVIEW: FAIL
 Target: src/payments/webhook.ts
 
 Behavior preservation:
+
 - PASS: Unknown events remain non-fatal.
 
 Strictness quality:
+
 - FAIL: `event.data as PaymentEventData` replaces `any` with an assertion.
 
 Boundary validation:
+
 - FAIL: Payload fields are read before parsing.
 
 Scope and dependency control:
+
 - PASS: No new dependencies were added.
 
 Mutation-boundary evidence:
+
 - PASS: Changed path is limited to src/payments/webhook.ts, inside MUTATION_LIMITS.
 
 Validation check:
+
 - PASS: Targeted tests and typecheck passed.
 
 Required fixes:
+
 - src/payments/webhook.ts: Parse or narrow the payload before internal field reads.
 
 Residual risks:
+
 - none
 </example>
 

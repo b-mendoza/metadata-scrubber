@@ -1,13 +1,11 @@
 # State Machine — rewriting-code-strictly
 
-Finite-state execution model for this skill. Mermaid SoT:
-[`flow-diagram.md`](./flow-diagram.md). This table is the authoritative list of
-states, transitions, guards, and terminals.
+Finite-state execution model for this skill. Mermaid SoT: [`flow-diagram.md`](./flow-diagram.md). This table is the authoritative list of states, transitions, guards, and terminals.
 
 ## States
 
 | State | Kind | Role |
-| ----- | ---- | ---- |
+| --- | --- | --- |
 | `Intake` | active | Normalize inputs; load personality |
 | `GateTarget` | active | Require `TARGET_CODE` |
 | `AskTarget` | active | One target question; interactive wait |
@@ -41,7 +39,7 @@ states, transitions, guards, and terminals.
 ## Transitions
 
 | From | To | Guard / event |
-| ---- | -- | ------------- |
+| --- | --- | --- |
 | `[*]` | `Intake` | run start |
 | `Intake` | `GateTarget` | inputs normalized; personality loaded |
 | `GateTarget` | `AskTarget` | `TARGET_CODE` missing |
@@ -105,7 +103,7 @@ Exactly one of: `PASS`, `NO_CHANGE`, `NEEDS_CLARIFICATION`, `BLOCKED`, `ERROR`.
 ## Reachability and dead-state checks
 
 | Property | Result |
-| -------- | ------ |
+| --- | --- |
 | Every active state reachable from `Intake` | yes |
 | Every terminal reachable | yes |
 | Dead states (no outgoing, non-terminal) | none |

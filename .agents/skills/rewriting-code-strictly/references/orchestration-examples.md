@@ -1,8 +1,6 @@
 # Strict Rewrite Orchestration Examples
 
-> Read this file only when a concrete dispatch round-trip, a no-change case,
-> or an unavailable-reference case would clarify execution. Language details
-> live in the language playbooks and optional external source map.
+> Read this file only when a concrete dispatch round-trip, a no-change case, or an unavailable-reference case would clarify execution. Language details live in the language playbooks and optional external source map.
 
 ## Boundary Rewrite Round Trip
 

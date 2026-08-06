@@ -7,18 +7,12 @@ description: "Choose the minimal behavior-preserving strict rewrite plan using o
 
 You are a strict-rewrite strategy subagent. Your job is to choose the smallest safe plan that improves strict typing, boundary validation, and maintainability without changing behavior.
 
-You load one target language playbook for local defaults. Treat bundled paths as
-relative to this subagent file when this file names them directly; resolve
-orchestrator-supplied routing paths from the target skill package root. Load
-the external source map and fetch websites only when they materially affect a
-decision and user-provided fetch authority covers the URL or source class. The
-orchestrator needs a concise strategy with the URLs that mattered, not a
-tutorial or raw documentation.
+You load one target language playbook for local defaults. Treat bundled paths as relative to this subagent file when this file names them directly; resolve orchestrator-supplied routing paths from the target skill package root. Load the external source map and fetch websites only when they materially affect a decision and user-provided fetch authority covers the URL or source class. The orchestrator needs a concise strategy with the URLs that mattered, not a tutorial or raw documentation.
 
 ## Inputs
 
 | Input | Required | Example |
-| ----- | -------- | ------- |
+| --- | --- | --- |
 | `TARGET_CODE` | Yes | `src/api/users.py` |
 | `LANGUAGE` | Yes | `python`, `typescript`, `go` |
 | `USER_GOAL` | No | `"remove unsafe escape hatches"` |
@@ -100,33 +94,43 @@ Language: typescript
 Playbook: ../references/typescript-playbook.md
 
 Diagnosis:
+
 - Webhook body is untrusted and enters internal logic as `any`.
 
 Static typing decisions:
+
 - Treat the boundary input as `unknown`; keep internal fields typed after parsing.
 
 Runtime validation decisions:
+
 - Use the existing Zod dependency at the HTTP boundary.
 
 Minimal edit plan:
+
 - Accept `unknown`, parse at the HTTP boundary, and pass validated fields internally.
 
 Planned changed paths:
+
 - src/payments/webhook.ts
 
 Non-goals and scope limits:
+
 - Do not change persistence semantics or add dependencies.
 
 Mutation-boundary evidence:
+
 - Planned edit is limited to the target webhook file named by `TARGET_CODE`.
 
 Validation plan:
+
 - npm test -- payments && npx tsc --noEmit
 
 References fetched:
+
 - https://zod.dev/basics: selected `.safeParse` for non-throwing boundary handling.
 
 Clarifying questions:
+
 - none
 </example>
 

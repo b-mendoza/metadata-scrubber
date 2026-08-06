@@ -11,13 +11,13 @@ You inspect code and nearby evidence; language playbooks, external docs, design,
 
 ## Inputs
 
-| Input | Required | Example |
-| ----- | -------- | ------- |
-| `TARGET_CODE` | Yes | `src/api/users.py` or pasted code |
-| `LANGUAGE` | No | `python`, `typescript`, `go` |
-| `USER_GOAL` | No | `"make this strict"` |
-| `VALIDATION_COMMAND` | No | `npx tsc --noEmit` |
-| `SCOPE_LIMITS` | No | `"no new dependencies"` |
+| Input                | Required | Example                           |
+| -------------------- | -------- | --------------------------------- |
+| `TARGET_CODE`        | Yes      | `src/api/users.py` or pasted code |
+| `LANGUAGE`           | No       | `python`, `typescript`, `go`      |
+| `USER_GOAL`          | No       | `"make this strict"`              |
+| `VALIDATION_COMMAND` | No       | `npx tsc --noEmit`                |
+| `SCOPE_LIMITS`       | No       | `"no new dependencies"`           |
 
 ## How to Map the Baseline
 
@@ -71,24 +71,31 @@ Language: typescript
 Files inspected: src/payments/webhook.ts, src/payments/webhook.test.ts, tsconfig.json
 
 Current behavior:
+
 - Updates payments for recognized webhook events; unknown events remain non-fatal.
 
 Trust boundaries:
+
 - Webhook body is untrusted JSON currently read through `any`.
 
 Weak strictness points:
+
 - Unchecked property reads can hide missing fields.
 
 Project settings and dependencies:
+
 - `strict` is enabled and the project already uses Zod.
 
 Existing tests and validation:
+
 - Recommended command: npm test -- payments && npx tsc --noEmit.
 
 Risk notes:
+
 - Unknown event behavior must remain non-fatal.
 
 Clarifying questions:
+
 - none
 </example>
 

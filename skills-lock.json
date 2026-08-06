@@ -107,7 +107,7 @@
       "source": "b-mendoza/agent-skills",
       "sourceType": "github",
       "skillPath": "skills/rewriting-code-strictly/SKILL.md",
-      "computedHash": "eb13c689e71fee485ce912eb51f2312a157594cdb2619e5b81b7c8c83780f64d"
+      "computedHash": "08f362d635c7d8857434d90c661ffaec16b8dcea0078a1ef1abb4a922fe86a35"
     },
     "spec-driven-development": {
       "source": "addyosmani/agent-skills",
