@@ -1,9 +1,8 @@
 # Commit Executor Report Contract
 
-Return this exact structure for one approved group. Do not include raw diffs or
-full command logs.
+Return this exact structure for one approved group. Do not include raw diffs or full command logs.
 
-```markdown
+```text
 COMMIT_EXECUTE: PASS | VERIFY_FAILED | BLOCKED | COMMIT_ERROR | ERROR
 
 Group ID: <group-id>
@@ -43,15 +42,10 @@ Decision needed: <required for VERIFY_FAILED needs-user-decision or BLOCKED need
 
 Contract rules:
 
-- `APPROVED_COMMIT_SCOPE` missing is `BLOCKED`; never fall back to
-  `CHANGE_PATHS`.
+- `APPROVED_COMMIT_SCOPE` missing is `BLOCKED`; never fall back to `CHANGE_PATHS`.
 - `Plan match: exact` requires the staged path list.
 - Preservation claims require before/after digest values or `not-needed`.
-- Naive unstage/restage is forbidden for preserved paths whose worktree differs
-  from the index version.
-- `same-scope-same-group-retry` requires `Retry delta`; a group runs at most
-  3 times in total (1 initial attempt + 2 retries); otherwise use
-  `needs-user-decision` or `terminal`.
+- Naive unstage/restage is forbidden for preserved paths whose worktree differs from the index version.
+- `same-scope-same-group-retry` requires `Retry delta`; a group runs at most 3 times in total (1 initial attempt + 2 retries); otherwise use `needs-user-decision` or `terminal`.
 - Verification `not-run` requires group-level `UNVERIFIED_COMMIT_APPROVED`.
-- Hook rejection is `COMMIT_ERROR`, never bypassed or amended; hook-mutated
-  staging is reported as `hook-mutation`, never retried silently.
+- Hook rejection is `COMMIT_ERROR`, never bypassed or amended; hook-mutated staging is reported as `hook-mutation`, never retried silently.

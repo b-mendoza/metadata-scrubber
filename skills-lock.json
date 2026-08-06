@@ -29,7 +29,7 @@
       "source": "b-mendoza/agent-skills",
       "sourceType": "github",
       "skillPath": "skills/committing-scoped-changes/SKILL.md",
-      "computedHash": "7daedc5fc3890fcec998eb32acb179b3e9331f88a518f39eecda73b86dc43051"
+      "computedHash": "c25a18ed2bec7a0af517fd5007f88bd241bccfbadd15ef601bd96d6724dde55d"
     },
     "diagnosing-root-causes": {
       "source": "b-mendoza/agent-skills",

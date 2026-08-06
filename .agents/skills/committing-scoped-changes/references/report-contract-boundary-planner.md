@@ -1,9 +1,8 @@
 # Boundary Planner Report Contract
 
-Return this exact structure. The plan accounts for every scoped change in a
-group include list or the omissions list.
+Return this exact structure. The plan accounts for every scoped change in a group include list or the omissions list.
 
-```markdown
+```text
 COMMIT_PLAN: PASS | NEEDS_DECISION | NO_COMMIT_WORTHY_CHANGES | BLOCKED | ERROR
 
 Plan digest: <stable group ids + messages>
@@ -28,11 +27,8 @@ Decision needed: <required for NEEDS_DECISION>
 
 Contract rules:
 
-- Every tracked modification, deletion, and untracked file under `CHANGE_PATHS`
-  appears in exactly one `Include` or `Omissions` entry.
-- A non-empty `Omissions` list always triggers orchestrator gate
-  `G_IN_SCOPE_OMISSION`; annotations do not suppress it.
+- Every tracked modification, deletion, and untracked file under `CHANGE_PATHS` appears in exactly one `Include` or `Omissions` entry.
+- A non-empty `Omissions` list always triggers orchestrator gate `G_IN_SCOPE_OMISSION`; annotations do not suppress it.
 - Groups are listed in execution order: no group may depend on a later one.
 - Verification must be read-only or explicitly `not-run` with reason.
-- Use `NO_COMMIT_WORTHY_CHANGES` for benign no-commit plans; use `BLOCKED` only
-  for insufficient, inconsistent, or unusable state input.
+- Use `NO_COMMIT_WORTHY_CHANGES` for benign no-commit plans; use `BLOCKED` only for insufficient, inconsistent, or unusable state input.

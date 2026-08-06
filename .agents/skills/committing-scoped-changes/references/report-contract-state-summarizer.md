@@ -1,9 +1,8 @@
 # State Summarizer Report Contract
 
-Return this exact structure. Keep summaries bounded; do not paste raw diffs,
-full command output, copied ticket text, or copied web text.
+Return this exact structure. Keep summaries bounded; do not paste raw diffs, full command output, copied ticket text, or copied web text.
 
-```markdown
+```text
 SCOPED_STATE: PASS | NEEDS_CONTEXT | NO_SCOPED_CHANGES | BLOCKED | ERROR
 
 Mode: initial | post-commit
@@ -37,10 +36,6 @@ Decision needed: <required for NEEDS_CONTEXT>
 
 Status rules:
 
-- `BLOCKED` when a git operation is in progress, the workspace is not a usable
-  git repository, or the path scope is invalid.
-- `NO_SCOPED_CHANGES` only when no tracked modification, deletion, staged
-  entry, or untracked file exists under `APPROVED_COMMIT_SCOPE` (which starts
-  as `CHANGE_PATHS` and may have grown by approved expansions).
-- `NEEDS_CONTEXT` asks one targeted question; do not ask broad planning
-  questions from this specialist.
+- `BLOCKED` when a git operation is in progress, the workspace is not a usable git repository, or the path scope is invalid.
+- `NO_SCOPED_CHANGES` only when no tracked modification, deletion, staged entry, or untracked file exists under `APPROVED_COMMIT_SCOPE` (which starts as `CHANGE_PATHS` and may have grown by approved expansions).
+- `NEEDS_CONTEXT` asks one targeted question; do not ask broad planning questions from this specialist.
