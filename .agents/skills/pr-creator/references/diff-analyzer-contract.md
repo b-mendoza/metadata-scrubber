@@ -1,7 +1,6 @@
 # Contract: diff-analyzer
 
-Return exactly one status block. Keep full patches and raw diff output out of
-the block.
+Return exactly one status block. Keep full patches and raw diff output out of the block.
 
 ```text
 DIFF_ANALYSIS: <PASS | LARGE_PR_CONFIRMATION_REQUIRED | EMPTY_DIFF | ERROR>
@@ -30,6 +29,4 @@ Reason: <one line>
 Decision needed: <none | approve large/mixed PR | next action>
 ```
 
-Use `ERROR` when compared SHAs do not match preflight pins. Use
-`LARGE_PR_CONFIRMATION_REQUIRED` only when a measurable rule fired and approval
-is not present.
+Use `ERROR` when compared SHAs do not match preflight pins. Use `LARGE_PR_CONFIRMATION_REQUIRED` only when a measurable rule fired and approval is not present.

@@ -1,17 +1,13 @@
 # State Machine — pr-creator
 
-Finite-state execution model for this skill. Mermaid SoT:
-[`flow-diagram.md`](./flow-diagram.md). This table is the authoritative list of
-states, transitions, guards, and terminals.
+Finite-state execution model for this skill. Mermaid SoT: [`flow-diagram.md`](./flow-diagram.md). This table is the authoritative list of states, transitions, guards, and terminals.
 
-Six specialists stay separate: each owns a distinct status prefix and failure
-mode (topology, preflight/push, scope, draft, metadata, submit). That split is
-earned complexity, not decoration.
+Six specialists stay separate: each owns a distinct status prefix and failure mode (topology, preflight/push, scope, draft, metadata, submit). That split is earned complexity, not decoration.
 
 ## States
 
 | State | Kind | Role |
-| ----- | ---- | ---- |
+| --- | --- | --- |
 | `ResolveMode` | active | Set `EXECUTION_MODE` to `dispatch` or `inline` |
 | `NormalizeInputs` | active | Defaults and normalized user inputs |
 | `InspectRepo` | active | Dispatch `repo-state-inspector` |
@@ -52,7 +48,7 @@ earned complexity, not decoration.
 ## Transitions
 
 | From | To | Guard / event |
-| ---- | -- | ------------- |
+| --- | --- | --- |
 | `[*]` | `ResolveMode` | run start |
 | `ResolveMode` | `NormalizeInputs` | mode recorded |
 | `NormalizeInputs` | `InspectRepo` | inputs normalized |
@@ -151,22 +147,16 @@ earned complexity, not decoration.
 
 ## Cycle ledgers
 
-Independent counters (max 3 non-`PASS` redispatches per gate, then
-`FinalDecision`): `push`, `scope`, `type/scope`, `reviewer`, `label`,
-`preview-edit`. Submission uses only the bounded create retry inside
-`pr-submitter`.
+Independent counters (max 3 non-`PASS` redispatches per gate, then `FinalDecision`): `push`, `scope`, `type/scope`, `reviewer`, `label`, `preview-edit`. Submission uses only the bounded create retry inside `pr-submitter`.
 
 ## Terminal decisions
 
-Success: verified PR/MR URL. Failure/suspend envelopes:
-`AUTH`, `BASE_BRANCH_MISSING`, `HEAD_BRANCH_UNPUSHED`, `EMPTY_DIFF`,
-`PR_EXISTS`, `BLOCKED`, `AWAITING_USER`, `CANCELLED`, `CREATE_ERROR`,
-`CREATE_UNCERTAIN`, `ESCALATED`.
+Success: verified PR/MR URL. Failure/suspend envelopes: `AUTH`, `BASE_BRANCH_MISSING`, `HEAD_BRANCH_UNPUSHED`, `EMPTY_DIFF`, `PR_EXISTS`, `BLOCKED`, `AWAITING_USER`, `CANCELLED`, `CREATE_ERROR`, `CREATE_UNCERTAIN`, `ESCALATED`.
 
 ## Reachability and dead-state checks
 
 | Property | Result |
-| -------- | ------ |
+| --- | --- |
 | Every active state reachable from `ResolveMode` | yes |
 | Every terminal reachable | yes |
 | Dead states (no outgoing, non-terminal) | none |

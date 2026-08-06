@@ -22,6 +22,4 @@ Reason: <one line>
 Decision needed: <none | question for orchestrator>
 ```
 
-Use `BLOCKED` for not-a-git-repository, detached HEAD, invalid `PR_STATE`, no
-safely nameable branch, or unusable remote facts. Use `ERROR` for unexpected
-inspection failure.
+Use `BLOCKED` for not-a-git-repository, detached HEAD, invalid `PR_STATE`, no safely nameable branch, or unusable remote facts. Use `ERROR` for unexpected inspection failure.

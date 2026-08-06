@@ -1,7 +1,6 @@
 # Contract: pr-submitter
 
-Return exactly one status block. Echo platform-returned values for orchestrator
-verification; do not rely on inputs as verification evidence.
+Return exactly one status block. Echo platform-returned values for orchestrator verification; do not rely on inputs as verification evidence.
 
 ```text
 PR_SUBMIT: <PASS | HEAD_MOVED | CREATE_UNCERTAIN | BLOCKED | CREATE_ERROR | AUTH | ERROR>
@@ -30,6 +29,4 @@ Reason: <one line>
 Decision needed: <none | rerun diff after head moved | user checks commands | next action>
 ```
 
-Use `HEAD_MOVED` before create when the remote head SHA no longer matches the
-frozen preview. Use `CREATE_UNCERTAIN` only after querying for the PR/MR and one
-bounded retry still cannot determine the outcome.
+Use `HEAD_MOVED` before create when the remote head SHA no longer matches the frozen preview. Use `CREATE_UNCERTAIN` only after querying for the PR/MR and one bounded retry still cannot determine the outcome.

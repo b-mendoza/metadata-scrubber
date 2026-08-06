@@ -1,7 +1,6 @@
 # Contract: review-metadata-suggester
 
-Return exactly one status block. Do not include raw CODEOWNERS contents or full
-platform API responses.
+Return exactly one status block. Do not include raw CODEOWNERS contents or full platform API responses.
 
 ```text
 REVIEW_METADATA: <PASS | NEEDS_REVIEWER | INVALID_LABELS | AUTH | ERROR>
@@ -21,6 +20,4 @@ Reason: <one line>
 Decision needed: <none | provide reviewers or none | choose existing labels or remove | next action>
 ```
 
-`REVIEWERS=none` resolves to `Reviewers: none (user-confirmed)` and `PASS` when
-labels are valid. Use `INVALID_LABELS` for any override not reported by the
-platform as existing.
+`REVIEWERS=none` resolves to `Reviewers: none (user-confirmed)` and `PASS` when labels are valid. Use `INVALID_LABELS` for any override not reported by the platform as existing.

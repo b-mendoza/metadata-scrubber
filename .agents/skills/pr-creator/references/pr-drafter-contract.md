@@ -1,7 +1,6 @@
 # Contract: pr-drafter
 
-Return exactly one status block. The body may be multi-line Markdown; keep it
-grounded in `DIFF_ANALYSIS` or exact overrides.
+Return exactly one status block. The body may be multi-line Markdown; keep it grounded in `DIFF_ANALYSIS` or exact overrides.
 
 ```text
 PR_DRAFT: <PASS | NEEDS_CHOICE | ERROR>
@@ -18,5 +17,4 @@ Reason: <one line>
 Decision needed: <none | choose type | choose scope | choose type and scope | next action>
 ```
 
-Use `NEEDS_CHOICE` only when the type or scope materially affects the title/body.
-Use `ERROR` when required diff facts are missing or contradictory.
+Use `NEEDS_CHOICE` only when the type or scope materially affects the title/body. Use `ERROR` when required diff facts are missing or contradictory.

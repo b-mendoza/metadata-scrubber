@@ -1,7 +1,6 @@
 # Contract: preflight-validator
 
-Return exactly one status block. Do not include secrets, tokens, or full command
-output.
+Return exactly one status block. Do not include secrets, tokens, or full command output.
 
 ```text
 PREFLIGHT: <PASS | PUSH_REQUIRED | PUSH_REJECTED | PR_EXISTS | AUTH | BASE_BRANCH_MISSING | HEAD_BRANCH_UNPUSHED | BLOCKED | ERROR>
@@ -25,8 +24,6 @@ Decision needed: <none | approve plain push | user resolves rejected push | next
 Code semantics:
 
 - `PR_EXISTS`: an open PR/MR already targets the same base from the same head.
-- `PUSH_REQUIRED`: head branch must be published and no valid push approval is
-  present.
+- `PUSH_REQUIRED`: head branch must be published and no valid push approval is present.
 - `PUSH_REJECTED`: approved plain push was rejected; do not retry with force.
-- `HEAD_BRANCH_UNPUSHED`: source is still not comparable and cannot be safely
-  published by this skill.
+- `HEAD_BRANCH_UNPUSHED`: source is still not comparable and cannot be safely published by this skill.

@@ -1,13 +1,8 @@
 # pr-creator Workflow
 
-Finite-state control flow for the `pr-creator` orchestrator
-(`stateDiagram-v2`). Companion transition table:
-[`state-machine.md`](./state-machine.md).
+Finite-state control flow for the `pr-creator` orchestrator (`stateDiagram-v2`). Companion transition table: [`state-machine.md`](./state-machine.md).
 
-Resolves dispatch mode, inspects fork-aware topology, preflights with
-idempotency and pinned SHAs, enforces scope and metadata gates, freezes an
-approved preview, and verifies the created or found PR/MR with
-platform-returned fields and body digests.
+Resolves dispatch mode, inspects fork-aware topology, preflights with idempotency and pinned SHAs, enforces scope and metadata gates, freezes an approved preview, and verifies the created or found PR/MR with platform-returned fields and body digests.
 
 ```mermaid
 stateDiagram-v2
@@ -135,7 +130,7 @@ stateDiagram-v2
 ## Terminal States
 
 | State | Envelope / meaning | Terminal? |
-| ----- | ------------------ | --------- |
+| --- | --- | --- |
 | `TerminalSuccess` | Verified PR/MR URL; platform fields match freeze | yes |
 | `TerminalAwaitingUser` | `AWAITING_USER` — focused question pending | suspend |
 | `TerminalPrExists` | `PR_EXISTS` | yes |
@@ -151,12 +146,7 @@ stateDiagram-v2
 
 ## Invariants
 
-- `SubmitPr` runs only after safe platform path, `PREFLIGHT: PASS`,
-  `DIFF_ANALYSIS: PASS`, `PR_DRAFT: PASS`, `REVIEW_METADATA: PASS`, exact
-  preview approval, and a matching approval record.
-- Push, scope, type/scope, reviewer, label, and preview-edit gates each have an
-  independent three-cycle counter. Submission has only the bounded retry inside
-  `pr-submitter`.
-- Every terminal failure uses the shared envelope with status, stopped-at,
-  evidence, reason, and one next step.
+- `SubmitPr` runs only after safe platform path, `PREFLIGHT: PASS`, `DIFF_ANALYSIS: PASS`, `PR_DRAFT: PASS`, `REVIEW_METADATA: PASS`, exact preview approval, and a matching approval record.
+- Push, scope, type/scope, reviewer, label, and preview-edit gates each have an independent three-cycle counter. Submission has only the bounded retry inside `pr-submitter`.
+- Every terminal failure uses the shared envelope with status, stopped-at, evidence, reason, and one next step.
 - Pushes are plain `git push <head_remote> <branch>`; force variants never run.
