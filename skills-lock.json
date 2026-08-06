@@ -144,6 +144,12 @@
       "sourceType": "github",
       "skillPath": "skills/writing-plans/SKILL.md",
       "computedHash": "a8a8b0d07b744173079b25d26c6a189a0b5e7ddd80444ce92055b974dab7352b"
+    },
+    "clarifying-assumptions": {
+      "source": "b-mendoza/agent-skills",
+      "sourceType": "github",
+      "skillPath": "skills/clarifying-assumptions/SKILL.md",
+      "computedHash": "302d781ac1d7f78174a7f4ef7d56254a575e7154767a791dd662207a1e13c481"
     }
   }
 }
