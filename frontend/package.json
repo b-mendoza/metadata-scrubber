@@ -3,6 +3,9 @@
   "private": true,
   "type": "module",
   "sideEffects": false,
+  "imports": {
+    "#/*": "./src/*"
+  },
   "scripts": {
     "build": "vite build",
     "clean:hard": "node scripts/hard-clean.ts",
