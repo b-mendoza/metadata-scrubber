@@ -168,6 +168,12 @@
       "sourceType": "github",
       "skillPath": "skills/fetching-work-item/SKILL.md",
       "computedHash": "d239cf14b47138fa93cc661212197ad8ab626a1a9d69c28a6774cd1a85882fc5"
+    },
+    "orchestrating-workflow": {
+      "source": "b-mendoza/agent-skills",
+      "sourceType": "github",
+      "skillPath": "skills/orchestrating-workflow/SKILL.md",
+      "computedHash": "3eedfafca9c9796a86f52d3e1343057b537803f229734234724eacb1f84c93f3"
     }
   }
 }
