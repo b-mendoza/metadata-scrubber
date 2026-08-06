@@ -1,32 +1,17 @@
 # Status Contracts
 
-Read this file when producing or checking a phase status, terminal envelope, or
-posting ledger. Keep blocks compact: include evidence references, URLs, dates,
-IDs, and paths, not raw payloads, full diffs, long logs, or long documentation
-excerpts.
+Read this file when producing or checking a phase status, terminal envelope, or posting ledger. Keep blocks compact: include evidence references, URLs, dates, IDs, and paths, not raw payloads, full diffs, long logs, or long documentation excerpts.
 
 ## Shared Values
 
-- Classifications: `valid`, `questionable`, `pushback`,
-  `needs-user-decision`, `not-assessed-report-only`.
+- Classifications: `valid`, `questionable`, `pushback`, `needs-user-decision`, `not-assessed-report-only`.
 - Action intents: `implement`, `clarify`, `push-back`, `ask-user`.
-- Posting targets: `review-comment-reply:<root-id>`,
-  `requires-user-choice:review-summary`, `requires-user-choice:issue-comment`,
-  `requires-user-choice:unsupported-review-reply`,
-  `requires-user-choice:unresolved-metadata`.
-- Reply dispositions: `reply-ready`, `follow-up-ready`, `skipped-resolved`,
-  `skipped-already-replied`, `unsupported-or-needs-user-choice`.
-- Posting states: `not-posted`, `pending-confirmation`, `posted`, `partial`,
-  `cancelled`, `failed`.
-- Collection completeness: `complete`, `limited`, or `incomplete`. `PASS` may
-  use only `complete` or `limited`.
-- Counter fields: `questions.pr-url`, `questions.output-path`,
-  `questions.posting-mode`, `questions.product`, `questions.target`,
-  `questions.wording`, `preview-decision`, `preview-repair`,
-  `contract-repair`, `verify.context.<item>`, `verify.fix.<item>`.
-- `POSTING_MODE` allowed values: `draft-only`, `post-after-confirmation` only.
-  Unknown or ambiguous values use `questions.posting-mode` (cap 3), then
-  `PR_COMMENT_RESPONSE: NEEDS_USER_DECISION`.
+- Posting targets: `review-comment-reply:<root-id>`, `requires-user-choice:review-summary`, `requires-user-choice:issue-comment`, `requires-user-choice:unsupported-review-reply`, `requires-user-choice:unresolved-metadata`.
+- Reply dispositions: `reply-ready`, `follow-up-ready`, `skipped-resolved`, `skipped-already-replied`, `unsupported-or-needs-user-choice`.
+- Posting states: `not-posted`, `pending-confirmation`, `posted`, `partial`, `cancelled`, `failed`.
+- Collection completeness: `complete`, `limited`, or `incomplete`. `PASS` may use only `complete` or `limited`.
+- Counter fields: `questions.pr-url`, `questions.output-path`, `questions.posting-mode`, `questions.product`, `questions.target`, `questions.wording`, `preview-decision`, `preview-repair`, `contract-repair`, `verify.context.<item>`, `verify.fix.<item>`.
+- `POSTING_MODE` allowed values: `draft-only`, `post-after-confirmation` only. Unknown or ambiguous values use `questions.posting-mode` (cap 3), then `PR_COMMENT_RESPONSE: NEEDS_USER_DECISION`.
 
 ## Collector Output
 
@@ -64,8 +49,7 @@ Reason: none | <why status is not PASS>
 Next step: none | <smallest recovery action>
 ```
 
-`NO_COMMENTS` means the PR has no comments at all. If filtering leaves zero
-in-scope comments, return `PASS` with `In-scope: 0`.
+`NO_COMMENTS` means the PR has no comments at all. If filtering leaves zero in-scope comments, return `PASS` with `In-scope: 0`.
 
 ## Assessor Output
 
@@ -183,9 +167,7 @@ Reason: none | <why status is not PASS>
 Next step: none | <smallest recovery action>
 ```
 
-`POST: PARTIAL` means at least one reply is live on GitHub and later approved
-replies failed or were not attempted. The orchestrator must sync the report and
-emit `PR_COMMENT_RESPONSE: POST_ERROR` with `Posting: partial`.
+`POST: PARTIAL` means at least one reply is live on GitHub and later approved replies failed or were not attempted. The orchestrator must sync the report and emit `PR_COMMENT_RESPONSE: POST_ERROR` with `Posting: partial`.
 
 ## Orchestrator Failure Envelope
 

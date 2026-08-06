@@ -1,17 +1,13 @@
 # State Machine — responding-to-pr-review-comments
 
-Finite-state execution model for this skill. Mermaid SoT:
-[`flow-diagram.md`](./flow-diagram.md). This table is the authoritative list of
-states, transitions, guards, and terminals. Normative status block shapes live in
-[`references/status-contracts.md`](./references/status-contracts.md).
+Finite-state execution model for this skill. Mermaid SoT: [`flow-diagram.md`](./flow-diagram.md). This table is the authoritative list of states, transitions, guards, and terminals. Normative status block shapes live in [`references/status-contracts.md`](./references/status-contracts.md).
 
-Six specialists stay separate: each owns a distinct status prefix
-(`COLLECT`, `ASSESS`, `DRAFT`, `VERIFY`, `WRITE`, `POST`). That split is earned.
+Six specialists stay separate: each owns a distinct status prefix (`COLLECT`, `ASSESS`, `DRAFT`, `VERIFY`, `WRITE`, `POST`). That split is earned.
 
 ## States
 
 | State | Kind | Role |
-| ----- | ---- | ---- |
+| --- | --- | --- |
 | `NormalizeInputs` | active | Defaults, untrusted-content rule, counter init |
 | `GatePrUrl` | active | Require unambiguous `PR_URL` |
 | `GateOutputPath` | active | Enforce `OUTPUT_FILE` safety checklist |
@@ -54,7 +50,7 @@ Six specialists stay separate: each owns a distinct status prefix
 ## Transitions
 
 | From | To | Guard / event |
-| ---- | -- | ------------- |
+| --- | --- | --- |
 | `[*]` | `NormalizeInputs` | run start |
 | `NormalizeInputs` | `GatePrUrl` | inputs initialized |
 | `GatePrUrl` | `GateOutputPath` | `PR_URL` unambiguous |
@@ -132,7 +128,7 @@ Six specialists stay separate: each owns a distinct status prefix
 ## Cycle ledgers
 
 | Counter | Cap | Exhaustion route |
-| ------- | --- | ---------------- |
+| --- | --- | --- |
 | `questions.pr-url` | 3 | `TerminalNeedsUserDecision` |
 | `questions.output-path` | 3 | `TerminalNeedsUserDecision` |
 | `questions.posting-mode` | 3 | `TerminalNeedsUserDecision` |
@@ -147,7 +143,7 @@ Six specialists stay separate: each owns a distinct status prefix
 ## Terminal decisions
 
 | Envelope | Posting field | Meaning |
-| -------- | ------------- | ------- |
+| --- | --- | --- |
 | `PASS` | `not-posted` | Verified report; no live replies |
 | `PASS` | `posted` | All approved replies posted and ledger-synced |
 | `POST_ERROR` | `partial` or `failed` | Live side effects and/or post failure; ledger required if any live |
@@ -159,7 +155,7 @@ Six specialists stay separate: each owns a distinct status prefix
 ## Reachability and dead-state checks
 
 | Property | Result |
-| -------- | ------ |
+| --- | --- |
 | Every active state reachable from `NormalizeInputs` | yes |
 | Every terminal reachable | yes |
 | Dead states (no outgoing, non-terminal) | none |

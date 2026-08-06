@@ -1,7 +1,6 @@
 # Status Examples
 
-Load this file only when a concrete format example is needed. These are examples
-of shape, not additional workflow rules.
+Load this file only when a concrete format example is needed. These are examples of shape, not additional workflow rules.
 
 ## Degraded Identity Collection
 
