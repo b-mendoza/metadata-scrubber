@@ -186,6 +186,12 @@
       "sourceType": "github",
       "skillPath": "skills/planning-work-item-tasks/SKILL.md",
       "computedHash": "a74b90a693e01f221844bb60588dd944980eb23aaf5d6eca84951f74a4e51dba"
+    },
+    "vitest": {
+      "source": "antfu/skills",
+      "sourceType": "github",
+      "skillPath": "skills/vitest/SKILL.md",
+      "computedHash": "943d436114c677802426741980146c07560bf375297666b03062444f4b98a785"
     }
   }
 }
