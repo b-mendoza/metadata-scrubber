@@ -1,15 +1,13 @@
 # State Machine — planning-codebase-restructuring
 
-Finite-state execution model for this skill. Mermaid source of truth:
-[`flow-diagram.md`](./flow-diagram.md). This table is the authoritative list of
-states, transitions, guards, and terminals.
+Finite-state execution model for this skill. Mermaid source of truth: [`flow-diagram.md`](./flow-diagram.md). This table is the authoritative list of states, transitions, guards, and terminals.
 
 `SKILL.md` must use the same state names, guards, and terminal decisions.
 
 ## States
 
 | State | Kind | Role |
-| ----- | ---- | ---- |
+| --- | --- | --- |
 | `ResumeCheck` | active | Detect optional `RESUME_PACKET` |
 | `ResumeValidate` | active | Re-validate retained summaries; restore counters and notes |
 | `Preflight` | active | Normalize inputs; init counters; resolve paths; disclose clone |
@@ -40,7 +38,7 @@ states, transitions, guards, and terminals.
 ## Counters and named guards
 
 | Name | Rule |
-| ---- | ---- |
+| --- | --- |
 | `review_repair_count` | Starts at `0`. On each `PLAN_REVIEW: FAIL`, increment by 1, then if `review_repair_count > 2` enter `TerminalBlocked`; otherwise enter `ReviewRepair`. Allows at most two FAIL→repair cycles (counts `1` and `2`). |
 | `per_phase_contract_repair` | Each required phase may re-dispatch once for summary-contract failure on a `PASS` summary; second contract failure → `TerminalBlocked`. |
 | Reference accessibility | Inaccessible, unparseable, unverifiable, or unfetchable reference → `BLOCKED` from `ReferenceAssess`, never `PASS`, and never enters `ReferenceRepair`. |
@@ -51,11 +49,11 @@ states, transitions, guards, and terminals.
 ## Transitions
 
 | From | To | Guard / event |
-| ---- | -- | ------------- |
+| --- | --- | --- |
 | `[*]` | `ResumeCheck` | run start |
 | `ResumeCheck` | `ResumeValidate` | `RESUME_PACKET` supplied |
 | `ResumeCheck` | `Preflight` | no packet |
-| `ResumeValidate` | *(restored active state)* | packet valid; jump to `phase_reached` (Mermaid cannot enumerate dynamic targets; this table is authoritative) |
+| `ResumeValidate` | _(restored active state)_ | packet valid; jump to `phase_reached` (Mermaid cannot enumerate dynamic targets; this table is authoritative) |
 | `ResumeValidate` | `Preflight` | packet malformed or retained summary fails contract |
 | `Preflight` | `TerminalNeedsInput` | required inputs missing and not safely inferable |
 | `Preflight` | `ReferenceGate` | preflight summary stated; inputs ready |
@@ -121,7 +119,7 @@ Exactly one of: `READY`, `NEEDS_INPUT`, `BLOCKED`, `ERROR`.
 ## Reachability and dead-state checks
 
 | Property | Result |
-| -------- | ------ |
+| --- | --- |
 | Every active state reachable from `ResumeCheck` | yes |
 | Every terminal reachable | yes |
 | Dead states (no outgoing, non-terminal) | none |
