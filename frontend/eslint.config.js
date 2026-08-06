@@ -118,13 +118,6 @@ export default defineConfig(
       ],
       "@typescript-eslint/return-await": [ERROR, "in-try-catch"],
       "arrow-body-style": OFF,
-      eqeqeq: [
-        ERROR,
-        "always",
-        {
-          null: "ignore",
-        },
-      ],
       "import/newline-after-import": ERROR,
       "no-restricted-imports": [
         ERROR,
@@ -145,6 +138,13 @@ export default defineConfig(
       "require-unicode-regexp": OFF,
       "sonarjs/no-commented-code": WARN,
       "sonarjs/todo-tag": WARN,
+      eqeqeq: [
+        ERROR,
+        "always",
+        {
+          null: "ignore",
+        },
+      ],
     },
   },
   /**
