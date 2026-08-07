@@ -475,15 +475,7 @@ func TestPDFPathsEnforceConfiguredStreamLimit(t *testing.T) {
 	DisableConfigDir()
 	work := newObservedPDFWork()
 	oversizedContent := strings.Repeat("x", int(maxPDFStreamBytes)+1)
-	pdfBytes := buildPDF(t, pdfFixture{
-		objects: map[int]string{
-			1: "<< /Type /Catalog /Pages 2 0 R >>",
-			2: "<< /Type /Pages /Kids [3 0 R] /Count 1 >>",
-			3: "<< /Type /Page /Parent 2 0 R /MediaBox [0 0 200 200] /Resources << >> /Contents 4 0 R >>",
-			4: streamObject(oversizedContent),
-		},
-		rootObjectNumber: 1,
-	})
+	pdfBytes := buildPDFWithContent(t, oversizedContent)
 
 	defaultContext, defaultErr := api.ReadValidateAndOptimize(bytes.NewReader(pdfBytes), model.NewDefaultConfiguration())
 	require.NoError(t, defaultErr)
