@@ -313,23 +313,7 @@ func releaseDecodedMetadataStream(
 	streamDictionary *types.StreamDict,
 ) {
 	streamDictionary.Content = nil
-
-	switch stream := streamObject.(type) {
-	case types.IndirectRef:
-		entry, found := context.FindTableEntry(stream.ObjectNumber.Value(), stream.GenerationNumber.Value())
-		if !found || entry.Object == nil {
-			return
-		}
-		storedStream, ok := entry.Object.(types.StreamDict)
-		if !ok {
-			return
-		}
-		storedStream.Content = nil
-		entry.Object = storedStream
-	case types.StreamDict:
-		stream.Content = nil
-		dictionary[key] = stream
-	}
+	storeMetadataStreamContent(context, dictionary, key, streamObject, nil)
 }
 
 func (state *traversalState) metadataIdentity(path []int) (string, string) {
