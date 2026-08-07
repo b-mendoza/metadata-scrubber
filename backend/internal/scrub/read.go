@@ -26,8 +26,13 @@ func preflightMetadataEntries(context *model.Context, snapshots []metadataEntryS
 	decodedIndirectObjects := make(map[indirectObjectIdentity]struct{})
 
 	for _, snapshot := range snapshots {
-		identity, indirect := metadataIndirectObjectIdentity(snapshot.value)
+		indirectReference, indirect := snapshot.value.(types.IndirectRef)
+		identity := indirectObjectIdentity{}
 		if indirect {
+			identity = indirectObjectIdentity{
+				objectNumber:     indirectReference.ObjectNumber.Value(),
+				generationNumber: indirectReference.GenerationNumber.Value(),
+			}
 			if _, decoded := decodedIndirectObjects[identity]; decoded {
 				continue
 			}
@@ -42,7 +47,7 @@ func preflightMetadataEntries(context *model.Context, snapshots []metadataEntryS
 		if err != nil {
 			return err
 		}
-		cachePreflightMetadataStream(context, snapshot, streamDictionary)
+		storeMetadataStreamContent(context, snapshot.dictionary, snapshot.key, snapshot.value, streamDictionary.Content)
 		remainingDecodeBytes -= int64(len(content))
 		if indirect {
 			decodedIndirectObjects[identity] = struct{}{}
@@ -52,28 +57,11 @@ func preflightMetadataEntries(context *model.Context, snapshots []metadataEntryS
 	return nil
 }
 
-func metadataIndirectObjectIdentity(object types.Object) (indirectObjectIdentity, bool) {
-	indirectReference, indirect := object.(types.IndirectRef)
-	if !indirect {
-		return indirectObjectIdentity{}, false
-	}
-	return indirectObjectIdentity{
-		objectNumber:     indirectReference.ObjectNumber.Value(),
-		generationNumber: indirectReference.GenerationNumber.Value(),
-	}, true
-}
 
 func metadataStreamForPreflight(context *model.Context, object types.Object) *types.StreamDict {
 	if indirectReference, indirect := object.(types.IndirectRef); indirect {
-		entry, found := context.FindTableEntry(
-			indirectReference.ObjectNumber.Value(),
-			indirectReference.GenerationNumber.Value(),
-		)
-		if !found || entry.Free || entry.Object == nil {
-			return nil
-		}
-		streamDictionary, stream := entry.Object.(types.StreamDict)
-		if !stream {
+		entry, streamDictionary, found := resolveIndirectMetadataStream(context, indirectReference)
+		if !found || entry.Free {
 			return nil
 		}
 		return &streamDictionary
@@ -110,34 +98,43 @@ func decodeMetadataStreamForPreflight(streamDictionary *types.StreamDict, remain
 	return content, nil
 }
 
-func cachePreflightMetadataStream(
+func resolveIndirectMetadataStream(
 	context *model.Context,
-	snapshot metadataEntrySnapshot,
-	streamDictionary *types.StreamDict,
-) {
-	if indirectReference, indirect := snapshot.value.(types.IndirectRef); indirect {
-		entry, found := context.FindTableEntry(
-			indirectReference.ObjectNumber.Value(),
-			indirectReference.GenerationNumber.Value(),
-		)
-		if !found || entry.Object == nil {
-			return
-		}
-		storedStream, stream := entry.Object.(types.StreamDict)
-		if !stream {
-			return
-		}
-		storedStream.Content = streamDictionary.Content
-		entry.Object = storedStream
-		return
+	indirectReference types.IndirectRef,
+) (*model.XRefTableEntry, types.StreamDict, bool) {
+	entry, found := context.FindTableEntry(
+		indirectReference.ObjectNumber.Value(),
+		indirectReference.GenerationNumber.Value(),
+	)
+	if !found || entry.Object == nil {
+		return nil, types.StreamDict{}, false
 	}
-
-	storedStream, stream := snapshot.value.(types.StreamDict)
+	streamDictionary, stream := entry.Object.(types.StreamDict)
 	if !stream {
-		return
+		return nil, types.StreamDict{}, false
 	}
-	storedStream.Content = streamDictionary.Content
-	snapshot.dictionary[snapshot.key] = storedStream
+	return entry, streamDictionary, true
+}
+
+func storeMetadataStreamContent(
+	context *model.Context,
+	dictionary types.Dict,
+	key string,
+	streamObject types.Object,
+	content []byte,
+) {
+	switch stream := streamObject.(type) {
+	case types.IndirectRef:
+		entry, storedStream, found := resolveIndirectMetadataStream(context, stream)
+		if !found {
+			return
+		}
+		storedStream.Content = content
+		entry.Object = storedStream
+	case types.StreamDict:
+		stream.Content = content
+		dictionary[key] = stream
+	}
 }
 
 func snapshotMetadataEntries(context *model.Context) ([]metadataEntrySnapshot, bool, error) {
