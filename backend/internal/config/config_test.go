@@ -23,7 +23,10 @@ const (
 )
 
 func TestLoadDefaultsPortWhenUnset(t *testing.T) {
-	cfg, err := loadConfigWithoutPort(t)
+	setValidR2Environment(t)
+	unsetEnvironmentValue(t, portEnvKey)
+
+	cfg, err := config.Load()
 
 	require.NoError(t, err)
 	require.Equal(t, 8080, cfg.Port)
@@ -118,16 +121,21 @@ func TestLoadRejectsAbsentOrBlankR2Values(t *testing.T) {
 	} {
 		for _, input := range []struct {
 			name  string
-			value *string
+			value string
+			unset bool
 		}{
-			{name: "unset"},
-			{name: "empty", value: stringPointer("")},
-			{name: "ASCII whitespace only", value: stringPointer(" \t\n")},
-			{name: "Unicode whitespace only", value: stringPointer("  ")},
+			{name: "unset", unset: true},
+			{name: "empty", value: ""},
+			{name: "ASCII whitespace only", value: " \t\n"},
+			{name: "Unicode whitespace only", value: "  "},
 		} {
 			t.Run(setting.fieldName+"/"+input.name, func(t *testing.T) {
 				setValidR2Environment(t)
-				setOptionalEnvironmentValue(t, setting.environmentKey, input.value)
+				if input.unset {
+					unsetEnvironmentValue(t, setting.environmentKey)
+				} else {
+					t.Setenv(setting.environmentKey, input.value)
+				}
 
 				cfg, err := config.Load()
 
@@ -193,15 +201,6 @@ func loadConfigWithPort(t *testing.T, port string) (config.Config, error) {
 	return config.Load()
 }
 
-func loadConfigWithoutPort(t *testing.T) (config.Config, error) {
-	t.Helper()
-
-	setValidR2Environment(t)
-	unsetEnvironmentValue(t, portEnvKey)
-
-	return config.Load()
-}
-
 func setValidR2Environment(t *testing.T) {
 	t.Helper()
 
@@ -211,17 +210,6 @@ func setValidR2Environment(t *testing.T) {
 	t.Setenv(r2BucketEnvKey, validR2Bucket)
 }
 
-func setOptionalEnvironmentValue(t *testing.T, key string, value *string) {
-	t.Helper()
-
-	if value == nil {
-		unsetEnvironmentValue(t, key)
-		return
-	}
-
-	t.Setenv(key, *value)
-}
-
 func unsetEnvironmentValue(t *testing.T, key string) {
 	t.Helper()
 
@@ -229,8 +217,4 @@ func unsetEnvironmentValue(t *testing.T, key string) {
 	// original value; os.Unsetenv then removes the variable for this test.
 	t.Setenv(key, "")
 	require.NoError(t, os.Unsetenv(key))
-}
-
-func stringPointer(value string) *string {
-	return &value
 }
