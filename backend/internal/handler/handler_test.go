@@ -104,13 +104,14 @@ func TestScrubRejectsFirstByteOverUploadLimit(t *testing.T) {
 	require.Equal(t, `missing or invalid "file" form field`, errorMessage(t, recorder), "Scrub error message")
 }
 
-func TestScrubRejectsUnsupportedType(t *testing.T) {
+func TestScrubProcessesPDFBytesIndependentOfFilename(t *testing.T) {
 	recorder := httptest.NewRecorder()
-	Scrub(recorder, newMultipartFileRequest(t, "notes.txt", []byte("plain text")))
+	Scrub(recorder, newMultipartFileRequest(t, "notes.txt", readScrubbablePDF(t)))
 
-	require.Equal(t, http.StatusUnsupportedMediaType, recorder.Code, "Scrub status; body: %s", recorder.Body.String())
-	require.Equal(t, mediatype.JSON, recorder.Header().Get(header.ContentType), header.ContentType)
-	require.Equal(t, "unsupported file type", errorMessage(t, recorder), "Scrub error message")
+	require.Equal(t, http.StatusOK, recorder.Code, "Scrub status; body: %s", recorder.Body.String())
+	require.Equal(t, mediatype.OctetStream, recorder.Header().Get(header.ContentType), header.ContentType)
+	require.Equal(t, "attachment; filename=notes.txt", recorder.Header().Get(header.ContentDisposition))
+	require.NotEmpty(t, recorder.Body.Bytes())
 }
 
 func TestScrubReportsScrubFailure(t *testing.T) {
