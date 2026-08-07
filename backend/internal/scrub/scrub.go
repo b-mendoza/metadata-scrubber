@@ -173,6 +173,24 @@ func boundedPDFConfiguration() *model.Configuration {
 	return configuration
 }
 
+// InspectPDF returns bounded descriptions of all supported PDF metadata fields.
+func InspectPDF(inputBytes []byte, origin InspectionOrigin) ([]Field, error) {
+	if !origin.valid() {
+		return nil, fmt.Errorf("invalid inspection origin %q", origin)
+	}
+
+	context, err := readPDF(inputBytes)
+	if err != nil {
+		return nil, err
+	}
+	analysis, err := analyzePDF(context, origin)
+	if err != nil {
+		return nil, err
+	}
+
+	return analysis.fields, nil
+}
+
 const pdfExtension = ".pdf"
 
 // ErrUnsupportedType is returned when a file's extension has no scrubber wired up.

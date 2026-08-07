@@ -3,6 +3,7 @@ package scrub
 import (
 	"bytes"
 	"compress/zlib"
+	"errors"
 	"fmt"
 	"io"
 	"os"
@@ -11,6 +12,7 @@ import (
 	"strings"
 	"testing"
 	"time"
+	"unicode/utf8"
 	"github.com/pdfcpu/pdfcpu/pkg/api"
 	"github.com/pdfcpu/pdfcpu/pkg/pdfcpu/model"
 	"github.com/pdfcpu/pdfcpu/pkg/pdfcpu/types"
@@ -431,5 +433,322 @@ func streamObject(content string) string {
 
 func syntheticXMP(marker string) string {
 	return fmt.Sprintf(`<x:xmpmeta xmlns:x="adobe:ns:meta/"><rdf:RDF xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"><rdf:Description rdf:about="" xmlns:synthetic="urn:synthetic" synthetic:marker="%s"/></rdf:RDF></x:xmpmeta>`, marker)
+}
+
+
+func TestInspectPDFAcceptsSignatureLikeTextAndEmptySignatureField(t *testing.T) {
+	DisableConfigDir()
+	pdfBytes := buildUnsignedSignatureLikePDF(t)
+
+	fields, err := InspectPDF(pdfBytes, PublicInput)
+
+	requireNotSignedPDF(t, err)
+	require.NoError(t, err)
+	require.NotEmpty(t, fields)
+}
+
+
+func TestInspectPDFAppliesPreviewByteCeilingDeterministically(t *testing.T) {
+	DisableConfigDir()
+
+	testCases := []struct {
+		name            string
+		value           string
+		expectedPreview string
+	}{
+		{name: "below ceiling", value: strings.Repeat("a", maxFieldPreviewBytes-1), expectedPreview: strings.Repeat("a", maxFieldPreviewBytes-1)},
+		{name: "exact ceiling", value: strings.Repeat("b", maxFieldPreviewBytes), expectedPreview: strings.Repeat("b", maxFieldPreviewBytes)},
+		{name: "above ceiling", value: strings.Repeat("c", maxFieldPreviewBytes+1), expectedPreview: strings.Repeat("c", maxFieldPreviewBytes)},
+		{name: "multibyte rune crosses ceiling", value: strings.Repeat("d", maxFieldPreviewBytes-1) + "éZ", expectedPreview: strings.Repeat("d", maxFieldPreviewBytes-1)},
+	}
+	for _, testCase := range testCases {
+		t.Run(testCase.name, func(t *testing.T) {
+			pdfBytes := buildPDFWithInfo(t, map[string]string{"Title": pdfString(testCase.value)})
+
+			fields, err := InspectPDF(pdfBytes, PublicInput)
+			require.NoError(t, err)
+			require.Len(t, fields, 1)
+			require.Equal(t, testCase.expectedPreview, fields[0].Preview)
+			require.Equal(t, len(testCase.value), fields[0].OriginalByteSize)
+			requireValidUTF8Preview(t, fields[0])
+
+			repeatedFields, err := InspectPDF(pdfBytes, PublicInput)
+			require.NoError(t, err)
+			require.Equal(t, fields, repeatedFields)
+		})
+	}
+}
+
+
+func TestInspectPDFBoundsIdentitiesDerivedFromLongCustomKeys(t *testing.T) {
+	DisableConfigDir()
+	longKey := strings.Repeat("LongCustomKey", 512)
+	pdfBytes := buildPDFWithInfo(t, map[string]string{longKey: pdfString("synthetic value")})
+
+	fields, err := InspectPDF(pdfBytes, PublicInput)
+
+	require.NoError(t, err)
+	require.Equal(t, []Field{{
+		Name:             "info.custom.001",
+		Label:            "Custom document property 1",
+		Preview:          "synthetic value",
+		OriginalByteSize: len("synthetic value"),
+		Action:           ActionRemove,
+	}}, fields)
+	require.NotContains(t, fields[0].Name, longKey)
+	require.NotContains(t, fields[0].Label, longKey)
+	require.LessOrEqual(t, len(fields[0].Name), maxFieldPreviewBytes)
+	require.LessOrEqual(t, len(fields[0].Label), maxFieldPreviewBytes)
+}
+
+
+func TestInspectPDFEnumeratesDeepMetadataDeterministically(t *testing.T) {
+	DisableConfigDir()
+	pdfBytes, metadata := buildMetadataRichPDF(t)
+
+	fields, err := InspectPDF(pdfBytes, PublicInput)
+	require.NoError(t, err)
+
+	expectedFields := []Field{
+		{Name: "info.author", Label: "Author", Preview: metadata.author, OriginalByteSize: len(metadata.author), Action: ActionRemove},
+		{Name: "info.creation_date", Label: "Creation date", Preview: metadata.creationDate, OriginalByteSize: len(metadata.creationDate), Action: ActionReplace},
+		{Name: "info.custom.001", Label: "Custom document property 1", Preview: metadata.customValue, OriginalByteSize: len(metadata.customValue), Action: ActionRemove},
+		{Name: "info.custom.002", Label: "Custom document property 2", Preview: "true", OriginalByteSize: len("true"), Action: ActionRemove},
+		{Name: "info.custom.003", Label: "Custom document property 3", Preview: "SyntheticName", OriginalByteSize: len("SyntheticName"), Action: ActionRemove},
+		{Name: "info.custom.004", Label: "Custom document property 4", Preview: "7", OriginalByteSize: len("7"), Action: ActionRemove},
+		{Name: "info.mod_date", Label: "Modification date", Preview: metadata.modDate, OriginalByteSize: len(metadata.modDate), Action: ActionReplace},
+		{Name: "info.producer", Label: "Producer", Preview: metadata.producer, OriginalByteSize: len(metadata.producer), Action: ActionReplace},
+		{Name: "info.title", Label: "Title", Preview: metadata.title, OriginalByteSize: len(metadata.title), Action: ActionRemove},
+		{Name: "metadata.catalog", Label: "Document metadata", Preview: metadata.catalogXMP, OriginalByteSize: len(metadata.catalogXMP), Action: ActionRemove},
+		{Name: "metadata.object.000001.001", Label: "Embedded metadata 1", Preview: metadata.nestedXMP, OriginalByteSize: len(metadata.nestedXMP), Action: ActionRemove},
+		{Name: "metadata.page.0001", Label: "Page 1 metadata", Preview: metadata.pageXMP, OriginalByteSize: len(metadata.pageXMP), Action: ActionRemove},
+		{Name: "metadata.page.0002", Label: "Page 2 metadata", Preview: metadata.pageXMP, OriginalByteSize: len(metadata.pageXMP), Action: ActionRemove},
+	}
+	require.Equal(t, expectedFields, fields)
+
+	repeatedFields, err := InspectPDF(pdfBytes, PublicInput)
+	require.NoError(t, err)
+	require.Equal(t, fields, repeatedFields)
+}
+
+
+func TestInspectPDFKeepsEveryNeutralTrioNearMissVisible(t *testing.T) {
+	DisableConfigDir()
+	date := "D:20260102030405+00'00'"
+	neutralEntries := map[string]string{
+		"Producer":     pdfString("pdfcpu " + model.VersionStr),
+		"CreationDate": pdfString(date),
+		"ModDate":      pdfString(date),
+	}
+
+	testCases := []struct {
+		name          string
+		entries       map[string]string
+		metadata      metadataLocation
+		expectedNames []string
+	}{
+		{name: "partial trio", entries: map[string]string{"Producer": neutralEntries["Producer"], "CreationDate": neutralEntries["CreationDate"]}, expectedNames: []string{"info.creation_date", "info.producer"}},
+		{name: "mismatched dates", entries: mergeInfoEntries(neutralEntries, map[string]string{"ModDate": pdfString("D:20260102030406+00'00'")}), expectedNames: neutralTrioFieldNames()},
+		{name: "invalid dates", entries: mergeInfoEntries(neutralEntries, map[string]string{"CreationDate": pdfString("invalid"), "ModDate": pdfString("invalid")}), expectedNames: neutralTrioFieldNames()},
+		{name: "different producer", entries: mergeInfoEntries(neutralEntries, map[string]string{"Producer": pdfString("another producer")}), expectedNames: neutralTrioFieldNames()},
+		{name: "extra custom Info", entries: mergeInfoEntries(neutralEntries, map[string]string{"Custom": pdfString("still-user-metadata")}), expectedNames: []string{"info.creation_date", "info.custom.001", "info.mod_date", "info.producer"}},
+		{name: "catalog metadata", entries: neutralEntries, metadata: catalogMetadata, expectedNames: append(neutralTrioFieldNames(), "metadata.catalog")},
+		{name: "page metadata", entries: neutralEntries, metadata: pageMetadata, expectedNames: append(neutralTrioFieldNames(), "metadata.page.0001")},
+		{name: "nested metadata", entries: neutralEntries, metadata: nestedMetadata, expectedNames: append(neutralTrioFieldNames(), "metadata.object.000001.001")},
+	}
+	for _, testCase := range testCases {
+		t.Run(testCase.name, func(t *testing.T) {
+			pdfBytes := buildPDFWithInfoAndMetadata(t, testCase.entries, testCase.metadata)
+
+			fields, err := InspectPDF(pdfBytes, PostWriteVerification)
+
+			require.NoError(t, err)
+			require.Equal(t, testCase.expectedNames, fieldNames(fields))
+			requireExpectedActions(t, fields)
+		})
+	}
+}
+
+
+func TestInspectPDFRequiresKnownOrigin(t *testing.T) {
+	DisableConfigDir()
+
+	fields, err := InspectPDF(buildCleanPDF(t), InspectionOrigin("unknown"))
+
+	require.Error(t, err)
+	require.Nil(t, fields)
+}
+
+
+func TestInspectPDFTreatsNeutralTrioAccordingToOrigin(t *testing.T) {
+	DisableConfigDir()
+	date := "D:20260102030405+00'00'"
+	pdfBytes := buildPDFWithInfo(t, map[string]string{
+		"Producer":     pdfString("pdfcpu " + model.VersionStr),
+		"CreationDate": pdfString(date),
+		"ModDate":      pdfString(date),
+	})
+
+	publicFields, err := InspectPDF(pdfBytes, PublicInput)
+	require.NoError(t, err)
+	require.Equal(t, []string{"info.creation_date", "info.mod_date", "info.producer"}, fieldNames(publicFields))
+	for _, field := range publicFields {
+		require.Equal(t, ActionReplace, field.Action)
+	}
+
+	verificationFields, err := InspectPDF(pdfBytes, PostWriteVerification)
+	require.NoError(t, err)
+	require.Empty(t, verificationFields)
+}
+
+
+func buildCleanPDF(t *testing.T) []byte {
+	t.Helper()
+
+	return buildPDFWithContent(t, "BT /F1 12 Tf 20 100 Td (Synthetic page) Tj ET")
+}
+
+
+func buildMetadataRichPDF(t *testing.T) ([]byte, metadataFixtureValues) {
+	t.Helper()
+
+	metadata := metadataFixtureValues{
+		title:        "Synthetic title",
+		author:       "Synthetic author",
+		producer:     "Synthetic producer",
+		creationDate: "D:20260102030405+00'00'",
+		modDate:      "D:20260203040506+00'00'",
+		customValue:  "Synthetic custom value",
+		catalogXMP:   syntheticXMP("catalog-xmp-marker"),
+		pageXMP:      syntheticXMP("page-xmp-marker"),
+		nestedXMP:    syntheticXMP("nested-xmp-marker"),
+	}
+
+	infoDictionary := fmt.Sprintf(
+		"<< /Title %s /Author <%x> /Producer %s /CreationDate %s /ModDate %s /Custom#20Key %s /Flag true /Mode /SyntheticName /Rank 7 >>",
+		pdfString(metadata.title),
+		[]byte(metadata.author),
+		pdfString(metadata.producer),
+		pdfString(metadata.creationDate),
+		pdfString(metadata.modDate),
+		pdfString(metadata.customValue),
+	)
+
+	return buildPDF(t, pdfFixture{
+		objects: map[int]string{
+			1:  "<< /Type /Catalog /Pages 2 0 R /Metadata 6 0 R /Synthetic << /Metadata 8 0 R >> >>",
+			2:  "<< /Type /Pages /Kids [3 0 R 4 0 R] /Count 2 >>",
+			3:  "<< /Type /Page /Parent 2 0 R /MediaBox [0 0 200 200] /Resources << >> /Contents 5 0 R /Metadata 7 0 R >>",
+			4:  "<< /Type /Page /Parent 2 0 R /MediaBox [0 0 200 200] /Resources << >> /Contents 10 0 R /Metadata 7 0 R >>",
+			5:  streamObject("BT 20 100 Td (Synthetic readable content page one) Tj ET"),
+			6:  metadataStreamObject(metadata.catalogXMP),
+			7:  metadataStreamObject(metadata.pageXMP),
+			8:  metadataStreamObject(metadata.nestedXMP),
+			9:  infoDictionary,
+			10: streamObject("BT 20 100 Td (Synthetic readable content page two) Tj ET"),
+		},
+		rootObjectNumber: 1,
+		infoObjectNumber: 9,
+	}), metadata
+}
+
+
+func buildPDFWithContent(t *testing.T, content string) []byte {
+	t.Helper()
+
+	return buildPDF(t, pdfFixture{
+		objects: map[int]string{
+			1: "<< /Type /Catalog /Pages 2 0 R >>",
+			2: "<< /Type /Pages /Kids [3 0 R] /Count 1 >>",
+			3: "<< /Type /Page /Parent 2 0 R /MediaBox [0 0 200 200] /Resources << >> /Contents 4 0 R >>",
+			4: streamObject(content),
+		},
+		rootObjectNumber: 1,
+	})
+}
+
+
+func buildUnsignedSignatureLikePDF(t *testing.T) []byte {
+	t.Helper()
+
+	return buildPDF(t, pdfFixture{
+		objects: map[int]string{
+			1: "<< /Type /Catalog /Pages 2 0 R /AcroForm << /Fields [5 0 R] >> >>",
+			2: "<< /Type /Pages /Kids [3 0 R] /Count 1 >>",
+			3: "<< /Type /Page /Parent 2 0 R /MediaBox [0 0 200 200] /Resources << >> /Contents 4 0 R /Annots [5 0 R] >>",
+			4: streamObject("BT 20 100 Td (/Type /Sig is ordinary text) Tj ET"),
+			5: "<< /Type /Annot /Subtype /Widget /FT /Sig /T (EmptySignature) /Rect [0 0 0 0] /P 3 0 R >>",
+			6: "<< /Title (/Type /DocTimeStamp is ordinary text) >>",
+		},
+		rootObjectNumber: 1,
+		infoObjectNumber: 6,
+	})
+}
+
+
+func fieldNames(fields []Field) []string {
+	names := make([]string, len(fields))
+	for index, field := range fields {
+		names[index] = field.Name
+	}
+	return names
+}
+
+
+func mergeInfoEntries(baseEntries, replacements map[string]string) map[string]string {
+	mergedEntries := make(map[string]string, len(baseEntries)+len(replacements))
+	for key, value := range baseEntries {
+		mergedEntries[key] = value
+	}
+	for key, value := range replacements {
+		mergedEntries[key] = value
+	}
+	return mergedEntries
+}
+
+
+type metadataFixtureValues struct {
+	title        string
+	author       string
+	producer     string
+	creationDate string
+	modDate      string
+	customValue  string
+	catalogXMP   string
+	pageXMP      string
+	nestedXMP    string
+}
+
+
+func neutralTrioFieldNames() []string {
+	return []string{"info.creation_date", "info.mod_date", "info.producer"}
+}
+
+
+func requireExpectedActions(t *testing.T, fields []Field) {
+	t.Helper()
+
+	for _, field := range fields {
+		expectedAction := ActionRemove
+		if strings.HasPrefix(field.Name, "info.") && field.Name != "info.custom.001" {
+			expectedAction = ActionReplace
+		}
+		require.Equal(t, expectedAction, field.Action, field.Name)
+	}
+}
+
+
+func requireNotSignedPDF(t *testing.T, err error) {
+	t.Helper()
+
+	require.False(t, errors.Is(err, ErrSignedPDF), "unexpected signed-PDF classification: %v", err)
+}
+
+
+func requireValidUTF8Preview(t *testing.T, field Field) {
+	t.Helper()
+
+	require.True(t, utf8.ValidString(field.Preview), "invalid UTF-8 preview %q", field.Preview)
+	require.LessOrEqual(t, len(field.Preview), maxFieldPreviewBytes)
 }
 
