@@ -3,8 +3,8 @@ package scrub
 import (
 	"bytes"
 	"os"
+	"reflect"
 	"testing"
-
 	"github.com/pdfcpu/pdfcpu/pkg/api"
 	"github.com/stretchr/testify/require"
 )
@@ -41,7 +41,7 @@ func TestScrubRejectsUnsupportedTypeWithSentinel(t *testing.T) {
 func TestScrubRemovesPDFPropertiesForUppercaseExtension(t *testing.T) {
 	DisableConfigDir()
 
-	pdf := readPDF(t)
+	pdf := readFixturePDF(t)
 	require.NotEmpty(t, pdfProperties(t, pdf), "fixture PDF properties are empty before scrub")
 
 	got, err := Scrub("REPORT.PDF", pdf)
@@ -58,7 +58,7 @@ func TestScrubRejectsInvalidPDFWithNoOutput(t *testing.T) {
 	require.Nil(t, got, "Scrub invalid PDF output")
 }
 
-func readPDF(t *testing.T) []byte {
+func readFixturePDF(t *testing.T) []byte {
 	t.Helper()
 
 	pdf, err := os.ReadFile("testdata/with-property.pdf")
@@ -75,3 +75,27 @@ func pdfProperties(t *testing.T, pdf []byte) map[string]string {
 
 	return properties
 }
+
+
+func TestInspectionSummaryLimitsStayAtApprovedValues(t *testing.T) {
+	require.Equal(t, 10_000_000, MaxInputBytes)
+	require.Equal(t, 256, maxFieldPreviewBytes)
+	require.Equal(t, 128, maxInspectionFields)
+	require.Equal(t, 32_768, maxInspectionBytes)
+	require.Equal(t, 20_000_000, maxDecodedMetadataBytes)
+}
+
+func TestFieldExposesOnlyApprovedInspectionProperties(t *testing.T) {
+	fieldType := reflect.TypeFor[Field]()
+	require.Equal(t, 5, fieldType.NumField())
+	require.Equal(t, []string{"Name", "Label", "Preview", "OriginalByteSize", "Action"}, structFieldNames(fieldType))
+}
+
+func structFieldNames(structType reflect.Type) []string {
+	names := make([]string, structType.NumField())
+	for index := range structType.NumField() {
+		names[index] = structType.Field(index).Name
+	}
+	return names
+}
+
