@@ -2,7 +2,6 @@
 package handler
 
 import (
-	"errors"
 	"io"
 	"mime"
 	"net/http"
@@ -57,7 +56,7 @@ func Scrub(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	cleaned, err := scrub.Scrub(fileHeader.Filename, src)
+	cleaned, err := scrub.CleanPDF(src)
 	if err != nil {
 		writeScrubError(w, err)
 		return
@@ -78,10 +77,5 @@ func contentDisposition(filename string) string {
 }
 
 func writeScrubError(w http.ResponseWriter, err error) {
-	if errors.Is(err, scrub.ErrUnsupportedType) {
-		httpx.WriteError(w, http.StatusUnsupportedMediaType, err.Error())
-		return
-	}
-
 	httpx.WriteError(w, http.StatusInternalServerError, scrubFileError+err.Error())
 }
