@@ -3,11 +3,13 @@ package main
 import (
 	"bufio"
 	"bytes"
+	"context"
 	"encoding/json"
 	"io"
 	"log/slog"
 	"net/http"
 	"net/http/httptest"
+	"os"
 	"testing"
 
 	"github.com/stretchr/testify/require"
@@ -15,6 +17,54 @@ import (
 	"metadata-scrubber/internal/config"
 	"metadata-scrubber/internal/httpx/header"
 )
+
+const (
+	startupR2Endpoint        = "https://fedcba9876543210fedcba9876543210.r2.cloudflarestorage.com"
+	startupR2AccessKeyID     = "startup-access-key-id-sentinel"
+	startupR2SecretAccessKey = "startup-secret-access-key-sentinel"
+	startupR2Bucket          = "startup-bucket-sentinel"
+)
+
+func TestRunRejectsIncompleteOrInvalidR2ConfigurationBeforeStartingServer(t *testing.T) {
+	for _, testCase := range []struct {
+		name          string
+		configureFail func(t *testing.T)
+		affectedField string
+	}{
+		{
+			name: "missing required value",
+			configureFail: func(t *testing.T) {
+				t.Helper()
+				unsetStartupEnvironmentValue(t, "R2_SECRET_ACCESS_KEY")
+			},
+			affectedField: "R2SecretAccessKey",
+		},
+		{
+			name: "invalid endpoint contract",
+			configureFail: func(t *testing.T) {
+				t.Helper()
+				t.Setenv("R2_ENDPOINT", "https://localhost:9000")
+			},
+			affectedField: "R2Endpoint",
+		},
+	} {
+		t.Run(testCase.name, func(t *testing.T) {
+			setValidStartupEnvironment(t)
+			testCase.configureFail(t)
+
+			err := run(context.Background())
+
+			require.Error(t, err)
+			require.ErrorContains(t, err, "invalid configuration")
+			require.ErrorContains(t, err, testCase.affectedField)
+			require.NotContains(t, err.Error(), startupR2Endpoint)
+			require.NotContains(t, err.Error(), startupR2AccessKeyID)
+			require.NotContains(t, err.Error(), startupR2SecretAccessKey)
+			require.NotContains(t, err.Error(), startupR2Bucket)
+			require.NotContains(t, err.Error(), "https://localhost:9000")
+		})
+	}
+}
 
 func TestNewServerConfiguresAddressAndHandler(t *testing.T) {
 	t.Parallel()
@@ -72,6 +122,22 @@ func TestNewServerRoutesScrubUploads(t *testing.T) {
 	server.Handler.ServeHTTP(recorder, request)
 
 	require.Equal(t, http.StatusBadRequest, recorder.Code)
+}
+
+func setValidStartupEnvironment(t *testing.T) {
+	t.Helper()
+
+	t.Setenv("R2_ENDPOINT", startupR2Endpoint)
+	t.Setenv("R2_ACCESS_KEY_ID", startupR2AccessKeyID)
+	t.Setenv("R2_SECRET_ACCESS_KEY", startupR2SecretAccessKey)
+	t.Setenv("R2_BUCKET", startupR2Bucket)
+}
+
+func unsetStartupEnvironmentValue(t *testing.T, key string) {
+	t.Helper()
+
+	t.Setenv(key, "")
+	require.NoError(t, os.Unsetenv(key))
 }
 
 func discardLogger() *slog.Logger {
