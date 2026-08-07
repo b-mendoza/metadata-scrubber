@@ -18,9 +18,7 @@ const (
 	maxUploadSize        = scrub.MaxInputBytes
 	maxMultipartOverhead = 1 << 20
 	maxMultipartBodySize = maxUploadSize + maxMultipartOverhead
-	reachableStatus      = "reachable"
 	fileFormField        = "file"
-	scrubFileError       = "could not scrub file: "
 )
 
 type reachabilityResponse struct {
@@ -29,7 +27,7 @@ type reachabilityResponse struct {
 
 // Reachability gives callers a cheap way to verify the backend HTTP API is reachable.
 func Reachability(w http.ResponseWriter, _ *http.Request) {
-	httpx.WriteJSON(w, http.StatusOK, reachabilityResponse{Status: reachableStatus})
+	httpx.WriteJSON(w, http.StatusOK, reachabilityResponse{Status: "reachable"})
 }
 
 // Scrub accepts a multipart upload under the form field "file", removes
@@ -43,38 +41,30 @@ func Scrub(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	src, err := io.ReadAll(io.LimitReader(file, maxUploadSize+1))
+	inputBytes, err := io.ReadAll(io.LimitReader(file, maxUploadSize+1))
 	_ = file.Close()
 
 	if err != nil {
 		httpx.WriteError(w, http.StatusInternalServerError, "could not read uploaded file")
 		return
 	}
-	if len(src) > maxUploadSize {
+	if len(inputBytes) > maxUploadSize {
 		httpx.WriteError(w, http.StatusBadRequest, "missing or invalid \"file\" form field")
 		return
 	}
 
-	cleaned, err := scrub.CleanPDF(src)
+	cleanedBytes, err := scrub.CleanPDF(inputBytes)
 	if err != nil {
-		writeScrubError(w, err)
+		httpx.WriteError(w, http.StatusInternalServerError, "could not scrub file: "+err.Error())
 		return
 	}
 
-	writeDownload(w, fileHeader.Filename, cleaned)
-}
-
-func writeDownload(w http.ResponseWriter, filename string, cleaned []byte) {
 	w.Header().Set(header.ContentType, mediatype.OctetStream)
-	w.Header().Set(header.ContentDisposition, contentDisposition(filename))
+	w.Header().Set(header.ContentDisposition, contentDisposition(fileHeader.Filename))
 	w.WriteHeader(http.StatusOK)
-	_, _ = w.Write(cleaned)
+	_, _ = w.Write(cleanedBytes)
 }
 
 func contentDisposition(filename string) string {
 	return mime.FormatMediaType("attachment", map[string]string{"filename": filepath.Base(filename)})
-}
-
-func writeScrubError(w http.ResponseWriter, err error) {
-	httpx.WriteError(w, http.StatusInternalServerError, scrubFileError+err.Error())
 }
