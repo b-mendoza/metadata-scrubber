@@ -1,13 +1,25 @@
 package config_test
 
 import (
-	"strings"
 	"testing"
 
 	"github.com/stretchr/testify/require"
 
 	"metadata-scrubber/internal/config"
 )
+
+func TestLoadAcceptsAnyNonblankBucketName(t *testing.T) {
+	for _, bucket := range []string{"my_bucket", "My.Bucket", "ab"} {
+		t.Run(bucket, func(t *testing.T) {
+			setValidR2Environment(t)
+			t.Setenv(r2BucketEnvKey, bucket)
+
+			_, err := config.Load()
+
+			require.NoError(t, err)
+		})
+	}
+}
 
 func TestLoadAcceptsCanonicalCloudflareR2Endpoint(t *testing.T) {
 	setValidR2Environment(t)
@@ -59,59 +71,6 @@ func TestLoadRejectsNonCanonicalR2Endpoints(t *testing.T) {
 			require.ErrorContains(t, err, "invalid configuration")
 			require.ErrorContains(t, err, "R2Endpoint")
 			require.NotContains(t, err.Error(), testCase.endpoint)
-		})
-	}
-}
-
-func TestLoadAcceptsCloudflareCompatibleBucketNames(t *testing.T) {
-	for _, bucket := range []string{
-		"abc",
-		strings.Repeat("a", 63),
-		"letters",
-		"1bucket9",
-		"metadata--scrubber",
-		"metadata-scrubber-2",
-	} {
-		t.Run(bucket, func(t *testing.T) {
-			setValidR2Environment(t)
-			t.Setenv(r2BucketEnvKey, bucket)
-
-			_, err := config.Load()
-
-			require.NoError(t, err)
-		})
-	}
-}
-
-func TestLoadRejectsInvalidBucketNames(t *testing.T) {
-	for _, testCase := range []struct {
-		name   string
-		bucket string
-	}{
-		{name: "too short", bucket: "ab"},
-		{name: "too long", bucket: strings.Repeat("a", 64)},
-		{name: "leading hyphen", bucket: "-bucket"},
-		{name: "trailing hyphen", bucket: "bucket-"},
-		{name: "uppercase letter", bucket: "Bucket"},
-		{name: "leading whitespace", bucket: " bucket"},
-		{name: "trailing whitespace", bucket: "bucket "},
-		{name: "internal whitespace", bucket: "buck et"},
-		{name: "underscore", bucket: "my_bucket"},
-		{name: "period", bucket: "my.bucket"},
-		{name: "slash", bucket: "my/bucket"},
-		{name: "colon", bucket: "my:bucket"},
-		{name: "non-ASCII letter", bucket: "bücket"},
-		{name: "non-ASCII symbol", bucket: "buck€t"},
-	} {
-		t.Run(testCase.name, func(t *testing.T) {
-			setValidR2Environment(t)
-			t.Setenv(r2BucketEnvKey, testCase.bucket)
-
-			_, err := config.Load()
-
-			require.Error(t, err)
-			require.ErrorContains(t, err, "invalid configuration")
-			require.ErrorContains(t, err, "R2Bucket")
 		})
 	}
 }

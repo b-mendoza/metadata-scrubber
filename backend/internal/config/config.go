@@ -28,7 +28,7 @@ type Config struct {
 	// R2SecretAccessKey is the secret paired with R2AccessKeyID.
 	R2SecretAccessKey string `env:"R2_SECRET_ACCESS_KEY" validate:"notblank"`
 	// R2Bucket is the Cloudflare R2 bucket used by the backend.
-	R2Bucket string `env:"R2_BUCKET" validate:"r2_bucket"`
+	R2Bucket string `env:"R2_BUCKET" validate:"notblank"`
 }
 
 // Load parses and validates the environment into Config.
@@ -49,7 +49,6 @@ func newConfigValidator() *validator.Validate {
 	configValidator := validator.New(validator.WithRequiredStructEnabled())
 	for tag, validation := range map[string]validator.Func{
 		"notblank":    validators.NotBlank,
-		"r2_bucket":   validateR2Bucket,
 		"r2_endpoint": validateR2Endpoint,
 	} {
 		if err := configValidator.RegisterValidation(tag, validation); err != nil {
@@ -73,11 +72,6 @@ func validateR2Endpoint(field validator.FieldLevel) bool {
 
 	accountLabel, found = strings.CutSuffix(accountLabel, r2EndpointHostSuffix)
 	return found && isLowercaseAlphanumericHyphenToken(accountLabel)
-}
-
-func validateR2Bucket(field validator.FieldLevel) bool {
-	bucketName := field.Field().String()
-	return len(bucketName) >= 3 && len(bucketName) <= 63 && isLowercaseAlphanumericHyphenToken(bucketName)
 }
 
 func isLowercaseAlphanumericHyphenToken(label string) bool {
