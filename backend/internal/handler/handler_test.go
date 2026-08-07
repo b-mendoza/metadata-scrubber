@@ -101,6 +101,32 @@ func TestScrubRejectsFirstByteOverUploadLimit(t *testing.T) {
 	require.Equal(t, `missing or invalid "file" form field`, errorMessage(t, recorder), "Scrub error message")
 }
 
+func TestScrubRejectsRequestBodyOverMultipartLimit(t *testing.T) {
+	var requestBody bytes.Buffer
+	writer := multipart.NewWriter(&requestBody)
+
+	file, err := writer.CreateFormFile(fileFormField, "report.pdf")
+	require.NoError(t, err, "create multipart file")
+	_, err = file.Write(padUploadToSize(t, readScrubbablePDF(t), maxUploadSize))
+	require.NoError(t, err, "write multipart file")
+
+	// The file alone would be accepted, so the oversized ignored field is what
+	// pushes the request body over maxMultipartBodySize: only the MaxBytesReader
+	// ceiling can reject this request, not the file payload limit.
+	require.NoError(t, writer.WriteField("ignored", strings.Repeat("x", 2*maxMultipartOverhead)), "write oversized field")
+	require.NoError(t, writer.Close(), "close multipart writer")
+	require.Greater(t, requestBody.Len(), maxMultipartBodySize, "request body must exceed the multipart ceiling")
+
+	request := httptest.NewRequest(http.MethodPost, "/api/scrub", &requestBody)
+	request.Header.Set(header.ContentType, writer.FormDataContentType())
+	recorder := httptest.NewRecorder()
+
+	Scrub(recorder, request)
+
+	require.Equal(t, http.StatusBadRequest, recorder.Code, "Scrub status; body: %s", recorder.Body.String())
+	require.Equal(t, `missing or invalid "file" form field`, errorMessage(t, recorder), "Scrub error message")
+}
+
 func TestScrubProcessesPDFBytesIndependentOfFilename(t *testing.T) {
 	recorder := httptest.NewRecorder()
 	Scrub(recorder, newMultipartFileRequest(t, "notes.txt", readScrubbablePDF(t)))
