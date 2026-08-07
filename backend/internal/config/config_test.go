@@ -159,10 +159,10 @@ func TestLoadDoesNotDiscloseConfigurationValuesInErrors(t *testing.T) {
 			name: "validation failure",
 			configureFail: func(t *testing.T) {
 				t.Helper()
-				t.Setenv(r2BucketEnvKey, "invalid.bucket")
+				t.Setenv(r2EndpointEnvKey, "https://config-disclosure.example")
 			},
 			errorCategory:          "invalid configuration",
-			configuredFailureValue: "invalid.bucket",
+			configuredFailureValue: "https://config-disclosure.example",
 		},
 		{
 			name: "parse failure",
