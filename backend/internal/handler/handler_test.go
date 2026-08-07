@@ -3,6 +3,8 @@ package handler
 import (
 	"bytes"
 	"encoding/json"
+	"errors"
+	"fmt"
 	"mime/multipart"
 	"net/http"
 	"net/http/httptest"
@@ -14,6 +16,7 @@ import (
 
 	"metadata-scrubber/internal/httpx/header"
 	"metadata-scrubber/internal/httpx/mediatype"
+	"metadata-scrubber/internal/scrub"
 )
 
 func TestScrubSetsDownloadHeaders(t *testing.T) {
@@ -137,15 +140,58 @@ func TestScrubProcessesPDFBytesIndependentOfFilename(t *testing.T) {
 	require.NotEmpty(t, recorder.Body.Bytes())
 }
 
-func TestScrubReportsScrubFailure(t *testing.T) {
+func TestScrubReportsScrubFailureWithoutErrorDetail(t *testing.T) {
 	recorder := httptest.NewRecorder()
 	Scrub(recorder, newMultipartFileRequest(t, "report.pdf", []byte("not a pdf")))
 
 	require.Equal(t, http.StatusInternalServerError, recorder.Code, "Scrub status; body: %s", recorder.Body.String())
 	require.Equal(t, mediatype.JSON, recorder.Header().Get(header.ContentType), header.ContentType)
+	require.Equal(t, "could not scrub file", errorMessage(t, recorder), "Scrub error message")
+}
 
-	message := errorMessage(t, recorder)
-	require.True(t, strings.HasPrefix(message, "could not scrub file: "), "Scrub error message = %q", message)
+func TestWriteScrubFailureClassifiesScrubErrors(t *testing.T) {
+	tests := []struct {
+		name        string
+		scrubErr    error
+		wantStatus  int
+		wantMessage string
+	}{
+		{
+			name:        "input too large is a client error",
+			scrubErr:    fmt.Errorf("read PDF: %w", scrub.ErrInputTooLarge),
+			wantStatus:  http.StatusBadRequest,
+			wantMessage: "PDF input exceeds 10 MB limit",
+		},
+		{
+			name:        "signed PDF is unsupported media",
+			scrubErr:    fmt.Errorf("read PDF: %w", scrub.ErrSignedPDF),
+			wantStatus:  http.StatusUnsupportedMediaType,
+			wantMessage: "signed PDF is unsupported",
+		},
+		{
+			name:        "inspection limit is a client error",
+			scrubErr:    fmt.Errorf("analyze PDF: %w", scrub.ErrInspectionLimit),
+			wantStatus:  http.StatusBadRequest,
+			wantMessage: "PDF metadata exceeds inspection limits",
+		},
+		{
+			name:        "unclassified failure hides its detail",
+			scrubErr:    errors.New("pdfcpu: internal parser detail"),
+			wantStatus:  http.StatusInternalServerError,
+			wantMessage: "could not scrub file",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			recorder := httptest.NewRecorder()
+			writeScrubFailure(recorder, httptest.NewRequest(http.MethodPost, "/api/scrub", nil), tt.scrubErr)
+
+			require.Equal(t, tt.wantStatus, recorder.Code, "status; body: %s", recorder.Body.String())
+			require.Equal(t, tt.wantMessage, errorMessage(t, recorder), "error message")
+			require.NotContains(t, recorder.Body.String(), "pdfcpu", "response must not leak scrub error detail")
+		})
+	}
 }
 
 func readScrubbablePDF(t *testing.T) []byte {
