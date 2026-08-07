@@ -125,6 +125,15 @@ func TestScrubReportsScrubFailure(t *testing.T) {
 	require.True(t, strings.HasPrefix(message, "could not scrub file: "), "Scrub error message = %q", message)
 }
 
+func readScrubbablePDF(t *testing.T) []byte {
+	t.Helper()
+
+	pdf, err := os.ReadFile("testdata/with-property.pdf")
+	require.NoError(t, err, "read PDF fixture")
+
+	return pdf
+}
+
 func padUploadToSize(t *testing.T, body []byte, size int) []byte {
 	t.Helper()
 	require.LessOrEqual(t, len(body), size)
@@ -135,15 +144,6 @@ func padUploadToSize(t *testing.T, body []byte, size int) []byte {
 		paddedBody[index] = ' '
 	}
 	return paddedBody
-}
-
-func readScrubbablePDF(t *testing.T) []byte {
-	t.Helper()
-
-	pdf, err := os.ReadFile("testdata/with-property.pdf")
-	require.NoError(t, err, "read PDF fixture")
-
-	return pdf
 }
 
 func newMultipartFileRequest(t *testing.T, filename string, body []byte) *http.Request {

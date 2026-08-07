@@ -6,10 +6,9 @@ import (
 	"errors"
 	"fmt"
 	"io"
-	"path/filepath"
-	"strings"
+
 	"github.com/pdfcpu/pdfcpu/pkg/api"
-	"github.com/pdfcpu/pdfcpu/pkg/pdfcpu"
+	pdfcpu "github.com/pdfcpu/pdfcpu/pkg/pdfcpu"
 	"github.com/pdfcpu/pdfcpu/pkg/pdfcpu/model"
 	"github.com/pdfcpu/pdfcpu/pkg/pdfcpu/types"
 )
@@ -24,6 +23,16 @@ const (
 	maxInspectionFields     = 128
 	maxInspectionBytes      = 32 << 10
 	maxDecodedMetadataBytes = 20_000_000
+
+	maxPDFStreamBytes       int64 = MaxInputBytes
+	maxPDFDecodeBytes       int64 = 20_000_000
+	maxPDFImagePixels       int64 = 10_000_000
+	maxPDFImageBytes        int64 = 40_000_000
+	maxPDFObjectCount             = 100_000
+	maxPDFObjectStreamCount       = 50_000
+	maxPDFObjectStreamFirst int64 = 2_000_000
+	maxPDFXRefEntries             = 100_000
+	maxPDFRecursionDepth          = 64
 )
 
 // InspectionOrigin identifies whether PDF bytes came from public input or from
@@ -63,7 +72,16 @@ var (
 	ErrSignedPDF = errors.New("signed PDF is unsupported")
 	// ErrInspectionLimit classifies metadata inventories too large to report completely.
 	ErrInspectionLimit = errors.New("PDF metadata exceeds inspection limits")
+
+	// validatePDFContext is a narrow seam for proving preflight failures precede validation.
+	validatePDFContext = api.ValidateContext
 )
+
+type cleanPDFOperations struct {
+	remove func(*model.Context, *pdfAnalysis)
+	write  func(*model.Context, io.Writer) error
+	verify func([]byte) error
+}
 
 // DisableConfigDir prevents pdfcpu from creating or reading a per-user config
 // directory. Call once at startup before any PDF inspection or scrub.
@@ -71,47 +89,63 @@ func DisableConfigDir() {
 	api.DisableConfigDir()
 }
 
-const maxPDFDecodeBytes int64 = 20_000_000
+// InspectPDF returns bounded descriptions of all supported PDF metadata fields.
+func InspectPDF(inputBytes []byte, origin InspectionOrigin) ([]Field, error) {
+	if !origin.valid() {
+		return nil, fmt.Errorf("invalid inspection origin %q", origin)
+	}
+
+	context, err := readPDF(inputBytes)
+	if err != nil {
+		return nil, err
+	}
+	analysis, err := analyzePDF(context, origin)
+	if err != nil {
+		return nil, err
+	}
+
+	return analysis.fields, nil
+}
+
+// CleanPDF removes supported metadata from PDF bytes.
+func CleanPDF(inputBytes []byte) ([]byte, error) {
+	return cleanPDF(inputBytes, cleanPDFOperations{
+		remove: removeAnalyzedMetadata,
+		write:  api.WriteContext,
+		verify: verifyScrubbedPDF,
+	})
+}
+
+func cleanPDF(inputBytes []byte, operations cleanPDFOperations) ([]byte, error) {
+	context, err := readPDF(inputBytes)
+	if err != nil {
+		return nil, err
+	}
+	analysis, err := analyzePDF(context, PublicInput)
+	if err != nil {
+		return nil, err
+	}
+	if len(analysis.fields) == 0 {
+		return inputBytes, nil
+	}
+
+	operations.remove(context, analysis)
+	var output bytes.Buffer
+	if err := operations.write(context, &output); err != nil {
+		return nil, err
+	}
+
+	outputBytes := output.Bytes()
+	if err := operations.verify(outputBytes); err != nil {
+		return nil, err
+	}
+
+	return outputBytes, nil
+}
 
 func (origin InspectionOrigin) valid() bool {
 	return origin == PublicInput || origin == PostWriteVerification
 }
-
-func infoObjectValue(context *model.Context, object types.Object) (string, error) {
-	dereferencedObject, err := context.Dereference(object)
-	if err != nil {
-		return "", err
-	}
-
-	switch value := dereferencedObject.(type) {
-	case types.StringLiteral:
-		return types.StringLiteralToString(value)
-	case types.HexLiteral:
-		return types.HexLiteralToString(value)
-	case types.Name:
-		return types.DecodeName(value.Value())
-	case types.Boolean, types.Integer, types.Float:
-		return value.PDFString(), nil
-	default:
-		return "", fmt.Errorf("unsupported Info value type %T", dereferencedObject)
-	}
-}
-
-const (
-	maxPDFStreamBytes       int64 = MaxInputBytes
-	maxPDFImagePixels       int64 = 10_000_000
-	maxPDFImageBytes        int64 = 40_000_000
-	maxPDFObjectCount             = 100_000
-	maxPDFObjectStreamCount       = 50_000
-	maxPDFObjectStreamFirst int64 = 2_000_000
-	maxPDFXRefEntries             = 100_000
-	maxPDFRecursionDepth          = 64
-)
-
-var (
-	// validatePDFContext is a narrow seam for proving preflight failures precede validation.
-	validatePDFContext = api.ValidateContext
-)
 
 func readPDF(inputBytes []byte) (*model.Context, error) {
 	if len(inputBytes) > MaxInputBytes {
@@ -174,82 +208,22 @@ func boundedPDFConfiguration() *model.Configuration {
 	return configuration
 }
 
-// InspectPDF returns bounded descriptions of all supported PDF metadata fields.
-func InspectPDF(inputBytes []byte, origin InspectionOrigin) ([]Field, error) {
-	if !origin.valid() {
-		return nil, fmt.Errorf("invalid inspection origin %q", origin)
-	}
-
-	context, err := readPDF(inputBytes)
+func infoObjectValue(context *model.Context, object types.Object) (string, error) {
+	dereferencedObject, err := context.Dereference(object)
 	if err != nil {
-		return nil, err
-	}
-	analysis, err := analyzePDF(context, origin)
-	if err != nil {
-		return nil, err
+		return "", err
 	}
 
-	return analysis.fields, nil
-}
-
-type cleanPDFOperations struct {
-	remove func(*model.Context, *pdfAnalysis)
-	write  func(*model.Context, io.Writer) error
-	verify func([]byte) error
-}
-
-// CleanPDF removes supported metadata from PDF bytes.
-func CleanPDF(inputBytes []byte) ([]byte, error) {
-	return cleanPDF(inputBytes, cleanPDFOperations{
-		remove: removeAnalyzedMetadata,
-		write:  api.WriteContext,
-		verify: verifyScrubbedPDF,
-	})
-}
-
-func cleanPDF(inputBytes []byte, operations cleanPDFOperations) ([]byte, error) {
-	context, err := readPDF(inputBytes)
-	if err != nil {
-		return nil, err
-	}
-	analysis, err := analyzePDF(context, PublicInput)
-	if err != nil {
-		return nil, err
-	}
-	if len(analysis.fields) == 0 {
-		return inputBytes, nil
-	}
-
-	operations.remove(context, analysis)
-	var output bytes.Buffer
-	if err := operations.write(context, &output); err != nil {
-		return nil, err
-	}
-
-	outputBytes := output.Bytes()
-	if err := operations.verify(outputBytes); err != nil {
-		return nil, err
-	}
-
-	return outputBytes, nil
-}
-
-const pdfExtension = ".pdf"
-
-// ErrUnsupportedType is returned when a file's extension has no scrubber wired up.
-var ErrUnsupportedType = errors.New("unsupported file type")
-
-// Scrub dispatches on file extension and returns the metadata-free bytes.
-// Today only PDF is wired up; add DOCX/TXT branches here as you build out.
-func Scrub(filename string, src []byte) ([]byte, error) {
-	switch normalizedExtension(filename) {
-	case pdfExtension:
-		return CleanPDF(src)
+	switch value := dereferencedObject.(type) {
+	case types.StringLiteral:
+		return types.StringLiteralToString(value)
+	case types.HexLiteral:
+		return types.HexLiteralToString(value)
+	case types.Name:
+		return types.DecodeName(value.Value())
+	case types.Boolean, types.Integer, types.Float:
+		return value.PDFString(), nil
 	default:
-		return nil, ErrUnsupportedType
+		return "", fmt.Errorf("unsupported Info value type %T", dereferencedObject)
 	}
-}
-
-func normalizedExtension(filename string) string {
-	return strings.ToLower(filepath.Ext(filename))
 }

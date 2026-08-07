@@ -18,9 +18,9 @@ const (
 	maxUploadSize        = scrub.MaxInputBytes
 	maxMultipartOverhead = 1 << 20
 	maxMultipartBodySize = maxUploadSize + maxMultipartOverhead
-	reachableStatus = "reachable"
-	fileFormField   = "file"
-	scrubFileError  = "could not scrub file: "
+	reachableStatus      = "reachable"
+	fileFormField        = "file"
+	scrubFileError       = "could not scrub file: "
 )
 
 type reachabilityResponse struct {
@@ -50,7 +50,6 @@ func Scrub(w http.ResponseWriter, r *http.Request) {
 		httpx.WriteError(w, http.StatusInternalServerError, "could not read uploaded file")
 		return
 	}
-
 	if len(src) > maxUploadSize {
 		httpx.WriteError(w, http.StatusBadRequest, "missing or invalid \"file\" form field")
 		return
