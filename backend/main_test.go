@@ -126,6 +126,7 @@ func TestNewServerRoutesScrubUploads(t *testing.T) {
 func setValidStartupEnvironment(t *testing.T) {
 	t.Helper()
 
+	t.Setenv("PORT", "8080")
 	t.Setenv("R2_ACCOUNT_ID", startupR2AccountID)
 	t.Setenv("R2_ACCESS_KEY_ID", startupR2AccessKeyID)
 	t.Setenv("R2_SECRET_ACCESS_KEY", startupR2SecretAccessKey)
