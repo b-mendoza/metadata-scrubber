@@ -46,9 +46,6 @@ type traversalState struct {
 }
 
 func analyzePDF(context *model.Context, origin InspectionOrigin) (*pdfAnalysis, error) {
-	if !origin.valid() {
-		return nil, fmt.Errorf("invalid inspection origin %q", origin)
-	}
 	if pdfHasCachedSignature(context) {
 		return nil, ErrSignedPDF
 	}
