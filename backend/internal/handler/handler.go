@@ -15,8 +15,10 @@ import (
 )
 
 const (
-	// maxUploadSize caps the size of an uploaded file (25 MB) to keep memory usage bounded.
-	maxUploadSize   = 25 << 20
+	// maxUploadSize matches the scrub package's decimal 10 MB product boundary.
+	maxUploadSize        = scrub.MaxInputBytes
+	maxMultipartOverhead = 1 << 20
+	maxMultipartBodySize = maxUploadSize + maxMultipartOverhead
 	reachableStatus = "reachable"
 	fileFormField   = "file"
 	scrubFileError  = "could not scrub file: "
@@ -34,7 +36,7 @@ func Reachability(w http.ResponseWriter, _ *http.Request) {
 // Scrub accepts a multipart upload under the form field "file", removes
 // its metadata, and streams the cleaned file back to the client.
 func Scrub(w http.ResponseWriter, r *http.Request) {
-	r.Body = http.MaxBytesReader(w, r.Body, maxUploadSize)
+	r.Body = http.MaxBytesReader(w, r.Body, maxMultipartBodySize)
 
 	file, fileHeader, err := r.FormFile(fileFormField)
 	if err != nil {
@@ -42,12 +44,16 @@ func Scrub(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// pdfcpu needs an io.ReadSeeker, so buffer the upload into memory.
-	src, err := io.ReadAll(file)
+	src, err := io.ReadAll(io.LimitReader(file, maxUploadSize+1))
 	_ = file.Close()
 
 	if err != nil {
 		httpx.WriteError(w, http.StatusInternalServerError, "could not read uploaded file")
+		return
+	}
+
+	if len(src) > maxUploadSize {
+		httpx.WriteError(w, http.StatusBadRequest, "missing or invalid \"file\" form field")
 		return
 	}
 
