@@ -19,7 +19,7 @@ import (
 )
 
 const (
-	startupR2Endpoint        = "https://fedcba9876543210fedcba9876543210.r2.cloudflarestorage.com"
+	startupR2AccountID       = "startup-account-id-sentinel"
 	startupR2AccessKeyID     = "startup-access-key-id-sentinel"
 	startupR2SecretAccessKey = "startup-secret-access-key-sentinel"
 	startupR2Bucket          = "startup-bucket-sentinel"
@@ -40,12 +40,12 @@ func TestRunRejectsIncompleteOrInvalidR2ConfigurationBeforeStartingServer(t *tes
 			affectedField: "R2SecretAccessKey",
 		},
 		{
-			name: "invalid endpoint contract",
+			name: "blank required value",
 			configureFail: func(t *testing.T) {
 				t.Helper()
-				t.Setenv("R2_ENDPOINT", "https://localhost:9000")
+				t.Setenv("R2_ACCOUNT_ID", " \t\n")
 			},
-			affectedField: "R2Endpoint",
+			affectedField: "R2AccountID",
 		},
 	} {
 		t.Run(testCase.name, func(t *testing.T) {
@@ -57,11 +57,10 @@ func TestRunRejectsIncompleteOrInvalidR2ConfigurationBeforeStartingServer(t *tes
 			require.Error(t, err)
 			require.ErrorContains(t, err, "invalid configuration")
 			require.ErrorContains(t, err, testCase.affectedField)
-			require.NotContains(t, err.Error(), startupR2Endpoint)
+			require.NotContains(t, err.Error(), startupR2AccountID)
 			require.NotContains(t, err.Error(), startupR2AccessKeyID)
 			require.NotContains(t, err.Error(), startupR2SecretAccessKey)
 			require.NotContains(t, err.Error(), startupR2Bucket)
-			require.NotContains(t, err.Error(), "https://localhost:9000")
 		})
 	}
 }
@@ -127,7 +126,7 @@ func TestNewServerRoutesScrubUploads(t *testing.T) {
 func setValidStartupEnvironment(t *testing.T) {
 	t.Helper()
 
-	t.Setenv("R2_ENDPOINT", startupR2Endpoint)
+	t.Setenv("R2_ACCOUNT_ID", startupR2AccountID)
 	t.Setenv("R2_ACCESS_KEY_ID", startupR2AccessKeyID)
 	t.Setenv("R2_SECRET_ACCESS_KEY", startupR2SecretAccessKey)
 	t.Setenv("R2_BUCKET", startupR2Bucket)
