@@ -244,7 +244,7 @@ var ErrUnsupportedType = errors.New("unsupported file type")
 func Scrub(filename string, src []byte) ([]byte, error) {
 	switch normalizedExtension(filename) {
 	case pdfExtension:
-		return scrubPDF(src)
+		return CleanPDF(src)
 	default:
 		return nil, ErrUnsupportedType
 	}
@@ -252,18 +252,4 @@ func Scrub(filename string, src []byte) ([]byte, error) {
 
 func normalizedExtension(filename string) string {
 	return strings.ToLower(filepath.Ext(filename))
-}
-
-func scrubPDF(src []byte) ([]byte, error) {
-	var out bytes.Buffer
-
-	// A nil property list tells pdfcpu to remove every document property and the
-	// catalog XMP metadata, rather than a named subset.
-	var allProperties []string
-
-	if err := api.RemoveProperties(bytes.NewReader(src), &out, allProperties, nil); err != nil {
-		return nil, err
-	}
-
-	return out.Bytes(), nil
 }
