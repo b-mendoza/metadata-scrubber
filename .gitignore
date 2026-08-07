@@ -6,6 +6,6 @@
 /.codex/
 opencode.jsonc
 
-# Environment variables
+# Local environment files
+.env*.local
 .env
-.env.*
