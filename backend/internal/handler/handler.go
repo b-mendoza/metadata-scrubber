@@ -2,7 +2,9 @@
 package handler
 
 import (
+	"errors"
 	"io"
+	"log/slog"
 	"mime"
 	"net/http"
 	"path/filepath"
@@ -55,7 +57,7 @@ func Scrub(w http.ResponseWriter, r *http.Request) {
 
 	cleanedBytes, err := scrub.CleanPDF(inputBytes)
 	if err != nil {
-		httpx.WriteError(w, http.StatusInternalServerError, "could not scrub file: "+err.Error())
+		writeScrubFailure(w, r, err)
 		return
 	}
 
@@ -63,6 +65,23 @@ func Scrub(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set(header.ContentDisposition, contentDisposition(fileHeader.Filename))
 	w.WriteHeader(http.StatusOK)
 	_, _ = w.Write(cleanedBytes)
+}
+
+// writeScrubFailure answers classified scrub failures as client errors with
+// fixed public messages. Everything unclassified is a server failure: its
+// detail is logged for diagnostics and never echoed to the client.
+func writeScrubFailure(w http.ResponseWriter, r *http.Request, scrubErr error) {
+	switch {
+	case errors.Is(scrubErr, scrub.ErrInputTooLarge):
+		httpx.WriteError(w, http.StatusBadRequest, "PDF input exceeds 10 MB limit")
+	case errors.Is(scrubErr, scrub.ErrSignedPDF):
+		httpx.WriteError(w, http.StatusUnsupportedMediaType, "signed PDF is unsupported")
+	case errors.Is(scrubErr, scrub.ErrInspectionLimit):
+		httpx.WriteError(w, http.StatusBadRequest, "PDF metadata exceeds inspection limits")
+	default:
+		slog.ErrorContext(r.Context(), "scrub failed", "error", scrubErr)
+		httpx.WriteError(w, http.StatusInternalServerError, "could not scrub file")
+	}
 }
 
 func contentDisposition(filename string) string {
