@@ -3,7 +3,6 @@ package handler
 import (
 	"bytes"
 	"encoding/json"
-	"io"
 	"mime/multipart"
 	"net/http"
 	"net/http/httptest"
@@ -62,9 +61,7 @@ func TestScrubSetsDownloadHeaders(t *testing.T) {
 
 func TestContentDispositionEncodesControlBytes(t *testing.T) {
 	filename := "bad\r\n\x00\x7fname.pdf"
-	want := `attachment; filename*=utf-8''bad%0D%0A%00%7Fname.pdf`
-
-	require.Equal(t, want, contentDisposition(filename), "contentDisposition(%q)", filename)
+	require.Equal(t, `attachment; filename*=utf-8''bad%0D%0A%00%7Fname.pdf`, contentDisposition(filename), "contentDisposition(%q)", filename)
 }
 
 func TestReachabilityReportsReachableStatus(t *testing.T) {
@@ -138,12 +135,8 @@ func padUploadToSize(t *testing.T, body []byte, size int) []byte {
 	t.Helper()
 	require.LessOrEqual(t, len(body), size)
 
-	paddedBody := make([]byte, size)
-	copy(paddedBody, body)
-	for index := len(body); index < len(paddedBody); index++ {
-		paddedBody[index] = ' '
-	}
-	return paddedBody
+	padding := bytes.Repeat([]byte{' '}, size-len(body))
+	return append(bytes.Clone(body), padding...)
 }
 
 func newMultipartFileRequest(t *testing.T, filename string, body []byte) *http.Request {
@@ -155,7 +148,7 @@ func newMultipartFileRequest(t *testing.T, filename string, body []byte) *http.R
 	file, err := writer.CreateFormFile(fileFormField, filename)
 	require.NoError(t, err, "create multipart file")
 
-	_, err = io.Copy(file, bytes.NewReader(body))
+	_, err = file.Write(body)
 	require.NoError(t, err, "write multipart file")
 	require.NoError(t, writer.Close(), "close multipart writer")
 
