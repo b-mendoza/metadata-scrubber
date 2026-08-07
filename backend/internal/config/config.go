@@ -3,14 +3,11 @@ package config
 
 import (
 	"fmt"
-	"strings"
 
 	"github.com/caarlos0/env/v11"
 	"github.com/go-playground/validator/v10"
 	"github.com/go-playground/validator/v10/non-standard/validators"
 )
-
-const r2EndpointHostSuffix = ".r2.cloudflarestorage.com"
 
 // configValidator is shared across calls; the validator caches per-struct
 // reflection metadata, so it and its custom validations are initialized once.
@@ -21,14 +18,22 @@ var configValidator = newConfigValidator()
 type Config struct {
 	// Port is the TCP port the HTTP server listens on.
 	Port int `env:"PORT" envDefault:"8080" validate:"gte=1,lte=65535"`
-	// R2Endpoint is the canonical Cloudflare R2 production endpoint.
-	R2Endpoint string `env:"R2_ENDPOINT" validate:"r2_endpoint"`
+	// R2AccountID is the Cloudflare account whose R2 storage the backend uses.
+	R2AccountID string `env:"R2_ACCOUNT_ID" validate:"notblank"`
 	// R2AccessKeyID identifies the R2 credential pair.
 	R2AccessKeyID string `env:"R2_ACCESS_KEY_ID" validate:"notblank"`
 	// R2SecretAccessKey is the secret paired with R2AccessKeyID.
 	R2SecretAccessKey string `env:"R2_SECRET_ACCESS_KEY" validate:"notblank"`
 	// R2Bucket is the Cloudflare R2 bucket used by the backend.
 	R2Bucket string `env:"R2_BUCKET" validate:"notblank"`
+}
+
+// R2Endpoint is the Cloudflare R2 endpoint for the configured account, built
+// from the scheme and host suffix fixed here in code. The account ID is
+// trusted as configured: it is validated only as non-blank, on the grounds
+// that anyone able to set it could also read the R2 credentials.
+func (c Config) R2Endpoint() string {
+	return "https://" + c.R2AccountID + ".r2.cloudflarestorage.com"
 }
 
 // Load parses and validates the environment into Config.
@@ -47,48 +52,9 @@ func Load() (Config, error) {
 
 func newConfigValidator() *validator.Validate {
 	configValidator := validator.New(validator.WithRequiredStructEnabled())
-	for tag, validation := range map[string]validator.Func{
-		"notblank":    validators.NotBlank,
-		"r2_endpoint": validateR2Endpoint,
-	} {
-		if err := configValidator.RegisterValidation(tag, validation); err != nil {
-			panic(fmt.Sprintf("registering %s configuration validation: %v", tag, err))
-		}
+	if err := configValidator.RegisterValidation("notblank", validators.NotBlank); err != nil {
+		panic(fmt.Sprintf("registering notblank configuration validation: %v", err))
 	}
 
 	return configValidator
-}
-
-// validateR2Endpoint pins where R2 credentials are sent: only exact
-// https://<account>.r2.cloudflarestorage.com endpoints pass. The account-label
-// character check keeps the suffix match honest — without it, a value like
-// https://evil.example/?x=.r2.cloudflarestorage.com would pass the cuts while
-// actually pointing at another host.
-func validateR2Endpoint(field validator.FieldLevel) bool {
-	accountLabel, found := strings.CutPrefix(field.Field().String(), "https://")
-	if !found {
-		return false
-	}
-
-	accountLabel, found = strings.CutSuffix(accountLabel, r2EndpointHostSuffix)
-	return found && isLowercaseAlphanumericHyphenToken(accountLabel)
-}
-
-func isLowercaseAlphanumericHyphenToken(label string) bool {
-	if label == "" || !isLowercaseAlphanumeric(label[0]) || !isLowercaseAlphanumeric(label[len(label)-1]) {
-		return false
-	}
-
-	for index := 1; index < len(label)-1; index++ {
-		character := label[index]
-		if !isLowercaseAlphanumeric(character) && character != '-' {
-			return false
-		}
-	}
-
-	return true
-}
-
-func isLowercaseAlphanumeric(character byte) bool {
-	return character >= 'a' && character <= 'z' || character >= '0' && character <= '9'
 }

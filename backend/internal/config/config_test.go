@@ -11,12 +11,12 @@ import (
 
 const (
 	portEnvKey              = "PORT"
-	r2EndpointEnvKey        = "R2_ENDPOINT"
+	r2AccountIDEnvKey       = "R2_ACCOUNT_ID"
 	r2AccessKeyIDEnvKey     = "R2_ACCESS_KEY_ID"
 	r2SecretAccessKeyEnvKey = "R2_SECRET_ACCESS_KEY"
 	r2BucketEnvKey          = "R2_BUCKET"
 
-	validR2Endpoint        = "https://0123456789abcdef0123456789abcdef.r2.cloudflarestorage.com"
+	validR2AccountID       = "0123456789abcdef0123456789abcdef"
 	validR2AccessKeyID     = " synthetic-access-key-id "
 	validR2SecretAccessKey = " synthetic-secret-access-key "
 	validR2Bucket          = "metadata-scrubber-test"
@@ -103,10 +103,33 @@ func TestLoadReturnsCompleteR2ConfigurationUnchanged(t *testing.T) {
 
 	require.NoError(t, err)
 	require.Equal(t, 3000, cfg.Port)
-	require.Equal(t, validR2Endpoint, cfg.R2Endpoint)
+	require.Equal(t, validR2AccountID, cfg.R2AccountID)
 	require.Equal(t, validR2AccessKeyID, cfg.R2AccessKeyID)
 	require.Equal(t, validR2SecretAccessKey, cfg.R2SecretAccessKey)
 	require.Equal(t, validR2Bucket, cfg.R2Bucket)
+}
+
+func TestR2EndpointFixesSchemeAndHostAroundAccountID(t *testing.T) {
+	cfg := config.Config{R2AccountID: validR2AccountID}
+
+	require.Equal(
+		t,
+		"https://0123456789abcdef0123456789abcdef.r2.cloudflarestorage.com",
+		cfg.R2Endpoint(),
+	)
+}
+
+func TestLoadAcceptsAnyNonblankBucketName(t *testing.T) {
+	for _, bucket := range []string{"my_bucket", "My.Bucket", "ab"} {
+		t.Run(bucket, func(t *testing.T) {
+			setValidR2Environment(t)
+			t.Setenv(r2BucketEnvKey, bucket)
+
+			_, err := config.Load()
+
+			require.NoError(t, err)
+		})
+	}
 }
 
 func TestLoadRejectsAbsentOrBlankR2Values(t *testing.T) {
@@ -114,7 +137,7 @@ func TestLoadRejectsAbsentOrBlankR2Values(t *testing.T) {
 		environmentKey string
 		fieldName      string
 	}{
-		{environmentKey: r2EndpointEnvKey, fieldName: "R2Endpoint"},
+		{environmentKey: r2AccountIDEnvKey, fieldName: "R2AccountID"},
 		{environmentKey: r2AccessKeyIDEnvKey, fieldName: "R2AccessKeyID"},
 		{environmentKey: r2SecretAccessKeyEnvKey, fieldName: "R2SecretAccessKey"},
 		{environmentKey: r2BucketEnvKey, fieldName: "R2Bucket"},
@@ -159,10 +182,10 @@ func TestLoadDoesNotDiscloseConfigurationValuesInErrors(t *testing.T) {
 			name: "validation failure",
 			configureFail: func(t *testing.T) {
 				t.Helper()
-				t.Setenv(r2EndpointEnvKey, "https://config-disclosure.example")
+				t.Setenv(portEnvKey, "70000")
 			},
 			errorCategory:          "invalid configuration",
-			configuredFailureValue: "https://config-disclosure.example",
+			configuredFailureValue: "70000",
 		},
 		{
 			name: "parse failure",
@@ -181,7 +204,7 @@ func TestLoadDoesNotDiscloseConfigurationValuesInErrors(t *testing.T) {
 
 			require.Error(t, err)
 			require.ErrorContains(t, err, testCase.errorCategory)
-			require.NotContains(t, err.Error(), validR2Endpoint)
+			require.NotContains(t, err.Error(), validR2AccountID)
 			require.NotContains(t, err.Error(), validR2AccessKeyID)
 			require.NotContains(t, err.Error(), validR2SecretAccessKey)
 			require.NotContains(t, err.Error(), validR2Bucket)
@@ -204,7 +227,7 @@ func loadConfigWithPort(t *testing.T, port string) (config.Config, error) {
 func setValidR2Environment(t *testing.T) {
 	t.Helper()
 
-	t.Setenv(r2EndpointEnvKey, validR2Endpoint)
+	t.Setenv(r2AccountIDEnvKey, validR2AccountID)
 	t.Setenv(r2AccessKeyIDEnvKey, validR2AccessKeyID)
 	t.Setenv(r2SecretAccessKeyEnvKey, validR2SecretAccessKey)
 	t.Setenv(r2BucketEnvKey, validR2Bucket)
