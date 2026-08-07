@@ -85,9 +85,18 @@ func TestScrubRejectsMissingFile(t *testing.T) {
 	require.Equal(t, `missing or invalid "file" form field`, errorMessage(t, recorder), "Scrub error message")
 }
 
-func TestScrubRejectsOversizedUpload(t *testing.T) {
-	// The upload cap trips inside FormFile, so an oversized upload collapses
-	// into the missing-file response rather than a 413.
+func TestScrubAcceptsExactUploadLimitIncludingMultipartFraming(t *testing.T) {
+	require.Equal(t, 10_000_000, maxUploadSize)
+	pdfBytes := padUploadToSize(t, readScrubbablePDF(t), maxUploadSize)
+	recorder := httptest.NewRecorder()
+
+	Scrub(recorder, newMultipartFileRequest(t, "report.pdf", pdfBytes))
+
+	require.Equal(t, http.StatusOK, recorder.Code, "Scrub status; body: %s", recorder.Body.String())
+	require.NotEmpty(t, recorder.Body.Bytes())
+}
+
+func TestScrubRejectsFirstByteOverUploadLimit(t *testing.T) {
 	recorder := httptest.NewRecorder()
 	Scrub(recorder, newMultipartFileRequest(t, "report.pdf", make([]byte, maxUploadSize+1)))
 
@@ -113,6 +122,18 @@ func TestScrubReportsScrubFailure(t *testing.T) {
 
 	message := errorMessage(t, recorder)
 	require.True(t, strings.HasPrefix(message, "could not scrub file: "), "Scrub error message = %q", message)
+}
+
+func padUploadToSize(t *testing.T, body []byte, size int) []byte {
+	t.Helper()
+	require.LessOrEqual(t, len(body), size)
+
+	paddedBody := make([]byte, size)
+	copy(paddedBody, body)
+	for index := len(body); index < len(paddedBody); index++ {
+		paddedBody[index] = ' '
+	}
+	return paddedBody
 }
 
 func readScrubbablePDF(t *testing.T) []byte {
