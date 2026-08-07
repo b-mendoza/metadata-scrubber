@@ -14,6 +14,7 @@ import (
 	"time"
 	"unicode/utf8"
 	"github.com/pdfcpu/pdfcpu/pkg/api"
+	"github.com/pdfcpu/pdfcpu/pkg/pdfcpu"
 	"github.com/pdfcpu/pdfcpu/pkg/pdfcpu/model"
 	"github.com/pdfcpu/pdfcpu/pkg/pdfcpu/types"
 	"github.com/stretchr/testify/require"
@@ -835,5 +836,558 @@ func requireMetadataStreamCachesCleared(t *testing.T, context *model.Context) {
 		require.NotEmpty(t, stream.Raw)
 	}
 	require.Positive(t, metadataStreamCount)
+}
+
+
+func TestCleanPDFRejectsInvalidPDFWithNoOutput(t *testing.T) {
+	DisableConfigDir()
+
+	outputBytes, err := CleanPDF([]byte("not a pdf"))
+
+	require.Error(t, err)
+	require.Nil(t, outputBytes)
+}
+
+
+func TestCleanPDFRemovesEveryInspectedTargetAndVerifiesOutput(t *testing.T) {
+	DisableConfigDir()
+	inputBytes, metadata := buildMetadataRichPDF(t)
+	inputContext := assertValidPDF(t, inputBytes)
+	require.Equal(t, 2, inputContext.PageCount)
+
+	inputFields, err := InspectPDF(inputBytes, PublicInput)
+	require.NoError(t, err)
+	require.Len(t, inputFields, 13)
+
+	outputBytes, err := CleanPDF(inputBytes)
+	require.NoError(t, err)
+	require.NotEqual(t, inputBytes, outputBytes)
+
+	outputContext := assertValidPDF(t, outputBytes)
+	require.Equal(t, inputContext.PageCount, outputContext.PageCount)
+	verificationFields, err := InspectPDF(outputBytes, PostWriteVerification)
+	require.NoError(t, err)
+	require.Empty(t, verificationFields)
+
+	publicOutputFields, err := InspectPDF(outputBytes, PublicInput)
+	require.NoError(t, err)
+	require.Equal(t, []string{"info.creation_date", "info.mod_date", "info.producer"}, fieldNames(publicOutputFields))
+	for _, field := range publicOutputFields {
+		require.Equal(t, ActionReplace, field.Action)
+	}
+
+	requireNoOriginalMarkers(t, outputBytes,
+		metadata.title,
+		metadata.author,
+		metadata.producer,
+		metadata.customValue,
+		"catalog-xmp-marker",
+		"page-xmp-marker",
+		"nested-xmp-marker",
+	)
+	contentByPage := extractedPageContent(t, outputContext)
+	require.Contains(t, contentByPage[1], "Synthetic readable content page one")
+	require.Contains(t, contentByPage[2], "Synthetic readable content page two")
+}
+
+
+func TestCleanPDFReturnsCleanPDFWithoutRewriting(t *testing.T) {
+	DisableConfigDir()
+	work := newObservedPDFWork()
+	inputBytes := buildCleanPDF(t)
+
+	fields, err := InspectPDF(inputBytes, PublicInput)
+	require.NoError(t, err)
+	require.Empty(t, fields)
+
+	outputBytes, err := work.clean(inputBytes)
+	require.NoError(t, err)
+	require.Equal(t, inputBytes, outputBytes)
+	require.Zero(t, work.mutations)
+	require.Zero(t, work.writes)
+	require.Zero(t, work.verifications)
+}
+
+
+func TestCleanPDFReturnsNilOutputWhenPostWriteVerificationFails(t *testing.T) {
+	DisableConfigDir()
+	work := newObservedPDFWork()
+	work.verifyError = errors.New("synthetic verification failure")
+	inputBytes := buildPDFWithInfo(t, map[string]string{"Title": pdfString("verification failure")})
+
+	outputBytes, err := work.clean(inputBytes)
+
+	require.Error(t, err)
+	require.Nil(t, outputBytes)
+	require.Equal(t, 1, work.mutations)
+	require.Equal(t, 1, work.writes)
+	require.Equal(t, 1, work.verifications)
+}
+
+
+func TestCleanPDFReturnsNilOutputWhenWriteFails(t *testing.T) {
+	DisableConfigDir()
+	work := newObservedPDFWork()
+	work.writeError = errors.New("synthetic write failure")
+	inputBytes := buildPDFWithInfo(t, map[string]string{"Title": pdfString("write failure")})
+
+	outputBytes, err := work.clean(inputBytes)
+
+	require.Error(t, err)
+	require.Nil(t, outputBytes)
+	require.Equal(t, 1, work.mutations)
+	require.Equal(t, 1, work.writes)
+	require.Zero(t, work.verifications)
+}
+
+
+func TestCleanPDFRewritesPublicNeutralLookingTrio(t *testing.T) {
+	DisableConfigDir()
+	work := newObservedPDFWork()
+	date := "D:20260102030405+00'00'"
+	inputBytes := buildPDFWithInfo(t, map[string]string{
+		"Producer":     pdfString("pdfcpu " + model.VersionStr),
+		"CreationDate": pdfString(date),
+		"ModDate":      pdfString(date),
+	})
+
+	outputBytes, err := work.clean(inputBytes)
+
+	require.NoError(t, err)
+	require.NotEqual(t, inputBytes, outputBytes)
+	require.Equal(t, 1, work.mutations)
+	require.Equal(t, 1, work.writes)
+	require.Equal(t, 1, work.verifications)
+	verificationFields, err := InspectPDF(outputBytes, PostWriteVerification)
+	require.NoError(t, err)
+	require.Empty(t, verificationFields)
+}
+
+
+func TestCleanPDFUsesBoundedConfigurationForPostWriteVerification(t *testing.T) {
+	DisableConfigDir()
+	oversizedPDF := buildPDFWithContent(t, strings.Repeat("x", int(maxPDFStreamBytes)+1))
+	work := newObservedPDFWork()
+	work.writeOutput = oversizedPDF
+	inputBytes := buildPDFWithInfo(t, map[string]string{"Title": pdfString("verify me")})
+
+	outputBytes, err := work.clean(inputBytes)
+
+	require.Error(t, err)
+	require.Nil(t, outputBytes)
+	require.Equal(t, 1, work.mutations)
+	require.Equal(t, 1, work.writes)
+	require.Equal(t, 1, work.verifications)
+}
+
+
+func TestCleanPDFUsesBoundedConfigurationForWriting(t *testing.T) {
+	DisableConfigDir()
+	work := newObservedPDFWork()
+	inputBytes := buildPDFWithInfo(t, map[string]string{"Title": pdfString("write me")})
+
+	outputBytes, err := work.clean(inputBytes)
+
+	require.NoError(t, err)
+	require.NotNil(t, outputBytes)
+	require.Equal(t, 1, work.writes)
+	require.Equal(t, []model.ResourceLimits{boundedPDFConfiguration().Limits}, work.writeLimits)
+}
+
+
+func TestInspectPDFEnforcesAggregateSummaryBudgetAtomically(t *testing.T) {
+	DisableConfigDir()
+	work := newObservedPDFWork()
+	entries := make(map[string]string, maxInspectionFields)
+	for index := range maxInspectionFields {
+		entries[fmt.Sprintf("Custom%03d", index)] = pdfString(strings.Repeat("v", maxFieldPreviewBytes+1))
+	}
+	pdfBytes := buildPDFWithInfo(t, entries)
+
+	fields, err := InspectPDF(pdfBytes, PublicInput)
+	requireInspectionLimit(t, fields, err)
+
+	outputBytes, err := work.clean(pdfBytes)
+	requireScrubLimit(t, outputBytes, err)
+	require.Zero(t, work.mutations)
+	require.Zero(t, work.writes)
+	require.Zero(t, work.verifications)
+}
+
+
+func TestInspectPDFEnforcesFieldCountAtomically(t *testing.T) {
+	DisableConfigDir()
+	work := newObservedPDFWork()
+
+	acceptedEntries := make(map[string]string, maxInspectionFields)
+	for index := range maxInspectionFields {
+		acceptedEntries[fmt.Sprintf("Custom%03d", index)] = pdfString("x")
+	}
+	acceptedFields, err := InspectPDF(buildPDFWithInfo(t, acceptedEntries), PublicInput)
+	require.NoError(t, err)
+	require.Len(t, acceptedFields, maxInspectionFields)
+
+	rejectedEntries := make(map[string]string, maxInspectionFields+1)
+	for index := range maxInspectionFields + 1 {
+		rejectedEntries[fmt.Sprintf("Custom%03d", index)] = pdfString("x")
+	}
+	rejectedPDF := buildPDFWithInfo(t, rejectedEntries)
+	fields, err := InspectPDF(rejectedPDF, PublicInput)
+	requireInspectionLimit(t, fields, err)
+
+	outputBytes, err := work.clean(rejectedPDF)
+	requireScrubLimit(t, outputBytes, err)
+	require.Zero(t, work.mutations)
+	require.Zero(t, work.writes)
+	require.Zero(t, work.verifications)
+}
+
+
+func TestInspectPDFRejectsEverySignedStructureBeforeMutationOrWriting(t *testing.T) {
+	DisableConfigDir()
+	testCases := []struct {
+		name     string
+		pdfBytes func(*testing.T) []byte
+	}{
+		{name: "signature dictionary", pdfBytes: func(t *testing.T) []byte { return buildSignedPDF(t, signedDictionary) }},
+		{name: "document timestamp dictionary", pdfBytes: func(t *testing.T) []byte { return buildSignedPDF(t, documentTimestampDictionary) }},
+		{name: "certification permission", pdfBytes: func(t *testing.T) []byte { return buildSignedPDF(t, certificationPermission) }},
+		{name: "usage rights permission", pdfBytes: func(t *testing.T) []byte { return buildSignedPDF(t, usageRightsPermission) }},
+		{name: "cached signed form state", pdfBytes: func(t *testing.T) []byte { return buildSignedPDF(t, cachedSignedForm) }},
+	}
+	for _, testCase := range testCases {
+		t.Run(testCase.name, func(t *testing.T) {
+			pdfBytes := testCase.pdfBytes(t)
+			work := newObservedPDFWork()
+
+			fields, inspectErr := InspectPDF(pdfBytes, PublicInput)
+			outputBytes, scrubErr := work.clean(pdfBytes)
+
+			requireSignedPDF(t, fields, outputBytes, inspectErr, scrubErr)
+			require.Zero(t, work.mutations)
+			require.Zero(t, work.writes)
+			require.Zero(t, work.verifications)
+		})
+	}
+}
+
+
+func TestPDFByteAPIsEnforceAggregateInputLimit(t *testing.T) {
+	DisableConfigDir()
+	exactLimitPDF := padPDFToSize(t, buildCleanPDF(t), MaxInputBytes)
+
+	fields, err := InspectPDF(exactLimitPDF, PublicInput)
+	require.NoError(t, err)
+	require.Empty(t, fields)
+
+	outputBytes, err := CleanPDF(exactLimitPDF)
+	require.NoError(t, err)
+	require.Equal(t, exactLimitPDF, outputBytes)
+
+	overLimitPDF := append(exactLimitPDF, ' ')
+	fields, err = InspectPDF(overLimitPDF, PublicInput)
+	require.ErrorIs(t, err, ErrInputTooLarge)
+	require.Nil(t, fields)
+
+	outputBytes, err = CleanPDF(overLimitPDF)
+	require.ErrorIs(t, err, ErrInputTooLarge)
+	require.Nil(t, outputBytes)
+}
+
+
+func TestPDFPathsEnforceConfiguredStreamLimit(t *testing.T) {
+	DisableConfigDir()
+	work := newObservedPDFWork()
+	oversizedContent := strings.Repeat("x", int(maxPDFStreamBytes)+1)
+	pdfBytes := buildPDF(t, pdfFixture{
+		objects: map[int]string{
+			1: "<< /Type /Catalog /Pages 2 0 R >>",
+			2: "<< /Type /Pages /Kids [3 0 R] /Count 1 >>",
+			3: "<< /Type /Page /Parent 2 0 R /MediaBox [0 0 200 200] /Resources << >> /Contents 4 0 R >>",
+			4: streamObject(oversizedContent),
+		},
+		rootObjectNumber: 1,
+	})
+
+	defaultContext, defaultErr := api.ReadValidateAndOptimize(bytes.NewReader(pdfBytes), model.NewDefaultConfiguration())
+	require.NoError(t, defaultErr)
+	require.NotNil(t, defaultContext)
+
+	fields, inspectErr := InspectPDF(pdfBytes, PublicInput)
+	require.Error(t, inspectErr)
+	require.Nil(t, fields)
+
+	outputBytes, scrubErr := work.clean(pdfBytes)
+	require.Error(t, scrubErr)
+	require.Nil(t, outputBytes)
+
+	verificationErr := verifyScrubbedPDF(pdfBytes)
+	require.Error(t, verificationErr)
+	require.Zero(t, work.mutations)
+	require.Zero(t, work.writes)
+	require.Zero(t, work.verifications)
+}
+
+
+func TestPDFPathsRejectAggregateDecodedMetadataBudgetBeforeWriting(t *testing.T) {
+	DisableConfigDir()
+	const (
+		streamCount        = 24
+		decodedStreamBytes = 1 << 20
+	)
+	require.Greater(t, streamCount*decodedStreamBytes, maxDecodedMetadataBytes)
+	pdfBytes := buildPDFWithCompressedMetadataStreams(t, streamCount, decodedStreamBytes)
+	work := newObservedPDFWork()
+
+	fields, inspectErr := InspectPDF(pdfBytes, PublicInput)
+	outputBytes, scrubErr := work.clean(pdfBytes)
+
+	requireInspectionLimit(t, fields, inspectErr)
+	requireScrubLimit(t, outputBytes, scrubErr)
+	require.Zero(t, work.mutations)
+	require.Zero(t, work.writes)
+	require.Zero(t, work.verifications)
+}
+
+
+func TestPDFPathsRejectOversizedCompressedCatalogMetadataBeforeValidation(t *testing.T) {
+	DisableConfigDir()
+	decodedBytes := maxDecodedMetadataBytes + 1
+	pdfBytes := buildPDFWithCompressedCatalogMetadata(t, oversizedXMP(t, decodedBytes))
+	require.Less(t, len(pdfBytes), MaxInputBytes)
+	work := newObservedPDFWork()
+	validationCalls := 0
+	originalValidatePDFContext := validatePDFContext
+	validatePDFContext = func(context *model.Context) error {
+		validationCalls++
+		return originalValidatePDFContext(context)
+	}
+	t.Cleanup(func() { validatePDFContext = originalValidatePDFContext })
+
+	fields, inspectErr := InspectPDF(pdfBytes, PublicInput)
+	outputBytes, scrubErr := CleanPDF(pdfBytes)
+	observedOutputBytes, observedScrubErr := work.clean(pdfBytes)
+
+	requireInspectionLimit(t, fields, inspectErr)
+	requireScrubLimit(t, outputBytes, scrubErr)
+	requireScrubLimit(t, observedOutputBytes, observedScrubErr)
+	require.Zero(t, validationCalls)
+	require.Zero(t, work.mutations)
+	require.Zero(t, work.writes)
+	require.Zero(t, work.verifications)
+}
+
+
+func TestPDFPathsRejectUndecodableMetadataAtomically(t *testing.T) {
+	DisableConfigDir()
+	testCases := []struct {
+		name     string
+		pdfBytes func(*testing.T) []byte
+	}{
+		{name: "unsupported Info value", pdfBytes: func(t *testing.T) []byte {
+			return buildPDFWithInfo(t, map[string]string{"Custom": "[1 2]"})
+		}},
+		{name: "non UTF-8 metadata stream", pdfBytes: func(t *testing.T) []byte {
+			return buildPDFWithInfoAndRawMetadata(t, map[string]string{}, string([]byte{0xff, 0xfe}))
+		}},
+	}
+	for _, testCase := range testCases {
+		t.Run(testCase.name, func(t *testing.T) {
+			pdfBytes := testCase.pdfBytes(t)
+			work := newObservedPDFWork()
+
+			fields, inspectErr := InspectPDF(pdfBytes, PublicInput)
+			outputBytes, scrubErr := work.clean(pdfBytes)
+
+			require.Error(t, inspectErr)
+			require.Nil(t, fields)
+			require.Error(t, scrubErr)
+			require.Nil(t, outputBytes)
+			require.Zero(t, work.mutations)
+			require.Zero(t, work.writes)
+			require.Zero(t, work.verifications)
+		})
+	}
+}
+
+
+func assertValidPDF(t *testing.T, pdfBytes []byte) *model.Context {
+	t.Helper()
+
+	context, err := api.ReadValidateAndOptimize(bytes.NewReader(pdfBytes), boundedPDFConfiguration())
+	require.NoError(t, err)
+
+	return context
+}
+
+
+func buildSignedPDF(t *testing.T, variant signedPDFVariant) []byte {
+	t.Helper()
+
+	objects := map[int]string{
+		1: "<< /Type /Catalog /Pages 2 0 R >>",
+		2: "<< /Type /Pages /Kids [3 0 R] /Count 1 >>",
+		3: "<< /Type /Page /Parent 2 0 R /MediaBox [0 0 200 200] /Resources << >> /Contents 4 0 R >>",
+		4: streamObject("BT 20 100 Td (Signed synthetic page) Tj ET"),
+	}
+
+	switch variant {
+	case signedDictionary:
+		objects[1] = "<< /Type /Catalog /Pages 2 0 R /AcroForm << /Fields [5 0 R] /SigFlags 3 >> >>"
+		objects[3] = "<< /Type /Page /Parent 2 0 R /MediaBox [0 0 200 200] /Resources << >> /Contents 4 0 R /Annots [5 0 R] >>"
+		objects[5] = "<< /Type /Annot /Subtype /Widget /FT /Sig /T (Signature1) /Rect [0 0 0 0] /V 6 0 R /P 3 0 R >>"
+		objects[6] = "<< /Type /Sig /Filter /Adobe.PPKLite /SubFilter /adbe.pkcs7.detached /ByteRange [0 0 0 0] /Contents <> /M (D:20260102030405+00'00') >>"
+	case documentTimestampDictionary:
+		objects[1] = "<< /Type /Catalog /Pages 2 0 R /SyntheticTimestamp 5 0 R >>"
+		objects[5] = "<< /Type /DocTimeStamp /Filter /Adobe.PPKLite >>"
+	case certificationPermission:
+		objects[1] = "<< /Type /Catalog /Pages 2 0 R /Perms << /DocMDP 5 0 R >> >>"
+		objects[5] = "<< /Filter /Adobe.PPKLite >>"
+	case usageRightsPermission:
+		objects[1] = "<< /Type /Catalog /Pages 2 0 R /Perms << /UR3 5 0 R >> >>"
+		objects[5] = "<< /Filter /Adobe.PPKLite >>"
+	case cachedSignedForm:
+		objects[1] = "<< /Type /Catalog /Pages 2 0 R /AcroForm << /Fields [5 0 R] >> >>"
+		objects[3] = "<< /Type /Page /Parent 2 0 R /MediaBox [0 0 200 200] /Resources << >> /Contents 4 0 R /Annots [5 0 R] >>"
+		objects[5] = "<< /Type /Annot /Subtype /Widget /FT /Sig /T (Signature1) /Rect [0 0 0 0] /V 6 0 R /P 3 0 R >>"
+		objects[6] = "<< /Filter /Adobe.PPKLite /SubFilter /adbe.pkcs7.detached /ByteRange [0 0 0 0] /Contents <> >>"
+	}
+
+	return buildPDF(t, pdfFixture{objects: objects, rootObjectNumber: 1})
+}
+
+
+func extractedPageContent(t *testing.T, context *model.Context) map[int]string {
+	t.Helper()
+
+	contentByPage := make(map[int]string, context.PageCount)
+	for pageNumber := 1; pageNumber <= context.PageCount; pageNumber++ {
+		contentReader, err := pdfcpu.ExtractPageContent(context, pageNumber)
+		require.NoError(t, err)
+		contentBytes, err := io.ReadAll(contentReader)
+		require.NoError(t, err)
+		contentByPage[pageNumber] = string(contentBytes)
+	}
+
+	return contentByPage
+}
+
+
+func newObservedPDFWork() *observedPDFWork {
+	return &observedPDFWork{}
+}
+
+
+type observedPDFWork struct {
+	mutations     int
+	writes        int
+	verifications int
+	writeLimits   []model.ResourceLimits
+	writeError    error
+	verifyError   error
+	writeOutput   []byte
+}
+
+
+func oversizedXMP(t *testing.T, decodedBytes int) string {
+	t.Helper()
+
+	const prefix = `<x:xmpmeta xmlns:x="adobe:ns:meta/"><rdf:RDF xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"><rdf:Description>`
+	const suffix = `</rdf:Description></rdf:RDF></x:xmpmeta>`
+	require.Greater(t, decodedBytes, len(prefix)+len(suffix))
+
+	var metadata strings.Builder
+	metadata.Grow(decodedBytes)
+	metadata.WriteString(prefix)
+	metadata.WriteString(strings.Repeat("x", decodedBytes-len(prefix)-len(suffix)))
+	metadata.WriteString(suffix)
+	return metadata.String()
+}
+
+
+func padPDFToSize(t *testing.T, pdfBytes []byte, size int) []byte {
+	t.Helper()
+	require.LessOrEqual(t, len(pdfBytes), size)
+
+	paddedPDF := make([]byte, size)
+	copy(paddedPDF, pdfBytes)
+	for index := len(pdfBytes); index < len(paddedPDF); index++ {
+		paddedPDF[index] = ' '
+	}
+	return paddedPDF
+}
+
+
+func requireInspectionLimit(t *testing.T, fields []Field, err error) {
+	t.Helper()
+
+	require.ErrorIs(t, err, ErrInspectionLimit)
+	require.Nil(t, fields)
+}
+
+
+func requireNoOriginalMarkers(t *testing.T, outputBytes []byte, markers ...string) {
+	t.Helper()
+
+	for _, marker := range markers {
+		require.NotContains(t, string(outputBytes), marker)
+	}
+}
+
+
+func requireScrubLimit(t *testing.T, outputBytes []byte, err error) {
+	t.Helper()
+
+	require.ErrorIs(t, err, ErrInspectionLimit)
+	require.Nil(t, outputBytes)
+}
+
+
+func requireSignedPDF(t *testing.T, fields []Field, outputBytes []byte, inspectErr error, scrubErr error) {
+	t.Helper()
+
+	require.ErrorIs(t, inspectErr, ErrSignedPDF)
+	require.Nil(t, fields)
+	require.ErrorIs(t, scrubErr, ErrSignedPDF)
+	require.Nil(t, outputBytes)
+}
+
+
+type signedPDFVariant int
+
+const (
+	signedDictionary signedPDFVariant = iota
+	documentTimestampDictionary
+	certificationPermission
+	usageRightsPermission
+	cachedSignedForm
+)
+
+func (work *observedPDFWork) clean(inputBytes []byte) ([]byte, error) {
+	return cleanPDF(inputBytes, cleanPDFOperations{
+		remove: func(context *model.Context, analysis *pdfAnalysis) {
+			work.mutations++
+			removeAnalyzedMetadata(context, analysis)
+		},
+		write: func(context *model.Context, writer io.Writer) error {
+			work.writes++
+			work.writeLimits = append(work.writeLimits, context.Conf.Limits)
+			if work.writeError != nil {
+				return work.writeError
+			}
+			if work.writeOutput != nil {
+				_, err := writer.Write(work.writeOutput)
+				return err
+			}
+			return api.WriteContext(context, writer)
+		},
+		verify: func(outputBytes []byte) error {
+			work.verifications++
+			if work.verifyError != nil {
+				return work.verifyError
+			}
+			return verifyScrubbedPDF(outputBytes)
+		},
+	})
 }
 
