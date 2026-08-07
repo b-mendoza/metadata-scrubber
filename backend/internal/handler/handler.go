@@ -63,7 +63,6 @@ func Scrub(w http.ResponseWriter, r *http.Request) {
 
 	w.Header().Set(header.ContentType, mediatype.OctetStream)
 	w.Header().Set(header.ContentDisposition, contentDisposition(fileHeader.Filename))
-	w.WriteHeader(http.StatusOK)
 	_, _ = w.Write(cleanedBytes)
 }
 
