@@ -5,7 +5,10 @@ import (
 	"os"
 	"reflect"
 	"testing"
+	"time"
 	"github.com/pdfcpu/pdfcpu/pkg/api"
+	"github.com/pdfcpu/pdfcpu/pkg/pdfcpu/model"
+	"github.com/pdfcpu/pdfcpu/pkg/pdfcpu/types"
 	"github.com/stretchr/testify/require"
 )
 
@@ -97,5 +100,64 @@ func structFieldNames(structType reflect.Type) []string {
 		names[index] = structType.Field(index).Name
 	}
 	return names
+}
+
+
+func TestCachedSignatureVariantsAreClassifiedAsSigned(t *testing.T) {
+	testCases := []struct {
+		name    string
+		context *model.Context
+	}{
+		{name: "signature flag", context: signatureContext(func(context *model.Context) { context.SignatureExist = true })},
+		{name: "append only flag", context: signatureContext(func(context *model.Context) { context.AppendOnly = true })},
+		{name: "usage rights dictionary", context: signatureContext(func(context *model.Context) { context.URSignature = types.Dict{"Filter": types.Name("Synthetic")} })},
+		{name: "certified signature object", context: signatureContext(func(context *model.Context) { context.CertifiedSigObjNr = 9 })},
+		{name: "trusted document timestamp", context: signatureContext(func(context *model.Context) { context.DTS = time.Unix(1, 0) })},
+		{name: "signed cached signature", context: signatureContext(func(context *model.Context) {
+			context.Signatures = map[int]map[int]model.Signature{0: {9: {Signed: true}}}
+		})},
+	}
+	for _, testCase := range testCases {
+		t.Run(testCase.name, func(t *testing.T) {
+			require.True(t, pdfHasCachedSignature(testCase.context))
+		})
+	}
+}
+
+
+func TestSummaryBuilderAcceptsExactAggregateBudgetAndRejectsNextByte(t *testing.T) {
+	const fieldBytes = len("n") + len("l") + len("v") + len(ActionRemove) + len("1")
+
+	acceptedBuilder := &summaryBuilder{totalBytes: maxInspectionBytes - fieldBytes}
+	require.NoError(t, acceptedBuilder.add("n", "l", "v", ActionRemove))
+	require.Equal(t, maxInspectionBytes, acceptedBuilder.totalBytes)
+	require.Len(t, acceptedBuilder.fields, 1)
+
+	rejectedBuilder := &summaryBuilder{totalBytes: maxInspectionBytes - fieldBytes + 1}
+	err := rejectedBuilder.add("n", "l", "v", ActionRemove)
+	require.ErrorIs(t, err, ErrInspectionLimit)
+	require.Empty(t, rejectedBuilder.fields)
+	require.Equal(t, maxInspectionBytes-fieldBytes+1, rejectedBuilder.totalBytes)
+}
+
+
+func TestSummaryBuilderEnforcesDecodedMetadataBudgetExactly(t *testing.T) {
+	acceptedBuilder := &summaryBuilder{decodedMetadataBytes: maxDecodedMetadataBytes - 1}
+	require.NoError(t, acceptedBuilder.addMetadataBytes("n", "l", []byte("x"), ActionRemove))
+	require.Equal(t, int64(maxDecodedMetadataBytes), acceptedBuilder.decodedMetadataBytes)
+	require.Len(t, acceptedBuilder.fields, 1)
+
+	rejectedBuilder := &summaryBuilder{decodedMetadataBytes: maxDecodedMetadataBytes}
+	err := rejectedBuilder.addMetadataBytes("n", "l", []byte("x"), ActionRemove)
+	require.ErrorIs(t, err, ErrInspectionLimit)
+	require.Empty(t, rejectedBuilder.fields)
+	require.Equal(t, int64(maxDecodedMetadataBytes), rejectedBuilder.decodedMetadataBytes)
+}
+
+
+func signatureContext(apply func(*model.Context)) *model.Context {
+	context := &model.Context{XRefTable: &model.XRefTable{}}
+	apply(context)
+	return context
 }
 

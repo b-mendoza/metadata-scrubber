@@ -4,9 +4,12 @@ package scrub
 import (
 	"bytes"
 	"errors"
+	"fmt"
 	"path/filepath"
 	"strings"
 	"github.com/pdfcpu/pdfcpu/pkg/api"
+	"github.com/pdfcpu/pdfcpu/pkg/pdfcpu/model"
+	"github.com/pdfcpu/pdfcpu/pkg/pdfcpu/types"
 )
 
 const (
@@ -64,6 +67,32 @@ var (
 // directory. Call once at startup before any PDF inspection or scrub.
 func DisableConfigDir() {
 	api.DisableConfigDir()
+}
+
+const maxPDFDecodeBytes int64 = 20_000_000
+
+func (origin InspectionOrigin) valid() bool {
+	return origin == PublicInput || origin == PostWriteVerification
+}
+
+func infoObjectValue(context *model.Context, object types.Object) (string, error) {
+	dereferencedObject, err := context.Dereference(object)
+	if err != nil {
+		return "", err
+	}
+
+	switch value := dereferencedObject.(type) {
+	case types.StringLiteral:
+		return types.StringLiteralToString(value)
+	case types.HexLiteral:
+		return types.HexLiteralToString(value)
+	case types.Name:
+		return types.DecodeName(value.Value())
+	case types.Boolean, types.Integer, types.Float:
+		return value.PDFString(), nil
+	default:
+		return "", fmt.Errorf("unsupported Info value type %T", dereferencedObject)
+	}
 }
 
 const pdfExtension = ".pdf"
