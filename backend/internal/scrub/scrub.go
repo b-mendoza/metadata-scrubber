@@ -1,4 +1,4 @@
-// Package scrub removes metadata from uploaded files.
+// Package scrub inspects and removes metadata from PDF bytes.
 package scrub
 
 import (
@@ -6,21 +6,70 @@ import (
 	"errors"
 	"path/filepath"
 	"strings"
-
 	"github.com/pdfcpu/pdfcpu/pkg/api"
 )
+
+const (
+	// MaxInputBytes is the aggregate PDF input boundary shared by every caller.
+	MaxInputBytes = 10_000_000
+
+	// Inspection summaries stay small enough for synchronous responses, while PDF
+	// limits assume a 10 MB input and cap decoded/image amplification separately.
+	maxFieldPreviewBytes    = 256
+	maxInspectionFields     = 128
+	maxInspectionBytes      = 32 << 10
+	maxDecodedMetadataBytes = 20_000_000
+)
+
+// InspectionOrigin identifies whether PDF bytes came from public input or from
+// this package's just-completed write path.
+type InspectionOrigin string
+
+const (
+	// PublicInput inspects untrusted uploaded PDF bytes.
+	PublicInput InspectionOrigin = "public-input"
+	// PostWriteVerification inspects bytes just written by CleanPDF.
+	PostWriteVerification InspectionOrigin = "post-write-verification"
+)
+
+// FieldAction describes how CleanPDF handles an inspected metadata field.
+type FieldAction string
+
+const (
+	// ActionRemove means the field is deleted.
+	ActionRemove FieldAction = "remove"
+	// ActionReplace means pdfcpu replaces the field with a neutral value.
+	ActionReplace FieldAction = "replace"
+)
+
+// Field is a bounded, user-reviewable description of one PDF metadata field.
+type Field struct {
+	Name             string
+	Label            string
+	Preview          string
+	OriginalByteSize int
+	Action           FieldAction
+}
+
+var (
+	// ErrInputTooLarge classifies PDF inputs above the aggregate product boundary.
+	ErrInputTooLarge = errors.New("PDF input exceeds 10 MB limit")
+	// ErrSignedPDF classifies a structurally signed PDF that must not be rewritten.
+	ErrSignedPDF = errors.New("signed PDF is unsupported")
+	// ErrInspectionLimit classifies metadata inventories too large to report completely.
+	ErrInspectionLimit = errors.New("PDF metadata exceeds inspection limits")
+)
+
+// DisableConfigDir prevents pdfcpu from creating or reading a per-user config
+// directory. Call once at startup before any PDF inspection or scrub.
+func DisableConfigDir() {
+	api.DisableConfigDir()
+}
 
 const pdfExtension = ".pdf"
 
 // ErrUnsupportedType is returned when a file's extension has no scrubber wired up.
 var ErrUnsupportedType = errors.New("unsupported file type")
-
-// DisableConfigDir stops pdfcpu from creating a config dir under $HOME on first
-// use, which panics on a read-only/scratch rootfs. RemoveProperties needs no
-// config, so it is safe to disable. Call once at startup before any scrub.
-func DisableConfigDir() {
-	api.DisableConfigDir()
-}
 
 // Scrub dispatches on file extension and returns the metadata-free bytes.
 // Today only PDF is wired up; add DOCX/TXT branches here as you build out.
