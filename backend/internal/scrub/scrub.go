@@ -8,6 +8,7 @@ import (
 	"path/filepath"
 	"strings"
 	"github.com/pdfcpu/pdfcpu/pkg/api"
+	"github.com/pdfcpu/pdfcpu/pkg/pdfcpu"
 	"github.com/pdfcpu/pdfcpu/pkg/pdfcpu/model"
 	"github.com/pdfcpu/pdfcpu/pkg/pdfcpu/types"
 )
@@ -93,6 +94,83 @@ func infoObjectValue(context *model.Context, object types.Object) (string, error
 	default:
 		return "", fmt.Errorf("unsupported Info value type %T", dereferencedObject)
 	}
+}
+
+const (
+	maxPDFStreamBytes       int64 = MaxInputBytes
+	maxPDFImagePixels       int64 = 10_000_000
+	maxPDFImageBytes        int64 = 40_000_000
+	maxPDFObjectCount             = 100_000
+	maxPDFObjectStreamCount       = 50_000
+	maxPDFObjectStreamFirst int64 = 2_000_000
+	maxPDFXRefEntries             = 100_000
+	maxPDFRecursionDepth          = 64
+)
+
+var (
+	// validatePDFContext is a narrow seam for proving preflight failures precede validation.
+	validatePDFContext = api.ValidateContext
+)
+
+func readPDF(inputBytes []byte) (*model.Context, error) {
+	if len(inputBytes) > MaxInputBytes {
+		return nil, ErrInputTooLarge
+	}
+
+	configuration := boundedPDFConfiguration()
+	context, err := api.ReadContext(bytes.NewReader(inputBytes), configuration)
+	if err != nil {
+		return nil, err
+	}
+
+	// pdfcpu v0.13.0 validation drops later parent links to an already-validated
+	// metadata stream. Preserve those links so inspection and removal stay symmetric.
+	metadataEntries, structurallySigned, err := snapshotMetadataEntries(context)
+	if err != nil {
+		return nil, err
+	}
+	if structurallySigned {
+		return nil, ErrSignedPDF
+	}
+	// pdfcpu v0.13.0 catalog validation calls StreamDict.Decode with its 512 MiB
+	// default. Decode every discovered metadata stream under our aggregate ceiling
+	// and keep the bounded content cached through validation.
+	if err := preflightMetadataEntries(context, metadataEntries); err != nil {
+		return nil, err
+	}
+	if err := validatePDFContext(context); err != nil {
+		return nil, err
+	}
+	restoreMetadataEntries(metadataEntries)
+	if configuration.Optimize {
+		if err := api.OptimizeContext(context); err != nil {
+			return nil, err
+		}
+	}
+	if err := pdfcpu.CacheFormFonts(context); err != nil {
+		return nil, err
+	}
+
+	return context, nil
+}
+
+func boundedPDFConfiguration() *model.Configuration {
+	configuration := model.NewDefaultConfiguration()
+	configuration.Cmd = model.REMOVEPROPERTIES
+	configuration.PostProcessValidate = true
+	configuration.Limits = model.ResourceLimits{
+		MaxStreamBytes:       maxPDFStreamBytes,
+		MaxDecodeBytes:       maxPDFDecodeBytes,
+		MaxImagePixels:       maxPDFImagePixels,
+		MaxImageBytes:        maxPDFImageBytes,
+		MaxObjectCount:       maxPDFObjectCount,
+		MaxObjectStreamCount: maxPDFObjectStreamCount,
+		MaxObjectStreamFirst: maxPDFObjectStreamFirst,
+		MaxXRefEntries:       maxPDFXRefEntries,
+		MaxRecursionDepth:    maxPDFRecursionDepth,
+	}
+
+	return configuration
 }
 
 const pdfExtension = ".pdf"
