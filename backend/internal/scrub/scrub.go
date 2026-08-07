@@ -5,6 +5,7 @@ import (
 	"bytes"
 	"errors"
 	"fmt"
+	"io"
 	"path/filepath"
 	"strings"
 	"github.com/pdfcpu/pdfcpu/pkg/api"
@@ -189,6 +190,48 @@ func InspectPDF(inputBytes []byte, origin InspectionOrigin) ([]Field, error) {
 	}
 
 	return analysis.fields, nil
+}
+
+type cleanPDFOperations struct {
+	remove func(*model.Context, *pdfAnalysis)
+	write  func(*model.Context, io.Writer) error
+	verify func([]byte) error
+}
+
+// CleanPDF removes supported metadata from PDF bytes.
+func CleanPDF(inputBytes []byte) ([]byte, error) {
+	return cleanPDF(inputBytes, cleanPDFOperations{
+		remove: removeAnalyzedMetadata,
+		write:  api.WriteContext,
+		verify: verifyScrubbedPDF,
+	})
+}
+
+func cleanPDF(inputBytes []byte, operations cleanPDFOperations) ([]byte, error) {
+	context, err := readPDF(inputBytes)
+	if err != nil {
+		return nil, err
+	}
+	analysis, err := analyzePDF(context, PublicInput)
+	if err != nil {
+		return nil, err
+	}
+	if len(analysis.fields) == 0 {
+		return inputBytes, nil
+	}
+
+	operations.remove(context, analysis)
+	var output bytes.Buffer
+	if err := operations.write(context, &output); err != nil {
+		return nil, err
+	}
+
+	outputBytes := output.Bytes()
+	if err := operations.verify(outputBytes); err != nil {
+		return nil, err
+	}
+
+	return outputBytes, nil
 }
 
 const pdfExtension = ".pdf"
