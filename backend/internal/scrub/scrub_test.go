@@ -752,3 +752,88 @@ func requireValidUTF8Preview(t *testing.T, field Field) {
 	require.LessOrEqual(t, len(field.Preview), maxFieldPreviewBytes)
 }
 
+
+func TestAnalyzePDFReleasesDecodedMetadataStreamCaches(t *testing.T) {
+	DisableConfigDir()
+	const decodedStreamBytes = 1 << 20
+	context, err := readPDF(buildPDFWithCompressedMetadataStreams(t, 2, decodedStreamBytes))
+	require.NoError(t, err)
+	require.Equal(t, 2, primeMetadataStreamCaches(t, context, decodedStreamBytes))
+
+	analysis, err := analyzePDF(context, PublicInput)
+
+	require.NoError(t, err)
+	require.Len(t, analysis.fields, 2)
+	requireMetadataStreamCachesCleared(t, context)
+
+	removeAnalyzedMetadata(context, analysis)
+	var output bytes.Buffer
+	require.NoError(t, api.WriteContext(context, &output))
+	require.NoError(t, verifyScrubbedPDF(output.Bytes()))
+}
+
+
+func buildPDFWithCompressedMetadataStreams(t *testing.T, streamCount, decodedStreamBytes int) []byte {
+	t.Helper()
+
+	objects := map[int]string{
+		2: "<< /Type /Pages /Kids [3 0 R] /Count 1 >>",
+		3: "<< /Type /Page /Parent 2 0 R /MediaBox [0 0 200 200] /Resources << >> /Contents 4 0 R >>",
+		4: streamObject("BT 20 100 Td (Synthetic page) Tj ET"),
+	}
+	var catalog strings.Builder
+	catalog.WriteString("<< /Type /Catalog /Pages 2 0 R /SyntheticParents [")
+	for index := range streamCount {
+		parentObjectNumber := 5 + index*2
+		streamObjectNumber := parentObjectNumber + 1
+		_, err := fmt.Fprintf(&catalog, " %d 0 R", parentObjectNumber)
+		require.NoError(t, err)
+		objects[parentObjectNumber] = fmt.Sprintf("<< /Metadata %d 0 R >>", streamObjectNumber)
+		objects[streamObjectNumber] = compressedMetadataStreamObject(t, strings.Repeat("x", decodedStreamBytes))
+	}
+	catalog.WriteString(" ] >>")
+	objects[1] = catalog.String()
+
+	return buildPDF(t, pdfFixture{objects: objects, rootObjectNumber: 1})
+}
+
+
+func primeMetadataStreamCaches(t *testing.T, context *model.Context, decodedStreamBytes int) int {
+	t.Helper()
+
+	primed := 0
+	for _, entry := range context.Table {
+		if entry == nil || entry.Object == nil {
+			continue
+		}
+		stream, ok := entry.Object.(types.StreamDict)
+		if !ok || stream.Type() == nil || *stream.Type() != "Metadata" {
+			continue
+		}
+		stream.Content = bytes.Repeat([]byte("x"), decodedStreamBytes)
+		entry.Object = stream
+		primed++
+	}
+	return primed
+}
+
+
+func requireMetadataStreamCachesCleared(t *testing.T, context *model.Context) {
+	t.Helper()
+
+	metadataStreamCount := 0
+	for _, entry := range context.Table {
+		if entry == nil || entry.Object == nil {
+			continue
+		}
+		stream, ok := entry.Object.(types.StreamDict)
+		if !ok || stream.Type() == nil || *stream.Type() != "Metadata" {
+			continue
+		}
+		metadataStreamCount++
+		require.Nil(t, stream.Content)
+		require.NotEmpty(t, stream.Raw)
+	}
+	require.Positive(t, metadataStreamCount)
+}
+
