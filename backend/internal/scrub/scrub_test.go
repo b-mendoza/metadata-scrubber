@@ -98,6 +98,18 @@ func TestInspectPDFAppliesPreviewByteCeilingDeterministically(t *testing.T) {
 	}
 }
 
+func TestInspectPDFPreservesBackslashAndParenthesisCharacters(t *testing.T) {
+	DisableConfigDir()
+	const title = `back\slash (balanced) and lone ( parenthesis`
+	pdfBytes := buildPDFWithInfo(t, map[string]string{"Title": pdfString(title)})
+
+	fields, err := InspectPDF(pdfBytes, PublicInput)
+	require.NoError(t, err)
+	require.Len(t, fields, 1)
+	require.Equal(t, title, fields[0].Preview)
+	require.Equal(t, len(title), fields[0].OriginalByteSize)
+}
+
 func TestPDFPathsRejectAggregateDecodedMetadataBudgetBeforeWriting(t *testing.T) {
 	DisableConfigDir()
 	const (
@@ -1029,7 +1041,7 @@ func oversizedXMP(t *testing.T, decodedBytes int) string {
 }
 
 func pdfString(value string) string {
-	replacer := strings.NewReplacer(`\\`, `\\\\`, `(`, `\\(`, `)`, `\\)`)
+	replacer := strings.NewReplacer(`\`, `\\`, `(`, `\(`, `)`, `\)`)
 	return "(" + replacer.Replace(value) + ")"
 }
 
