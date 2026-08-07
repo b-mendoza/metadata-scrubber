@@ -1002,11 +1002,6 @@
     },
     {
       "files": ["src/**/*.ts?(x)", "lucide.d.ts"],
-      "globals": {
-        "AsyncDisposableStack": "readonly",
-        "DisposableStack": "readonly",
-        "SuppressedError": "readonly"
-      },
       "env": {
         "browser": true,
         "node": true
@@ -1020,11 +1015,6 @@
         "vite.config.ts",
         "vitest.config.ts"
       ],
-      "globals": {
-        "AsyncDisposableStack": "readonly",
-        "DisposableStack": "readonly",
-        "SuppressedError": "readonly"
-      },
       "env": {
         "node": true
       }
