@@ -162,7 +162,7 @@
       "error",
       {
         "variant": "modified",
-        "max": 10
+        "max": 4
       }
     ],
     "curly": ["error", "multi-line"],
