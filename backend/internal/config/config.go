@@ -7,6 +7,7 @@ import (
 
 	"github.com/caarlos0/env/v11"
 	"github.com/go-playground/validator/v10"
+	"github.com/go-playground/validator/v10/non-standard/validators"
 )
 
 const r2EndpointHostSuffix = ".r2.cloudflarestorage.com"
@@ -23,9 +24,9 @@ type Config struct {
 	// R2Endpoint is the canonical Cloudflare R2 production endpoint.
 	R2Endpoint string `env:"R2_ENDPOINT" validate:"r2_endpoint"`
 	// R2AccessKeyID identifies the R2 credential pair.
-	R2AccessKeyID string `env:"R2_ACCESS_KEY_ID" validate:"nonblank"`
+	R2AccessKeyID string `env:"R2_ACCESS_KEY_ID" validate:"notblank"`
 	// R2SecretAccessKey is the secret paired with R2AccessKeyID.
-	R2SecretAccessKey string `env:"R2_SECRET_ACCESS_KEY" validate:"nonblank"`
+	R2SecretAccessKey string `env:"R2_SECRET_ACCESS_KEY" validate:"notblank"`
 	// R2Bucket is the Cloudflare R2 bucket used by the backend.
 	R2Bucket string `env:"R2_BUCKET" validate:"r2_bucket"`
 }
@@ -47,7 +48,7 @@ func Load() (Config, error) {
 func newConfigValidator() *validator.Validate {
 	configValidator := validator.New(validator.WithRequiredStructEnabled())
 	for tag, validation := range map[string]validator.Func{
-		"nonblank":    validateNonblank,
+		"notblank":    validators.NotBlank,
 		"r2_bucket":   validateR2Bucket,
 		"r2_endpoint": validateR2Endpoint,
 	} {
@@ -57,10 +58,6 @@ func newConfigValidator() *validator.Validate {
 	}
 
 	return configValidator
-}
-
-func validateNonblank(field validator.FieldLevel) bool {
-	return strings.TrimSpace(field.Field().String()) != ""
 }
 
 // validateR2Endpoint pins where R2 credentials are sent: only exact
