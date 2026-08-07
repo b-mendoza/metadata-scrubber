@@ -12,9 +12,9 @@ Application code lives under `internal/`:
 | `handler` | HTTP handlers for the service's endpoints. |
 | `httpx` | HTTP helpers shared across handlers (CORS, logging, media types, responses). |
 | `bindings` | Middleware that attaches the validated config to every request context; no handler reads it yet. |
-| `config` | Environment-driven service configuration (e.g. `PORT`). |
+| `config` | Environment-driven service and Cloudflare R2 connection configuration, validated before startup. |
 
 ## Runtime
 
-- `main.go` wires the packages together: JSON structured logging via `slog`, read-header timeout, and graceful shutdown on SIGINT/SIGTERM.
+- `main.go` validates the complete environment configuration before constructing the server, then wires JSON structured logging via `slog`, the read-header timeout, and graceful shutdown on SIGINT/SIGTERM.
 - The linter configuration lives in `.golangci.yml`; the required Go version is pinned by the `go` directive in `go.mod`.
