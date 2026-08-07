@@ -63,6 +63,11 @@ func validateNonblank(field validator.FieldLevel) bool {
 	return strings.TrimSpace(field.Field().String()) != ""
 }
 
+// validateR2Endpoint pins where R2 credentials are sent: only exact
+// https://<account>.r2.cloudflarestorage.com endpoints pass. The account-label
+// character check keeps the suffix match honest — without it, a value like
+// https://evil.example/?x=.r2.cloudflarestorage.com would pass the cuts while
+// actually pointing at another host.
 func validateR2Endpoint(field validator.FieldLevel) bool {
 	accountLabel, found := strings.CutPrefix(field.Field().String(), "https://")
 	if !found {
