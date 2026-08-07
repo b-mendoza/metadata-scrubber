@@ -3,7 +3,6 @@ package scrub
 import (
 	"errors"
 	"fmt"
-	"sort"
 
 	"github.com/pdfcpu/pdfcpu/pkg/filter"
 	"github.com/pdfcpu/pdfcpu/pkg/pdfcpu/model"
@@ -56,7 +55,6 @@ func preflightMetadataEntries(context *model.Context, snapshots []metadataEntryS
 
 	return nil
 }
-
 
 func metadataStreamForPreflight(context *model.Context, object types.Object) *types.StreamDict {
 	if indirectReference, indirect := object.(types.IndirectRef); indirect {
@@ -138,84 +136,27 @@ func storeMetadataStreamContent(
 }
 
 func snapshotMetadataEntries(context *model.Context) ([]metadataEntrySnapshot, bool, error) {
-	objectNumbers := make([]int, 0, len(context.Table))
-	for objectNumber, entry := range context.Table {
-		if objectNumber == 0 || entry == nil || entry.Free || entry.Object == nil {
-			continue
-		}
-		objectNumbers = append(objectNumbers, objectNumber)
-	}
-	sort.Ints(objectNumbers)
-
 	snapshots := make([]metadataEntrySnapshot, 0)
-	for _, objectNumber := range objectNumbers {
+	walker := structuralWalker{
+		context: context,
+		inspectMetadata: func(dictionary types.Dict, key string, _ []int) error {
+			snapshots = append(snapshots, metadataEntrySnapshot{dictionary: dictionary, key: key, value: dictionary[key]})
+			return nil
+		},
+	}
+
+	for _, objectNumber := range sortedLiveObjectNumbers(context) {
 		entry := context.Table[objectNumber]
-		structurallySigned, err := snapshotObject(context, entry.Object, &snapshots)
+		err := walker.walkObject(entry.Object, nil)
+		if errors.Is(err, ErrSignedPDF) {
+			return nil, true, nil
+		}
 		if err != nil {
 			return nil, false, err
-		}
-		if structurallySigned {
-			return nil, true, nil
 		}
 	}
 
 	return snapshots, false, nil
-}
-
-func snapshotObject(context *model.Context, object types.Object, snapshots *[]metadataEntrySnapshot) (bool, error) {
-	switch value := object.(type) {
-	case types.Dict:
-		return snapshotDictionary(context, value, snapshots)
-	case types.StreamDict:
-		return snapshotDictionary(context, value.Dict, snapshots)
-	case types.ObjectStreamDict:
-		return snapshotDictionary(context, value.Dict, snapshots)
-	case types.XRefStreamDict:
-		return snapshotDictionary(context, value.Dict, snapshots)
-	case types.Array:
-		for _, item := range value {
-			if _, indirect := item.(types.IndirectRef); indirect {
-				continue
-			}
-			structurallySigned, err := snapshotObject(context, item, snapshots)
-			if err != nil || structurallySigned {
-				return structurallySigned, err
-			}
-		}
-	}
-
-	return false, nil
-}
-
-func snapshotDictionary(context *model.Context, dictionary types.Dict, snapshots *[]metadataEntrySnapshot) (bool, error) {
-	if dictionaryHasSignatureType(context, dictionary) {
-		return true, nil
-	}
-
-	keys, err := sortedDictionaryKeys(dictionary)
-	if err != nil {
-		return false, err
-	}
-	for _, key := range keys {
-		logicalKey, err := types.DecodeName(key)
-		if err != nil {
-			return false, fmt.Errorf("decode PDF dictionary key: %w", err)
-		}
-		value := dictionary[key]
-		if logicalKey == "Metadata" {
-			*snapshots = append(*snapshots, metadataEntrySnapshot{dictionary: dictionary, key: key, value: value})
-			continue
-		}
-		if _, indirect := value.(types.IndirectRef); indirect {
-			continue
-		}
-		structurallySigned, err := snapshotObject(context, value, snapshots)
-		if err != nil || structurallySigned {
-			return structurallySigned, err
-		}
-	}
-
-	return false, nil
 }
 
 func restoreMetadataEntries(snapshots []metadataEntrySnapshot) {
