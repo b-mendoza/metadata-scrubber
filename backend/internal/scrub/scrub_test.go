@@ -125,9 +125,7 @@ func TestPDFPathsRejectAggregateDecodedMetadataBudgetBeforeWriting(t *testing.T)
 
 	requireInspectionLimit(t, fields, inspectErr)
 	requireScrubLimit(t, outputBytes, scrubErr)
-	require.Zero(t, work.mutations)
-	require.Zero(t, work.writes)
-	require.Zero(t, work.verifications)
+	requireNoPDFWork(t, work)
 }
 
 func TestPDFPathsRejectOversizedCompressedCatalogMetadataBeforeValidation(t *testing.T) {
@@ -152,9 +150,7 @@ func TestPDFPathsRejectOversizedCompressedCatalogMetadataBeforeValidation(t *tes
 	requireScrubLimit(t, outputBytes, scrubErr)
 	requireScrubLimit(t, observedOutputBytes, observedScrubErr)
 	require.Zero(t, validationCalls)
-	require.Zero(t, work.mutations)
-	require.Zero(t, work.writes)
-	require.Zero(t, work.verifications)
+	requireNoPDFWork(t, work)
 }
 
 func TestMetadataPreflightCachesCatalogContentWithoutMarkingItValidated(t *testing.T) {
@@ -281,9 +277,7 @@ func TestInspectPDFEnforcesFieldCountAtomically(t *testing.T) {
 
 	outputBytes, err := work.clean(rejectedPDF)
 	requireScrubLimit(t, outputBytes, err)
-	require.Zero(t, work.mutations)
-	require.Zero(t, work.writes)
-	require.Zero(t, work.verifications)
+	requireNoPDFWork(t, work)
 }
 
 func TestInspectPDFEnforcesAggregateSummaryBudgetAtomically(t *testing.T) {
@@ -300,9 +294,7 @@ func TestInspectPDFEnforcesAggregateSummaryBudgetAtomically(t *testing.T) {
 
 	outputBytes, err := work.clean(pdfBytes)
 	requireScrubLimit(t, outputBytes, err)
-	require.Zero(t, work.mutations)
-	require.Zero(t, work.writes)
-	require.Zero(t, work.verifications)
+	requireNoPDFWork(t, work)
 }
 
 func TestSummaryBuilderAcceptsExactAggregateBudgetAndRejectsNextByte(t *testing.T) {
@@ -444,9 +436,7 @@ func TestCleanPDFReturnsCleanPDFWithoutRewriting(t *testing.T) {
 	outputBytes, err := work.clean(inputBytes)
 	require.NoError(t, err)
 	require.Equal(t, inputBytes, outputBytes)
-	require.Zero(t, work.mutations)
-	require.Zero(t, work.writes)
-	require.Zero(t, work.verifications)
+	requireNoPDFWork(t, work)
 }
 
 func TestCleanPDFRewritesPublicNeutralLookingTrio(t *testing.T) {
@@ -491,9 +481,7 @@ func TestPDFPathsEnforceConfiguredStreamLimit(t *testing.T) {
 
 	verificationErr := verifyScrubbedPDF(pdfBytes)
 	require.Error(t, verificationErr)
-	require.Zero(t, work.mutations)
-	require.Zero(t, work.writes)
-	require.Zero(t, work.verifications)
+	requireNoPDFWork(t, work)
 }
 
 func TestBoundedPDFConfigurationAssignsEveryResourceLimit(t *testing.T) {
@@ -608,9 +596,7 @@ func TestPDFPathsRejectUndecodableMetadataAtomically(t *testing.T) {
 			require.Nil(t, fields)
 			require.Error(t, scrubErr)
 			require.Nil(t, outputBytes)
-			require.Zero(t, work.mutations)
-			require.Zero(t, work.writes)
-			require.Zero(t, work.verifications)
+			requireNoPDFWork(t, work)
 		})
 	}
 }
@@ -660,9 +646,7 @@ func TestInspectPDFRejectsEverySignedStructureBeforeMutationOrWriting(t *testing
 			outputBytes, scrubErr := work.clean(pdfBytes)
 
 			requireSignedPDF(t, fields, outputBytes, inspectErr, scrubErr)
-			require.Zero(t, work.mutations)
-			require.Zero(t, work.writes)
-			require.Zero(t, work.verifications)
+			requireNoPDFWork(t, work)
 		})
 	}
 }
@@ -1240,6 +1224,14 @@ func requireScrubLimit(t *testing.T, outputBytes []byte, err error) {
 
 	require.ErrorIs(t, err, ErrInspectionLimit)
 	require.Nil(t, outputBytes)
+}
+
+func requireNoPDFWork(t *testing.T, work *observedPDFWork) {
+	t.Helper()
+
+	require.Zero(t, work.mutations)
+	require.Zero(t, work.writes)
+	require.Zero(t, work.verifications)
 }
 
 func requireSignedPDF(t *testing.T, fields []Field, outputBytes []byte, inspectErr error, scrubErr error) {
