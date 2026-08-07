@@ -4,7 +4,7 @@
 
 ## Package layout
 
-Application code lives under `internal/`:
+The backend's internal packages are:
 
 | Package | Responsibility |
 | --- | --- |
@@ -16,5 +16,5 @@ Application code lives under `internal/`:
 
 ## Runtime
 
-- `main.go` validates the complete environment configuration before constructing the server, then wires JSON structured logging via `slog`, the read-header timeout, and graceful shutdown on SIGINT/SIGTERM.
+- main.go configures JSON slog logging, validates the complete environment before server construction, applies a read-header timeout, and shuts down gracefully on SIGINT/SIGTERM.
 - The linter configuration lives in `.golangci.yml`; the required Go version is pinned by the `go` directive in `go.mod`.
