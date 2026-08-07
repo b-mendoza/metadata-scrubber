@@ -8,7 +8,7 @@ Application code lives under `internal/`:
 
 | Package | Responsibility |
 | --- | --- |
-| `scrub` | Removes metadata from uploaded file bytes. |
+| `scrub` | Inspects and removes metadata from PDF bytes. |
 | `handler` | HTTP handlers for the service's endpoints. |
 | `httpx` | HTTP helpers shared across handlers (CORS, logging, media types, responses). |
 | `bindings` | Middleware that attaches the validated config to every request context; no handler reads it yet. |
