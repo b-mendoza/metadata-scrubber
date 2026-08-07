@@ -4,8 +4,6 @@ import (
 	"errors"
 	"fmt"
 	"sort"
-	"strconv"
-	"strings"
 	"unicode/utf8"
 
 	"github.com/pdfcpu/pdfcpu/pkg/filter"
@@ -24,25 +22,22 @@ type pdfAnalysis struct {
 	metadataTargets []dictionaryEntryTarget
 }
 
-type summaryBuilder struct {
-	fields               []Field
-	totalBytes           int
-	decodedMetadataBytes int64
+type standardInfoFieldDescriptor struct {
+	name   string
+	label  string
+	action FieldAction
 }
 
-type objectRole struct {
-	catalog    bool
-	pageNumber int
-}
-
-type traversalState struct {
-	analysis        *pdfAnalysis
-	builder         *summaryBuilder
-	context         *model.Context
-	roles           map[int]objectRole
-	seenTargets     map[string]struct{}
-	metadataOrdinal int
-	objectNumber    int
+var standardInfoFields = map[string]standardInfoFieldDescriptor{
+	"Author":       {name: "info.author", label: "Author", action: ActionRemove},
+	"CreationDate": {name: "info.creation_date", label: "Creation date", action: ActionReplace},
+	"Creator":      {name: "info.creator", label: "Creator", action: ActionRemove},
+	"Keywords":     {name: "info.keywords", label: "Keywords", action: ActionRemove},
+	"ModDate":      {name: "info.mod_date", label: "Modification date", action: ActionReplace},
+	"Producer":     {name: "info.producer", label: "Producer", action: ActionReplace},
+	"Subject":      {name: "info.subject", label: "Subject", action: ActionRemove},
+	"Title":        {name: "info.title", label: "Title", action: ActionRemove},
+	"Trapped":      {name: "info.trapped", label: "Trapped", action: ActionRemove},
 }
 
 func analyzePDF(context *model.Context, origin InspectionOrigin) (*pdfAnalysis, error) {
@@ -108,7 +103,8 @@ func analyzeInfoDictionary(context *model.Context, analysis *pdfAnalysis, builde
 			return fmt.Errorf("decode PDF Info field %q: %w", logicalKey, err)
 		}
 
-		name, label, action, standard := standardInfoField(logicalKey)
+		field, standard := standardInfoFields[logicalKey]
+		name, label, action := field.name, field.label, field.action
 		if !standard {
 			customFieldNumber++
 			name = fmt.Sprintf("info.custom.%03d", customFieldNumber)
@@ -125,46 +121,14 @@ func analyzeInfoDictionary(context *model.Context, analysis *pdfAnalysis, builde
 	return nil
 }
 
-func standardInfoField(key string) (string, string, FieldAction, bool) {
-	fields := map[string]struct {
-		name   string
-		label  string
-		action FieldAction
-	}{
-		"Author":       {name: "info.author", label: "Author", action: ActionRemove},
-		"CreationDate": {name: "info.creation_date", label: "Creation date", action: ActionReplace},
-		"Creator":      {name: "info.creator", label: "Creator", action: ActionRemove},
-		"Keywords":     {name: "info.keywords", label: "Keywords", action: ActionRemove},
-		"ModDate":      {name: "info.mod_date", label: "Modification date", action: ActionReplace},
-		"Producer":     {name: "info.producer", label: "Producer", action: ActionReplace},
-		"Subject":      {name: "info.subject", label: "Subject", action: ActionRemove},
-		"Title":        {name: "info.title", label: "Title", action: ActionRemove},
-		"Trapped":      {name: "info.trapped", label: "Trapped", action: ActionRemove},
-	}
-	field, exists := fields[key]
-	if !exists {
-		return "", "", "", false
-	}
-	return field.name, field.label, field.action, true
-}
-
 func analyzeObjectMetadata(context *model.Context, analysis *pdfAnalysis, builder *summaryBuilder) error {
 	roles, err := pdfObjectRoles(context)
 	if err != nil {
 		return err
 	}
 
-	objectNumbers := make([]int, 0, len(context.Table))
-	for objectNumber, entry := range context.Table {
-		if objectNumber == 0 || entry == nil || entry.Free || entry.Object == nil {
-			continue
-		}
-		objectNumbers = append(objectNumbers, objectNumber)
-	}
-	sort.Ints(objectNumbers)
-
 	seenTargets := make(map[string]struct{})
-	for _, objectNumber := range objectNumbers {
+	for _, objectNumber := range sortedLiveObjectNumbers(context) {
 		entry := context.Table[objectNumber]
 		state := traversalState{
 			analysis:     analysis,
@@ -179,88 +143,6 @@ func analyzeObjectMetadata(context *model.Context, analysis *pdfAnalysis, builde
 		}
 	}
 
-	return nil
-}
-
-func pdfObjectRoles(context *model.Context) (map[int]objectRole, error) {
-	roles := make(map[int]objectRole, context.PageCount+1)
-	if context.Root != nil {
-		roles[context.Root.ObjectNumber.Value()] = objectRole{catalog: true}
-	}
-	for pageNumber := 1; pageNumber <= context.PageCount; pageNumber++ {
-		pageReference, err := context.PageDictIndRef(pageNumber)
-		if err != nil {
-			return nil, fmt.Errorf("resolve PDF page %d: %w", pageNumber, err)
-		}
-		if pageReference != nil {
-			roles[pageReference.ObjectNumber.Value()] = objectRole{pageNumber: pageNumber}
-		}
-	}
-	return roles, nil
-}
-
-func (state *traversalState) inspectObject(object types.Object, path []int) error {
-	switch value := object.(type) {
-	case types.Dict:
-		return state.inspectDictionary(value, path)
-	case types.StreamDict:
-		return state.inspectDictionary(value.Dict, path)
-	case types.ObjectStreamDict:
-		return state.inspectDictionary(value.Dict, path)
-	case types.XRefStreamDict:
-		return state.inspectDictionary(value.Dict, path)
-	case types.Array:
-		return state.inspectArray(value, path)
-	case types.IndirectRef:
-		return nil
-	default:
-		return nil
-	}
-}
-
-func (state *traversalState) inspectDictionary(dictionary types.Dict, path []int) error {
-	if dictionaryHasSignatureType(state.context, dictionary) {
-		return ErrSignedPDF
-	}
-
-	keys, err := sortedDictionaryKeys(dictionary)
-	if err != nil {
-		return err
-	}
-	for keyIndex, key := range keys {
-		logicalKey, err := types.DecodeName(key)
-		if err != nil {
-			return fmt.Errorf("decode PDF dictionary key: %w", err)
-		}
-		if logicalKey == "Metadata" {
-			if err := state.inspectMetadataEntry(dictionary, key, path); err != nil {
-				return err
-			}
-			continue
-		}
-
-		value := dictionary[key]
-		if _, indirect := value.(types.IndirectRef); indirect {
-			continue
-		}
-		childPath := appendPath(path, keyIndex+1)
-		if err := state.inspectObject(value, childPath); err != nil {
-			return err
-		}
-	}
-
-	return nil
-}
-
-func (state *traversalState) inspectArray(array types.Array, path []int) error {
-	for valueIndex, value := range array {
-		if _, indirect := value.(types.IndirectRef); indirect {
-			continue
-		}
-		if err := state.inspectObject(value, appendPath(path, valueIndex+1)); err != nil {
-			return err
-		}
-	}
 	return nil
 }
 
@@ -330,37 +212,6 @@ func (state *traversalState) metadataIdentity(path []int) (string, string) {
 		fmt.Sprintf("Embedded metadata %d", state.metadataOrdinal)
 }
 
-func dictionaryHasSignatureType(context *model.Context, dictionary types.Dict) bool {
-	typeObject, exists := dictionary.Find("Type")
-	if !exists {
-		return false
-	}
-	dereferencedType, err := context.Dereference(typeObject)
-	if err != nil {
-		return false
-	}
-	name, ok := dereferencedType.(types.Name)
-	if !ok {
-		return false
-	}
-	decodedName, err := types.DecodeName(name.Value())
-	return err == nil && (decodedName == "Sig" || decodedName == "DocTimeStamp")
-}
-
-func pdfHasCachedSignature(context *model.Context) bool {
-	if context.SignatureExist || context.AppendOnly || len(context.URSignature) > 0 || context.CertifiedSigObjNr > 0 || !context.DTS.IsZero() {
-		return true
-	}
-	for _, incrementSignatures := range context.Signatures {
-		for _, signature := range incrementSignatures {
-			if signature.Signed {
-				return true
-			}
-		}
-	}
-	return false
-}
-
 func hasNeutralPDFCPUTrio(context *model.Context, analysis *pdfAnalysis) bool {
 	if len(analysis.metadataTargets) != 0 || len(analysis.infoTargets) != 3 || context.Info == nil {
 		return false
@@ -391,94 +242,4 @@ func hasNeutralPDFCPUTrio(context *model.Context, analysis *pdfAnalysis) bool {
 	}
 	_, validDate := types.DateTime(values["CreationDate"], false)
 	return validDate
-}
-
-func (builder *summaryBuilder) add(name, label, value string, action FieldAction) error {
-	return builder.addPreview(name, label, truncateUTF8(value, maxFieldPreviewBytes), len(value), action)
-}
-
-func (builder *summaryBuilder) remainingDecodedMetadataBytes() int64 {
-	return maxDecodedMetadataBytes - builder.decodedMetadataBytes
-}
-
-func (builder *summaryBuilder) addMetadataBytes(name, label string, value []byte, action FieldAction) error {
-	if !utf8.Valid(value) {
-		return errors.New("metadata preview is not valid UTF-8")
-	}
-	if int64(len(value)) > builder.remainingDecodedMetadataBytes() {
-		return ErrInspectionLimit
-	}
-
-	previewBytes := truncateUTF8Bytes(value, maxFieldPreviewBytes)
-	if err := builder.addPreview(name, label, string(previewBytes), len(value), action); err != nil {
-		return err
-	}
-	builder.decodedMetadataBytes += int64(len(value))
-	return nil
-}
-
-func (builder *summaryBuilder) addPreview(name, label, preview string, originalByteSize int, action FieldAction) error {
-	if len(builder.fields) >= maxInspectionFields {
-		return ErrInspectionLimit
-	}
-
-	field := Field{
-		Name:             name,
-		Label:            label,
-		Preview:          preview,
-		OriginalByteSize: originalByteSize,
-		Action:           action,
-	}
-	fieldBytes := len(field.Name) + len(field.Label) + len(field.Preview) + len(field.Action) + len(strconv.Itoa(field.OriginalByteSize))
-	if builder.totalBytes+fieldBytes > maxInspectionBytes {
-		return ErrInspectionLimit
-	}
-
-	builder.totalBytes += fieldBytes
-	builder.fields = append(builder.fields, field)
-	return nil
-}
-
-func truncateUTF8(value string, byteLimit int) string {
-	previewLength := min(len(value), byteLimit)
-	for !utf8.ValidString(value[:previewLength]) {
-		previewLength--
-	}
-	return strings.Clone(value[:previewLength])
-}
-
-func truncateUTF8Bytes(value []byte, byteLimit int) []byte {
-	previewLength := min(len(value), byteLimit)
-	for !utf8.Valid(value[:previewLength]) {
-		previewLength--
-	}
-	return value[:previewLength]
-}
-
-func sortedDictionaryKeys(dictionary types.Dict) ([]string, error) {
-	keys := make([]string, 0, len(dictionary))
-	for key := range dictionary {
-		keys = append(keys, key)
-	}
-	sort.Slice(keys, func(firstIndex, secondIndex int) bool {
-		firstKey, firstErr := types.DecodeName(keys[firstIndex])
-		secondKey, secondErr := types.DecodeName(keys[secondIndex])
-		if firstErr != nil || secondErr != nil || firstKey == secondKey {
-			return keys[firstIndex] < keys[secondIndex]
-		}
-		return firstKey < secondKey
-	})
-	for _, key := range keys {
-		if _, err := types.DecodeName(key); err != nil {
-			return nil, fmt.Errorf("decode PDF dictionary key: %w", err)
-		}
-	}
-	return keys, nil
-}
-
-func appendPath(path []int, component int) []int {
-	childPath := make([]int, len(path)+1)
-	copy(childPath, path)
-	childPath[len(path)] = component
-	return childPath
 }
