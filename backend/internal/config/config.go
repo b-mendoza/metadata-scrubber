@@ -3,6 +3,7 @@ package config
 
 import (
 	"fmt"
+	"net/url"
 
 	"github.com/caarlos0/env/v11"
 	"github.com/go-playground/validator/v10"
@@ -28,12 +29,17 @@ type Config struct {
 	R2Bucket string `env:"R2_BUCKET" validate:"notblank"`
 }
 
-// R2Endpoint is the Cloudflare R2 endpoint for the configured account, built
-// from the scheme and host suffix fixed here in code. The account ID is
-// trusted as configured: it is validated only as non-blank, on the grounds
-// that anyone able to set it could also read the R2 credentials.
+// R2Endpoint is the Cloudflare R2 endpoint for the configured account.
+// Assembling it with url.URL fixes the scheme and host suffix and escapes
+// any URL-delimiter bytes in the account ID into the host, so a malformed
+// value yields an endpoint that fails at first use instead of one pointing
+// at different URL structure. The account ID itself is validated only as
+// non-blank: no format rule catches a well-formed wrong value, Cloudflare
+// is the oracle for real IDs, and anyone able to set the value could also
+// read the R2 credentials.
 func (c Config) R2Endpoint() string {
-	return "https://" + c.R2AccountID + ".r2.cloudflarestorage.com"
+	endpoint := url.URL{Scheme: "https", Host: c.R2AccountID + ".r2.cloudflarestorage.com"}
+	return endpoint.String()
 }
 
 // Load parses and validates the environment into Config.
