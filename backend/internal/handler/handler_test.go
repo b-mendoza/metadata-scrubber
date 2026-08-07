@@ -86,8 +86,8 @@ func TestScrubRejectsMissingFile(t *testing.T) {
 }
 
 func TestScrubAcceptsExactUploadLimitIncludingMultipartFraming(t *testing.T) {
-	require.Equal(t, 10_000_000, maxUploadSize)
-	pdfBytes := padUploadToSize(t, readScrubbablePDF(t), maxUploadSize)
+	require.Equal(t, 10_000_000, scrub.MaxInputBytes)
+	pdfBytes := padUploadToSize(t, readScrubbablePDF(t), scrub.MaxInputBytes)
 	recorder := httptest.NewRecorder()
 
 	Scrub(recorder, newMultipartFileRequest(t, "report.pdf", pdfBytes))
@@ -98,7 +98,7 @@ func TestScrubAcceptsExactUploadLimitIncludingMultipartFraming(t *testing.T) {
 
 func TestScrubRejectsFirstByteOverUploadLimit(t *testing.T) {
 	recorder := httptest.NewRecorder()
-	Scrub(recorder, newMultipartFileRequest(t, "report.pdf", make([]byte, maxUploadSize+1)))
+	Scrub(recorder, newMultipartFileRequest(t, "report.pdf", make([]byte, scrub.MaxInputBytes+1)))
 
 	require.Equal(t, http.StatusBadRequest, recorder.Code, "Scrub status; body: %s", recorder.Body.String())
 	require.Equal(t, `missing or invalid "file" form field`, errorMessage(t, recorder), "Scrub error message")
@@ -110,7 +110,7 @@ func TestScrubRejectsRequestBodyOverMultipartLimit(t *testing.T) {
 
 	file, err := writer.CreateFormFile(fileFormField, "report.pdf")
 	require.NoError(t, err, "create multipart file")
-	_, err = file.Write(padUploadToSize(t, readScrubbablePDF(t), maxUploadSize))
+	_, err = file.Write(padUploadToSize(t, readScrubbablePDF(t), scrub.MaxInputBytes))
 	require.NoError(t, err, "write multipart file")
 
 	// The file alone would be accepted, so the oversized ignored field is what

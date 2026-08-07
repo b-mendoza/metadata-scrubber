@@ -16,10 +16,8 @@ import (
 )
 
 const (
-	// maxUploadSize matches the scrub package's decimal 10 MB product boundary.
-	maxUploadSize        = scrub.MaxInputBytes
 	maxMultipartOverhead = 1 << 20
-	maxMultipartBodySize = maxUploadSize + maxMultipartOverhead
+	maxMultipartBodySize = scrub.MaxInputBytes + maxMultipartOverhead
 	fileFormField        = "file"
 )
 
@@ -43,14 +41,14 @@ func Scrub(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	inputBytes, err := io.ReadAll(io.LimitReader(file, maxUploadSize+1))
+	inputBytes, err := io.ReadAll(io.LimitReader(file, scrub.MaxInputBytes+1))
 	_ = file.Close()
 
 	if err != nil {
 		httpx.WriteError(w, http.StatusInternalServerError, "could not read uploaded file")
 		return
 	}
-	if len(inputBytes) > maxUploadSize {
+	if len(inputBytes) > scrub.MaxInputBytes {
 		httpx.WriteError(w, http.StatusBadRequest, "missing or invalid \"file\" form field")
 		return
 	}
