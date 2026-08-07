@@ -124,7 +124,7 @@ func TestPDFPathsRejectAggregateDecodedMetadataBudgetBeforeWriting(t *testing.T)
 	outputBytes, scrubErr := work.clean(pdfBytes)
 
 	requireInspectionLimit(t, fields, inspectErr)
-	requireScrubLimit(t, outputBytes, scrubErr)
+	requireInspectionLimit(t, outputBytes, scrubErr)
 	requireNoPDFWork(t, work)
 }
 
@@ -147,8 +147,8 @@ func TestPDFPathsRejectOversizedCompressedCatalogMetadataBeforeValidation(t *tes
 	observedOutputBytes, observedScrubErr := work.clean(pdfBytes)
 
 	requireInspectionLimit(t, fields, inspectErr)
-	requireScrubLimit(t, outputBytes, scrubErr)
-	requireScrubLimit(t, observedOutputBytes, observedScrubErr)
+	requireInspectionLimit(t, outputBytes, scrubErr)
+	requireInspectionLimit(t, observedOutputBytes, observedScrubErr)
 	require.Zero(t, validationCalls)
 	requireNoPDFWork(t, work)
 }
@@ -276,7 +276,7 @@ func TestInspectPDFEnforcesFieldCountAtomically(t *testing.T) {
 	requireInspectionLimit(t, fields, err)
 
 	outputBytes, err := work.clean(rejectedPDF)
-	requireScrubLimit(t, outputBytes, err)
+	requireInspectionLimit(t, outputBytes, err)
 	requireNoPDFWork(t, work)
 }
 
@@ -293,7 +293,7 @@ func TestInspectPDFEnforcesAggregateSummaryBudgetAtomically(t *testing.T) {
 	requireInspectionLimit(t, fields, err)
 
 	outputBytes, err := work.clean(pdfBytes)
-	requireScrubLimit(t, outputBytes, err)
+	requireInspectionLimit(t, outputBytes, err)
 	requireNoPDFWork(t, work)
 }
 
@@ -1212,18 +1212,11 @@ func requireValidUTF8Preview(t *testing.T, field Field) {
 	require.LessOrEqual(t, len(field.Preview), maxFieldPreviewBytes)
 }
 
-func requireInspectionLimit(t *testing.T, fields []Field, err error) {
+func requireInspectionLimit[T any](t *testing.T, result []T, err error) {
 	t.Helper()
 
 	require.ErrorIs(t, err, ErrInspectionLimit)
-	require.Nil(t, fields)
-}
-
-func requireScrubLimit(t *testing.T, outputBytes []byte, err error) {
-	t.Helper()
-
-	require.ErrorIs(t, err, ErrInspectionLimit)
-	require.Nil(t, outputBytes)
+	require.Nil(t, result)
 }
 
 func requireNoPDFWork(t *testing.T, work *observedPDFWork) {
