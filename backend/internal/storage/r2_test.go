@@ -348,6 +348,22 @@ func TestR2RejectsInvalidInputsBeforeStorageRequests(t *testing.T) {
 	require.Zero(t, requestCount.Load())
 }
 
+func TestR2ProductionRequestsHaveABoundedOverallDuration(t *testing.T) {
+	t.Parallel()
+
+	adapter := NewR2(config.Config{
+		R2AccessKeyID:     testAccessKey,
+		R2SecretAccessKey: testSecretKey,
+		R2Bucket:          testBucket,
+	})
+
+	// Intentionally exact: this constant is the only bound on a stalled R2
+	// exchange, so a silent change to it must fail the suite.
+	httpClient, ok := adapter.client.Options().HTTPClient.(*http.Client)
+	require.True(t, ok)
+	require.Equal(t, 30*time.Second, httpClient.Timeout)
+}
+
 func TestR2PropagatesContextAndSanitizesProviderFailures(t *testing.T) {
 	t.Parallel()
 
