@@ -6,6 +6,7 @@ linters:
   enable:
     - bodyclose # checks that HTTP response bodies are closed
     - errorlint # finds problems with Go 1.13+ error wrapping (errors.Is/As)
+    - gosec # inspects source code for common security problems
     - misspell # catches commonly misspelled English words in comments/strings
     - revive # fast, configurable replacement for the deprecated golint
     - unconvert # flags unnecessary type conversions
