@@ -158,24 +158,3 @@ func sourceObjectTooLargeError(operation string) error {
 func copyBytes(input []byte) []byte {
 	return append([]byte(nil), input...)
 }
-
-func copyMetadata(input map[string]string) map[string]string {
-	if input == nil {
-		return nil
-	}
-
-	copied := make(map[string]string, len(input))
-	for key, value := range input {
-		copied[key] = value
-	}
-
-	return copied
-}
-
-func copyHeaders(input http.Header) http.Header {
-	if input == nil {
-		return nil
-	}
-
-	return input.Clone()
-}
