@@ -22,9 +22,31 @@ tasks:
     cmds:
       - go test -race -cover ./...
 
-  # Read-only umbrella (CI-safe, writes nothing): lint + verify formatting.
-  # golangci-lint's `run` checks the enabled formatters too, so a single
-  # command covers both — no parallel runner needed like the frontend.
+  test:coverage:
+    desc: Run the suite writing a coverage profile, then print the per-function summary
+    cmds:
+      - go test -race -covermode=atomic -coverprofile=coverage.out ./...
+      - go tool cover -func=coverage.out
+
+  test:watch:
+    desc: Re-run the test suite whenever Go sources, test fixtures, or module files change
+    watch: true
+    # method: none disables Task's up-to-date checkpointing so the suite
+    # always runs once at watcher startup instead of being skipped as
+    # "up to date" from a previous invocation's checksum.
+    method: none
+    sources:
+      - "**/*.go"
+      - "**/testdata/**"
+      - go.mod
+      - go.sum
+    cmds:
+      - task: test
+
+  # Read-only umbrella (CI-safe, writes nothing): module hygiene + lint +
+  # verify formatting. golangci-lint's `run` checks the enabled formatters
+  # too, so a single command covers both — no parallel runner needed like
+  # the frontend.
   lint:
     desc: Check module tidiness, lint, and verify formatting without modifying files (read-only)
     cmds:
