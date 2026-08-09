@@ -164,11 +164,10 @@ func (r2 *R2) DownloadSource(
 		Key:    aws.String(objectKey),
 	}
 	if expectedETag != "" {
-		wireETag, wireErr := providerETag(expectedETag)
-		if wireErr != nil {
-			return SourceObject{}, wireErr
+		if err := validateCanonicalETag(expectedETag); err != nil {
+			return SourceObject{}, err
 		}
-		input.IfMatch = aws.String(wireETag)
+		input.IfMatch = aws.String("\"" + expectedETag + "\"")
 	}
 
 	output, err := r2.client.GetObject(ctx, input)
