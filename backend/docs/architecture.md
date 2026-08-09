@@ -8,7 +8,8 @@ The backend's internal packages are:
 
 | Package | Responsibility |
 | --- | --- |
-| `scrub` | Inspects and removes metadata from PDF bytes. |
+| `scrub` | Parses and validates PDF bytes, inspects their metadata, and removes supported metadata. |
+| `sniff` | Applies the strict offset-zero `%PDF-` byte policy for PDF intake candidacy without establishing structural validity. |
 | `handler` | HTTP handlers for the service's endpoints. |
 | `httpx` | HTTP helpers shared across handlers (CORS, logging, responses), with `httpx/header` and `httpx/mediatype` subpackages for header and media-type handling. |
 | `bindings` | Middleware that attaches the validated config and provider-neutral storage boundary to every request context; no handler reads them yet. |
