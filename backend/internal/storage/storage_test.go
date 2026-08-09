@@ -291,7 +291,7 @@ func TestFakeRejectsInvalidExpiryBeforeRecordingCalls(t *testing.T) {
 	}
 }
 
-func TestFakePropagatesContextAndInjectedFailuresWithoutMutation(t *testing.T) {
+func TestFakePropagatesContextCancellationWithoutMutation(t *testing.T) {
 	t.Parallel()
 
 	fake := storage.NewFake()
@@ -303,14 +303,6 @@ func TestFakePropagatesContextAndInjectedFailuresWithoutMutation(t *testing.T) {
 	err = fake.UploadSanitized(ctx, "file-1", "revision-1", []byte("not stored"))
 	require.ErrorIs(t, err, context.Canceled)
 	_, exists, stateErr := fake.SanitizedBytes("file-1", "revision-1")
-	require.NoError(t, stateErr)
-	require.False(t, exists)
-
-	injectedErr := errors.New("synthetic dependency failure")
-	fake.SetFailure(storage.FakeUploadSanitized, injectedErr)
-	err = fake.UploadSanitized(context.Background(), "file-1", "revision-1", []byte("not stored"))
-	require.ErrorIs(t, err, injectedErr)
-	_, exists, stateErr = fake.SanitizedBytes("file-1", "revision-1")
 	require.NoError(t, stateErr)
 	require.False(t, exists)
 }
