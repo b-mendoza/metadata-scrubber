@@ -2,7 +2,6 @@ package storage
 
 import (
 	"context"
-	"fmt"
 	"maps"
 	"net/http"
 	"net/url"
@@ -132,7 +131,7 @@ func (fake *Fake) recordAttemptLocked(ctx context.Context, operation string, cal
 
 	fake.calls = append(fake.calls, call)
 	if injectedErr := fake.failures[call.Operation]; injectedErr != nil {
-		return fmt.Errorf("%s: %w", operation, injectedErr)
+		return operationError(operation, injectedErr)
 	}
 
 	return nil
@@ -256,13 +255,13 @@ func (fake *Fake) DownloadSource(
 
 	source, exists := fake.sources[fileID]
 	if !exists {
-		return SourceObject{}, fmt.Errorf("%s: %w", operation, ErrSourceNotFound)
+		return SourceObject{}, operationError(operation, ErrSourceNotFound)
 	}
 	if expectedETag != "" && source.ETag != expectedETag {
-		return SourceObject{}, fmt.Errorf("%s: %w", operation, ErrSourceRevisionConflict)
+		return SourceObject{}, operationError(operation, ErrSourceRevisionConflict)
 	}
 	if len(source.PDFBytes) > MaxSourceObjectBytes {
-		return SourceObject{}, sourceObjectTooLargeError(operation)
+		return SourceObject{}, operationError(operation, ErrSourceObjectTooLarge)
 	}
 
 	return copySourceObject(source), nil
