@@ -10,7 +10,7 @@ The backend's internal packages are:
 | --- | --- |
 | `scrub` | Inspects and removes metadata from PDF bytes. |
 | `handler` | HTTP handlers for the service's endpoints. |
-| `httpx` | HTTP helpers shared across handlers (CORS, logging, media types, responses). |
+| `httpx` | HTTP helpers shared across handlers (CORS, logging, responses), with `httpx/header` and `httpx/mediatype` subpackages for header and media-type handling. |
 | `bindings` | Middleware that attaches the validated config and provider-neutral storage boundary to every request context; no handler reads them yet. |
 | `config` | Environment-driven service and Cloudflare R2 connection configuration, validated before startup. |
 | `storage` | Provider-neutral private PDF storage contract, synchronized in-memory fake, and Cloudflare R2 adapter for size-bound presigned upload grants, presigned downloads, source revision reads that distinguish a missing source, exact sanitized-revision lookup, and sanitized uploads. Production R2 requests carry an overall HTTP timeout. |
