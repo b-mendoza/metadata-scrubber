@@ -18,6 +18,8 @@ import (
 	"github.com/pdfcpu/pdfcpu/pkg/pdfcpu/model"
 	"github.com/pdfcpu/pdfcpu/pkg/pdfcpu/types"
 	"github.com/stretchr/testify/require"
+
+	"metadata-scrubber/internal/sniff"
 )
 
 func TestInspectPDFRequiresKnownOrigin(t *testing.T) {
@@ -36,6 +38,40 @@ func TestCleanPDFRejectsInvalidPDFWithNoOutput(t *testing.T) {
 
 	require.Error(t, err)
 	require.Nil(t, outputBytes)
+}
+
+func TestInspectPDFRejectsMalformedCandidatesWithoutSignedClassification(t *testing.T) {
+	DisableConfigDir()
+	testCases := []struct {
+		name       string
+		inputBytes []byte
+	}{
+		{name: "bare candidate prefix", inputBytes: []byte("%PDF-")},
+		{name: "complete versioned header", inputBytes: []byte("%PDF-1.7\n")},
+	}
+	for _, testCase := range testCases {
+		t.Run(testCase.name, func(t *testing.T) {
+			require.True(t, sniff.IsPDFCandidate(testCase.inputBytes))
+
+			fields, err := InspectPDF(testCase.inputBytes, PublicInput)
+
+			require.Error(t, err)
+			require.Nil(t, fields)
+			requireNotSignedPDF(t, err)
+		})
+	}
+}
+
+func TestInspectPDFAcceptsValidPDFWithLeadingBytes(t *testing.T) {
+	DisableConfigDir()
+	inputBytes := append([]byte("leading bytes\n"), buildCleanPDF(t)...)
+	require.False(t, sniff.IsPDFCandidate(inputBytes))
+
+	fields, err := InspectPDF(inputBytes, PublicInput)
+
+	require.NoError(t, err)
+	require.NotNil(t, fields)
+	require.Empty(t, fields)
 }
 
 func TestInspectPDFEnumeratesDeepMetadataDeterministically(t *testing.T) {
