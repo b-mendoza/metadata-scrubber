@@ -10,10 +10,14 @@ import (
 
 	"metadata-scrubber/internal/bindings"
 	"metadata-scrubber/internal/config"
+	"metadata-scrubber/internal/storage"
 )
 
 func testBindings() bindings.Bindings {
-	return bindings.Bindings{Env: config.Config{Port: 3000}}
+	return bindings.Bindings{
+		Env:     config.Config{Port: 3000},
+		Storage: storage.NewFake(),
+	}
 }
 
 func TestInjectMakesBindingsAvailableToHandler(t *testing.T) {
