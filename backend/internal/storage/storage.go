@@ -45,9 +45,9 @@ var (
 //
 // PresignSourceUpload binds the validated expected size into the grant, so the
 // store rejects uploads whose byte count differs. DownloadSource reports a
-// missing source as ErrSourceNotFound. UploadSanitized is create-only: the
-// sanitized key is immutable, and writing an existing revision is an
-// idempotent success that leaves the stored object unchanged.
+// missing source as ErrSourceNotFound. UploadSanitized may overwrite: a
+// revision key encodes its exact source ETag, so every write to it carries an
+// equivalent sanitized copy of the same source revision.
 type Storage interface {
 	PresignSourceUpload(
 		ctx context.Context,
