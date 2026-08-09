@@ -20,3 +20,8 @@ runs:
       shell: bash
       working-directory: ./backend
       run: task test
+
+    - name: Scan for known vulnerabilities
+      shell: bash
+      working-directory: ./backend
+      run: task vuln
