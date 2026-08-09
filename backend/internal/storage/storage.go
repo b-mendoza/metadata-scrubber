@@ -106,14 +106,6 @@ func NormalizeProviderETag(providerETag string) (string, error) {
 	return normalizedETag, nil
 }
 
-func providerETag(sourceETag string) (string, error) {
-	if err := validateCanonicalETag(sourceETag); err != nil {
-		return "", err
-	}
-
-	return "\"" + sourceETag + "\"", nil
-}
-
 func validateFileID(fileID string) error {
 	if fileID == "" || fileID == "." || fileID == ".." || strings.Contains(fileID, "/") {
 		return ErrInvalidFileID
