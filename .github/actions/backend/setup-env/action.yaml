@@ -28,10 +28,6 @@ runs:
         go version
         task --version
 
-    # Fetches build dependencies only. `go mod tidy -diff` (run by `task
-    # lint`) walks the full module graph and may fetch extra graph metadata
-    # on a cold cache; those fetches land in the same setup-go module cache,
-    # so they only cost time on the first run after a go.sum change.
     - name: Download dependencies
       shell: bash
       working-directory: ./backend

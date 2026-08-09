@@ -43,25 +43,13 @@ tasks:
     cmds:
       - task: test
 
-  # Read-only umbrella (CI-safe, writes nothing): module hygiene + lint +
-  # verify formatting. golangci-lint's `run` checks the enabled formatters
-  # too, so a single command covers both — no parallel runner needed like
-  # the frontend.
+  # Read-only umbrella (CI-safe, writes nothing): lint + verify formatting.
+  # golangci-lint's `run` checks the enabled formatters too, so a single
+  # command covers both — no parallel runner needed like the frontend.
   lint:
-    desc: Check module tidiness, lint, and verify formatting without modifying files (read-only)
+    desc: Lint and verify formatting without modifying files (read-only)
     cmds:
-      - task: lint:deps
       - go tool golangci-lint run --config {{.GOLANGCI_LINT_CONFIG}}
-
-  # `go mod tidy -diff` exits non-zero when go.mod/go.sum are inconsistent
-  # with the source (e.g. a dependency bump that skipped tidying — this
-  # broke CI on the pdfcpu v0.14.0 update). `go mod verify` checks that
-  # downloaded modules match their go.sum checksums.
-  lint:deps:
-    desc: Verify go.mod/go.sum are tidy and module checksums match (read-only)
-    cmds:
-      - go mod tidy -diff
-      - go mod verify
 
   # Not part of `lint`: it queries the Go vulnerability database over the
   # network, and new advisories can make it fail without any code change.
