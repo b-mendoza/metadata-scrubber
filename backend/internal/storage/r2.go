@@ -6,6 +6,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"maps"
 	"net/http"
 	"time"
 
@@ -203,7 +204,7 @@ func (r2 *R2) DownloadSource(
 
 	return SourceObject{
 		PDFBytes: copyBytes(pdfBytes),
-		Metadata: copyMetadata(output.Metadata),
+		Metadata: maps.Clone(output.Metadata),
 		ETag:     normalizedETag,
 	}, nil
 }
@@ -269,7 +270,7 @@ func (r2 *R2) UploadSanitized(
 }
 
 func browserRequestHeaders(signedHeaders http.Header) http.Header {
-	requiredHeaders := copyHeaders(signedHeaders)
+	requiredHeaders := signedHeaders.Clone()
 	if requiredHeaders == nil {
 		requiredHeaders = make(http.Header)
 	}

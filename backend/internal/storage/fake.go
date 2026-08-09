@@ -3,6 +3,7 @@ package storage
 import (
 	"context"
 	"fmt"
+	"maps"
 	"net/http"
 	"net/url"
 	"strconv"
@@ -320,7 +321,7 @@ func (fake *Fake) UploadSanitized(
 func copySourceObject(source SourceObject) SourceObject {
 	return SourceObject{
 		PDFBytes: copyBytes(source.PDFBytes),
-		Metadata: copyMetadata(source.Metadata),
+		Metadata: maps.Clone(source.Metadata),
 		ETag:     source.ETag,
 	}
 }
