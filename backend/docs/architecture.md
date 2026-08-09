@@ -13,7 +13,7 @@ The backend's internal packages are:
 | `httpx` | HTTP helpers shared across handlers (CORS, logging, media types, responses). |
 | `bindings` | Middleware that attaches the validated config and provider-neutral storage boundary to every request context; no handler reads them yet. |
 | `config` | Environment-driven service and Cloudflare R2 connection configuration, validated before startup. |
-| `storage` | Provider-neutral private PDF storage contract, synchronized in-memory fake, and Cloudflare R2 adapter for size-bound presigned upload grants, presigned downloads, source revision reads that distinguish a missing source, exact sanitized-revision lookup, and create-only sanitized uploads. Production R2 requests carry an overall HTTP timeout. |
+| `storage` | Provider-neutral private PDF storage contract, synchronized in-memory fake, and Cloudflare R2 adapter for size-bound presigned upload grants, presigned downloads, source revision reads that distinguish a missing source, exact sanitized-revision lookup, and sanitized uploads. Production R2 requests carry an overall HTTP timeout. |
 
 ## Runtime
 
