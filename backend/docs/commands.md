@@ -13,6 +13,7 @@ All commands are [Task](https://taskfile.dev) targets defined in `Taskfile.yml`.
 | `task test:watch` | Re-run the suite whenever Go sources, `testdata` fixtures, or module files change. |
 | `task lint` | Check module tidiness (`lint:deps`), lint, and verify formatting; read-only (CI-safe). |
 | `task lint:deps` | Verify `go.mod`/`go.sum` are tidy (`go mod tidy -diff`) and module checksums match (`go mod verify`); read-only. |
+| `task vuln` | Scan for known vulnerabilities reachable from this module's code (`govulncheck`); queries the Go vulnerability database over the network. |
 | `task fix` | Apply lint auto-fixes (`fix:lint`), then format the source (`fix:fmt`); writes files. |
 | `task tidy` | Add missing and remove unused module dependencies (`go mod tidy`). |
 
