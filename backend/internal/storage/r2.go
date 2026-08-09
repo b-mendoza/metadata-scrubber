@@ -82,6 +82,7 @@ func newR2(cfg config.Config, options r2Options) *R2 {
 func (r2 *R2) PresignSourceUpload(
 	ctx context.Context,
 	fileID string,
+	sizeBytes int64,
 	expiry time.Duration,
 ) (PresignedRequest, error) {
 	const operation = "presigning source upload"
@@ -93,14 +94,18 @@ func (r2 *R2) PresignSourceUpload(
 	if err != nil {
 		return PresignedRequest{}, err
 	}
+	if err := validateSourceUploadSize(sizeBytes); err != nil {
+		return PresignedRequest{}, err
+	}
 	if err := validatePresignExpiry(expiry); err != nil {
 		return PresignedRequest{}, err
 	}
 
 	presigned, err := r2.presigner.PresignPutObject(ctx, &s3.PutObjectInput{
-		Bucket:      aws.String(r2.bucket),
-		Key:         aws.String(objectKey),
-		ContentType: aws.String(PDFContentType),
+		Bucket:        aws.String(r2.bucket),
+		Key:           aws.String(objectKey),
+		ContentType:   aws.String(PDFContentType),
+		ContentLength: aws.Int64(sizeBytes),
 	},
 		s3.WithPresignExpires(expiry),
 		s3.WithPresignClientFromClientOptions(func(options *s3.Options) {

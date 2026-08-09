@@ -27,6 +27,10 @@ var (
 	ErrSourceRevisionConflict = errors.New("source revision changed")
 	// ErrSourceObjectTooLarge means the source exceeds the backend memory boundary.
 	ErrSourceObjectTooLarge = errors.New("source object exceeds 10 MB limit")
+	// ErrSourceNotFound means no source object exists for the logical file ID.
+	ErrSourceNotFound = errors.New("source object not found")
+	// ErrInvalidSourceSize means an expected upload size is not a positive byte count.
+	ErrInvalidSourceSize = errors.New("invalid source upload size")
 	// ErrInvalidFileID means a logical file identifier cannot form one safe key segment.
 	ErrInvalidFileID = errors.New("invalid file ID")
 	// ErrInvalidETag means an ETag is not in the canonical unquoted strong form.
@@ -39,7 +43,12 @@ var (
 
 // Storage is the provider-neutral private PDF storage boundary.
 type Storage interface {
-	PresignSourceUpload(ctx context.Context, fileID string, expiry time.Duration) (PresignedRequest, error)
+	PresignSourceUpload(
+		ctx context.Context,
+		fileID string,
+		sizeBytes int64,
+		expiry time.Duration,
+	) (PresignedRequest, error)
 	PresignSanitizedDownload(
 		ctx context.Context,
 		fileID string,
@@ -126,6 +135,17 @@ func validateCanonicalETag(sourceETag string) error {
 	}
 	if strings.HasPrefix(sourceETag, "\"") && strings.HasSuffix(sourceETag, "\"") {
 		return ErrInvalidETag
+	}
+
+	return nil
+}
+
+func validateSourceUploadSize(sizeBytes int64) error {
+	if sizeBytes <= 0 {
+		return ErrInvalidSourceSize
+	}
+	if sizeBytes > MaxSourceObjectBytes {
+		return ErrSourceObjectTooLarge
 	}
 
 	return nil

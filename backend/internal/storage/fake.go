@@ -33,6 +33,7 @@ type FakeCall struct {
 	FileID     string
 	SourceETag string
 	ObjectKey  string
+	SizeBytes  int64
 	Expiry     time.Duration
 }
 
@@ -120,6 +121,10 @@ func (fake *Fake) Calls() []FakeCall {
 	return append([]FakeCall(nil), fake.calls...)
 }
 
+// recordAttemptLocked appends the call and only then applies any injected
+// failure: Calls reports every validated attempt, including attempts that fail
+// through injection, while input-validation failures never reach this method
+// and are therefore never recorded.
 func (fake *Fake) recordAttemptLocked(ctx context.Context, operation string, call FakeCall) error {
 	if err := contextError(ctx, operation); err != nil {
 		return err
@@ -137,6 +142,7 @@ func (fake *Fake) recordAttemptLocked(ctx context.Context, operation string, cal
 func (fake *Fake) PresignSourceUpload(
 	ctx context.Context,
 	fileID string,
+	sizeBytes int64,
 	expiry time.Duration,
 ) (PresignedRequest, error) {
 	const operation = "presigning source upload"
@@ -146,6 +152,9 @@ func (fake *Fake) PresignSourceUpload(
 	}
 	objectKey, err := SourceObjectKey(fileID)
 	if err != nil {
+		return PresignedRequest{}, err
+	}
+	if err := validateSourceUploadSize(sizeBytes); err != nil {
 		return PresignedRequest{}, err
 	}
 	if err := validatePresignExpiry(expiry); err != nil {
@@ -158,6 +167,7 @@ func (fake *Fake) PresignSourceUpload(
 		Operation: FakePresignSourceUpload,
 		FileID:    fileID,
 		ObjectKey: objectKey,
+		SizeBytes: sizeBytes,
 		Expiry:    expiry,
 	}); err != nil {
 		return PresignedRequest{}, err
@@ -165,8 +175,11 @@ func (fake *Fake) PresignSourceUpload(
 
 	fake.grantSequence++
 	return PresignedRequest{
-		URL:             fakeGrantURL(objectKey, fake.grantSequence),
-		RequiredHeaders: http.Header{"Content-Type": []string{PDFContentType}},
+		URL: fakeGrantURL(objectKey, fake.grantSequence),
+		RequiredHeaders: http.Header{
+			"Content-Type":   []string{PDFContentType},
+			"Content-Length": []string{strconv.FormatInt(sizeBytes, 10)},
+		},
 	}, nil
 }
 
