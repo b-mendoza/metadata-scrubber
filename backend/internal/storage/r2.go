@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"context"
 	"errors"
-	"fmt"
 	"io"
 	"maps"
 	"net/http"
@@ -190,10 +189,10 @@ func (r2 *R2) DownloadSource(
 	if err != nil {
 		statusCode := httpStatusCode(err)
 		if expectedETag != "" && statusCode == http.StatusPreconditionFailed {
-			return SourceObject{}, fmt.Errorf("%s: %w", operation, ErrSourceRevisionConflict)
+			return SourceObject{}, operationError(operation, ErrSourceRevisionConflict)
 		}
 		if statusCode == http.StatusNotFound {
-			return SourceObject{}, fmt.Errorf("%s: %w", operation, ErrSourceNotFound)
+			return SourceObject{}, operationError(operation, ErrSourceNotFound)
 		}
 		return SourceObject{}, r2OperationError(ctx, operation)
 	}
@@ -201,7 +200,7 @@ func (r2 *R2) DownloadSource(
 		if output.Body != nil {
 			_ = output.Body.Close()
 		}
-		return SourceObject{}, dependencyError(operation)
+		return SourceObject{}, operationError(operation, ErrDependency)
 	}
 
 	pdfBytes, readErr := io.ReadAll(io.LimitReader(output.Body, MaxSourceObjectBytes+1))
@@ -210,15 +209,15 @@ func (r2 *R2) DownloadSource(
 		if err := contextError(ctx, operation); err != nil {
 			return SourceObject{}, err
 		}
-		return SourceObject{}, dependencyError(operation)
+		return SourceObject{}, operationError(operation, ErrDependency)
 	}
 	if len(pdfBytes) > MaxSourceObjectBytes {
-		return SourceObject{}, sourceObjectTooLargeError(operation)
+		return SourceObject{}, operationError(operation, ErrSourceObjectTooLarge)
 	}
 
 	normalizedETag, err := NormalizeProviderETag(*output.ETag)
 	if err != nil {
-		return SourceObject{}, dependencyError(operation)
+		return SourceObject{}, operationError(operation, ErrDependency)
 	}
 
 	return SourceObject{
@@ -326,10 +325,10 @@ func pinPDFContentType(stack *middleware.Stack) error {
 // timeout is a dependency failure, not a caller signal.
 func r2OperationError(ctx context.Context, operation string) error {
 	if ctxErr := ctx.Err(); ctxErr != nil {
-		return fmt.Errorf("%s: %w", operation, ctxErr)
+		return operationError(operation, ctxErr)
 	}
 
-	return dependencyError(operation)
+	return operationError(operation, ErrDependency)
 }
 
 func httpStatusCode(err error) int {

@@ -167,18 +167,14 @@ func validatePresignExpiry(expiry time.Duration) error {
 
 func contextError(ctx context.Context, operation string) error {
 	if err := ctx.Err(); err != nil {
-		return fmt.Errorf("%s: %w", operation, err)
+		return operationError(operation, err)
 	}
 
 	return nil
 }
 
-func dependencyError(operation string) error {
-	return fmt.Errorf("%s: %w", operation, ErrDependency)
-}
-
-func sourceObjectTooLargeError(operation string) error {
-	return fmt.Errorf("%s: %w", operation, ErrSourceObjectTooLarge)
+func operationError(operation string, err error) error {
+	return fmt.Errorf("%s: %w", operation, err)
 }
 
 func copyBytes(input []byte) []byte {
