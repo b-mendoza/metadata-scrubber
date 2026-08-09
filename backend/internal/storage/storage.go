@@ -42,6 +42,12 @@ var (
 )
 
 // Storage is the provider-neutral private PDF storage boundary.
+//
+// PresignSourceUpload binds the validated expected size into the grant, so the
+// store rejects uploads whose byte count differs. DownloadSource reports a
+// missing source as ErrSourceNotFound. UploadSanitized is create-only: the
+// sanitized key is immutable, and writing an existing revision is an
+// idempotent success that leaves the stored object unchanged.
 type Storage interface {
 	PresignSourceUpload(
 		ctx context.Context,

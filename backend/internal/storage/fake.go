@@ -256,7 +256,7 @@ func (fake *Fake) DownloadSource(
 
 	source, exists := fake.sources[fileID]
 	if !exists {
-		return SourceObject{}, dependencyError(operation)
+		return SourceObject{}, fmt.Errorf("%s: %w", operation, ErrSourceNotFound)
 	}
 	if expectedETag != "" && source.ETag != expectedETag {
 		return SourceObject{}, fmt.Errorf("%s: %w", operation, ErrSourceRevisionConflict)
@@ -327,7 +327,11 @@ func (fake *Fake) UploadSanitized(
 		return err
 	}
 
-	fake.sanitizedObjects[objectKey] = copyBytes(pdfBytes)
+	// The revision key is immutable, so repeating a write for an existing
+	// revision is an idempotent success that leaves the stored bytes unchanged.
+	if _, exists := fake.sanitizedObjects[objectKey]; !exists {
+		fake.sanitizedObjects[objectKey] = copyBytes(pdfBytes)
+	}
 	return nil
 }
 
