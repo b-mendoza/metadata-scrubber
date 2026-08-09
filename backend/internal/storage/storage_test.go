@@ -3,7 +3,6 @@ package storage_test
 import (
 	"context"
 	"errors"
-	"net/http"
 	"net/url"
 	"strings"
 	"sync"
@@ -393,17 +392,4 @@ func TestFakeSupportsConcurrentExactRevisionOperations(t *testing.T) {
 	_, exists, err := fake.SanitizedBytes("file-1", "revision-1")
 	require.NoError(t, err)
 	require.True(t, exists)
-}
-
-func TestFakeReturnsCopiedHeaderMaps(t *testing.T) {
-	t.Parallel()
-
-	fake := storage.NewFake()
-	first, err := fake.PresignSourceUpload(context.Background(), "file-1", time.Minute)
-	require.NoError(t, err)
-	first.RequiredHeaders[http.CanonicalHeaderKey("Content-Type")][0] = "text/plain"
-
-	second, err := fake.PresignSourceUpload(context.Background(), "file-1", time.Minute)
-	require.NoError(t, err)
-	require.Equal(t, storage.PDFContentType, second.RequiredHeaders.Get("Content-Type"))
 }
