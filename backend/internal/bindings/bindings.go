@@ -6,11 +6,13 @@ import (
 	"net/http"
 
 	"metadata-scrubber/internal/config"
+	"metadata-scrubber/internal/storage"
 )
 
 // Bindings is the set of validated, request-scoped application values.
 type Bindings struct {
-	Env config.Config
+	Env     config.Config
+	Storage storage.Storage
 }
 
 // contextKey is unexported, so no other package can forge the bindings key.
