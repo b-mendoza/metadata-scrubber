@@ -17,6 +17,7 @@ import (
 	"metadata-scrubber/internal/handler"
 	"metadata-scrubber/internal/httpx"
 	"metadata-scrubber/internal/scrub"
+	"metadata-scrubber/internal/storage"
 )
 
 const (
@@ -49,7 +50,8 @@ func run(ctx context.Context) error {
 	}
 
 	logger := slog.Default()
-	server := newServer(cfg, logger)
+	objectStorage := storage.NewR2(cfg)
+	server := newServer(cfg, objectStorage, logger)
 
 	serverErr := make(chan error, 1)
 	go func() {
@@ -79,17 +81,20 @@ func shutdownServer(server *http.Server, waitForServer <-chan error) error {
 }
 
 // newServer wires the API routes to their handlers and returns the configured
-// server. Bindings are injected ahead of the routes so a handler can read
-// validated config from the request context; no handler reads them yet.
-func newServer(cfg config.Config, logger *slog.Logger) *http.Server {
+// server. Bindings are injected ahead of the routes so handlers can use validated
+// configuration and the private object-storage boundary.
+func newServer(cfg config.Config, objectStorage storage.Storage, logger *slog.Logger) *http.Server {
 	mux := http.NewServeMux()
 
 	mux.HandleFunc("GET /api/health", handler.Reachability)
 	mux.HandleFunc("POST /api/scrub", handler.Scrub)
 
 	return &http.Server{
-		Addr:              fmt.Sprintf(":%d", cfg.Port),
-		Handler:           httpx.RequestLogger(logger)(httpx.CORS(bindings.Inject(bindings.Bindings{Env: cfg})(mux))),
+		Addr: fmt.Sprintf(":%d", cfg.Port),
+		Handler: httpx.RequestLogger(logger)(httpx.CORS(bindings.Inject(bindings.Bindings{
+			Env:     cfg,
+			Storage: objectStorage,
+		})(mux))),
 		ReadHeaderTimeout: readHeaderTimeout,
 	}
 }
