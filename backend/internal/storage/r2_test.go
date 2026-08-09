@@ -170,10 +170,7 @@ func TestR2EnforcesTheSourceObjectMemoryBoundary(t *testing.T) {
 func TestR2MapsOnlyConditionalSourcePreconditionFailureToConflict(t *testing.T) {
 	t.Parallel()
 
-	adapter := newTestR2Server(t, http.HandlerFunc(func(response http.ResponseWriter, _ *http.Request) {
-		response.WriteHeader(http.StatusPreconditionFailed)
-		_, _ = io.WriteString(response, "provider-body-sentinel")
-	}))
+	adapter := newTestR2StatusServer(t, http.StatusPreconditionFailed)
 
 	_, err := adapter.DownloadSource(context.Background(), "file-1", "revision-1")
 	require.ErrorIs(t, err, ErrSourceRevisionConflict)
@@ -188,10 +185,7 @@ func TestR2MapsOnlyConditionalSourcePreconditionFailureToConflict(t *testing.T) 
 func TestR2KeepsOrdinarySourceFailuresDistinctFromRevisionConflict(t *testing.T) {
 	t.Parallel()
 
-	adapter := newTestR2Server(t, http.HandlerFunc(func(response http.ResponseWriter, _ *http.Request) {
-		response.WriteHeader(http.StatusForbidden)
-		_, _ = io.WriteString(response, "provider-body-sentinel")
-	}))
+	adapter := newTestR2StatusServer(t, http.StatusForbidden)
 
 	_, err := adapter.DownloadSource(context.Background(), "file-1", "revision-1")
 
@@ -223,10 +217,7 @@ func TestR2TreatsMalformedProviderETagsAsOrdinaryFailures(t *testing.T) {
 func TestR2ReportsAMissingSourceAsSourceNotFound(t *testing.T) {
 	t.Parallel()
 
-	adapter := newTestR2Server(t, http.HandlerFunc(func(response http.ResponseWriter, _ *http.Request) {
-		response.WriteHeader(http.StatusNotFound)
-		_, _ = io.WriteString(response, "provider-body-sentinel")
-	}))
+	adapter := newTestR2StatusServer(t, http.StatusNotFound)
 
 	_, err := adapter.DownloadSource(context.Background(), "file-identifier-sentinel", "")
 	require.ErrorIs(t, err, ErrSourceNotFound)
@@ -331,10 +322,7 @@ func TestR2SanitizedUploadPinsPDFContentTypeAndPerformsNoFollowUp(t *testing.T) 
 func TestR2TreatsAnExistingSanitizedRevisionWriteAsIdempotentSuccess(t *testing.T) {
 	t.Parallel()
 
-	adapter := newTestR2Server(t, http.HandlerFunc(func(response http.ResponseWriter, _ *http.Request) {
-		response.WriteHeader(http.StatusPreconditionFailed)
-		_, _ = io.WriteString(response, "provider-body-sentinel")
-	}))
+	adapter := newTestR2StatusServer(t, http.StatusPreconditionFailed)
 
 	err := adapter.UploadSanitized(context.Background(), "file-1", "revision-1", []byte("pdf"))
 
@@ -467,6 +455,15 @@ func newTestR2Server(t *testing.T, handler http.Handler) *R2 {
 	server := httptest.NewServer(handler)
 	t.Cleanup(server.Close)
 	return newTestR2(server.URL, server.Client())
+}
+
+func newTestR2StatusServer(t *testing.T, status int) *R2 {
+	t.Helper()
+
+	return newTestR2Server(t, http.HandlerFunc(func(response http.ResponseWriter, _ *http.Request) {
+		response.WriteHeader(status)
+		_, _ = io.WriteString(response, "provider-body-sentinel")
+	}))
 }
 
 func newTestR2(endpoint string, httpClient *http.Client) *R2 {
