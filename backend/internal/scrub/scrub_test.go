@@ -363,19 +363,12 @@ func TestSummaryBuilderEnforcesDecodedMetadataBudgetExactly(t *testing.T) {
 
 func TestInspectPDFTreatsNeutralTrioAccordingToOrigin(t *testing.T) {
 	DisableConfigDir()
-	date := "D:20260102030405+00'00'"
-	pdfBytes := buildPDFWithInfo(t, map[string]string{
-		"Producer":     pdfString("pdfcpu " + model.VersionStr),
-		"CreationDate": pdfString(date),
-		"ModDate":      pdfString(date),
-	})
+	pdfBytes := buildPDFWithInfo(t, neutralTrioInfoEntries())
 
 	publicFields, err := InspectPDF(pdfBytes, PublicInput)
 	require.NoError(t, err)
-	require.Equal(t, []string{"info.creation_date", "info.mod_date", "info.producer"}, fieldNames(publicFields))
-	for _, field := range publicFields {
-		require.Equal(t, ActionReplace, field.Action)
-	}
+	require.Equal(t, neutralTrioFieldNames(), fieldNames(publicFields))
+	requireExpectedActions(t, publicFields)
 
 	verificationFields, err := InspectPDF(pdfBytes, PostWriteVerification)
 	require.NoError(t, err)
@@ -384,12 +377,7 @@ func TestInspectPDFTreatsNeutralTrioAccordingToOrigin(t *testing.T) {
 
 func TestInspectPDFKeepsEveryNeutralTrioNearMissVisible(t *testing.T) {
 	DisableConfigDir()
-	date := "D:20260102030405+00'00'"
-	neutralEntries := map[string]string{
-		"Producer":     pdfString("pdfcpu " + model.VersionStr),
-		"CreationDate": pdfString(date),
-		"ModDate":      pdfString(date),
-	}
+	neutralEntries := neutralTrioInfoEntries()
 
 	testCases := []struct {
 		name          string
@@ -441,10 +429,8 @@ func TestCleanPDFRemovesEveryInspectedTargetAndVerifiesOutput(t *testing.T) {
 
 	publicOutputFields, err := InspectPDF(outputBytes, PublicInput)
 	require.NoError(t, err)
-	require.Equal(t, []string{"info.creation_date", "info.mod_date", "info.producer"}, fieldNames(publicOutputFields))
-	for _, field := range publicOutputFields {
-		require.Equal(t, ActionReplace, field.Action)
-	}
+	require.Equal(t, neutralTrioFieldNames(), fieldNames(publicOutputFields))
+	requireExpectedActions(t, publicOutputFields)
 
 	requireNoOriginalMarkers(t, outputBytes,
 		metadata.title,
@@ -478,12 +464,7 @@ func TestCleanPDFReturnsCleanPDFWithoutRewriting(t *testing.T) {
 func TestCleanPDFRewritesPublicNeutralLookingTrio(t *testing.T) {
 	DisableConfigDir()
 	work := newObservedPDFWork()
-	date := "D:20260102030405+00'00'"
-	inputBytes := buildPDFWithInfo(t, map[string]string{
-		"Producer":     pdfString("pdfcpu " + model.VersionStr),
-		"CreationDate": pdfString(date),
-		"ModDate":      pdfString(date),
-	})
+	inputBytes := buildPDFWithInfo(t, neutralTrioInfoEntries())
 
 	outputBytes, err := work.clean(inputBytes)
 
@@ -1205,6 +1186,14 @@ func mergeInfoEntries(baseEntries, replacements map[string]string) map[string]st
 
 func neutralTrioFieldNames() []string {
 	return []string{"info.creation_date", "info.mod_date", "info.producer"}
+}
+
+func neutralTrioInfoEntries() map[string]string {
+	return map[string]string{
+		"Producer":     pdfString("pdfcpu " + model.VersionStr),
+		"CreationDate": pdfString("D:20260102030405+00'00'"),
+		"ModDate":      pdfString("D:20260102030405+00'00'"),
+	}
 }
 
 func requireExpectedActions(t *testing.T, fields []Field) {
