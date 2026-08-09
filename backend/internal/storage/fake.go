@@ -119,6 +119,19 @@ func (fake *Fake) Calls() []FakeCall {
 	return append([]FakeCall(nil), fake.calls...)
 }
 
+func (fake *Fake) recordAttemptLocked(ctx context.Context, operation string, call FakeCall) error {
+	if err := contextError(ctx, operation); err != nil {
+		return err
+	}
+
+	fake.calls = append(fake.calls, call)
+	if injectedErr := fake.failures[call.Operation]; injectedErr != nil {
+		return fmt.Errorf("%s: %w", operation, injectedErr)
+	}
+
+	return nil
+}
+
 // PresignSourceUpload returns a private PDF PUT grant scoped to the source key.
 func (fake *Fake) PresignSourceUpload(
 	ctx context.Context,
@@ -140,18 +153,13 @@ func (fake *Fake) PresignSourceUpload(
 
 	fake.mu.Lock()
 	defer fake.mu.Unlock()
-	if err := contextError(ctx, operation); err != nil {
-		return PresignedRequest{}, err
-	}
-
-	fake.calls = append(fake.calls, FakeCall{
+	if err := fake.recordAttemptLocked(ctx, operation, FakeCall{
 		Operation: FakePresignSourceUpload,
 		FileID:    fileID,
 		ObjectKey: objectKey,
 		Expiry:    expiry,
-	})
-	if injectedErr := fake.failures[FakePresignSourceUpload]; injectedErr != nil {
-		return PresignedRequest{}, fmt.Errorf("%s: %w", operation, injectedErr)
+	}); err != nil {
+		return PresignedRequest{}, err
 	}
 
 	fake.grantSequence++
@@ -183,19 +191,14 @@ func (fake *Fake) PresignSanitizedDownload(
 
 	fake.mu.Lock()
 	defer fake.mu.Unlock()
-	if err := contextError(ctx, operation); err != nil {
-		return PresignedRequest{}, err
-	}
-
-	fake.calls = append(fake.calls, FakeCall{
+	if err := fake.recordAttemptLocked(ctx, operation, FakeCall{
 		Operation:  FakePresignSanitizedDownload,
 		FileID:     fileID,
 		SourceETag: sourceETag,
 		ObjectKey:  objectKey,
 		Expiry:     expiry,
-	})
-	if injectedErr := fake.failures[FakePresignSanitizedDownload]; injectedErr != nil {
-		return PresignedRequest{}, fmt.Errorf("%s: %w", operation, injectedErr)
+	}); err != nil {
+		return PresignedRequest{}, err
 	}
 
 	fake.grantSequence++
@@ -228,18 +231,13 @@ func (fake *Fake) DownloadSource(
 
 	fake.mu.Lock()
 	defer fake.mu.Unlock()
-	if err := contextError(ctx, operation); err != nil {
-		return SourceObject{}, err
-	}
-
-	fake.calls = append(fake.calls, FakeCall{
+	if err := fake.recordAttemptLocked(ctx, operation, FakeCall{
 		Operation:  FakeDownloadSource,
 		FileID:     fileID,
 		SourceETag: expectedETag,
 		ObjectKey:  objectKey,
-	})
-	if injectedErr := fake.failures[FakeDownloadSource]; injectedErr != nil {
-		return SourceObject{}, fmt.Errorf("%s: %w", operation, injectedErr)
+	}); err != nil {
+		return SourceObject{}, err
 	}
 
 	source, exists := fake.sources[fileID]
@@ -274,18 +272,13 @@ func (fake *Fake) SanitizedExists(
 
 	fake.mu.Lock()
 	defer fake.mu.Unlock()
-	if err := contextError(ctx, operation); err != nil {
-		return false, err
-	}
-
-	fake.calls = append(fake.calls, FakeCall{
+	if err := fake.recordAttemptLocked(ctx, operation, FakeCall{
 		Operation:  FakeSanitizedExists,
 		FileID:     fileID,
 		SourceETag: sourceETag,
 		ObjectKey:  objectKey,
-	})
-	if injectedErr := fake.failures[FakeSanitizedExists]; injectedErr != nil {
-		return false, fmt.Errorf("%s: %w", operation, injectedErr)
+	}); err != nil {
+		return false, err
 	}
 
 	_, exists := fake.sanitizedObjects[objectKey]
@@ -311,18 +304,13 @@ func (fake *Fake) UploadSanitized(
 
 	fake.mu.Lock()
 	defer fake.mu.Unlock()
-	if err := contextError(ctx, operation); err != nil {
-		return err
-	}
-
-	fake.calls = append(fake.calls, FakeCall{
+	if err := fake.recordAttemptLocked(ctx, operation, FakeCall{
 		Operation:  FakeUploadSanitized,
 		FileID:     fileID,
 		SourceETag: sourceETag,
 		ObjectKey:  objectKey,
-	})
-	if injectedErr := fake.failures[FakeUploadSanitized]; injectedErr != nil {
-		return fmt.Errorf("%s: %w", operation, injectedErr)
+	}); err != nil {
+		return err
 	}
 
 	fake.sanitizedObjects[objectKey] = copyBytes(pdfBytes)
