@@ -203,6 +203,34 @@ func TestFakeEnforcesTheSourceObjectMemoryBoundary(t *testing.T) {
 	}
 }
 
+func TestFakeReportsAMissingSourceAsSourceNotFound(t *testing.T) {
+	t.Parallel()
+
+	fake := storage.NewFake()
+
+	_, err := fake.DownloadSource(context.Background(), "file-1", "")
+	require.ErrorIs(t, err, storage.ErrSourceNotFound)
+	require.NotErrorIs(t, err, storage.ErrDependency)
+
+	_, err = fake.DownloadSource(context.Background(), "file-1", "revision-1")
+	require.ErrorIs(t, err, storage.ErrSourceNotFound)
+	require.NotErrorIs(t, err, storage.ErrSourceRevisionConflict)
+}
+
+func TestFakeKeepsTheFirstSanitizedRevisionWriteImmutable(t *testing.T) {
+	t.Parallel()
+
+	fake := storage.NewFake()
+	require.NoError(t, fake.UploadSanitized(context.Background(), "file-1", "revision-1", []byte("first write")))
+
+	require.NoError(t, fake.UploadSanitized(context.Background(), "file-1", "revision-1", []byte("second write")))
+
+	storedBytes, exists, err := fake.SanitizedBytes("file-1", "revision-1")
+	require.NoError(t, err)
+	require.True(t, exists)
+	require.Equal(t, []byte("first write"), storedBytes)
+}
+
 func TestFakeUsesExactSanitizedRevisionForExistenceGrantsAndUploads(t *testing.T) {
 	t.Parallel()
 

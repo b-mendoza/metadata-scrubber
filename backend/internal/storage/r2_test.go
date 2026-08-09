@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"errors"
+	"fmt"
 	"io"
 	"net/http"
 	"net/http/httptest"
@@ -219,6 +220,24 @@ func TestR2TreatsMalformedProviderETagsAsOrdinaryFailures(t *testing.T) {
 	}
 }
 
+func TestR2ReportsAMissingSourceAsSourceNotFound(t *testing.T) {
+	t.Parallel()
+
+	adapter := newTestR2Server(t, http.HandlerFunc(func(response http.ResponseWriter, _ *http.Request) {
+		response.WriteHeader(http.StatusNotFound)
+		_, _ = io.WriteString(response, "provider-body-sentinel")
+	}))
+
+	_, err := adapter.DownloadSource(context.Background(), "file-identifier-sentinel", "")
+	require.ErrorIs(t, err, ErrSourceNotFound)
+	require.NotErrorIs(t, err, ErrDependency)
+	assertSafeStorageError(t, err)
+
+	_, err = adapter.DownloadSource(context.Background(), "file-identifier-sentinel", "revision-1")
+	require.ErrorIs(t, err, ErrSourceNotFound)
+	require.NotErrorIs(t, err, ErrSourceRevisionConflict)
+}
+
 func TestR2SanitizedExistenceUsesOnlyTheExactRevisionKey(t *testing.T) {
 	t.Parallel()
 
@@ -287,6 +306,7 @@ func TestR2SanitizedUploadPinsPDFContentTypeAndPerformsNoFollowUp(t *testing.T) 
 			method:             request.Method,
 			path:               request.URL.Path,
 			contentType:        request.Header.Get("Content-Type"),
+			ifNoneMatch:        request.Header.Get("If-None-Match"),
 			sourceETagMetadata: request.Header.Get("X-Amz-Meta-Source-Etag"),
 			body:               body,
 			err:                readErr,
@@ -302,9 +322,23 @@ func TestR2SanitizedUploadPinsPDFContentTypeAndPerformsNoFollowUp(t *testing.T) 
 	require.Equal(t, http.MethodPut, request.method)
 	require.Equal(t, "/"+testBucket+"/"+revisionKey, request.path)
 	require.Equal(t, PDFContentType, request.contentType)
+	require.Equal(t, "*", request.ifNoneMatch)
 	require.Empty(t, request.sourceETagMetadata)
 	require.Equal(t, oversizedPDF, request.body)
 	require.Equal(t, int64(1), requestCount.Load())
+}
+
+func TestR2TreatsAnExistingSanitizedRevisionWriteAsIdempotentSuccess(t *testing.T) {
+	t.Parallel()
+
+	adapter := newTestR2Server(t, http.HandlerFunc(func(response http.ResponseWriter, _ *http.Request) {
+		response.WriteHeader(http.StatusPreconditionFailed)
+		_, _ = io.WriteString(response, "provider-body-sentinel")
+	}))
+
+	err := adapter.UploadSanitized(context.Background(), "file-1", "revision-1", []byte("pdf"))
+
+	require.NoError(t, err)
 }
 
 func TestR2SanitizedUploadReturnsASanitizedDependencyError(t *testing.T) {
@@ -369,6 +403,22 @@ func TestR2ProductionRequestsHaveABoundedOverallDuration(t *testing.T) {
 	httpClient, ok := adapter.client.Options().HTTPClient.(*http.Client)
 	require.True(t, ok)
 	require.Equal(t, 30*time.Second, httpClient.Timeout)
+}
+
+func TestR2MapsProviderTimeoutsToDependencyFailures(t *testing.T) {
+	t.Parallel()
+
+	adapter := newTestR2("https://endpoint-sentinel.invalid", &http.Client{Transport: roundTripFunc(
+		func(*http.Request) (*http.Response, error) {
+			return nil, fmt.Errorf("transport stall: %w", context.DeadlineExceeded)
+		},
+	)})
+
+	_, err := adapter.DownloadSource(context.Background(), "file-identifier-sentinel", "")
+
+	require.ErrorIs(t, err, ErrDependency)
+	require.NotErrorIs(t, err, context.DeadlineExceeded)
+	assertSafeStorageError(t, err)
 }
 
 func TestR2PropagatesContextAndSanitizesProviderFailures(t *testing.T) {
@@ -504,6 +554,7 @@ type observedStorageRequest struct {
 	method             string
 	path               string
 	ifMatch            string
+	ifNoneMatch        string
 	contentType        string
 	sourceETagMetadata string
 	body               []byte

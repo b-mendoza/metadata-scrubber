@@ -113,7 +113,7 @@ func (r2 *R2) PresignSourceUpload(
 		}),
 	)
 	if err != nil {
-		return PresignedRequest{}, r2OperationError(operation, err)
+		return PresignedRequest{}, r2OperationError(ctx, operation)
 	}
 
 	requiredHeaders := browserRequestHeaders(presigned.SignedHeader)
@@ -150,7 +150,7 @@ func (r2 *R2) PresignSanitizedDownload(
 		Key:    aws.String(objectKey),
 	}, s3.WithPresignExpires(expiry))
 	if err != nil {
-		return PresignedRequest{}, r2OperationError(operation, err)
+		return PresignedRequest{}, r2OperationError(ctx, operation)
 	}
 
 	return PresignedRequest{
@@ -188,10 +188,14 @@ func (r2 *R2) DownloadSource(
 
 	output, err := r2.client.GetObject(ctx, input)
 	if err != nil {
-		if expectedETag != "" && httpStatusCode(err) == http.StatusPreconditionFailed {
+		statusCode := httpStatusCode(err)
+		if expectedETag != "" && statusCode == http.StatusPreconditionFailed {
 			return SourceObject{}, fmt.Errorf("%s: %w", operation, ErrSourceRevisionConflict)
 		}
-		return SourceObject{}, r2OperationError(operation, err)
+		if statusCode == http.StatusNotFound {
+			return SourceObject{}, fmt.Errorf("%s: %w", operation, ErrSourceNotFound)
+		}
+		return SourceObject{}, r2OperationError(ctx, operation)
 	}
 	if output.Body == nil || output.ETag == nil {
 		if output.Body != nil {
@@ -251,7 +255,7 @@ func (r2 *R2) SanitizedExists(
 		return false, nil
 	}
 
-	return false, r2OperationError(operation, err)
+	return false, r2OperationError(ctx, operation)
 }
 
 // UploadSanitized writes PDF bytes to the exact immutable revision key.
@@ -276,9 +280,15 @@ func (r2 *R2) UploadSanitized(
 		Key:         aws.String(objectKey),
 		Body:        bytes.NewReader(pdfBytes),
 		ContentType: aws.String(PDFContentType),
+		IfNoneMatch: aws.String("*"),
 	})
 	if err != nil {
-		return r2OperationError(operation, err)
+		// The revision key is immutable, so a precondition failure means the
+		// exact sanitized revision already exists: an idempotent success.
+		if httpStatusCode(err) == http.StatusPreconditionFailed {
+			return nil
+		}
+		return r2OperationError(ctx, operation)
 	}
 
 	return nil
@@ -311,12 +321,12 @@ func pinPDFContentType(stack *middleware.Stack) error {
 	), middleware.After)
 }
 
-func r2OperationError(operation string, providerErr error) error {
-	if errors.Is(providerErr, context.Canceled) {
-		return fmt.Errorf("%s: %w", operation, context.Canceled)
-	}
-	if errors.Is(providerErr, context.DeadlineExceeded) {
-		return fmt.Errorf("%s: %w", operation, context.DeadlineExceeded)
+// r2OperationError sanitizes a provider failure. Cancellation and deadline are
+// propagated only when the caller's own context ended; a provider-side stall or
+// timeout is a dependency failure, not a caller signal.
+func r2OperationError(ctx context.Context, operation string) error {
+	if ctxErr := ctx.Err(); ctxErr != nil {
+		return fmt.Errorf("%s: %w", operation, ctxErr)
 	}
 
 	return dependencyError(operation)
