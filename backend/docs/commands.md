@@ -9,7 +9,10 @@ All commands are [Task](https://taskfile.dev) targets defined in `Taskfile.yml`.
 | `task build` | Compile the service into the `metadata-scrubber` binary. |
 | `task run` | Run the service locally (`go run .`). |
 | `task test` | Run the suite with the race detector and coverage (`go test -race -cover ./...`). |
-| `task lint` | Lint and verify formatting, read-only (CI-safe). |
+| `task test:coverage` | Run the suite writing `coverage.out` (gitignored), then print the per-function coverage summary. |
+| `task test:watch` | Re-run the suite whenever Go sources, `testdata` fixtures, or module files change. |
+| `task lint` | Check module tidiness (`lint:deps`), lint, and verify formatting; read-only (CI-safe). |
+| `task lint:deps` | Verify `go.mod`/`go.sum` are tidy (`go mod tidy -diff`) and module checksums match (`go mod verify`); read-only. |
 | `task fix` | Apply lint auto-fixes (`fix:lint`), then format the source (`fix:fmt`); writes files. |
 | `task tidy` | Add missing and remove unused module dependencies (`go mod tidy`). |
 
