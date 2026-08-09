@@ -20,7 +20,14 @@ import (
 	"metadata-scrubber/internal/config"
 )
 
-const r2SigningRegion = "auto"
+const (
+	r2SigningRegion = "auto"
+
+	// r2RequestTimeout bounds each storage HTTP exchange end to end; the SDK's
+	// default client bounds only dialing and the TLS handshake, so a stalled
+	// response would otherwise hang until the caller's context ends.
+	r2RequestTimeout = 30 * time.Second
+)
 
 // R2 implements Storage for a private Cloudflare R2 bucket.
 type R2 struct {
@@ -39,7 +46,10 @@ type r2Options struct {
 
 // NewR2 constructs an R2 adapter without contacting the object store.
 func NewR2(cfg config.Config) *R2 {
-	return newR2(cfg, r2Options{endpoint: cfg.R2Endpoint()})
+	return newR2(cfg, r2Options{
+		endpoint:   cfg.R2Endpoint(),
+		httpClient: &http.Client{Timeout: r2RequestTimeout},
+	})
 }
 
 func newR2(cfg config.Config, options r2Options) *R2 {
