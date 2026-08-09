@@ -63,6 +63,13 @@ tasks:
       - go mod tidy -diff
       - go mod verify
 
+  # Not part of `lint`: it queries the Go vulnerability database over the
+  # network, and new advisories can make it fail without any code change.
+  vuln:
+    desc: Scan for known vulnerabilities reachable from this module's code
+    cmds:
+      - go tool govulncheck ./...
+
   # Write umbrella (destructive): apply lint auto-fixes, then format. Format
   # runs last so the result is always cleanly formatted.
   fix:
