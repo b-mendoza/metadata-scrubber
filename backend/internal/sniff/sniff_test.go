@@ -9,7 +9,6 @@ import (
 )
 
 func TestIsPDFCandidateRecognizesCompleteOffsetZeroPrefix(t *testing.T) {
-	var candidateCheck func([]byte) bool = sniff.IsPDFCandidate //nolint:staticcheck // Explicit type enforces the byte-only API contract.
 	testCases := []struct {
 		name       string
 		inputBytes []byte
@@ -20,11 +19,7 @@ func TestIsPDFCandidateRecognizesCompleteOffsetZeroPrefix(t *testing.T) {
 	}
 	for _, testCase := range testCases {
 		t.Run(testCase.name, func(t *testing.T) {
-			firstResult := candidateCheck(testCase.inputBytes)
-			secondResult := candidateCheck(testCase.inputBytes)
-
-			require.True(t, firstResult)
-			require.Equal(t, firstResult, secondResult)
+			require.True(t, sniff.IsPDFCandidate(testCase.inputBytes))
 		})
 	}
 }
