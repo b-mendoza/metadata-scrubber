@@ -11,8 +11,7 @@ All commands are [Task](https://taskfile.dev) targets defined in `Taskfile.yml`.
 | `task test` | Run the suite with the race detector and coverage (`go test -race -cover ./...`). |
 | `task test:coverage` | Run the suite writing `coverage.out` (gitignored), then print the per-function coverage summary. |
 | `task test:watch` | Re-run the suite whenever Go sources, `testdata` fixtures, or module files change. |
-| `task lint` | Lint and verify formatting; read-only (CI-safe). |
-| `task vuln` | Scan for known vulnerabilities reachable from this module's code (`govulncheck`); queries the Go vulnerability database over the network. |
+| `task lint` | Lint, verify formatting, and scan for known vulnerabilities (`govulncheck`, networked); read-only (CI-safe). |
 | `task fix` | Apply lint auto-fixes (`fix:lint`), then format the source (`fix:fmt`); writes files. |
 | `task tidy` | Add missing and remove unused module dependencies (`go mod tidy`). |
 
