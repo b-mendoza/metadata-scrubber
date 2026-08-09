@@ -55,22 +55,13 @@ tasks:
       - go tool golangci-lint run --config {{.GOLANGCI_LINT_CONFIG}}
       - go tool govulncheck ./...
 
-  # Write umbrella (destructive): apply lint auto-fixes, then format. Format
-  # runs last so the result is always cleanly formatted.
+  # Write umbrella (destructive): apply lint auto-fixes, then format with
+  # gofumpt + gci (orchestrated by golangci-lint). Format runs last so the
+  # result is always cleanly formatted.
   fix:
     desc: Apply lint auto-fixes and format the source code (writes files)
     cmds:
-      - task: fix:lint
-      - task: fix:fmt
-
-  fix:lint:
-    desc: Apply lint auto-fixes where supported
-    cmds:
       - go tool golangci-lint run --config {{.GOLANGCI_LINT_CONFIG}} --fix
-
-  fix:fmt:
-    desc: Format the source code with gofumpt + gci (orchestrated by golangci-lint)
-    cmds:
       - go tool golangci-lint fmt --config {{.GOLANGCI_LINT_CONFIG}}
 
   tidy:

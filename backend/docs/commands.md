@@ -12,7 +12,7 @@ All commands are [Task](https://taskfile.dev) targets defined in `Taskfile.yml`.
 | `task test:coverage` | Run the suite writing `coverage.out` (gitignored), then print the per-function coverage summary. |
 | `task test:watch` | Re-run the suite whenever Go sources, `testdata` fixtures, or module files change. |
 | `task lint` | Lint, verify formatting, and scan for known vulnerabilities (`govulncheck`, networked); read-only (CI-safe). |
-| `task fix` | Apply lint auto-fixes (`fix:lint`), then format the source (`fix:fmt`); writes files. |
+| `task fix` | Apply lint auto-fixes, then format the source; writes files. |
 | `task tidy` | Add missing and remove unused module dependencies (`go mod tidy`). |
 
 ## Let tooling own generated files
