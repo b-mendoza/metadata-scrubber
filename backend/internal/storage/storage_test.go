@@ -79,6 +79,24 @@ func TestObjectKeysBindSanitizedStateToExactRevision(t *testing.T) {
 			sourceETag: "Case",
 			want:       "sanitized/file-1/Q2FzZQ",
 		},
+		{
+			name:       "different revision",
+			fileID:     "file-1",
+			sourceETag: "revision-2",
+			want:       "sanitized/file-1/cmV2aXNpb24tMg",
+		},
+		{
+			name:       "different file",
+			fileID:     "file-2",
+			sourceETag: "revision-1",
+			want:       "sanitized/file-2/cmV2aXNpb24tMQ",
+		},
+		{
+			name:       "lowercase revision",
+			fileID:     "file-1",
+			sourceETag: "case",
+			want:       "sanitized/file-1/Y2FzZQ",
+		},
 	} {
 		t.Run(testCase.name, func(t *testing.T) {
 			objectKey, keyErr := storage.SanitizedObjectKey(testCase.fileID, testCase.sourceETag)
@@ -88,20 +106,6 @@ func TestObjectKeysBindSanitizedStateToExactRevision(t *testing.T) {
 			require.NotContains(t, strings.TrimPrefix(objectKey, "sanitized/"+testCase.fileID+"/"), "/")
 		})
 	}
-
-	revisionOneKey, err := storage.SanitizedObjectKey("file-1", "revision-1")
-	require.NoError(t, err)
-	revisionTwoKey, err := storage.SanitizedObjectKey("file-1", "revision-2")
-	require.NoError(t, err)
-	otherFileKey, err := storage.SanitizedObjectKey("file-2", "revision-1")
-	require.NoError(t, err)
-	lowerCaseKey, err := storage.SanitizedObjectKey("file-1", "case")
-	require.NoError(t, err)
-
-	require.NotEqual(t, revisionOneKey, revisionTwoKey)
-	require.NotEqual(t, revisionOneKey, otherFileKey)
-	require.NotEqual(t, "sanitized/file-1/Q2FzZQ", lowerCaseKey)
-	require.NotEqual(t, "sanitized/file-1", revisionOneKey)
 }
 
 func TestObjectKeysRejectInvalidLogicalIdentifiers(t *testing.T) {
