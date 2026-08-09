@@ -16,6 +16,7 @@ import (
 
 	"metadata-scrubber/internal/config"
 	"metadata-scrubber/internal/httpx/header"
+	"metadata-scrubber/internal/storage"
 )
 
 const (
@@ -147,7 +148,7 @@ func discardLogger() *slog.Logger {
 func newTestServer(logger *slog.Logger) *http.Server {
 	cfg := config.Config{Port: 0}
 
-	return newServer(cfg, logger)
+	return newServer(cfg, storage.NewFake(), logger)
 }
 
 type serverLogRecord struct {
