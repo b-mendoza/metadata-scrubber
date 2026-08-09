@@ -25,6 +25,11 @@
       "matchDepTypes": ["golang"],
       "matchManagers": ["gomod"],
       "rangeStrategy": "bump"
+    },
+    {
+      "description": "By default Renovate only runs `go get`, which can leave go.sum without full-content checksums for shared transitive deps needed by go.mod `tool` directives (broke CI on the pdfcpu v0.14.0 PR). Run `go mod tidy` so non-major gomod PRs ship a consistent module graph (Renovate skips tidy on major updates unless gomodUpdateImportPaths is also enabled).",
+      "matchManagers": ["gomod"],
+      "postUpdateOptions": ["gomodTidy"]
     }
   ],
   "rebaseWhen": "conflicted",
