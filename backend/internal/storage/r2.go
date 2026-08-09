@@ -5,7 +5,6 @@ import (
 	"context"
 	"errors"
 	"io"
-	"maps"
 	"net/http"
 	"time"
 
@@ -221,8 +220,8 @@ func (r2 *R2) DownloadSource(
 	}
 
 	return SourceObject{
-		PDFBytes: copyBytes(pdfBytes),
-		Metadata: maps.Clone(output.Metadata),
+		PDFBytes: pdfBytes,
+		Metadata: output.Metadata,
 		ETag:     normalizedETag,
 	}, nil
 }
