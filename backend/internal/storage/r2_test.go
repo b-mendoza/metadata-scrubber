@@ -37,7 +37,8 @@ func TestR2PresignsOperationSpecificExactKeysAndExpiry(t *testing.T) {
 	presignMethods := capturePresignMethods(adapter)
 
 	uploadExpiry := time.Minute
-	upload, err := adapter.PresignSourceUpload(context.Background(), "file-1", uploadExpiry)
+	uploadSizeBytes := int64(1024)
+	upload, err := adapter.PresignSourceUpload(context.Background(), "file-1", uploadSizeBytes, uploadExpiry)
 	require.NoError(t, err)
 	assertPresignedRequest(
 		t,
@@ -48,9 +49,11 @@ func TestR2PresignsOperationSpecificExactKeysAndExpiry(t *testing.T) {
 		uploadExpiry,
 	)
 	require.Equal(t, PDFContentType, upload.RequiredHeaders.Get("Content-Type"))
+	require.Equal(t, "1024", upload.RequiredHeaders.Get("Content-Length"))
 	require.Empty(t, upload.RequiredHeaders.Get("Host"))
-	signedHeaders := parsePresignedURL(t, upload.URL).Query().Get("X-Amz-SignedHeaders")
-	require.Contains(t, strings.Split(signedHeaders, ";"), "content-type")
+	signedHeaders := strings.Split(parsePresignedURL(t, upload.URL).Query().Get("X-Amz-SignedHeaders"), ";")
+	require.Contains(t, signedHeaders, "content-type")
+	require.Contains(t, signedHeaders, "content-length")
 
 	downloadExpiry := 2 * time.Minute
 	download, err := adapter.PresignSanitizedDownload(
@@ -333,12 +336,16 @@ func TestR2RejectsInvalidInputsBeforeStorageRequests(t *testing.T) {
 		requestCount.Add(1)
 	}))
 
-	_, err := adapter.PresignSourceUpload(context.Background(), "folder/file", time.Minute)
+	_, err := adapter.PresignSourceUpload(context.Background(), "folder/file", 1024, time.Minute)
 	require.ErrorIs(t, err, ErrInvalidFileID)
 	_, err = adapter.PresignSanitizedDownload(context.Background(), "file-1", `"revision-1"`, time.Minute)
 	require.ErrorIs(t, err, ErrInvalidETag)
-	_, err = adapter.PresignSourceUpload(context.Background(), "file-1", 0)
+	_, err = adapter.PresignSourceUpload(context.Background(), "file-1", 1024, 0)
 	require.ErrorIs(t, err, ErrInvalidPresignExpiry)
+	_, err = adapter.PresignSourceUpload(context.Background(), "file-1", 0, time.Minute)
+	require.ErrorIs(t, err, ErrInvalidSourceSize)
+	_, err = adapter.PresignSourceUpload(context.Background(), "file-1", MaxSourceObjectBytes+1, time.Minute)
+	require.ErrorIs(t, err, ErrSourceObjectTooLarge)
 	_, err = adapter.DownloadSource(context.Background(), "file-1", `"revision-1"`)
 	require.ErrorIs(t, err, ErrInvalidETag)
 	_, err = adapter.SanitizedExists(context.Background(), "file-1", "")
@@ -375,7 +382,7 @@ func TestR2PropagatesContextAndSanitizesProviderFailures(t *testing.T) {
 		},
 	)})
 
-	_, err := adapter.PresignSourceUpload(ctx, "file-1", time.Minute)
+	_, err := adapter.PresignSourceUpload(ctx, "file-1", 1024, time.Minute)
 	require.ErrorIs(t, err, context.Canceled)
 	_, err = adapter.PresignSanitizedDownload(ctx, "file-1", "revision-1", time.Minute)
 	require.ErrorIs(t, err, context.Canceled)
