@@ -278,14 +278,8 @@ func (r2 *R2) UploadSanitized(
 		Key:         aws.String(objectKey),
 		Body:        bytes.NewReader(pdfBytes),
 		ContentType: aws.String(PDFContentType),
-		IfNoneMatch: aws.String("*"),
 	})
 	if err != nil {
-		// The revision key is immutable, so a precondition failure means the
-		// exact sanitized revision already exists: an idempotent success.
-		if httpStatusCode(err) == http.StatusPreconditionFailed {
-			return nil
-		}
 		return r2OperationError(ctx, operation)
 	}
 

@@ -297,7 +297,6 @@ func TestR2SanitizedUploadPinsPDFContentTypeAndPerformsNoFollowUp(t *testing.T) 
 			method:             request.Method,
 			path:               request.URL.Path,
 			contentType:        request.Header.Get("Content-Type"),
-			ifNoneMatch:        request.Header.Get("If-None-Match"),
 			sourceETagMetadata: request.Header.Get("X-Amz-Meta-Source-Etag"),
 			body:               body,
 			err:                readErr,
@@ -313,20 +312,9 @@ func TestR2SanitizedUploadPinsPDFContentTypeAndPerformsNoFollowUp(t *testing.T) 
 	require.Equal(t, http.MethodPut, request.method)
 	require.Equal(t, "/"+testBucket+"/"+revisionKey, request.path)
 	require.Equal(t, PDFContentType, request.contentType)
-	require.Equal(t, "*", request.ifNoneMatch)
 	require.Empty(t, request.sourceETagMetadata)
 	require.Equal(t, oversizedPDF, request.body)
 	require.Equal(t, int64(1), requestCount.Load())
-}
-
-func TestR2TreatsAnExistingSanitizedRevisionWriteAsIdempotentSuccess(t *testing.T) {
-	t.Parallel()
-
-	adapter := newTestR2StatusServer(t, http.StatusPreconditionFailed)
-
-	err := adapter.UploadSanitized(context.Background(), "file-1", "revision-1", []byte("pdf"))
-
-	require.NoError(t, err)
 }
 
 func TestR2SanitizedUploadReturnsASanitizedDependencyError(t *testing.T) {
@@ -551,7 +539,6 @@ type observedStorageRequest struct {
 	method             string
 	path               string
 	ifMatch            string
-	ifNoneMatch        string
 	contentType        string
 	sourceETagMetadata string
 	body               []byte
