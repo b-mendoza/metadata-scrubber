@@ -690,14 +690,19 @@ func TestInspectPDFAcceptsSignatureLikeTextAndEmptySignatureField(t *testing.T) 
 	require.NotEmpty(t, fields)
 }
 
+func onePagePDFObjects(content string) map[int]string {
+	return map[int]string{
+		1: "<< /Type /Catalog /Pages 2 0 R >>",
+		2: "<< /Type /Pages /Kids [3 0 R] /Count 1 >>",
+		3: "<< /Type /Page /Parent 2 0 R /MediaBox [0 0 200 200] /Resources << >> /Contents 4 0 R >>",
+		4: streamObject(content),
+	}
+}
+
 func buildPDFWithCompressedMetadataStreams(t *testing.T, streamCount, decodedStreamBytes int) []byte {
 	t.Helper()
 
-	objects := map[int]string{
-		2: "<< /Type /Pages /Kids [3 0 R] /Count 1 >>",
-		3: "<< /Type /Page /Parent 2 0 R /MediaBox [0 0 200 200] /Resources << >> /Contents 4 0 R >>",
-		4: streamObject("BT 20 100 Td (Synthetic page) Tj ET"),
-	}
+	objects := onePagePDFObjects("BT 20 100 Td (Synthetic page) Tj ET")
 	var catalog strings.Builder
 	catalog.WriteString("<< /Type /Catalog /Pages 2 0 R /SyntheticParents [")
 	for index := range streamCount {
@@ -717,16 +722,10 @@ func buildPDFWithCompressedMetadataStreams(t *testing.T, streamCount, decodedStr
 func buildPDFWithCompressedCatalogMetadata(t *testing.T, metadata string) []byte {
 	t.Helper()
 
-	return buildPDF(t, pdfFixture{
-		objects: map[int]string{
-			1: "<< /Type /Catalog /Pages 2 0 R /Metadata 5 0 R >>",
-			2: "<< /Type /Pages /Kids [3 0 R] /Count 1 >>",
-			3: "<< /Type /Page /Parent 2 0 R /MediaBox [0 0 200 200] /Resources << >> /Contents 4 0 R >>",
-			4: streamObject("BT 20 100 Td (Synthetic page) Tj ET"),
-			5: compressedMetadataStreamObject(t, metadata),
-		},
-		rootObjectNumber: 1,
-	})
+	objects := onePagePDFObjects("BT 20 100 Td (Synthetic page) Tj ET")
+	objects[1] = "<< /Type /Catalog /Pages 2 0 R /Metadata 5 0 R >>"
+	objects[5] = compressedMetadataStreamObject(t, metadata)
+	return buildPDF(t, pdfFixture{objects: objects, rootObjectNumber: 1})
 }
 
 func compressedMetadataStreamObject(t *testing.T, content string) string {
@@ -800,15 +799,7 @@ func buildCleanPDF(t *testing.T) []byte {
 func buildPDFWithContent(t *testing.T, content string) []byte {
 	t.Helper()
 
-	return buildPDF(t, pdfFixture{
-		objects: map[int]string{
-			1: "<< /Type /Catalog /Pages 2 0 R >>",
-			2: "<< /Type /Pages /Kids [3 0 R] /Count 1 >>",
-			3: "<< /Type /Page /Parent 2 0 R /MediaBox [0 0 200 200] /Resources << >> /Contents 4 0 R >>",
-			4: streamObject(content),
-		},
-		rootObjectNumber: 1,
-	})
+	return buildPDF(t, pdfFixture{objects: onePagePDFObjects(content), rootObjectNumber: 1})
 }
 
 type metadataFixtureValues struct {
@@ -909,13 +900,10 @@ func buildPDFWithInfoAndRawMetadataAtLocation(t *testing.T, entries map[string]s
 		nestedMetadataEntry = " /Synthetic << /Metadata 6 0 R >>"
 	}
 
-	objects := map[int]string{
-		1: fmt.Sprintf("<< /Type /Catalog /Pages 2 0 R%s%s >>", catalogMetadataEntry, nestedMetadataEntry),
-		2: "<< /Type /Pages /Kids [3 0 R] /Count 1 >>",
-		3: fmt.Sprintf("<< /Type /Page /Parent 2 0 R /MediaBox [0 0 200 200] /Resources << >> /Contents 4 0 R%s >>", pageMetadataEntry),
-		4: streamObject("BT 20 100 Td (Synthetic page) Tj ET"),
-		5: infoDictionaryObject(t, entries),
-	}
+	objects := onePagePDFObjects("BT 20 100 Td (Synthetic page) Tj ET")
+	objects[1] = fmt.Sprintf("<< /Type /Catalog /Pages 2 0 R%s%s >>", catalogMetadataEntry, nestedMetadataEntry)
+	objects[3] = fmt.Sprintf("<< /Type /Page /Parent 2 0 R /MediaBox [0 0 200 200] /Resources << >> /Contents 4 0 R%s >>", pageMetadataEntry)
+	objects[5] = infoDictionaryObject(t, entries)
 	if location != noMetadata {
 		objects[6] = metadataStreamObject(metadata)
 	}
@@ -955,12 +943,7 @@ const (
 func buildSignedPDF(t *testing.T, variant signedPDFVariant) []byte {
 	t.Helper()
 
-	objects := map[int]string{
-		1: "<< /Type /Catalog /Pages 2 0 R >>",
-		2: "<< /Type /Pages /Kids [3 0 R] /Count 1 >>",
-		3: "<< /Type /Page /Parent 2 0 R /MediaBox [0 0 200 200] /Resources << >> /Contents 4 0 R >>",
-		4: streamObject("BT 20 100 Td (Signed synthetic page) Tj ET"),
-	}
+	objects := onePagePDFObjects("BT 20 100 Td (Signed synthetic page) Tj ET")
 
 	switch variant {
 	case signedDictionary:
