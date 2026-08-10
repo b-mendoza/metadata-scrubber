@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"errors"
 	"io"
+	"log/slog"
 	"mime"
 	"net/http"
 	"strings"
@@ -186,8 +187,14 @@ func (handler *Handler) logStage(
 	outcome string,
 	startedAt time.Time,
 ) {
-	handler.logger.InfoContext(
+	// "failed" marks unclassified internal errors; every other outcome is expected traffic.
+	level := slog.LevelInfo
+	if outcome == "failed" {
+		level = slog.LevelError
+	}
+	handler.logger.Log(
 		ctx,
+		level,
 		stage,
 		"storage_key", storageKey,
 		"outcome", outcome,
