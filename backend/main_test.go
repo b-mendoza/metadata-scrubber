@@ -170,7 +170,13 @@ func TestNewServerSharesOneCapacityTwoGateAcrossDryRunAndScrubMisses(t *testing.
 			ETag:     "revision-" + fileID,
 		}))
 	}
-	observer := newServerAdmissionStorage(fake, thirdFileID)
+	observer := &serverAdmissionStorage{
+		Storage:             fake,
+		downloadStarted:     make(chan string, 3),
+		downloadRelease:     make(chan struct{}, 3),
+		observedScrubFileID: thirdFileID,
+		observedScrubLookup: make(chan struct{}),
+	}
 	server := newServer(config.Config{Port: 0}, observer, discardLogger())
 
 	responses := make(chan *httptest.ResponseRecorder, 3)
@@ -183,7 +189,7 @@ func TestNewServerSharesOneCapacityTwoGateAcrossDryRunAndScrubMisses(t *testing.
 			)
 		}(fileID)
 	}
-	observer.waitForDownloads(t, 2)
+	observer.waitForTwoDownloads(t)
 
 	go func() {
 		responses <- serveServerJSON(
@@ -256,16 +262,6 @@ type serverAdmissionStorage struct {
 	scrubLookupSignalOnce sync.Once
 }
 
-func newServerAdmissionStorage(delegate storage.Storage, observedScrubFileID string) *serverAdmissionStorage {
-	return &serverAdmissionStorage{
-		Storage:             delegate,
-		downloadStarted:     make(chan string, 3),
-		downloadRelease:     make(chan struct{}, 3),
-		observedScrubFileID: observedScrubFileID,
-		observedScrubLookup: make(chan struct{}),
-	}
-}
-
 func (observer *serverAdmissionStorage) DownloadSource(
 	ctx context.Context,
 	fileID string,
@@ -306,9 +302,9 @@ func (observer *serverAdmissionStorage) SanitizedExists(
 	return exists, err
 }
 
-func (observer *serverAdmissionStorage) waitForDownloads(t *testing.T, count int) {
+func (observer *serverAdmissionStorage) waitForTwoDownloads(t *testing.T) {
 	t.Helper()
-	for range count {
+	for range 2 {
 		select {
 		case <-observer.downloadStarted:
 		case <-time.After(time.Second):
