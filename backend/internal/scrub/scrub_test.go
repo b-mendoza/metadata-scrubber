@@ -591,7 +591,7 @@ func TestPDFPathsRejectUndecodableMetadataAtomically(t *testing.T) {
 			return buildPDFWithInfo(t, map[string]string{"Custom": "[1 2]"})
 		}},
 		{name: "non UTF-8 metadata stream", pdfBytes: func(t *testing.T) []byte {
-			return buildPDFWithInfoAndRawMetadata(t, map[string]string{}, string([]byte{0xff, 0xfe}))
+			return buildPDFWithInfoAndRawMetadataAtLocation(t, map[string]string{}, string([]byte{0xff, 0xfe}), catalogMetadata)
 		}},
 	}
 	for _, testCase := range testCases {
@@ -612,7 +612,7 @@ func TestPDFPathsRejectUndecodableMetadataAtomically(t *testing.T) {
 }
 
 func TestMetadataTraversalDeduplicatesOneParentEntryTarget(t *testing.T) {
-	context, err := readPDF(buildPDFWithInfoAndRawMetadata(t, map[string]string{}, syntheticXMP("duplicate-target")))
+	context, err := readPDF(buildPDFWithInfoAndRawMetadataAtLocation(t, map[string]string{}, syntheticXMP("duplicate-target"), catalogMetadata))
 	require.NoError(t, err)
 	catalog, err := context.Catalog()
 	require.NoError(t, err)
@@ -876,12 +876,6 @@ func buildPDFWithInfoAndMetadata(t *testing.T, entries map[string]string, locati
 	t.Helper()
 
 	return buildPDFWithInfoAndRawMetadataAtLocation(t, entries, syntheticXMP("near-miss-metadata"), location)
-}
-
-func buildPDFWithInfoAndRawMetadata(t *testing.T, entries map[string]string, metadata string) []byte {
-	t.Helper()
-
-	return buildPDFWithInfoAndRawMetadataAtLocation(t, entries, metadata, catalogMetadata)
 }
 
 func buildPDFWithInfoAndRawMetadataAtLocation(t *testing.T, entries map[string]string, metadata string, location metadataLocation) []byte {
