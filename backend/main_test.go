@@ -10,12 +10,16 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"os"
+	"strings"
+	"sync"
 	"testing"
+	"time"
 
 	"github.com/stretchr/testify/require"
 
 	"metadata-scrubber/internal/config"
 	"metadata-scrubber/internal/httpx/header"
+	"metadata-scrubber/internal/scrub"
 	"metadata-scrubber/internal/storage"
 )
 
@@ -103,7 +107,7 @@ func TestNewServerHandlesCORSPreflight(t *testing.T) {
 
 	server := newTestServer(discardLogger())
 	recorder := httptest.NewRecorder()
-	request := httptest.NewRequest(http.MethodOptions, "/api/scrub", nil)
+	request := httptest.NewRequest(http.MethodOptions, "/api/files/scrub", nil)
 
 	server.Handler.ServeHTTP(recorder, request)
 
@@ -112,16 +116,108 @@ func TestNewServerHandlesCORSPreflight(t *testing.T) {
 	require.Contains(t, recorder.Header().Get(header.AccessControlAllowMethods), http.MethodOptions)
 }
 
-func TestNewServerRoutesScrubUploads(t *testing.T) {
+func TestNewServerRoutesJSONWorkflowAndRemovesLegacyScrub(t *testing.T) {
 	t.Parallel()
 
 	server := newTestServer(discardLogger())
+	for _, path := range []string{"/api/uploads", "/api/files/dry-run", "/api/files/scrub"} {
+		recorder := httptest.NewRecorder()
+		request := httptest.NewRequest(http.MethodPost, path, nil)
+
+		server.Handler.ServeHTTP(recorder, request)
+
+		require.Equal(t, http.StatusUnsupportedMediaType, recorder.Code, path)
+	}
+
+	legacyRecorder := httptest.NewRecorder()
+	server.Handler.ServeHTTP(
+		legacyRecorder,
+		httptest.NewRequest(http.MethodPost, "/api/scrub", nil),
+	)
+	require.Equal(t, http.StatusNotFound, legacyRecorder.Code)
+}
+
+func TestNewServerRejectsWrongMethodsForJSONWorkflow(t *testing.T) {
+	t.Parallel()
+
+	require.Equal(t, 2, processingPermitCount)
+	require.Equal(t, 10_000_000, storage.MaxSourceObjectBytes)
+	require.Equal(t, 10_000_000, scrub.MaxInputBytes)
+
+	server := newTestServer(discardLogger())
 	recorder := httptest.NewRecorder()
-	request := httptest.NewRequest(http.MethodPost, "/api/scrub", nil)
+	server.Handler.ServeHTTP(recorder, httptest.NewRequest(http.MethodGet, "/api/uploads", nil))
 
-	server.Handler.ServeHTTP(recorder, request)
+	require.Equal(t, http.StatusMethodNotAllowed, recorder.Code)
+}
 
-	require.Equal(t, http.StatusBadRequest, recorder.Code)
+func TestNewServerSharesOneCapacityTwoGateAcrossDryRunAndScrubMisses(t *testing.T) {
+	const (
+		firstFileID  = "00000000-0000-4000-8000-000000000001"
+		secondFileID = "00000000-0000-4000-8000-000000000002"
+		thirdFileID  = "00000000-0000-4000-8000-000000000003"
+	)
+
+	pdfBytes, err := os.ReadFile("internal/handler/testdata/with-property.pdf")
+	require.NoError(t, err)
+	fake := storage.NewFake()
+	for _, fileID := range []string{firstFileID, secondFileID, thirdFileID} {
+		require.NoError(t, fake.SetSource(fileID, storage.SourceObject{
+			PDFBytes: pdfBytes,
+			ETag:     "revision-" + fileID,
+		}))
+	}
+	observer := newServerAdmissionStorage(fake, thirdFileID)
+	server := newServer(config.Config{Port: 0}, observer, discardLogger())
+
+	responses := make(chan *httptest.ResponseRecorder, 3)
+	for _, fileID := range []string{firstFileID, secondFileID} {
+		go func(id string) {
+			responses <- serveServerJSON(
+				server,
+				"/api/files/dry-run",
+				`{"storageKey":"uploads/`+id+`"}`,
+			)
+		}(fileID)
+	}
+	observer.waitForDownloads(t, 2)
+
+	go func() {
+		responses <- serveServerJSON(
+			server,
+			"/api/files/scrub",
+			`{"storageKey":"uploads/`+thirdFileID+`","etag":"revision-`+thirdFileID+`"}`,
+		)
+	}()
+	observer.waitForObservedScrubLookup(t)
+
+	select {
+	case fileID := <-observer.downloadStarted:
+		require.FailNow(t, "scrub miss entered a separate gate", "unexpected download for %s", fileID)
+	case <-time.After(100 * time.Millisecond):
+	}
+	require.Equal(t, 2, observer.peakDownloads())
+
+	observer.releaseOneDownload()
+	select {
+	case fileID := <-observer.downloadStarted:
+		require.Equal(t, thirdFileID, fileID)
+	case <-time.After(time.Second):
+		require.FailNow(t, "scrub miss did not enter shared gate after one permit was released")
+	}
+	require.Equal(t, 2, observer.peakDownloads())
+
+	observer.releaseOneDownload()
+	observer.releaseOneDownload()
+	for range 3 {
+		select {
+		case recorder := <-responses:
+			require.Equal(t, http.StatusOK, recorder.Code, recorder.Body.String())
+		case <-time.After(3 * time.Second):
+			require.FailNow(t, "timed out waiting for constructed route response")
+		}
+	}
+	require.Equal(t, 2, observer.peakDownloads())
 }
 
 func setValidStartupEnvironment(t *testing.T) {
@@ -149,6 +245,107 @@ func newTestServer(logger *slog.Logger) *http.Server {
 	cfg := config.Config{Port: 0}
 
 	return newServer(cfg, storage.NewFake(), logger)
+}
+
+func serveServerJSON(server *http.Server, path, body string) *httptest.ResponseRecorder {
+	request := httptest.NewRequest(http.MethodPost, path, strings.NewReader(body))
+	request.Header.Set(header.ContentType, "application/json")
+	recorder := httptest.NewRecorder()
+	server.Handler.ServeHTTP(recorder, request)
+	return recorder
+}
+
+type serverAdmissionStorage struct {
+	storage.Storage
+
+	mu                    sync.Mutex
+	active                int
+	peak                  int
+	downloadStarted       chan string
+	downloadRelease       chan struct{}
+	observedScrubFileID   string
+	observedScrubLookup   chan struct{}
+	scrubLookupSignalOnce sync.Once
+}
+
+func newServerAdmissionStorage(delegate storage.Storage, observedScrubFileID string) *serverAdmissionStorage {
+	return &serverAdmissionStorage{
+		Storage:             delegate,
+		downloadStarted:     make(chan string, 3),
+		downloadRelease:     make(chan struct{}, 3),
+		observedScrubFileID: observedScrubFileID,
+		observedScrubLookup: make(chan struct{}),
+	}
+}
+
+func (observer *serverAdmissionStorage) DownloadSource(
+	ctx context.Context,
+	fileID string,
+	expectedETag string,
+) (storage.SourceObject, error) {
+	observer.mu.Lock()
+	observer.active++
+	if observer.active > observer.peak {
+		observer.peak = observer.active
+	}
+	observer.mu.Unlock()
+
+	observer.downloadStarted <- fileID
+	select {
+	case <-observer.downloadRelease:
+	case <-ctx.Done():
+		observer.mu.Lock()
+		observer.active--
+		observer.mu.Unlock()
+		return storage.SourceObject{}, ctx.Err()
+	}
+
+	observer.mu.Lock()
+	observer.active--
+	observer.mu.Unlock()
+	return observer.Storage.DownloadSource(ctx, fileID, expectedETag)
+}
+
+func (observer *serverAdmissionStorage) SanitizedExists(
+	ctx context.Context,
+	fileID string,
+	sourceETag string,
+) (bool, error) {
+	exists, err := observer.Storage.SanitizedExists(ctx, fileID, sourceETag)
+	if fileID == observer.observedScrubFileID {
+		observer.scrubLookupSignalOnce.Do(func() { close(observer.observedScrubLookup) })
+	}
+	return exists, err
+}
+
+func (observer *serverAdmissionStorage) waitForDownloads(t *testing.T, count int) {
+	t.Helper()
+	for range count {
+		select {
+		case <-observer.downloadStarted:
+		case <-time.After(time.Second):
+			require.FailNow(t, "timed out waiting for constructed handler download")
+		}
+	}
+}
+
+func (observer *serverAdmissionStorage) waitForObservedScrubLookup(t *testing.T) {
+	t.Helper()
+	select {
+	case <-observer.observedScrubLookup:
+	case <-time.After(time.Second):
+		require.FailNow(t, "timed out waiting for scrub miss lookup")
+	}
+}
+
+func (observer *serverAdmissionStorage) releaseOneDownload() {
+	observer.downloadRelease <- struct{}{}
+}
+
+func (observer *serverAdmissionStorage) peakDownloads() int {
+	observer.mu.Lock()
+	defer observer.mu.Unlock()
+	return observer.peak
 }
 
 type serverLogRecord struct {
