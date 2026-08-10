@@ -186,10 +186,8 @@ func readPDF(inputBytes []byte) (*model.Context, error) {
 		return nil, err
 	}
 	restoreMetadataEntries(metadataEntries)
-	if configuration.Optimize {
-		if err := api.OptimizeContext(context); err != nil {
-			return nil, err
-		}
+	if err := api.OptimizeContext(context); err != nil {
+		return nil, err
 	}
 	if err := pdfcpu.CacheFormFonts(context); err != nil {
 		return nil, err
