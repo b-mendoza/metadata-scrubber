@@ -43,14 +43,8 @@ func TestR2PresignsOperationSpecificExactKeysAndExpiry(t *testing.T) {
 	uploadSizeBytes := int64(1024)
 	upload, err := adapter.PresignSourceUpload(context.Background(), "file-1", uploadSizeBytes, uploadExpiry)
 	require.NoError(t, err)
-	assertPresignedRequest(
-		t,
-		upload,
-		<-presignMethods,
-		http.MethodPut,
-		"/"+testBucket+"/source/file-1",
-		uploadExpiry,
-	)
+	require.Equal(t, http.MethodPut, <-presignMethods)
+	assertPresignedRequest(t, upload, "/"+testBucket+"/source/file-1", uploadExpiry)
 	require.Equal(t, PDFContentType, upload.RequiredHeaders.Get("Content-Type"))
 	require.Equal(t, "1024", upload.RequiredHeaders.Get("Content-Length"))
 	require.Empty(t, upload.RequiredHeaders.Get("Host"))
@@ -68,14 +62,8 @@ func TestR2PresignsOperationSpecificExactKeysAndExpiry(t *testing.T) {
 	require.NoError(t, err)
 	revisionKey, err := SanitizedObjectKey("file-1", "revision-1")
 	require.NoError(t, err)
-	assertPresignedRequest(
-		t,
-		download,
-		<-presignMethods,
-		http.MethodGet,
-		"/"+testBucket+"/"+revisionKey,
-		downloadExpiry,
-	)
+	require.Equal(t, http.MethodGet, <-presignMethods)
+	assertPresignedRequest(t, download, "/"+testBucket+"/"+revisionKey, downloadExpiry)
 	require.Empty(t, download.RequiredHeaders)
 }
 
@@ -475,15 +463,12 @@ func newTestR2(endpoint string, httpClient *http.Client) *R2 {
 func assertPresignedRequest(
 	t *testing.T,
 	request PresignedRequest,
-	actualMethod string,
-	expectedMethod string,
 	path string,
 	expiry time.Duration,
 ) {
 	t.Helper()
 
 	parsed := parsePresignedURL(t, request.URL)
-	require.Equal(t, expectedMethod, actualMethod)
 	require.Equal(t, path, parsed.Path)
 	require.Equal(t, strconv.FormatInt(int64(expiry/time.Second), 10), parsed.Query().Get("X-Amz-Expires"))
 	require.Equal(t, testAccessKey, strings.Split(parsed.Query().Get("X-Amz-Credential"), "/")[0])
