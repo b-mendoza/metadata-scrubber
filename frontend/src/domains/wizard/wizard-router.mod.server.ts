@@ -1,6 +1,6 @@
 import type { TRPC_ERROR_CODE_KEY } from "@trpc/server";
 import { TRPCError } from "@trpc/server";
-import { Schema } from "effect";
+import { Data, Effect, Schema } from "effect";
 
 import { CONTENT_TYPE_HEADER } from "#/shared/constants/http/headers/headers.mod";
 import {
@@ -47,10 +47,10 @@ interface PublicError {
 
 interface BackendJSONRequestParams<Result> {
   readonly body: object;
-  readonly decodeSuccess: (body: unknown) => Promise<Result>;
   readonly endpoint: EndpointIdentity;
   readonly path: string;
   readonly signal: AbortSignal;
+  readonly successSchema: Schema.ConstraintDecoder<Result>;
 }
 
 const hasMaximumUTF8Bytes = (value: string, maximum: number) =>
@@ -181,23 +181,6 @@ const scrubFileInput = Schema.toStandardSchemaV1(scrubFileInputSchema, {
   parseOptions: STRICT_PARSE_OPTIONS,
 });
 
-const decodeCreateUploadResponse = Schema.decodeUnknownPromise(
-  createUploadResponseSchema,
-  STRICT_PARSE_OPTIONS,
-);
-const decodeDryRunResponse = Schema.decodeUnknownPromise(
-  dryRunResponseSchema,
-  STRICT_PARSE_OPTIONS,
-);
-const decodeScrubFileResponse = Schema.decodeUnknownPromise(
-  scrubFileResponseSchema,
-  STRICT_PARSE_OPTIONS,
-);
-const decodeBackendError = Schema.decodeUnknownPromise(
-  backendErrorSchema,
-  STRICT_PARSE_OPTIONS,
-);
-
 const publicErrors: Record<
   EndpointIdentity,
   Readonly<Partial<Record<number, PublicError>>>
@@ -278,108 +261,118 @@ const publicErrors: Record<
   },
 };
 
-const createGatewayError = () =>
-  new TRPCError({
-    code: "BAD_GATEWAY",
-    message: GENERIC_GATEWAY_MESSAGE,
-  });
+class GatewayFailure extends Data.TaggedError("GatewayFailure") {}
 
-const runUpstreamOperation = async <Result>(
-  operation: () => Promise<Result>,
-): Promise<Result> =>
-  operation().then(
-    (result) => result,
-    () => {
-      throw createGatewayError();
-    },
-  );
+class PublicFailure extends Data.TaggedError("PublicFailure")<PublicError> {}
 
-const readResponseJSON = async (response: Response): Promise<unknown> =>
-  runUpstreamOperation(async () => response.json());
+type BackendFailure = GatewayFailure | PublicFailure;
 
-const decodeResponse = async <Result>(
-  decode: (body: unknown) => Promise<Result>,
-  body: unknown,
-): Promise<Result> => runUpstreamOperation(async () => decode(body));
+const createTRPCError = (failure: BackendFailure) =>
+  failure._tag === "PublicFailure"
+    ? new TRPCError({
+        code: failure.code,
+        message: failure.message,
+      })
+    : new TRPCError({
+        code: "BAD_GATEWAY",
+        message: GENERIC_GATEWAY_MESSAGE,
+      });
 
-const getPublicError = (
-  endpoint: EndpointIdentity,
-  status: number,
-): PublicError | undefined => publicErrors[endpoint][status];
-
-const requestBackendJSON = async <Result>({
+const requestBackendJSON = <Result>({
   body,
-  decodeSuccess,
   endpoint,
   path,
   signal,
-}: BackendJSONRequestParams<Result>): Promise<Result> => {
-  const { env } = getApplicationBindings();
-  const url = new URL(path, env.BACKEND_URL);
-  const response = await runUpstreamOperation(async () =>
-    fetch(url, {
-      body: JSON.stringify(body),
-      headers: {
-        [CONTENT_TYPE_HEADER]: JSON_MEDIA_TYPE,
-      },
-      method: POST_METHOD,
-      signal,
-    }),
-  );
-  const responseBody = await readResponseJSON(response);
+  successSchema,
+}: BackendJSONRequestParams<Result>): Effect.Effect<Result, BackendFailure> =>
+  Effect.gen(function* () {
+    const { env } = getApplicationBindings();
+    const url = new URL(path, env.BACKEND_URL);
+    const response = yield* Effect.tryPromise({
+      try: async () =>
+        fetch(url, {
+          body: JSON.stringify(body),
+          headers: {
+            [CONTENT_TYPE_HEADER]: JSON_MEDIA_TYPE,
+          },
+          method: POST_METHOD,
+          signal,
+        }),
+      catch: () => new GatewayFailure(),
+    });
+    const responseBody = yield* Effect.tryPromise({
+      try: async () => response.json(),
+      catch: () => new GatewayFailure(),
+    });
 
-  if (response.status === OK_STATUS_CODE) {
-    return decodeResponse(decodeSuccess, responseBody);
-  }
+    if (response.status === OK_STATUS_CODE) {
+      return yield* Schema.decodeUnknownEffect(
+        successSchema,
+        STRICT_PARSE_OPTIONS,
+      )(responseBody).pipe(Effect.mapError(() => new GatewayFailure()));
+    }
 
-  await decodeResponse(decodeBackendError, responseBody);
+    yield* Schema.decodeUnknownEffect(
+      backendErrorSchema,
+      STRICT_PARSE_OPTIONS,
+    )(responseBody).pipe(Effect.mapError(() => new GatewayFailure()));
 
-  const publicError = getPublicError(endpoint, response.status);
-  if (publicError === undefined) {
-    throw createGatewayError();
-  }
+    const publicError = publicErrors[endpoint][response.status];
 
-  throw new TRPCError(publicError);
-};
+    return yield* publicError === undefined
+      ? new GatewayFailure()
+      : new PublicFailure(publicError);
+  });
+
+const runBackendRequest = async <Result>(
+  backendRequest: Effect.Effect<Result, BackendFailure>,
+): Promise<Result> =>
+  Effect.runPromise(backendRequest.pipe(Effect.mapError(createTRPCError)));
 
 export const wizardRouter = createTRPCRouter({
   createUpload: publicProcedure
     .input(createUploadInput)
     .mutation(async ({ ctx, input }) =>
-      requestBackendJSON({
-        body: {
-          fileName: input.fileName,
-          fileSizeBytes: input.fileSizeBytes,
-        },
-        decodeSuccess: decodeCreateUploadResponse,
-        endpoint: "createUpload",
-        path: "/api/uploads",
-        signal: ctx.signal,
-      }),
+      runBackendRequest(
+        requestBackendJSON({
+          body: {
+            fileName: input.fileName,
+            fileSizeBytes: input.fileSizeBytes,
+          },
+          endpoint: "createUpload",
+          path: "/api/uploads",
+          signal: ctx.signal,
+          successSchema: createUploadResponseSchema,
+        }),
+      ),
     ),
   dryRun: publicProcedure.input(dryRunInput).mutation(async ({ ctx, input }) =>
-    requestBackendJSON({
-      body: {
-        storageKey: input.storageKey,
-      },
-      decodeSuccess: decodeDryRunResponse,
-      endpoint: "dryRun",
-      path: "/api/files/dry-run",
-      signal: ctx.signal,
-    }),
+    runBackendRequest(
+      requestBackendJSON({
+        body: {
+          storageKey: input.storageKey,
+        },
+        endpoint: "dryRun",
+        path: "/api/files/dry-run",
+        signal: ctx.signal,
+        successSchema: dryRunResponseSchema,
+      }),
+    ),
   ),
   scrubFile: publicProcedure
     .input(scrubFileInput)
     .mutation(async ({ ctx, input }) =>
-      requestBackendJSON({
-        body: {
-          storageKey: input.storageKey,
-          etag: input.etag,
-        },
-        decodeSuccess: decodeScrubFileResponse,
-        endpoint: "scrubFile",
-        path: "/api/files/scrub",
-        signal: ctx.signal,
-      }),
+      runBackendRequest(
+        requestBackendJSON({
+          body: {
+            storageKey: input.storageKey,
+            etag: input.etag,
+          },
+          endpoint: "scrubFile",
+          path: "/api/files/scrub",
+          signal: ctx.signal,
+          successSchema: scrubFileResponseSchema,
+        }),
+      ),
     ),
 });
