@@ -374,11 +374,7 @@ func TestR2ProductionRequestsHaveABoundedOverallDuration(t *testing.T) {
 func TestR2MapsProviderTimeoutsToDependencyFailures(t *testing.T) {
 	t.Parallel()
 
-	adapter := newTestR2("https://endpoint-sentinel.invalid", &http.Client{Transport: roundTripFunc(
-		func(*http.Request) (*http.Response, error) {
-			return nil, fmt.Errorf("transport stall: %w", context.DeadlineExceeded)
-		},
-	)})
+	adapter := newTestR2FailingTransport(fmt.Errorf("transport stall: %w", context.DeadlineExceeded))
 
 	_, err := adapter.DownloadSource(context.Background(), "file-identifier-sentinel", "")
 
@@ -392,11 +388,7 @@ func TestR2PropagatesContextAndSanitizesProviderFailures(t *testing.T) {
 
 	ctx, cancel := context.WithCancel(context.Background())
 	cancel()
-	adapter := newTestR2("https://endpoint-sentinel.invalid", &http.Client{Transport: roundTripFunc(
-		func(*http.Request) (*http.Response, error) {
-			return nil, errors.New("transport-provider-body-sentinel")
-		},
-	)})
+	adapter := newTestR2FailingTransport(errors.New("transport-provider-body-sentinel"))
 
 	_, err := adapter.PresignSourceUpload(ctx, "file-1", 1024, time.Minute)
 	require.ErrorIs(t, err, context.Canceled)
@@ -414,11 +406,7 @@ func TestR2PropagatesContextAndSanitizesProviderFailures(t *testing.T) {
 	_, err = adapter.SanitizedExists(deadlineCtx, "file-1", "revision-1")
 	require.ErrorIs(t, err, context.DeadlineExceeded)
 
-	adapter = newTestR2("https://endpoint-sentinel.invalid", &http.Client{Transport: roundTripFunc(
-		func(*http.Request) (*http.Response, error) {
-			return nil, errors.New("transport-provider-body-sentinel")
-		},
-	)})
+	adapter = newTestR2FailingTransport(errors.New("transport-provider-body-sentinel"))
 	_, err = adapter.DownloadSource(context.Background(), "file-identifier-sentinel", "")
 	require.ErrorIs(t, err, ErrDependency)
 	assertSafeStorageError(t, err)
@@ -442,6 +430,14 @@ func newTestR2StatusServer(t *testing.T, status int) *R2 {
 		response.WriteHeader(status)
 		_, _ = io.WriteString(response, "provider-body-sentinel")
 	}))
+}
+
+func newTestR2FailingTransport(transportErr error) *R2 {
+	return newTestR2("https://endpoint-sentinel.invalid", &http.Client{Transport: roundTripFunc(
+		func(*http.Request) (*http.Response, error) {
+			return nil, transportErr
+		},
+	)})
 }
 
 func newTestR2(endpoint string, httpClient *http.Client) *R2 {
