@@ -99,7 +99,10 @@ func InspectPDF(inputBytes []byte, origin InspectionOrigin) ([]Field, error) {
 
 	_, analysis, err := readAndAnalyzePDF(inputBytes, origin)
 	if err != nil {
-		return nil, classifyPublicPDFError(err)
+		if origin == PublicInput {
+			return nil, classifyPublicPDFError(err)
+		}
+		return nil, err
 	}
 	return analysis.fields, nil
 }
