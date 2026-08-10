@@ -1,7 +1,6 @@
 // Package header defines constants for the HTTP header names the backend sets,
 // so handlers reference one canonical spelling instead of repeating string
-// literals and risking typos. It mirrors the frontend headers module
-// (frontend/src/shared/constants/http/headers/headers.mod.ts).
+// literals and risking typos.
 //
 // Status codes and request methods are intentionally absent: net/http already
 // provides those as constants (http.StatusOK, http.MethodGet, ...), so wrapping
