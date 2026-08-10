@@ -1,7 +1,7 @@
-// Package mediatype defines constants for the MIME media types the backend sends
-// in Content-Type headers, keeping these values in one place instead of inline
-// string literals. Go's standard library has no constants for these, so unlike
-// status codes they are worth centralizing here.
+// Package mediatype defines constants for the MIME media types that httpx sends
+// in Content-Type headers, instead of inline string literals. It is not the one
+// place for every media type: storage declares PDFContentType for PDF uploads.
+// Go's standard library has no constants for media types, unlike status codes.
 package mediatype
 
 const (
