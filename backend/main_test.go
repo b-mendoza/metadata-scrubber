@@ -5,7 +5,6 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
-	"io"
 	"log/slog"
 	"net/http"
 	"net/http/httptest"
@@ -84,10 +83,8 @@ func TestNewServerConfiguresAddressAndHandler(t *testing.T) {
 	require.Equal(t, ":0", server.Addr)
 	require.Equal(t, readHeaderTimeout, server.ReadHeaderTimeout)
 
-	recorder := httptest.NewRecorder()
 	request := httptest.NewRequest(http.MethodGet, "/api/health", nil)
-
-	server.Handler.ServeHTTP(recorder, request)
+	recorder := serveServer(server, request)
 
 	require.Equal(t, http.StatusOK, recorder.Code)
 }
@@ -98,10 +95,8 @@ func TestNewServerLogsRequests(t *testing.T) {
 	var logs bytes.Buffer
 	server := newTestServer(slog.New(slog.NewJSONHandler(&logs, nil)))
 
-	recorder := httptest.NewRecorder()
 	request := httptest.NewRequest(http.MethodGet, "/api/health", nil)
-
-	server.Handler.ServeHTTP(recorder, request)
+	serveServer(server, request)
 
 	record := readServerCompletionLogRecord(t, logs.Bytes())
 	require.Equal(t, "/api/health", record.Path)
@@ -112,10 +107,8 @@ func TestNewServerHandlesCORSPreflight(t *testing.T) {
 	t.Parallel()
 
 	server := newTestServer(discardLogger())
-	recorder := httptest.NewRecorder()
 	request := httptest.NewRequest(http.MethodOptions, "/api/files/scrub", nil)
-
-	server.Handler.ServeHTTP(recorder, request)
+	recorder := serveServer(server, request)
 
 	require.Equal(t, http.StatusNoContent, recorder.Code)
 	require.Equal(t, "*", recorder.Header().Get(header.AccessControlAllowOrigin))
@@ -126,21 +119,21 @@ func TestNewServerRoutesJSONWorkflowAndRemovesLegacyScrub(t *testing.T) {
 	t.Parallel()
 
 	server := newTestServer(discardLogger())
-	for _, path := range []string{"/api/uploads", "/api/files/dry-run", "/api/files/scrub"} {
-		recorder := httptest.NewRecorder()
-		request := httptest.NewRequest(http.MethodPost, path, nil)
-
-		server.Handler.ServeHTTP(recorder, request)
-
-		require.Equal(t, http.StatusUnsupportedMediaType, recorder.Code, path)
+	testCases := []struct {
+		path       string
+		wantStatus int
+	}{
+		{path: "/api/uploads", wantStatus: http.StatusUnsupportedMediaType},
+		{path: "/api/files/dry-run", wantStatus: http.StatusUnsupportedMediaType},
+		{path: "/api/files/scrub", wantStatus: http.StatusUnsupportedMediaType},
+		{path: "/api/scrub", wantStatus: http.StatusNotFound},
 	}
+	for _, testCase := range testCases {
+		request := httptest.NewRequest(http.MethodPost, testCase.path, nil)
+		recorder := serveServer(server, request)
 
-	legacyRecorder := httptest.NewRecorder()
-	server.Handler.ServeHTTP(
-		legacyRecorder,
-		httptest.NewRequest(http.MethodPost, "/api/scrub", nil),
-	)
-	require.Equal(t, http.StatusNotFound, legacyRecorder.Code)
+		require.Equal(t, testCase.wantStatus, recorder.Code, testCase.path)
+	}
 }
 
 func TestCanonicalCapacityAndSizeLimitsStayPinned(t *testing.T) {
@@ -155,8 +148,8 @@ func TestNewServerRejectsWrongMethodsForJSONWorkflow(t *testing.T) {
 	t.Parallel()
 
 	server := newTestServer(discardLogger())
-	recorder := httptest.NewRecorder()
-	server.Handler.ServeHTTP(recorder, httptest.NewRequest(http.MethodGet, "/api/uploads", nil))
+	request := httptest.NewRequest(http.MethodGet, "/api/uploads", nil)
+	recorder := serveServer(server, request)
 
 	require.Equal(t, http.StatusMethodNotAllowed, recorder.Code)
 }
@@ -230,39 +223,24 @@ func TestNewServerSharesOneCapacityTwoGateAcrossDryRunAndScrubMisses(t *testing.
 	require.Equal(t, 2, observer.peakDownloads())
 }
 
-func setValidStartupEnvironment(t *testing.T) {
-	t.Helper()
-
-	t.Setenv("PORT", "8080")
-	t.Setenv("R2_ACCOUNT_ID", startupR2AccountID)
-	t.Setenv("R2_ACCESS_KEY_ID", startupR2AccessKeyID)
-	t.Setenv("R2_SECRET_ACCESS_KEY", startupR2SecretAccessKey)
-	t.Setenv("R2_BUCKET", startupR2Bucket)
-}
-
-func unsetStartupEnvironmentValue(t *testing.T, key string) {
-	t.Helper()
-
-	t.Setenv(key, "")
-	require.NoError(t, os.Unsetenv(key))
-}
-
 func discardLogger() *slog.Logger {
-	return slog.New(slog.NewTextHandler(io.Discard, nil))
+	return slog.New(slog.DiscardHandler)
 }
 
 func newTestServer(logger *slog.Logger) *http.Server {
-	cfg := config.Config{Port: 0}
+	return newServer(config.Config{Port: 0}, storage.NewFake(), logger)
+}
 
-	return newServer(cfg, storage.NewFake(), logger)
+func serveServer(server *http.Server, request *http.Request) *httptest.ResponseRecorder {
+	recorder := httptest.NewRecorder()
+	server.Handler.ServeHTTP(recorder, request)
+	return recorder
 }
 
 func serveServerJSON(server *http.Server, path, body string) *httptest.ResponseRecorder {
 	request := httptest.NewRequest(http.MethodPost, path, strings.NewReader(body))
 	request.Header.Set(header.ContentType, "application/json")
-	recorder := httptest.NewRecorder()
-	server.Handler.ServeHTTP(recorder, request)
-	return recorder
+	return serveServer(server, request)
 }
 
 type serverAdmissionStorage struct {
