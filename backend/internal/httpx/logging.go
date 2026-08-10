@@ -9,10 +9,6 @@ import (
 // RequestLogger logs the start and completion of every HTTP request without
 // logging request or response bodies.
 func RequestLogger(logger *slog.Logger) func(http.Handler) http.Handler {
-	if logger == nil {
-		logger = slog.Default()
-	}
-
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			startedAt := time.Now()
