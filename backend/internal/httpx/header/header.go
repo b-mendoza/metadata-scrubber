@@ -14,6 +14,8 @@ const (
 	// ContentDisposition controls inline vs attachment rendering and the
 	// suggested download filename.
 	ContentDisposition = "Content-Disposition"
+	// RetryAfter tells a caller when a temporary failure may be retried.
+	RetryAfter = "Retry-After"
 
 	// AccessControlAllowOrigin is the CORS header listing the allowed origins.
 	AccessControlAllowOrigin = "Access-Control-Allow-Origin"
