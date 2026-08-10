@@ -112,11 +112,6 @@ func (state *traversalState) inspectObject(object types.Object, path []int) erro
 	return walker.walkObject(object, path)
 }
 
-func (state *traversalState) inspectDictionary(dictionary types.Dict, path []int) error {
-	walker := structuralWalker{context: state.context, inspectMetadata: state.inspectMetadataEntry}
-	return walker.walkDictionary(dictionary, path)
-}
-
 func pdfObjectRoles(context *model.Context) (map[int]objectRole, error) {
 	roles := make(map[int]objectRole, context.PageCount+1)
 	if context.Root != nil {

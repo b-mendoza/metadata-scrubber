@@ -627,8 +627,8 @@ func TestMetadataTraversalDeduplicatesOneParentEntryTarget(t *testing.T) {
 		objectNumber: context.Root.ObjectNumber.Value(),
 	}
 
-	require.NoError(t, state.inspectDictionary(catalog, nil))
-	require.NoError(t, state.inspectDictionary(catalog, nil))
+	require.NoError(t, state.inspectObject(catalog, nil))
+	require.NoError(t, state.inspectObject(catalog, nil))
 
 	require.Len(t, builder.fields, 1)
 	require.Len(t, analysis.metadataTargets, 1)
