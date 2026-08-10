@@ -99,9 +99,6 @@ func InspectPDF(inputBytes []byte, origin InspectionOrigin) ([]Field, error) {
 
 	_, analysis, err := readAndAnalyzePDF(inputBytes, origin)
 	if err != nil {
-		if origin == PublicInput {
-			return nil, classifyPublicPDFError(err)
-		}
 		return nil, err
 	}
 	return analysis.fields, nil
@@ -119,7 +116,7 @@ func CleanPDF(inputBytes []byte) ([]byte, error) {
 func cleanPDF(inputBytes []byte, operations cleanPDFOperations) ([]byte, error) {
 	context, analysis, err := readAndAnalyzePDF(inputBytes, PublicInput)
 	if err != nil {
-		return nil, classifyPublicPDFError(err)
+		return nil, err
 	}
 	if len(analysis.fields) == 0 {
 		return inputBytes, nil
@@ -139,8 +136,9 @@ func cleanPDF(inputBytes []byte, operations cleanPDFOperations) ([]byte, error) 
 	return outputBytes, nil
 }
 
-func classifyPublicPDFError(err error) error {
-	if errors.Is(err, ErrInputTooLarge) ||
+func classifyPDFError(err error, origin InspectionOrigin) error {
+	if origin == PostWriteVerification ||
+		errors.Is(err, ErrInputTooLarge) ||
 		errors.Is(err, ErrSignedPDF) ||
 		errors.Is(err, ErrInspectionLimit) {
 		return err
@@ -152,11 +150,11 @@ func classifyPublicPDFError(err error) error {
 func readAndAnalyzePDF(inputBytes []byte, origin InspectionOrigin) (*model.Context, *pdfAnalysis, error) {
 	context, err := readPDF(inputBytes)
 	if err != nil {
-		return nil, nil, err
+		return nil, nil, classifyPDFError(err, origin)
 	}
 	analysis, err := analyzePDF(context, origin)
 	if err != nil {
-		return nil, nil, err
+		return nil, nil, classifyPDFError(err, origin)
 	}
 	return context, analysis, nil
 }
