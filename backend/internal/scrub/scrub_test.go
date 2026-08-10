@@ -62,6 +62,16 @@ func TestInspectPDFRejectsMalformedCandidatesWithoutSignedClassification(t *test
 	}
 }
 
+func TestInspectPDFPreservesUnderlyingErrorsForPostWriteVerification(t *testing.T) {
+	DisableConfigDir()
+
+	fields, err := InspectPDF([]byte("%PDF-1.7\n"), PostWriteVerification)
+
+	require.Error(t, err)
+	require.NotErrorIs(t, err, ErrMalformedPDF)
+	require.Nil(t, fields)
+}
+
 func TestInspectPDFAcceptsValidPDFWithLeadingBytes(t *testing.T) {
 	DisableConfigDir()
 	inputBytes := append([]byte("leading bytes\n"), buildCleanPDF(t)...)
