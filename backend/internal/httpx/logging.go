@@ -1,7 +1,6 @@
 package httpx
 
 import (
-	"fmt"
 	"log/slog"
 	"net/http"
 	"time"
@@ -34,7 +33,6 @@ func RequestLogger(logger *slog.Logger) func(http.Handler) http.Handler {
 						startedAt,
 						slog.LevelError,
 						slog.Bool("panicked", true),
-						slog.String("panic", fmt.Sprint(recovered)),
 					)
 					panic(recovered)
 				}
