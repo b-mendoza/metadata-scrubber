@@ -20,24 +20,35 @@ func RequestLogger(logger *slog.Logger) func(http.Handler) http.Handler {
 
 			logRequestStarted(logger, r, path)
 
-			recorder := newLoggingResponseWriter(w)
+			recorder := &loggingResponseWriter{
+				ResponseWriter: w,
+				status:         http.StatusOK,
+			}
 			defer func() {
-				if recovered := recover(); recovered != nil {
-					recorder.recordPanicStatus()
-
-					logRequestCompleted(
-						logger,
-						r,
-						path,
-						recorder,
-						startedAt,
-						slog.LevelError,
-						slog.Bool("panicked", true),
-					)
-					panic(recovered)
+				recovered := recover()
+				level := slog.LevelInfo
+				if recovered != nil {
+					if !recorder.wroteHeader {
+						recorder.status = http.StatusInternalServerError
+					}
+					level = slog.LevelError
 				}
 
-				logRequestCompleted(logger, r, path, recorder, startedAt, slog.LevelInfo)
+				attrs := []slog.Attr{
+					slog.String("method", r.Method),
+					slog.String("path", path),
+					slog.Int("status", recorder.status),
+					slog.Int("bytes", recorder.bytesWritten),
+					slog.Int64("duration_ms", time.Since(startedAt).Milliseconds()),
+				}
+				if recovered != nil {
+					attrs = append(attrs, slog.Bool("panicked", true))
+				}
+
+				logger.LogAttrs(r.Context(), level, "request completed", attrs...)
+				if recovered != nil {
+					panic(recovered)
+				}
 			}()
 
 			next.ServeHTTP(recorder, r)
@@ -57,44 +68,11 @@ func logRequestStarted(logger *slog.Logger, r *http.Request, path string) {
 	)
 }
 
-func logRequestCompleted(
-	logger *slog.Logger,
-	r *http.Request,
-	path string,
-	recorder *loggingResponseWriter,
-	startedAt time.Time,
-	level slog.Level,
-	extraAttrs ...slog.Attr,
-) {
-	attrs := []slog.Attr{
-		slog.String("method", r.Method),
-		slog.String("path", path),
-		slog.Int("status", recorder.status),
-		slog.Int("bytes", recorder.bytesWritten),
-		slog.Int64("duration_ms", time.Since(startedAt).Milliseconds()),
-	}
-	attrs = append(attrs, extraAttrs...)
-
-	logger.LogAttrs(
-		r.Context(),
-		level,
-		"request completed",
-		attrs...,
-	)
-}
-
 type loggingResponseWriter struct {
 	http.ResponseWriter
 	bytesWritten int
 	status       int
 	wroteHeader  bool
-}
-
-func newLoggingResponseWriter(w http.ResponseWriter) *loggingResponseWriter {
-	return &loggingResponseWriter{
-		ResponseWriter: w,
-		status:         http.StatusOK,
-	}
 }
 
 func (w *loggingResponseWriter) Write(body []byte) (int, error) {
@@ -120,10 +98,4 @@ func (w *loggingResponseWriter) WriteHeader(statusCode int) {
 
 func (w *loggingResponseWriter) Unwrap() http.ResponseWriter {
 	return w.ResponseWriter
-}
-
-func (w *loggingResponseWriter) recordPanicStatus() {
-	if !w.wroteHeader {
-		w.status = http.StatusInternalServerError
-	}
 }
