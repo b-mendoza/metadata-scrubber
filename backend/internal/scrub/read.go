@@ -66,19 +66,17 @@ func decodeMetadataStreamForPreflight(streamDictionary *types.StreamDict, remain
 	if remainingDecodeBytes <= 0 {
 		return nil, ErrInspectionLimit
 	}
-	if streamDictionary.Content != nil {
-		if int64(len(streamDictionary.Content)) > remainingDecodeBytes {
+
+	content := streamDictionary.Content
+	if content == nil {
+		var err error
+		content, err = streamDictionary.DecodeLengthWithLimit(-1, min(maxPDFDecodeBytes, remainingDecodeBytes))
+		if errors.Is(err, filter.ErrDecodeLimitExceeded) {
 			return nil, ErrInspectionLimit
 		}
-		return streamDictionary.Content, nil
-	}
-
-	content, err := streamDictionary.DecodeLengthWithLimit(-1, min(maxPDFDecodeBytes, remainingDecodeBytes))
-	if errors.Is(err, filter.ErrDecodeLimitExceeded) {
-		return nil, ErrInspectionLimit
-	}
-	if err != nil {
-		return nil, fmt.Errorf("preflight PDF metadata stream: %w", err)
+		if err != nil {
+			return nil, fmt.Errorf("preflight PDF metadata stream: %w", err)
+		}
 	}
 	if int64(len(content)) > remainingDecodeBytes {
 		return nil, ErrInspectionLimit
