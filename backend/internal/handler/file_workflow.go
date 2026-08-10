@@ -109,7 +109,7 @@ func (handler *Handler) Scrub(w http.ResponseWriter, request *http.Request) {
 		return
 	}
 	if exists {
-		handler.presignScrubbed(w, request, fileID, input, "cache-hit", startedAt)
+		handler.presignScrubbed(w, request, objectStorage, fileID, input, "cache-hit", startedAt)
 		return
 	}
 
@@ -148,7 +148,7 @@ func (handler *Handler) Scrub(w http.ResponseWriter, request *http.Request) {
 		httpx.WriteError(w, http.StatusInternalServerError, "could not store scrubbed file")
 		return
 	}
-	handler.presignScrubbed(w, request, fileID, input, "success", startedAt)
+	handler.presignScrubbed(w, request, objectStorage, fileID, input, "success", startedAt)
 }
 
 var errNotPDF = errors.New("not a PDF candidate")
@@ -156,15 +156,12 @@ var errNotPDF = errors.New("not a PDF candidate")
 func (handler *Handler) presignScrubbed(
 	w http.ResponseWriter,
 	request *http.Request,
+	objectStorage storage.Storage,
 	fileID string,
 	input scrubRequest,
 	outcome string,
 	startedAt time.Time,
 ) {
-	objectStorage := storageFromRequest(w, request)
-	if objectStorage == nil {
-		return
-	}
 	grant, err := objectStorage.PresignSanitizedDownload(
 		request.Context(),
 		fileID,
