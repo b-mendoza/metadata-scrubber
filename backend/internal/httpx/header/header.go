@@ -10,9 +10,6 @@ package header
 const (
 	// ContentType declares the media type of the response body.
 	ContentType = "Content-Type"
-	// ContentDisposition controls inline vs attachment rendering and the
-	// suggested download filename.
-	ContentDisposition = "Content-Disposition"
 	// RetryAfter tells a caller when a temporary failure may be retried.
 	RetryAfter = "Retry-After"
 
