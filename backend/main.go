@@ -23,7 +23,6 @@ import (
 const (
 	readHeaderTimeout       = 5 * time.Second
 	gracefulShutdownTimeout = 10 * time.Second
-	processingPermitCount   = 2
 )
 
 func main() {
@@ -81,7 +80,7 @@ func shutdownServer(server *http.Server, waitForServer <-chan error) error {
 
 func newServer(cfg config.Config, objectStorage storage.Storage, logger *slog.Logger) *http.Server {
 	mux := http.NewServeMux()
-	workflow := handler.New(logger, make(chan struct{}, processingPermitCount))
+	workflow := handler.New(logger, make(chan struct{}, handler.ProcessingPermitCount))
 
 	mux.HandleFunc("GET /api/health", handler.Reachability)
 	mux.HandleFunc("POST /api/uploads", workflow.Upload)
