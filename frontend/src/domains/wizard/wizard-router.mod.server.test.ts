@@ -53,13 +53,8 @@ const UNKNOWN_STATUS_CODE = 599;
 const GENERIC_GATEWAY_MESSAGE =
   "The file service could not complete the request.";
 
-interface WizardTestCaller {
-  createUpload: (input: unknown) => Promise<unknown>;
-  dryRun: (input: unknown) => Promise<unknown>;
-  scrubFile: (input: unknown) => Promise<unknown>;
-}
-
-type ProcedureName = keyof WizardTestCaller;
+type WizardCaller = ReturnType<typeof caller>["wizard"];
+type ProcedureName = keyof WizardCaller;
 
 interface DryRunField {
   action: "remove" | "replace";
@@ -71,54 +66,17 @@ interface DryRunField {
 
 const createRequest = () => new Request(FRONTEND_URL);
 
-const requireProcedure = (
-  router: object,
-  procedureName: ProcedureName,
-): ((input: unknown) => Promise<unknown>) => {
-  const procedure: unknown = Reflect.get(router, procedureName);
+const getWizardCaller = (request: Request): WizardCaller =>
+  caller(request).wizard;
 
-  if (typeof procedure !== "function") {
-    throw new TypeError(`Missing wizard procedure: ${procedureName}`);
-  }
-
-  return async (input) => {
-    const result: unknown = Reflect.apply(procedure, router, [input]);
-
-    if (!(result instanceof Promise)) {
-      throw new TypeError(
-        `Wizard procedure did not return a Promise: ${procedureName}`,
-      );
-    }
-
-    const resolvedResult: unknown = await result;
-
-    return resolvedResult;
-  };
-};
-
-const getWizardCaller = (request: Request): WizardTestCaller => {
-  const rootCaller = caller(request);
-  const wizard: unknown = Reflect.get(rootCaller, "wizard");
-
-  if (
-    (typeof wizard !== "object" && typeof wizard !== "function") ||
-    wizard === null
-  ) {
-    throw new TypeError("Missing wizard router");
-  }
-
-  return {
-    createUpload: requireProcedure(wizard, "createUpload"),
-    dryRun: requireProcedure(wizard, "dryRun"),
-    scrubFile: requireProcedure(wizard, "scrubFile"),
-  };
-};
-
-const invokeProcedure = async (
-  wizard: WizardTestCaller,
+const invokeUnknownInput = async (
+  wizard: WizardCaller,
   procedureName: ProcedureName,
   input: unknown,
-) => wizard[procedureName](input);
+): Promise<unknown> => {
+  // oxlint-disable-next-line typescript/no-unsafe-type-assertion -- Table-driven invalid inputs must cross the typed caller boundary.
+  return wizard[procedureName](input as never);
+};
 
 const jsonResponse = (body: unknown, status = OK_STATUS_CODE) =>
   new Response(JSON.stringify(body), { status });
@@ -463,7 +421,11 @@ describe("procedure input validation", () => {
       const fetchMock = vi.spyOn(globalThis, "fetch");
 
       await expect(
-        invokeProcedure(getWizardCaller(createRequest()), procedureName, input),
+        invokeUnknownInput(
+          getWizardCaller(createRequest()),
+          procedureName,
+          input,
+        ),
       ).rejects.toBeInstanceOf(TRPCError);
       expect(fetchMock).not.toHaveBeenCalled();
     },
@@ -862,7 +824,7 @@ describe("expected backend error translation", () => {
       );
 
       const error = await captureTRPCError(
-        invokeProcedure(getWizardCaller(createRequest()), procedure, input),
+        invokeUnknownInput(getWizardCaller(createRequest()), procedure, input),
       );
 
       expect(error).toMatchObject({ code, message });
@@ -905,7 +867,7 @@ describe("expected backend error translation", () => {
       );
 
       const error = await expectGatewayError(
-        invokeProcedure(getWizardCaller(createRequest()), procedure, input),
+        invokeUnknownInput(getWizardCaller(createRequest()), procedure, input),
       );
 
       expect(error.message).not.toContain(backendMarker);
