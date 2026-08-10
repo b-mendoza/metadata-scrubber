@@ -22,6 +22,7 @@ The backend's internal packages are:
 - Server construction creates one handler and one non-configurable buffered admission channel with capacity two, then registers `POST /api/uploads`, `POST /api/files/dry-run`, and `POST /api/files/scrub` alongside the health route. The superseded multipart endpoint is not registered.
 - Server construction injects both the validated configuration and the provider-neutral `storage.Storage` interface through request bindings before routing. Handlers do not construct provider clients or receive AWS SDK types.
 - Dry-run and scrub cache misses acquire the shared permit before source download and hold it through offset-zero sniffing and PDF inspection or cleaning. Scrub releases its permit before sanitized upload. Exact-revision sanitized cache hits stay outside admission and mint a fresh download grant without re-reading or rewriting the source.
+- A request that cannot acquire a permit within the two-second admission wait receives `503 Service Unavailable` with a `Retry-After: 2` header; a request whose client cancels while it waits receives `408 Request Timeout`. This saturation response is part of the client-observable API contract.
 - Dry-run returns the source's canonical ETag, and scrub conditionally reads, stores, and presigns only that reviewed revision.
 - The server applies a read-header timeout and shuts down gracefully on SIGINT/SIGTERM.
 - The linter configuration lives in `.golangci.yml`; the required Go version is pinned by the `go` directive in `go.mod`.
