@@ -203,9 +203,8 @@ func TestMetadataPreflightCachesCatalogContentWithoutMarkingItValidated(t *testi
 	storedStream, stream := metadataEntry.Object.(types.StreamDict)
 	require.True(t, stream)
 	require.Nil(t, storedStream.Content)
-	metadataEntries, structurallySigned, err := snapshotMetadataEntries(context)
+	metadataEntries, err := snapshotMetadataEntries(context)
 	require.NoError(t, err)
-	require.False(t, structurallySigned)
 
 	require.NoError(t, preflightMetadataEntries(context, metadataEntries))
 

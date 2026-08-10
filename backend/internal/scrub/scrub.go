@@ -93,19 +93,14 @@ func DisableConfigDir() {
 
 // InspectPDF returns bounded descriptions of all supported PDF metadata fields.
 func InspectPDF(inputBytes []byte, origin InspectionOrigin) ([]Field, error) {
-	if !origin.valid() {
+	if origin != PublicInput && origin != PostWriteVerification {
 		return nil, fmt.Errorf("invalid inspection origin %q", origin)
 	}
 
-	context, err := readPDF(inputBytes)
+	_, analysis, err := readAndAnalyzePDF(inputBytes, origin)
 	if err != nil {
 		return nil, classifyPublicPDFError(err)
 	}
-	analysis, err := analyzePDF(context, origin)
-	if err != nil {
-		return nil, classifyPublicPDFError(err)
-	}
-
 	return analysis.fields, nil
 }
 
@@ -119,11 +114,7 @@ func CleanPDF(inputBytes []byte) ([]byte, error) {
 }
 
 func cleanPDF(inputBytes []byte, operations cleanPDFOperations) ([]byte, error) {
-	context, err := readPDF(inputBytes)
-	if err != nil {
-		return nil, classifyPublicPDFError(err)
-	}
-	analysis, err := analyzePDF(context, PublicInput)
+	context, analysis, err := readAndAnalyzePDF(inputBytes, PublicInput)
 	if err != nil {
 		return nil, classifyPublicPDFError(err)
 	}
@@ -155,8 +146,16 @@ func classifyPublicPDFError(err error) error {
 	return fmt.Errorf("%w: %w", ErrMalformedPDF, err)
 }
 
-func (origin InspectionOrigin) valid() bool {
-	return origin == PublicInput || origin == PostWriteVerification
+func readAndAnalyzePDF(inputBytes []byte, origin InspectionOrigin) (*model.Context, *pdfAnalysis, error) {
+	context, err := readPDF(inputBytes)
+	if err != nil {
+		return nil, nil, err
+	}
+	analysis, err := analyzePDF(context, origin)
+	if err != nil {
+		return nil, nil, err
+	}
+	return context, analysis, nil
 }
 
 func readPDF(inputBytes []byte) (*model.Context, error) {
@@ -172,12 +171,9 @@ func readPDF(inputBytes []byte) (*model.Context, error) {
 
 	// pdfcpu v0.13.0 validation drops later parent links to an already-validated
 	// metadata stream. Preserve those links so inspection and removal stay symmetric.
-	metadataEntries, structurallySigned, err := snapshotMetadataEntries(context)
+	metadataEntries, err := snapshotMetadataEntries(context)
 	if err != nil {
 		return nil, err
-	}
-	if structurallySigned {
-		return nil, ErrSignedPDF
 	}
 	// pdfcpu v0.13.0 catalog validation calls StreamDict.Decode with its 512 MiB
 	// default. Decode every discovered metadata stream under our aggregate ceiling
