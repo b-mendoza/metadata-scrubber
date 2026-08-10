@@ -15,6 +15,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/aws/aws-sdk-go-v2/aws"
+	"github.com/aws/aws-sdk-go-v2/aws/retry"
 	"github.com/aws/aws-sdk-go-v2/service/s3"
 	"github.com/aws/smithy-go"
 	"github.com/aws/smithy-go/middleware"
@@ -460,9 +462,13 @@ func newTestR2(endpoint string, httpClient *http.Client) *R2 {
 		R2SecretAccessKey: testSecretKey,
 		R2Bucket:          testBucket,
 	}, r2Options{
-		endpoint:    endpoint,
-		httpClient:  httpClient,
-		maxAttempts: 1,
+		endpoint:   endpoint,
+		httpClient: httpClient,
+		retryer: func() aws.Retryer {
+			return retry.NewStandard(func(retryOptions *retry.StandardOptions) {
+				retryOptions.MaxAttempts = 1
+			})
+		},
 	})
 }
 

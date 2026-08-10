@@ -9,7 +9,6 @@ import (
 	"time"
 
 	"github.com/aws/aws-sdk-go-v2/aws"
-	"github.com/aws/aws-sdk-go-v2/aws/retry"
 	"github.com/aws/aws-sdk-go-v2/credentials"
 	"github.com/aws/aws-sdk-go-v2/service/s3"
 	"github.com/aws/smithy-go/middleware"
@@ -37,9 +36,9 @@ type R2 struct {
 var _ Storage = (*R2)(nil)
 
 type r2Options struct {
-	endpoint    string
-	httpClient  *http.Client
-	maxAttempts int
+	endpoint   string
+	httpClient *http.Client
+	retryer    func() aws.Retryer
 }
 
 // NewR2 constructs an R2 adapter without contacting the object store.
@@ -55,13 +54,7 @@ func newR2(cfg config.Config, options r2Options) *R2 {
 		Region:      r2SigningRegion,
 		Credentials: credentials.NewStaticCredentialsProvider(cfg.R2AccessKeyID, cfg.R2SecretAccessKey, ""),
 		HTTPClient:  options.httpClient,
-	}
-	if options.maxAttempts > 0 {
-		awsConfig.Retryer = func() aws.Retryer {
-			return retry.NewStandard(func(retryOptions *retry.StandardOptions) {
-				retryOptions.MaxAttempts = options.maxAttempts
-			})
-		}
+		Retryer:     options.retryer,
 	}
 
 	client := s3.NewFromConfig(awsConfig, func(s3Options *s3.Options) {
