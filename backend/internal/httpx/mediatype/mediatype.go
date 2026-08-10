@@ -7,6 +7,4 @@ package mediatype
 const (
 	// JSON is the media type for JSON response bodies.
 	JSON = "application/json"
-	// OctetStream is the media type for arbitrary binary downloads.
-	OctetStream = "application/octet-stream"
 )
