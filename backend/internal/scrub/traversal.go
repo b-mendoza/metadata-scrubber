@@ -1,9 +1,9 @@
 package scrub
 
 import (
+	"cmp"
 	"fmt"
 	"slices"
-	"sort"
 
 	"github.com/pdfcpu/pdfcpu/pkg/pdfcpu/model"
 	"github.com/pdfcpu/pdfcpu/pkg/pdfcpu/types"
@@ -39,7 +39,7 @@ func sortedLiveObjectNumbers(context *model.Context) []int {
 		}
 		objectNumbers = append(objectNumbers, objectNumber)
 	}
-	sort.Ints(objectNumbers)
+	slices.Sort(objectNumbers)
 	return objectNumbers
 }
 
@@ -167,21 +167,20 @@ func pdfHasCachedSignature(context *model.Context) bool {
 
 func sortedDictionaryKeys(dictionary types.Dict) ([]string, error) {
 	keys := make([]string, 0, len(dictionary))
+	logicalKeys := make(map[string]string, len(dictionary))
 	for key := range dictionary {
-		keys = append(keys, key)
-	}
-	sort.Slice(keys, func(firstIndex, secondIndex int) bool {
-		firstKey, firstErr := types.DecodeName(keys[firstIndex])
-		secondKey, secondErr := types.DecodeName(keys[secondIndex])
-		if firstErr != nil || secondErr != nil || firstKey == secondKey {
-			return keys[firstIndex] < keys[secondIndex]
-		}
-		return firstKey < secondKey
-	})
-	for _, key := range keys {
-		if _, err := types.DecodeName(key); err != nil {
+		logicalKey, err := types.DecodeName(key)
+		if err != nil {
 			return nil, fmt.Errorf("decode PDF dictionary key: %w", err)
 		}
+		keys = append(keys, key)
+		logicalKeys[key] = logicalKey
 	}
+	slices.SortFunc(keys, func(firstKey, secondKey string) int {
+		return cmp.Or(
+			cmp.Compare(logicalKeys[firstKey], logicalKeys[secondKey]),
+			cmp.Compare(firstKey, secondKey),
+		)
+	})
 	return keys, nil
 }
