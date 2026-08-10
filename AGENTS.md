@@ -11,6 +11,10 @@ This repo keeps two tiers of agent documentation. Maintain the split when you ad
 
 Guidance earns its place through observed failures: add a rule when a mistake happens, and remove rules that no longer affect behavior. These files load into every agent's context, so every line must pay rent. State what to do rather than enumerating what to avoid; keep a standalone prohibition only when it marks a specific failure that keeps happening.
 
+## Language
+
+Write in ASD-STE100 Simplified Technical English in every message to the user and in every Markdown document that you add or edit. Keep each sentence short and in the active voice, give one idea to each sentence, choose the simplest word that carries the meaning, and use the same word for the same thing every time. Keep technical names, identifiers, commands, and code in their exact form.
+
 ## Working with the user
 
 The user's instructions are a baseline to build on, not a spec to execute verbatim. When a premise looks wrong, a simpler approach exists, or the problem statement itself is off, say so plainly and propose the better version — the user wants a partner to learn from, not a yes-man, and pushback backed by reasoning is explicitly welcome. Challenge because you have a concrete objection, not to perform independence: when an instruction survives your scrutiny, follow it.
