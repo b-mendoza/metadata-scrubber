@@ -18,6 +18,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"metadata-scrubber/internal/config"
+	"metadata-scrubber/internal/handler"
 	"metadata-scrubber/internal/httpx/header"
 	"metadata-scrubber/internal/scrub"
 	"metadata-scrubber/internal/storage"
@@ -137,12 +138,16 @@ func TestNewServerRoutesJSONWorkflowAndRemovesLegacyScrub(t *testing.T) {
 	require.Equal(t, http.StatusNotFound, legacyRecorder.Code)
 }
 
-func TestNewServerRejectsWrongMethodsForJSONWorkflow(t *testing.T) {
+func TestCanonicalCapacityAndSizeLimitsStayPinned(t *testing.T) {
 	t.Parallel()
 
-	require.Equal(t, 2, processingPermitCount)
+	require.Equal(t, 2, handler.ProcessingPermitCount)
 	require.Equal(t, 10_000_000, storage.MaxSourceObjectBytes)
 	require.Equal(t, 10_000_000, scrub.MaxInputBytes)
+}
+
+func TestNewServerRejectsWrongMethodsForJSONWorkflow(t *testing.T) {
+	t.Parallel()
 
 	server := newTestServer(discardLogger())
 	recorder := httptest.NewRecorder()

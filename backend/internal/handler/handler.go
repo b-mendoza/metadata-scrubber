@@ -16,6 +16,10 @@ import (
 )
 
 const (
+	// ProcessingPermitCount is the fixed, non-configurable capacity of the
+	// server-owned PDF-processing admission gate.
+	ProcessingPermitCount = 2
+
 	maxJSONBodyBytes = 4 << 10
 	maxFileNameBytes = 255
 
@@ -111,7 +115,7 @@ func newHandler(
 	if logger == nil {
 		logger = slog.Default()
 	}
-	if permits == nil || cap(permits) != 2 {
+	if permits == nil || cap(permits) != ProcessingPermitCount {
 		panic("handler admission gate must have capacity 2")
 	}
 
