@@ -36,7 +36,7 @@ func TestCleanPDFRejectsInvalidPDFWithNoOutput(t *testing.T) {
 
 	outputBytes, err := CleanPDF([]byte("not a pdf"))
 
-	require.Error(t, err)
+	require.ErrorIs(t, err, ErrMalformedPDF)
 	require.Nil(t, outputBytes)
 }
 
@@ -55,7 +55,7 @@ func TestInspectPDFRejectsMalformedCandidatesWithoutSignedClassification(t *test
 
 			fields, err := InspectPDF(testCase.inputBytes, PublicInput)
 
-			require.Error(t, err)
+			require.ErrorIs(t, err, ErrMalformedPDF)
 			require.Nil(t, fields)
 			requireNotSignedPDF(t, err)
 		})

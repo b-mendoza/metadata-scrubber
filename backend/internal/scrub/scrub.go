@@ -72,6 +72,8 @@ var (
 	ErrSignedPDF = errors.New("signed PDF is unsupported")
 	// ErrInspectionLimit classifies metadata inventories too large to report completely.
 	ErrInspectionLimit = errors.New("PDF metadata exceeds inspection limits")
+	// ErrMalformedPDF classifies public PDF candidates that cannot be parsed or validated.
+	ErrMalformedPDF = errors.New("malformed PDF")
 
 	// validatePDFContext is a narrow seam for proving preflight failures precede validation.
 	validatePDFContext = api.ValidateContext
@@ -97,11 +99,11 @@ func InspectPDF(inputBytes []byte, origin InspectionOrigin) ([]Field, error) {
 
 	context, err := readPDF(inputBytes)
 	if err != nil {
-		return nil, err
+		return nil, classifyPublicPDFError(err)
 	}
 	analysis, err := analyzePDF(context, origin)
 	if err != nil {
-		return nil, err
+		return nil, classifyPublicPDFError(err)
 	}
 
 	return analysis.fields, nil
@@ -119,11 +121,11 @@ func CleanPDF(inputBytes []byte) ([]byte, error) {
 func cleanPDF(inputBytes []byte, operations cleanPDFOperations) ([]byte, error) {
 	context, err := readPDF(inputBytes)
 	if err != nil {
-		return nil, err
+		return nil, classifyPublicPDFError(err)
 	}
 	analysis, err := analyzePDF(context, PublicInput)
 	if err != nil {
-		return nil, err
+		return nil, classifyPublicPDFError(err)
 	}
 	if len(analysis.fields) == 0 {
 		return inputBytes, nil
@@ -141,6 +143,16 @@ func cleanPDF(inputBytes []byte, operations cleanPDFOperations) ([]byte, error) 
 	}
 
 	return outputBytes, nil
+}
+
+func classifyPublicPDFError(err error) error {
+	if errors.Is(err, ErrInputTooLarge) ||
+		errors.Is(err, ErrSignedPDF) ||
+		errors.Is(err, ErrInspectionLimit) {
+		return err
+	}
+
+	return fmt.Errorf("%w: %w", ErrMalformedPDF, err)
 }
 
 func (origin InspectionOrigin) valid() bool {
