@@ -16,7 +16,7 @@ func requireCORSHeaders(t *testing.T, responseHeaders http.Header) {
 
 	require.Equal(t, "*", responseHeaders.Get(header.AccessControlAllowOrigin))
 	require.Equal(t, "GET, POST, OPTIONS", responseHeaders.Get(header.AccessControlAllowMethods))
-	require.Equal(t, "Content-Type", responseHeaders.Get(header.AccessControlAllowHeaders))
+	require.Equal(t, header.ContentType, responseHeaders.Get(header.AccessControlAllowHeaders))
 }
 
 func TestCORSHandlesPreflightWithoutDelegating(t *testing.T) {
