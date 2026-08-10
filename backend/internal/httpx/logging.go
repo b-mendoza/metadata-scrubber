@@ -14,7 +14,15 @@ func RequestLogger(logger *slog.Logger) func(http.Handler) http.Handler {
 			startedAt := time.Now()
 			path := r.URL.Path
 
-			logRequestStarted(logger, r, path)
+			logger.LogAttrs(
+				r.Context(),
+				slog.LevelInfo,
+				"request started",
+				slog.String("method", r.Method),
+				slog.String("path", path),
+				slog.String("remote_addr", r.RemoteAddr),
+				slog.String("user_agent", r.UserAgent()),
+			)
 
 			recorder := &loggingResponseWriter{
 				ResponseWriter: w,
@@ -50,18 +58,6 @@ func RequestLogger(logger *slog.Logger) func(http.Handler) http.Handler {
 			next.ServeHTTP(recorder, r)
 		})
 	}
-}
-
-func logRequestStarted(logger *slog.Logger, r *http.Request, path string) {
-	logger.LogAttrs(
-		r.Context(),
-		slog.LevelInfo,
-		"request started",
-		slog.String("method", r.Method),
-		slog.String("path", path),
-		slog.String("remote_addr", r.RemoteAddr),
-		slog.String("user_agent", r.UserAgent()),
-	)
 }
 
 type loggingResponseWriter struct {
