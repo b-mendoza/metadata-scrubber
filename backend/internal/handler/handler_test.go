@@ -127,7 +127,7 @@ func TestJSONEndpointsValidateEveryBoundaryBeforeWork(t *testing.T) {
 				t.Run(testCase.name, func(t *testing.T) {
 					fake := storage.NewFake()
 					inspectCalls, cleanCalls := 0, 0
-					handler := newTestHandler(t, fake, make(chan struct{}, 2), func([]byte, scrub.InspectionOrigin) ([]scrub.Field, error) {
+					handler := newTestHandler(t, make(chan struct{}, 2), func([]byte, scrub.InspectionOrigin) ([]scrub.Field, error) {
 						inspectCalls++
 						return nil, nil
 					}, func(input []byte) ([]byte, error) {
@@ -159,7 +159,7 @@ func TestJSONEndpointsValidateEveryBoundaryBeforeWork(t *testing.T) {
 					endpoint.configureAccepted(t, fake)
 				}
 				inspectCalls, cleanCalls := 0, 0
-				handler := newTestHandler(t, fake, make(chan struct{}, 2), func([]byte, scrub.InspectionOrigin) ([]scrub.Field, error) {
+				handler := newTestHandler(t, make(chan struct{}, 2), func([]byte, scrub.InspectionOrigin) ([]scrub.Field, error) {
 					inspectCalls++
 					return nil, nil
 				}, func(input []byte) ([]byte, error) {
@@ -222,7 +222,7 @@ func TestUploadValidatesIntakeAndCreatesOpaqueGrant(t *testing.T) {
 	for _, testCase := range tests {
 		t.Run(testCase.name, func(t *testing.T) {
 			fake := storage.NewFake()
-			handler := newTestHandler(t, fake, make(chan struct{}, 2), nil, nil, deterministicEntropy)
+			handler := newTestHandler(t, make(chan struct{}, 2), nil, nil, deterministicEntropy)
 			body := mustJSON(t, uploadRequest{FileName: testCase.fileName, FileSizeBytes: testCase.size})
 			recorder := serveRequest(context.Background(), t, handler, fake, uploadMethod, mediatype.JSON+"; charset=utf-8", body)
 
@@ -255,7 +255,7 @@ func TestUploadValidatesIntakeAndCreatesOpaqueGrant(t *testing.T) {
 
 func TestUploadRejectsInvalidUTF8FilenameBeforeStorage(t *testing.T) {
 	fake := storage.NewFake()
-	handler := newTestHandler(t, fake, make(chan struct{}, 2), nil, nil, nil)
+	handler := newTestHandler(t, make(chan struct{}, 2), nil, nil, nil)
 	body := `{"fileName":"` + string([]byte{0xff}) + `","fileSizeBytes":1}`
 
 	recorder := serveRequest(context.Background(), t, handler, fake, uploadMethod, mediatype.JSON, body)
@@ -266,7 +266,7 @@ func TestUploadRejectsInvalidUTF8FilenameBeforeStorage(t *testing.T) {
 
 func TestUploadStopsBeforeStorageWhenEntropyFails(t *testing.T) {
 	fake := storage.NewFake()
-	handler := newTestHandler(t, fake, make(chan struct{}, 2), nil, nil, func([]byte) (int, error) {
+	handler := newTestHandler(t, make(chan struct{}, 2), nil, nil, func([]byte) (int, error) {
 		return 0, errors.New("entropy-secret")
 	})
 	body := mustJSON(t, uploadRequest{FileName: "report.pdf", FileSizeBytes: 1})
@@ -282,7 +282,7 @@ func TestUploadStopsBeforeStorageWhenEntropyFails(t *testing.T) {
 func TestUploadPresignFailureIsSanitized(t *testing.T) {
 	fake := storage.NewFake()
 	fake.SetFailure(storage.FakePresignSourceUpload, errors.New("provider-secret"))
-	handler := newTestHandler(t, fake, make(chan struct{}, 2), nil, nil, nil)
+	handler := newTestHandler(t, make(chan struct{}, 2), nil, nil, nil)
 	body := mustJSON(t, uploadRequest{FileName: "report.pdf", FileSizeBytes: 1})
 
 	recorder := serveRequest(context.Background(), t, handler, fake, uploadMethod, mediatype.JSON, body)
@@ -301,7 +301,7 @@ func TestPublicStorageKeysAndETagsAreValidatedBeforeStorage(t *testing.T) {
 	for _, invalidKey := range invalidKeys {
 		t.Run("key "+invalidKey, func(t *testing.T) {
 			fake := storage.NewFake()
-			handler := newTestHandler(t, fake, make(chan struct{}, 2), nil, nil, nil)
+			handler := newTestHandler(t, make(chan struct{}, 2), nil, nil, nil)
 			body := mustJSON(t, dryRunRequest{StorageKey: invalidKey})
 			recorder := serveRequest(context.Background(), t, handler, fake, dryRunMethod, mediatype.JSON, body)
 			require.Equal(t, http.StatusBadRequest, recorder.Code)
@@ -313,7 +313,7 @@ func TestPublicStorageKeysAndETagsAreValidatedBeforeStorage(t *testing.T) {
 	for _, invalidETag := range invalidETags {
 		t.Run("etag "+invalidETag, func(t *testing.T) {
 			fake := storage.NewFake()
-			handler := newTestHandler(t, fake, make(chan struct{}, 2), nil, nil, nil)
+			handler := newTestHandler(t, make(chan struct{}, 2), nil, nil, nil)
 			body := mustJSON(t, scrubRequest{StorageKey: formatStorageKey(fileIDOne), ETag: invalidETag})
 			recorder := serveRequest(context.Background(), t, handler, fake, scrubMethod, mediatype.JSON, body)
 			require.Equal(t, http.StatusBadRequest, recorder.Code)
@@ -326,7 +326,7 @@ func TestDryRunReturnsReviewedRevisionAndBackendOwnedFields(t *testing.T) {
 	fake := storage.NewFake()
 	require.NoError(t, fake.SetSource(fileIDOne, storage.SourceObject{PDFBytes: []byte("%PDF-synthetic"), ETag: "revision-one"}))
 	inspectCalls := 0
-	handler := newTestHandler(t, fake, make(chan struct{}, 2), func(input []byte, origin scrub.InspectionOrigin) ([]scrub.Field, error) {
+	handler := newTestHandler(t, make(chan struct{}, 2), func(input []byte, origin scrub.InspectionOrigin) ([]scrub.Field, error) {
 		inspectCalls++
 		require.Equal(t, []byte("%PDF-synthetic"), input)
 		require.Equal(t, scrub.PublicInput, origin)
@@ -357,7 +357,7 @@ func TestDryRunReturnsReviewedRevisionAndBackendOwnedFields(t *testing.T) {
 func TestDryRunReturnsNonNullEmptyFieldsForCleanPDF(t *testing.T) {
 	fake := storage.NewFake()
 	require.NoError(t, fake.SetSource(fileIDOne, storage.SourceObject{PDFBytes: []byte("%PDF-clean"), ETag: "revision-one"}))
-	handler := newTestHandler(t, fake, make(chan struct{}, 2), func([]byte, scrub.InspectionOrigin) ([]scrub.Field, error) {
+	handler := newTestHandler(t, make(chan struct{}, 2), func([]byte, scrub.InspectionOrigin) ([]scrub.Field, error) {
 		return nil, nil
 	}, nil, nil)
 	body := mustJSON(t, dryRunRequest{StorageKey: formatStorageKey(fileIDOne)})
@@ -373,7 +373,7 @@ func TestDryRunIntegratesWithPublicPDFInspection(t *testing.T) {
 	require.NoError(t, err)
 	fake := storage.NewFake()
 	require.NoError(t, fake.SetSource(fileIDOne, storage.SourceObject{PDFBytes: pdfBytes, ETag: "revision-one"}))
-	handler := newTestHandler(t, fake, make(chan struct{}, 2), scrub.InspectPDF, scrub.CleanPDF, nil)
+	handler := newTestHandler(t, make(chan struct{}, 2), scrub.InspectPDF, scrub.CleanPDF, nil)
 	body := mustJSON(t, dryRunRequest{StorageKey: formatStorageKey(fileIDOne)})
 
 	recorder := serveRequest(context.Background(), t, handler, fake, dryRunMethod, mediatype.JSON, body)
@@ -431,7 +431,7 @@ func TestDryRunClassifiesContentAndDependencyFailuresWithoutLeakingDetails(t *te
 			}
 			require.NoError(t, fake.SetSource(fileIDOne, storage.SourceObject{PDFBytes: testCase.pdfBytes, ETag: "revision-secret"}))
 			inspectCalls := 0
-			handler := newTestHandler(t, fake, make(chan struct{}, 2), func([]byte, scrub.InspectionOrigin) ([]scrub.Field, error) {
+			handler := newTestHandler(t, make(chan struct{}, 2), func([]byte, scrub.InspectionOrigin) ([]scrub.Field, error) {
 				inspectCalls++
 				return nil, testCase.inspectErr
 			}, nil, nil)
@@ -524,7 +524,7 @@ func TestScrubIntegratesWithDeepPDFCleaning(t *testing.T) {
 	require.NoError(t, err)
 	fake := storage.NewFake()
 	require.NoError(t, fake.SetSource(fileIDOne, storage.SourceObject{PDFBytes: pdfBytes, ETag: "revision-one"}))
-	handler := newTestHandler(t, fake, make(chan struct{}, 2), scrub.InspectPDF, scrub.CleanPDF, nil)
+	handler := newTestHandler(t, make(chan struct{}, 2), scrub.InspectPDF, scrub.CleanPDF, nil)
 	body := mustJSON(t, scrubRequest{StorageKey: formatStorageKey(fileIDOne), ETag: "revision-one"})
 
 	recorder := serveRequest(context.Background(), t, handler, fake, scrubMethod, mediatype.JSON, body)
@@ -542,7 +542,7 @@ func TestScrubReturnsConflictBeforePDFOrWriteWork(t *testing.T) {
 	fake := storage.NewFake()
 	require.NoError(t, fake.SetSource(fileIDOne, storage.SourceObject{PDFBytes: []byte("%PDF-current"), ETag: "revision-current"}))
 	cleanCalls := 0
-	handler := newTestHandler(t, fake, make(chan struct{}, 2), nil, func([]byte) ([]byte, error) {
+	handler := newTestHandler(t, make(chan struct{}, 2), nil, func([]byte) ([]byte, error) {
 		cleanCalls++
 		return nil, nil
 	}, nil)
@@ -629,7 +629,7 @@ func TestScrubFailuresStopAtTheFailedStage(t *testing.T) {
 				fake.SetFailure(testCase.failureOp, errors.New("provider-secret"))
 			}
 			cleanCalls := 0
-			handler := newTestHandler(t, fake, make(chan struct{}, 2), nil, func(input []byte) ([]byte, error) {
+			handler := newTestHandler(t, make(chan struct{}, 2), nil, func(input []byte) ([]byte, error) {
 				cleanCalls++
 				if testCase.cleanErr != nil {
 					return nil, testCase.cleanErr
@@ -657,7 +657,7 @@ func TestSaturatedAdmissionReturnsRetryable503WithoutDownloadingWaitingSource(t 
 	fake := storage.NewFake()
 	observer := newBlockingStorage(fake, fileIDOne, fileIDTwo)
 	seedCandidateSources(t, fake, fileIDOne, fileIDTwo, fileIDThree)
-	handler := newTestHandler(t, observer, make(chan struct{}, 2), nil, nil, nil)
+	handler := newTestHandler(t, make(chan struct{}, 2), nil, nil, nil)
 
 	holderResponses := startDryRunHolders(t, handler, observer, fileIDOne, fileIDTwo)
 	startedAt := time.Now()
@@ -682,7 +682,7 @@ func TestCancellationWhileWaitingReturnsSanitizedResponseWithoutStorageWork(t *t
 	observer := newBlockingStorage(fake, fileIDOne, fileIDTwo)
 	seedCandidateSources(t, fake, fileIDOne, fileIDTwo, fileIDThree)
 	var canceledInspectCalls, canceledCleanCalls atomic.Int64
-	handler := newTestHandler(t, observer, make(chan struct{}, 2), func(input []byte, _ scrub.InspectionOrigin) ([]scrub.Field, error) {
+	handler := newTestHandler(t, make(chan struct{}, 2), func(input []byte, _ scrub.InspectionOrigin) ([]scrub.Field, error) {
 		if bytes.Contains(input, []byte(fileIDThree)) {
 			canceledInspectCalls.Add(1)
 		}
@@ -746,7 +746,7 @@ func TestExactRevisionCacheHitSucceedsWhileBothPermitsAreHeld(t *testing.T) {
 	observer := newBlockingStorage(fake, fileIDOne, fileIDTwo)
 	seedCandidateSources(t, fake, fileIDOne, fileIDTwo)
 	require.NoError(t, fake.SetSanitized(fileIDThree, "revision-three", []byte("clean")))
-	handler := newTestHandler(t, observer, make(chan struct{}, 2), nil, nil, nil)
+	handler := newTestHandler(t, make(chan struct{}, 2), nil, nil, nil)
 	holderResponses := startDryRunHolders(t, handler, observer, fileIDOne, fileIDTwo)
 
 	body := mustJSON(t, scrubRequest{StorageKey: formatStorageKey(fileIDThree), ETag: "revision-three"})
@@ -765,7 +765,7 @@ func TestSharedAdmissionNeverExceedsTwoAndReleasesAfterEveryTerminalPath(t *test
 		fake := storage.NewFake()
 		observer := newBlockingStorage(fake, fileIDOne, fileIDTwo, fileIDThree)
 		seedCandidateSources(t, fake, fileIDOne, fileIDTwo, fileIDThree)
-		handler := newTestHandler(t, observer, make(chan struct{}, 2), nil, nil, nil)
+		handler := newTestHandler(t, make(chan struct{}, 2), nil, nil, nil)
 
 		requests := []struct {
 			method handlerMethod
@@ -837,7 +837,7 @@ func TestSharedAdmissionNeverExceedsTwoAndReleasesAfterEveryTerminalPath(t *test
 			if testCase.downloadPanic != "" {
 				observer.panicDownload(fileIDOne, testCase.downloadPanic)
 			}
-			handler := newTestHandler(t, observer, make(chan struct{}, 2), func(input []byte, _ scrub.InspectionOrigin) ([]scrub.Field, error) {
+			handler := newTestHandler(t, make(chan struct{}, 2), func(input []byte, _ scrub.InspectionOrigin) ([]scrub.Field, error) {
 				if bytes.Contains(input, []byte(fileIDOne)) {
 					if testCase.inspectPanic != "" {
 						panic(testCase.inspectPanic)
@@ -891,7 +891,7 @@ func TestScrubReleasesPermitBeforeUploadingSanitizedBytes(t *testing.T) {
 	seedCandidateSources(t, fake, fileIDOne, fileIDTwo, fileIDThree)
 	observer := newBlockingStorage(fake, fileIDTwo, fileIDThree)
 	observer.blockUpload(fileIDOne)
-	handler := newTestHandler(t, observer, make(chan struct{}, 2), nil, func(input []byte) ([]byte, error) {
+	handler := newTestHandler(t, make(chan struct{}, 2), nil, func(input []byte) ([]byte, error) {
 		return input, nil
 	}, nil)
 
@@ -917,7 +917,7 @@ func TestPipelineLogsRecordAllApprovedSuccessStages(t *testing.T) {
 	seedCandidateSources(t, fake, fileIDOne, fileIDTwo)
 	var logs bytes.Buffer
 	logger := slog.New(slog.NewJSONHandler(&logs, nil))
-	handler := newTestHandlerWithLogger(t, fake, make(chan struct{}, 2), logger, nil, nil, deterministicEntropy)
+	handler := newTestHandlerWithLogger(t, make(chan struct{}, 2), logger, nil, nil, deterministicEntropy)
 
 	uploadRecorder := serveRequest(
 		context.Background(),
@@ -1089,7 +1089,6 @@ func TestPipelineLogsShortCircuitFailuresAndDescribeCacheHitsTruthfully(t *testi
 			var logs bytes.Buffer
 			handler := newTestHandlerWithLogger(
 				t,
-				fake,
 				make(chan struct{}, 2),
 				slog.New(slog.NewJSONHandler(&logs, nil)),
 				testCase.inspect,
@@ -1181,7 +1180,7 @@ func TestPipelineLogsExcludeSeededSensitiveValues(t *testing.T) {
 }
 
 func TestHandlersWithoutBindingsReturnSafeServerFailure(t *testing.T) {
-	handler := newTestHandler(t, storage.NewFake(), make(chan struct{}, 2), nil, nil, nil)
+	handler := newTestHandler(t, make(chan struct{}, 2), nil, nil, nil)
 	request := httptest.NewRequest(http.MethodPost, "/api/files/dry-run", strings.NewReader(mustJSON(t, dryRunRequest{StorageKey: formatStorageKey(fileIDOne)})))
 	request.Header.Set(header.ContentType, mediatype.JSON)
 	recorder := httptest.NewRecorder()
@@ -1202,19 +1201,17 @@ const (
 
 func newTestHandler(
 	t *testing.T,
-	objectStorage storage.Storage,
 	permits chan struct{},
 	inspect inspectPDFOperation,
 	clean cleanPDFOperation,
 	entropy entropyOperation,
 ) *Handler {
 	t.Helper()
-	return newTestHandlerWithLogger(t, objectStorage, permits, slog.New(slog.NewTextHandler(io.Discard, nil)), inspect, clean, entropy)
+	return newTestHandlerWithLogger(t, permits, slog.New(slog.NewTextHandler(io.Discard, nil)), inspect, clean, entropy)
 }
 
 func newTestHandlerWithLogger(
 	t *testing.T,
-	_ storage.Storage,
 	permits chan struct{},
 	logger *slog.Logger,
 	inspect inspectPDFOperation,
