@@ -7,11 +7,7 @@ import (
 )
 
 func verifyScrubbedPDF(outputBytes []byte) error {
-	verificationContext, err := readPDF(outputBytes)
-	if err != nil {
-		return err
-	}
-	verificationAnalysis, err := analyzePDF(verificationContext, PostWriteVerification)
+	_, verificationAnalysis, err := readAndAnalyzePDF(outputBytes, PostWriteVerification)
 	if err != nil {
 		return err
 	}
