@@ -66,9 +66,7 @@ func decodeJSONRequest(w http.ResponseWriter, request *http.Request, destination
 }
 
 func validFileName(fileName string) bool {
-	if fileName == "" ||
-		len(fileName) > maxFileNameBytes ||
-		!utf8.ValidString(fileName) ||
+	if len(fileName) > maxFileNameBytes ||
 		strings.ContainsRune(fileName, utf8.RuneError) {
 		return false
 	}
