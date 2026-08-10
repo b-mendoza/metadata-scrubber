@@ -103,17 +103,11 @@ func SanitizedObjectKey(fileID string, sourceETag string) (string, error) {
 
 // NormalizeProviderETag converts one quoted strong provider ETag into canonical domain form.
 func NormalizeProviderETag(providerETag string) (string, error) {
-	if strings.TrimSpace(providerETag) != providerETag || strings.HasPrefix(providerETag, "W/") {
-		return "", ErrInvalidETag
-	}
 	if len(providerETag) < 3 || providerETag[0] != '"' || providerETag[len(providerETag)-1] != '"' {
 		return "", ErrInvalidETag
 	}
 
 	normalizedETag := providerETag[1 : len(providerETag)-1]
-	if strings.HasPrefix(normalizedETag, "\"") && strings.HasSuffix(normalizedETag, "\"") {
-		return "", ErrInvalidETag
-	}
 	if err := validateCanonicalETag(normalizedETag); err != nil {
 		return "", err
 	}
