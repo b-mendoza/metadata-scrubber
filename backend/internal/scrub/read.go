@@ -135,11 +135,7 @@ func snapshotMetadataEntries(context *model.Context) ([]metadataEntrySnapshot, e
 
 	for _, objectNumber := range sortedLiveObjectNumbers(context) {
 		entry := context.Table[objectNumber]
-		err := walker.walkObject(entry.Object, nil)
-		if errors.Is(err, ErrSignedPDF) {
-			return nil, ErrSignedPDF
-		}
-		if err != nil {
+		if err := walker.walkObject(entry.Object, nil); err != nil {
 			return nil, err
 		}
 	}
