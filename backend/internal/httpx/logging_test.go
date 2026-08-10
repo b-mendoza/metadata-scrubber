@@ -27,6 +27,7 @@ func TestRequestLoggerLogsRequestLifecycle(t *testing.T) {
 	})
 
 	request := httptest.NewRequest(http.MethodPost, "/api/scrub?token=query-secret", bytes.NewBufferString("request-body-secret"))
+	request.Header.Set("User-Agent", "metadata-scrubber-test")
 	recorder := httptest.NewRecorder()
 	handler.ServeHTTP(recorder, request)
 
@@ -49,6 +50,9 @@ func TestRequestLoggerLogsRequestLifecycle(t *testing.T) {
 	completed := records[1]
 
 	require.Equal(t, "request started", started.Msg)
+	require.NotEmpty(t, request.RemoteAddr)
+	require.Equal(t, request.RemoteAddr, started.RemoteAddr)
+	require.Equal(t, "metadata-scrubber-test", started.UserAgent)
 
 	require.Equal(t, "request completed", completed.Msg)
 	requireRequiredIntLogField(t, "status", http.StatusCreated, completed.Status)
@@ -104,6 +108,8 @@ type logRecord struct {
 	Level                string  `json:"level"`
 	Method               string  `json:"method"`
 	Path                 string  `json:"path"`
+	RemoteAddr           string  `json:"remote_addr"`
+	UserAgent            string  `json:"user_agent"`
 	Status               *int    `json:"status"`
 	Bytes                *int    `json:"bytes"`
 	DurationMilliseconds *int64  `json:"duration_ms"`
