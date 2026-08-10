@@ -1,9 +1,10 @@
 package scrub
 
 import (
+	"cmp"
 	"errors"
 	"fmt"
-	"sort"
+	"slices"
 	"unicode/utf8"
 
 	"github.com/pdfcpu/pdfcpu/pkg/filter"
@@ -60,13 +61,11 @@ func analyzePDF(context *model.Context, origin InspectionOrigin) (*pdfAnalysis, 
 		return analysis, nil
 	}
 
-	sort.Slice(builder.fields, func(firstIndex, secondIndex int) bool {
-		firstField := builder.fields[firstIndex]
-		secondField := builder.fields[secondIndex]
-		if firstField.Name == secondField.Name {
-			return firstField.Label < secondField.Label
-		}
-		return firstField.Name < secondField.Name
+	slices.SortStableFunc(builder.fields, func(firstField, secondField Field) int {
+		return cmp.Or(
+			cmp.Compare(firstField.Name, secondField.Name),
+			cmp.Compare(firstField.Label, secondField.Label),
+		)
 	})
 	analysis.fields = builder.fields
 
