@@ -23,6 +23,7 @@ import (
 const (
 	readHeaderTimeout       = 5 * time.Second
 	gracefulShutdownTimeout = 10 * time.Second
+	processingPermitCount   = 2
 )
 
 func main() {
@@ -85,9 +86,12 @@ func shutdownServer(server *http.Server, waitForServer <-chan error) error {
 // configuration and the private object-storage boundary.
 func newServer(cfg config.Config, objectStorage storage.Storage, logger *slog.Logger) *http.Server {
 	mux := http.NewServeMux()
+	workflow := handler.New(logger, make(chan struct{}, processingPermitCount))
 
 	mux.HandleFunc("GET /api/health", handler.Reachability)
-	mux.HandleFunc("POST /api/scrub", handler.Scrub)
+	mux.HandleFunc("POST /api/uploads", workflow.Upload)
+	mux.HandleFunc("POST /api/files/dry-run", workflow.DryRun)
+	mux.HandleFunc("POST /api/files/scrub", workflow.Scrub)
 
 	return &http.Server{
 		Addr: fmt.Sprintf(":%d", cfg.Port),
