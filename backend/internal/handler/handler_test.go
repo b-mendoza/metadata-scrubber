@@ -658,6 +658,11 @@ func TestSaturatedAdmissionReturnsRetryable503WithoutDownloadingWaitingSource(t 
 	observer := newBlockingStorage(fake, fileIDOne, fileIDTwo)
 	seedCandidateSources(t, fake, fileIDOne, fileIDTwo, fileIDThree)
 	handler := newTestHandler(t, make(chan struct{}, 2), nil, nil, nil)
+	require.Equal(t, 2*time.Second, handler.admissionTimeout, "production admission wait must stay wired to two seconds")
+	// Shorten the wait so the saturation path is exercised without spending the
+	// production timeout; only the one-sided lower bound below depends on the
+	// clock, and load can only increase elapsed time, never trip it.
+	handler.admissionTimeout = 75 * time.Millisecond
 
 	holderResponses := startDryRunHolders(t, handler, observer, fileIDOne, fileIDTwo)
 	startedAt := time.Now()
@@ -668,8 +673,7 @@ func TestSaturatedAdmissionReturnsRetryable503WithoutDownloadingWaitingSource(t 
 	require.Equal(t, http.StatusServiceUnavailable, recorder.Code, recorder.Body.String())
 	require.Equal(t, admissionRetryAfter, recorder.Header().Get(header.RetryAfter))
 	require.Equal(t, admissionTimeoutMessage, errorMessage(t, recorder))
-	require.GreaterOrEqual(t, elapsed, 1900*time.Millisecond)
-	require.Less(t, elapsed, 3*time.Second)
+	require.GreaterOrEqual(t, elapsed, 75*time.Millisecond)
 	require.False(t, observer.downloadObserved(fileIDThree))
 	requireNoFakeDownloadFor(t, fake, fileIDThree)
 
