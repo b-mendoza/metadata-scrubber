@@ -11,11 +11,6 @@ import (
 	"metadata-scrubber/internal/storage"
 )
 
-type guardedDryRunResult struct {
-	etag   string
-	fields []scrub.Field
-}
-
 // DryRun inspects the current source revision while holding shared admission.
 func (handler *Handler) DryRun(w http.ResponseWriter, request *http.Request) {
 	startedAt := time.Now()
@@ -33,39 +28,40 @@ func (handler *Handler) DryRun(w http.ResponseWriter, request *http.Request) {
 		return
 	}
 
-	release, err := handler.acquire(request.Context(), handler.permits, handler.admissionTimeout, handler.beforeAcquireSelect)
+	release, err := acquirePermit(request.Context(), handler.permits, handler.admissionTimeout, handler.beforeAcquireSelect)
 	if err != nil {
 		handler.writeAdmissionFailure(w, err)
 		return
 	}
 
-	result, err := func() (guardedDryRunResult, error) {
+	etag, inspectedFields, err := func() (string, []scrub.Field, error) {
 		defer release()
 
 		source, downloadErr := objectStorage.DownloadSource(request.Context(), fileID, "")
 		if downloadErr != nil {
-			return guardedDryRunResult{}, downloadErr
+			return "", nil, downloadErr
 		}
 		if !sniff.IsPDFCandidate(source.PDFBytes) {
 			handler.logStage(request.Context(), "sniffed", input.StorageKey, "rejected", startedAt)
-			return guardedDryRunResult{}, errNotPDF
+			return "", nil, errNotPDF
 		}
 		handler.logStage(request.Context(), "sniffed", input.StorageKey, "accepted", startedAt)
 
 		fields, inspectErr := handler.inspect(source.PDFBytes, scrub.PublicInput)
 		if inspectErr != nil {
-			return guardedDryRunResult{}, inspectErr
+			return "", nil, inspectErr
 		}
-		return guardedDryRunResult{etag: source.ETag, fields: fields}, nil
+		return source.ETag, fields, nil
 	}()
 	if err != nil {
-		handler.logStage(request.Context(), "dry-run", input.StorageKey, pdfOutcome(err), startedAt)
-		writePipelineFailure(w, err, "could not inspect PDF")
+		failure := classifyPipelineFailure(err, "could not inspect PDF")
+		handler.logStage(request.Context(), "dry-run", input.StorageKey, failure.outcome, startedAt)
+		httpx.WriteError(w, failure.status, failure.message)
 		return
 	}
 
-	fields := make([]publicField, 0, len(result.fields))
-	for _, field := range result.fields {
+	fields := make([]publicField, 0, len(inspectedFields))
+	for _, field := range inspectedFields {
 		fields = append(fields, publicField{
 			Name:             field.Name,
 			Label:            field.Label,
@@ -76,7 +72,7 @@ func (handler *Handler) DryRun(w http.ResponseWriter, request *http.Request) {
 	}
 
 	handler.logStage(request.Context(), "dry-run", input.StorageKey, "success", startedAt)
-	httpx.WriteJSON(w, http.StatusOK, dryRunResponse{ETag: result.etag, Fields: fields})
+	httpx.WriteJSON(w, http.StatusOK, dryRunResponse{ETag: etag, Fields: fields})
 }
 
 // Scrub cleans the exact reviewed source revision and returns its private download grant.
@@ -113,7 +109,7 @@ func (handler *Handler) Scrub(w http.ResponseWriter, request *http.Request) {
 		return
 	}
 
-	release, err := handler.acquire(request.Context(), handler.permits, handler.admissionTimeout, handler.beforeAcquireSelect)
+	release, err := acquirePermit(request.Context(), handler.permits, handler.admissionTimeout, handler.beforeAcquireSelect)
 	if err != nil {
 		handler.writeAdmissionFailure(w, err)
 		return
@@ -135,8 +131,9 @@ func (handler *Handler) Scrub(w http.ResponseWriter, request *http.Request) {
 		return handler.clean(source.PDFBytes)
 	}()
 	if err != nil {
-		handler.logStage(request.Context(), "scrubbed", input.StorageKey, pdfOutcome(err), startedAt)
-		writePipelineFailure(w, err, "could not scrub PDF")
+		failure := classifyPipelineFailure(err, "could not scrub PDF")
+		handler.logStage(request.Context(), "scrubbed", input.StorageKey, failure.outcome, startedAt)
+		httpx.WriteError(w, failure.status, failure.message)
 		return
 	}
 	handler.logStage(request.Context(), "scrubbed", input.StorageKey, "success", startedAt)

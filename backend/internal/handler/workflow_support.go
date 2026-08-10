@@ -169,15 +169,6 @@ func classifyPipelineFailure(err error, internalMessage string) pipelineFailure 
 	}
 }
 
-func writePipelineFailure(w http.ResponseWriter, err error, internalMessage string) {
-	failure := classifyPipelineFailure(err, internalMessage)
-	httpx.WriteError(w, failure.status, failure.message)
-}
-
-func pdfOutcome(err error) string {
-	return classifyPipelineFailure(err, "").outcome
-}
-
 func (handler *Handler) logStage(
 	ctx context.Context,
 	stage string,
