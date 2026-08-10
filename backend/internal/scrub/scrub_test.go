@@ -6,9 +6,10 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"maps"
 	"os"
 	"reflect"
-	"sort"
+	"slices"
 	"strings"
 	"testing"
 	"time"
@@ -908,11 +909,7 @@ func buildPDFWithInfoAndRawMetadataAtLocation(t *testing.T, entries map[string]s
 func infoDictionaryObject(t *testing.T, entries map[string]string) string {
 	t.Helper()
 
-	keys := make([]string, 0, len(entries))
-	for key := range entries {
-		keys = append(keys, key)
-	}
-	sort.Strings(keys)
+	keys := slices.Sorted(maps.Keys(entries))
 
 	var infoDictionary strings.Builder
 	infoDictionary.WriteString("<<")
@@ -1014,13 +1011,11 @@ type pdfFixture struct {
 func buildPDF(t *testing.T, fixture pdfFixture) []byte {
 	t.Helper()
 
-	objectNumbers := make([]int, 0, len(fixture.objects))
+	objectNumbers := slices.Sorted(maps.Keys(fixture.objects))
 	maxObjectNumber := 0
-	for objectNumber := range fixture.objects {
-		objectNumbers = append(objectNumbers, objectNumber)
-		maxObjectNumber = max(maxObjectNumber, objectNumber)
+	if len(objectNumbers) > 0 {
+		maxObjectNumber = objectNumbers[len(objectNumbers)-1]
 	}
-	sort.Ints(objectNumbers)
 
 	var pdf bytes.Buffer
 	pdf.WriteString("%PDF-1.7\n%\xE2\xE3\xCF\xD3\n")
