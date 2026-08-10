@@ -41,9 +41,7 @@ func main() {
 	}
 }
 
-// run starts the HTTP server and blocks until it fails or ctx is cancelled, at
-// which point it attempts a graceful shutdown. It returns the first error
-// encountered, or nil on a clean shutdown.
+// run returns the first ready listener result or the result of graceful shutdown after cancellation.
 func run(ctx context.Context) error {
 	cfg, err := config.Load()
 	if err != nil {
@@ -81,9 +79,6 @@ func shutdownServer(server *http.Server, waitForServer <-chan error) error {
 	return <-waitForServer
 }
 
-// newServer wires the API routes to their handlers and returns the configured
-// server. Bindings are injected ahead of the routes so handlers can use validated
-// configuration and the private object-storage boundary.
 func newServer(cfg config.Config, objectStorage storage.Storage, logger *slog.Logger) *http.Server {
 	mux := http.NewServeMux()
 	workflow := handler.New(logger, make(chan struct{}, processingPermitCount))
