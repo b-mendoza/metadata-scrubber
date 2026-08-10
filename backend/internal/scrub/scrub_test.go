@@ -6,6 +6,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"os"
 	"reflect"
 	"sort"
 	"strings"
@@ -22,9 +23,12 @@ import (
 	"metadata-scrubber/internal/sniff"
 )
 
-func TestInspectPDFRequiresKnownOrigin(t *testing.T) {
+func TestMain(m *testing.M) {
 	DisableConfigDir()
+	os.Exit(m.Run())
+}
 
+func TestInspectPDFRequiresKnownOrigin(t *testing.T) {
 	fields, err := InspectPDF(buildCleanPDF(t), InspectionOrigin("unknown"))
 
 	require.Error(t, err)
@@ -32,8 +36,6 @@ func TestInspectPDFRequiresKnownOrigin(t *testing.T) {
 }
 
 func TestCleanPDFRejectsInvalidPDFWithNoOutput(t *testing.T) {
-	DisableConfigDir()
-
 	outputBytes, err := CleanPDF([]byte("not a pdf"))
 
 	require.ErrorIs(t, err, ErrMalformedPDF)
@@ -41,7 +43,6 @@ func TestCleanPDFRejectsInvalidPDFWithNoOutput(t *testing.T) {
 }
 
 func TestInspectPDFRejectsMalformedCandidatesWithoutSignedClassification(t *testing.T) {
-	DisableConfigDir()
 	testCases := []struct {
 		name       string
 		inputBytes []byte
@@ -63,8 +64,6 @@ func TestInspectPDFRejectsMalformedCandidatesWithoutSignedClassification(t *test
 }
 
 func TestInspectPDFPreservesUnderlyingErrorsForPostWriteVerification(t *testing.T) {
-	DisableConfigDir()
-
 	fields, err := InspectPDF([]byte("%PDF-1.7\n"), PostWriteVerification)
 
 	require.Error(t, err)
@@ -73,7 +72,6 @@ func TestInspectPDFPreservesUnderlyingErrorsForPostWriteVerification(t *testing.
 }
 
 func TestInspectPDFAcceptsValidPDFWithLeadingBytes(t *testing.T) {
-	DisableConfigDir()
 	inputBytes := append([]byte("leading bytes\n"), buildCleanPDF(t)...)
 	require.False(t, sniff.IsPDFCandidate(inputBytes))
 
@@ -85,7 +83,6 @@ func TestInspectPDFAcceptsValidPDFWithLeadingBytes(t *testing.T) {
 }
 
 func TestInspectPDFEnumeratesDeepMetadataDeterministically(t *testing.T) {
-	DisableConfigDir()
 	pdfBytes, metadata := buildMetadataRichPDF(t)
 
 	fields, err := InspectPDF(pdfBytes, PublicInput)
@@ -114,8 +111,6 @@ func TestInspectPDFEnumeratesDeepMetadataDeterministically(t *testing.T) {
 }
 
 func TestInspectPDFAppliesPreviewByteCeilingDeterministically(t *testing.T) {
-	DisableConfigDir()
-
 	testCases := []struct {
 		name            string
 		value           string
@@ -145,7 +140,6 @@ func TestInspectPDFAppliesPreviewByteCeilingDeterministically(t *testing.T) {
 }
 
 func TestInspectPDFPreservesBackslashAndParenthesisCharacters(t *testing.T) {
-	DisableConfigDir()
 	const title = `back\slash (balanced) and lone ( parenthesis`
 	pdfBytes := buildPDFWithInfo(t, map[string]string{"Title": pdfString(title)})
 
@@ -157,14 +151,13 @@ func TestInspectPDFPreservesBackslashAndParenthesisCharacters(t *testing.T) {
 }
 
 func TestPDFPathsRejectAggregateDecodedMetadataBudgetBeforeWriting(t *testing.T) {
-	DisableConfigDir()
 	const (
 		streamCount        = 24
 		decodedStreamBytes = 1 << 20
 	)
 	require.Greater(t, streamCount*decodedStreamBytes, maxDecodedMetadataBytes)
 	pdfBytes := buildPDFWithCompressedMetadataStreams(t, streamCount, decodedStreamBytes)
-	work := newObservedPDFWork()
+	work := &observedPDFWork{}
 
 	fields, inspectErr := InspectPDF(pdfBytes, PublicInput)
 	outputBytes, scrubErr := work.clean(pdfBytes)
@@ -175,11 +168,10 @@ func TestPDFPathsRejectAggregateDecodedMetadataBudgetBeforeWriting(t *testing.T)
 }
 
 func TestPDFPathsRejectOversizedCompressedCatalogMetadataBeforeValidation(t *testing.T) {
-	DisableConfigDir()
 	decodedBytes := maxDecodedMetadataBytes + 1
 	pdfBytes := buildPDFWithCompressedCatalogMetadata(t, oversizedXMP(t, decodedBytes))
 	require.Less(t, len(pdfBytes), MaxInputBytes)
-	work := newObservedPDFWork()
+	work := &observedPDFWork{}
 	validationCalls := 0
 	originalValidatePDFContext := validatePDFContext
 	validatePDFContext = func(context *model.Context) error {
@@ -200,7 +192,6 @@ func TestPDFPathsRejectOversizedCompressedCatalogMetadataBeforeValidation(t *tes
 }
 
 func TestMetadataPreflightCachesCatalogContentWithoutMarkingItValidated(t *testing.T) {
-	DisableConfigDir()
 	metadata := syntheticXMP("bounded-preflight-cache")
 	context, err := api.ReadContext(
 		bytes.NewReader(buildPDFWithCompressedCatalogMetadata(t, metadata)),
@@ -225,7 +216,6 @@ func TestMetadataPreflightCachesCatalogContentWithoutMarkingItValidated(t *testi
 }
 
 func TestAnalyzePDFReleasesDecodedMetadataStreamCaches(t *testing.T) {
-	DisableConfigDir()
 	const decodedStreamBytes = 1 << 20
 	context, err := readPDF(buildPDFWithCompressedMetadataStreams(t, 2, decodedStreamBytes))
 	require.NoError(t, err)
@@ -244,7 +234,6 @@ func TestAnalyzePDFReleasesDecodedMetadataStreamCaches(t *testing.T) {
 }
 
 func TestPDFByteAPIsEnforceAggregateInputLimit(t *testing.T) {
-	DisableConfigDir()
 	exactLimitPDF := padPDFToSize(t, buildCleanPDF(t), MaxInputBytes)
 
 	fields, err := InspectPDF(exactLimitPDF, PublicInput)
@@ -280,7 +269,6 @@ func TestFieldExposesOnlyApprovedInspectionProperties(t *testing.T) {
 }
 
 func TestInspectPDFBoundsIdentitiesDerivedFromLongCustomKeys(t *testing.T) {
-	DisableConfigDir()
 	longKey := strings.Repeat("LongCustomKey", 512)
 	pdfBytes := buildPDFWithInfo(t, map[string]string{longKey: pdfString("synthetic value")})
 
@@ -301,8 +289,7 @@ func TestInspectPDFBoundsIdentitiesDerivedFromLongCustomKeys(t *testing.T) {
 }
 
 func TestInspectPDFEnforcesFieldCountAtomically(t *testing.T) {
-	DisableConfigDir()
-	work := newObservedPDFWork()
+	work := &observedPDFWork{}
 
 	acceptedEntries := make(map[string]string, maxInspectionFields)
 	for index := range maxInspectionFields {
@@ -326,8 +313,7 @@ func TestInspectPDFEnforcesFieldCountAtomically(t *testing.T) {
 }
 
 func TestInspectPDFEnforcesAggregateSummaryBudgetAtomically(t *testing.T) {
-	DisableConfigDir()
-	work := newObservedPDFWork()
+	work := &observedPDFWork{}
 	entries := make(map[string]string, maxInspectionFields)
 	for index := range maxInspectionFields {
 		entries[fmt.Sprintf("Custom%03d", index)] = pdfString(strings.Repeat("v", maxFieldPreviewBytes+1))
@@ -371,7 +357,6 @@ func TestSummaryBuilderEnforcesDecodedMetadataBudgetExactly(t *testing.T) {
 }
 
 func TestInspectPDFTreatsNeutralTrioAccordingToOrigin(t *testing.T) {
-	DisableConfigDir()
 	pdfBytes := buildPDFWithInfo(t, neutralTrioInfoEntries())
 
 	publicFields, err := InspectPDF(pdfBytes, PublicInput)
@@ -385,7 +370,6 @@ func TestInspectPDFTreatsNeutralTrioAccordingToOrigin(t *testing.T) {
 }
 
 func TestInspectPDFKeepsEveryNeutralTrioNearMissVisible(t *testing.T) {
-	DisableConfigDir()
 	neutralEntries := neutralTrioInfoEntries()
 
 	testCases := []struct {
@@ -417,7 +401,6 @@ func TestInspectPDFKeepsEveryNeutralTrioNearMissVisible(t *testing.T) {
 }
 
 func TestCleanPDFRemovesEveryInspectedTargetAndVerifiesOutput(t *testing.T) {
-	DisableConfigDir()
 	inputBytes, metadata := buildMetadataRichPDF(t)
 	inputContext := assertValidPDF(t, inputBytes)
 	require.Equal(t, 2, inputContext.PageCount)
@@ -456,8 +439,7 @@ func TestCleanPDFRemovesEveryInspectedTargetAndVerifiesOutput(t *testing.T) {
 }
 
 func TestCleanPDFReturnsCleanPDFWithoutRewriting(t *testing.T) {
-	DisableConfigDir()
-	work := newObservedPDFWork()
+	work := &observedPDFWork{}
 	inputBytes := buildCleanPDF(t)
 
 	fields, err := InspectPDF(inputBytes, PublicInput)
@@ -471,8 +453,7 @@ func TestCleanPDFReturnsCleanPDFWithoutRewriting(t *testing.T) {
 }
 
 func TestCleanPDFRewritesPublicNeutralLookingTrio(t *testing.T) {
-	DisableConfigDir()
-	work := newObservedPDFWork()
+	work := &observedPDFWork{}
 	inputBytes := buildPDFWithInfo(t, neutralTrioInfoEntries())
 
 	outputBytes, err := work.clean(inputBytes)
@@ -488,8 +469,7 @@ func TestCleanPDFRewritesPublicNeutralLookingTrio(t *testing.T) {
 }
 
 func TestPDFPathsEnforceConfiguredStreamLimit(t *testing.T) {
-	DisableConfigDir()
-	work := newObservedPDFWork()
+	work := &observedPDFWork{}
 	oversizedContent := strings.Repeat("x", int(maxPDFStreamBytes)+1)
 	pdfBytes := buildPDFWithContent(t, oversizedContent)
 
@@ -539,8 +519,7 @@ func TestBoundedPDFConfigurationAssignsEveryResourceLimit(t *testing.T) {
 }
 
 func TestCleanPDFUsesBoundedConfigurationForWriting(t *testing.T) {
-	DisableConfigDir()
-	work := newObservedPDFWork()
+	work := &observedPDFWork{}
 	inputBytes := buildPDFWithInfo(t, map[string]string{"Title": pdfString("write me")})
 
 	outputBytes, err := work.clean(inputBytes)
@@ -551,54 +530,59 @@ func TestCleanPDFUsesBoundedConfigurationForWriting(t *testing.T) {
 	require.Equal(t, []model.ResourceLimits{boundedPDFConfiguration().Limits}, work.writeLimits)
 }
 
-func TestCleanPDFUsesBoundedConfigurationForPostWriteVerification(t *testing.T) {
-	DisableConfigDir()
-	oversizedPDF := buildPDFWithContent(t, strings.Repeat("x", int(maxPDFStreamBytes)+1))
-	work := newObservedPDFWork()
-	work.writeOutput = oversizedPDF
-	inputBytes := buildPDFWithInfo(t, map[string]string{"Title": pdfString("verify me")})
+func TestCleanPDFFailurePathsReturnNilOutput(t *testing.T) {
+	testCases := []struct {
+		name              string
+		inputTitle        string
+		writeOutput       []byte
+		writeError        error
+		verifyError       error
+		wantVerifications int
+	}{
+		{
+			name:              "TestCleanPDFUsesBoundedConfigurationForPostWriteVerification",
+			inputTitle:        "verify me",
+			writeOutput:       buildPDFWithContent(t, strings.Repeat("x", int(maxPDFStreamBytes)+1)),
+			wantVerifications: 1,
+		},
+		{
+			name:       "TestCleanPDFReturnsNilOutputWhenWriteFails",
+			inputTitle: "write failure",
+			writeError: errors.New("synthetic write failure"),
+		},
+		{
+			name:              "TestCleanPDFReturnsNilOutputWhenPostWriteVerificationFails",
+			inputTitle:        "verification failure",
+			verifyError:       errors.New("synthetic verification failure"),
+			wantVerifications: 1,
+		},
+	}
 
-	outputBytes, err := work.clean(inputBytes)
+	for _, testCase := range testCases {
+		t.Run(testCase.name, func(t *testing.T) {
+			work := &observedPDFWork{
+				writeOutput: testCase.writeOutput,
+				writeError:  testCase.writeError,
+				verifyError: testCase.verifyError,
+			}
+			inputBytes := buildPDFWithInfo(t, map[string]string{"Title": pdfString(testCase.inputTitle)})
 
-	require.Error(t, err)
-	require.Nil(t, outputBytes)
-	require.Equal(t, 1, work.mutations)
-	require.Equal(t, 1, work.writes)
-	require.Equal(t, 1, work.verifications)
-}
+			outputBytes, err := work.clean(inputBytes)
 
-func TestCleanPDFReturnsNilOutputWhenWriteFails(t *testing.T) {
-	DisableConfigDir()
-	work := newObservedPDFWork()
-	work.writeError = errors.New("synthetic write failure")
-	inputBytes := buildPDFWithInfo(t, map[string]string{"Title": pdfString("write failure")})
-
-	outputBytes, err := work.clean(inputBytes)
-
-	require.Error(t, err)
-	require.Nil(t, outputBytes)
-	require.Equal(t, 1, work.mutations)
-	require.Equal(t, 1, work.writes)
-	require.Zero(t, work.verifications)
-}
-
-func TestCleanPDFReturnsNilOutputWhenPostWriteVerificationFails(t *testing.T) {
-	DisableConfigDir()
-	work := newObservedPDFWork()
-	work.verifyError = errors.New("synthetic verification failure")
-	inputBytes := buildPDFWithInfo(t, map[string]string{"Title": pdfString("verification failure")})
-
-	outputBytes, err := work.clean(inputBytes)
-
-	require.Error(t, err)
-	require.Nil(t, outputBytes)
-	require.Equal(t, 1, work.mutations)
-	require.Equal(t, 1, work.writes)
-	require.Equal(t, 1, work.verifications)
+			require.Error(t, err)
+			require.Nil(t, outputBytes)
+			require.Equal(t, 1, work.mutations)
+			require.Equal(t, 1, work.writes)
+			if testCase.wantVerifications == 0 {
+				require.Zero(t, work.verifications)
+			} else {
+				require.Equal(t, 1, work.verifications)
+			}
+		})
+	}
 }
 
 func TestPDFPathsRejectUndecodableMetadataAtomically(t *testing.T) {
-	DisableConfigDir()
 	testCases := []struct {
 		name     string
 		pdfBytes func(*testing.T) []byte
@@ -613,7 +597,7 @@ func TestPDFPathsRejectUndecodableMetadataAtomically(t *testing.T) {
 	for _, testCase := range testCases {
 		t.Run(testCase.name, func(t *testing.T) {
 			pdfBytes := testCase.pdfBytes(t)
-			work := newObservedPDFWork()
+			work := &observedPDFWork{}
 
 			fields, inspectErr := InspectPDF(pdfBytes, PublicInput)
 			outputBytes, scrubErr := work.clean(pdfBytes)
@@ -628,7 +612,6 @@ func TestPDFPathsRejectUndecodableMetadataAtomically(t *testing.T) {
 }
 
 func TestMetadataTraversalDeduplicatesOneParentEntryTarget(t *testing.T) {
-	DisableConfigDir()
 	context, err := readPDF(buildPDFWithInfoAndRawMetadata(t, map[string]string{}, syntheticXMP("duplicate-target")))
 	require.NoError(t, err)
 	catalog, err := context.Catalog()
@@ -652,7 +635,6 @@ func TestMetadataTraversalDeduplicatesOneParentEntryTarget(t *testing.T) {
 }
 
 func TestInspectPDFRejectsEverySignedStructureBeforeMutationOrWriting(t *testing.T) {
-	DisableConfigDir()
 	testCases := []struct {
 		name     string
 		pdfBytes func(*testing.T) []byte
@@ -666,7 +648,7 @@ func TestInspectPDFRejectsEverySignedStructureBeforeMutationOrWriting(t *testing
 	for _, testCase := range testCases {
 		t.Run(testCase.name, func(t *testing.T) {
 			pdfBytes := testCase.pdfBytes(t)
-			work := newObservedPDFWork()
+			work := &observedPDFWork{}
 
 			fields, inspectErr := InspectPDF(pdfBytes, PublicInput)
 			outputBytes, scrubErr := work.clean(pdfBytes)
@@ -699,7 +681,6 @@ func TestCachedSignatureVariantsAreClassifiedAsSigned(t *testing.T) {
 }
 
 func TestInspectPDFAcceptsSignatureLikeTextAndEmptySignatureField(t *testing.T) {
-	DisableConfigDir()
 	pdfBytes := buildUnsignedSignatureLikePDF(t)
 
 	fields, err := InspectPDF(pdfBytes, PublicInput)
@@ -1140,10 +1121,6 @@ type observedPDFWork struct {
 	writeError    error
 	verifyError   error
 	writeOutput   []byte
-}
-
-func newObservedPDFWork() *observedPDFWork {
-	return &observedPDFWork{}
 }
 
 func (work *observedPDFWork) clean(inputBytes []byte) ([]byte, error) {
