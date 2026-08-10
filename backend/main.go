@@ -48,34 +48,29 @@ func run(ctx context.Context) error {
 	}
 
 	logger := slog.Default()
-	objectStorage := storage.NewR2(cfg)
-	server := newServer(cfg, objectStorage, logger)
+	server := newServer(cfg, storage.NewR2(cfg), logger)
 
 	serverErr := make(chan error, 1)
 	go func() {
 		logger.Info("metadata-scrubber listening", "addr", server.Addr)
-		if err := server.ListenAndServe(); err != nil && !errors.Is(err, http.ErrServerClosed) {
-			serverErr <- err
-			return
+		err := server.ListenAndServe()
+		if errors.Is(err, http.ErrServerClosed) {
+			err = nil
 		}
-		serverErr <- nil
+		serverErr <- err
 	}()
 
 	select {
 	case err := <-serverErr:
 		return err
 	case <-ctx.Done():
-		return shutdownServer(server, serverErr)
+		shutdownCtx, cancel := context.WithTimeout(context.Background(), gracefulShutdownTimeout)
+		defer cancel()
+		if err := server.Shutdown(shutdownCtx); err != nil {
+			return err
+		}
+		return <-serverErr
 	}
-}
-
-func shutdownServer(server *http.Server, waitForServer <-chan error) error {
-	shutdownCtx, cancel := context.WithTimeout(context.Background(), gracefulShutdownTimeout)
-	defer cancel()
-	if err := server.Shutdown(shutdownCtx); err != nil {
-		return err
-	}
-	return <-waitForServer
 }
 
 func newServer(cfg config.Config, objectStorage storage.Storage, logger *slog.Logger) *http.Server {
