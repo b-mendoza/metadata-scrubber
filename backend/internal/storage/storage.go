@@ -171,6 +171,9 @@ func operationError(operation string, err error) error {
 	return fmt.Errorf("%s: %w", operation, err)
 }
 
+// copyBytes is not a synonym for bytes.Clone: for an empty non-nil input it
+// returns nil, and bytes.Clone returns an empty non-nil slice. Fake.SanitizedBytes
+// returns this value to callers, so the difference is observable.
 func copyBytes(input []byte) []byte {
 	return append([]byte(nil), input...)
 }
