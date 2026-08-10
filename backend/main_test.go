@@ -41,7 +41,8 @@ func TestRunRejectsIncompleteOrInvalidR2ConfigurationBeforeStartingServer(t *tes
 			name: "missing required value",
 			configureFail: func(t *testing.T) {
 				t.Helper()
-				unsetStartupEnvironmentValue(t, "R2_SECRET_ACCESS_KEY")
+				t.Setenv("R2_SECRET_ACCESS_KEY", "")
+				require.NoError(t, os.Unsetenv("R2_SECRET_ACCESS_KEY"))
 			},
 			affectedField: "R2SecretAccessKey",
 		},
@@ -55,7 +56,11 @@ func TestRunRejectsIncompleteOrInvalidR2ConfigurationBeforeStartingServer(t *tes
 		},
 	} {
 		t.Run(testCase.name, func(t *testing.T) {
-			setValidStartupEnvironment(t)
+			t.Setenv("PORT", "8080")
+			t.Setenv("R2_ACCOUNT_ID", startupR2AccountID)
+			t.Setenv("R2_ACCESS_KEY_ID", startupR2AccessKeyID)
+			t.Setenv("R2_SECRET_ACCESS_KEY", startupR2SecretAccessKey)
+			t.Setenv("R2_BUCKET", startupR2Bucket)
 			testCase.configureFail(t)
 
 			err := run(context.Background())
