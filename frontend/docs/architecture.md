@@ -16,7 +16,8 @@
 ## Server boundaries
 
 - Route server handlers / server functions handle small, direct, single-purpose operations (see `src/routes/api/upload.ts`). Wrap server-only code with `createServerOnlyFn` from `@tanstack/react-start`.
-- tRPC procedures handle database queries, business logic, and multi-step operations. Routers live in `src/shared/libs/trpc/` and per-domain files such as `src/domains/products/products-router.mod.server.ts`.
+- tRPC procedures handle database queries, business logic, and multi-step operations. The root router registers the `products` and `wizard` domain routers.
+- The `wizard` router is server-only. It sends small JSON requests to the backend through the validated `BACKEND_URL` binding. It passes the request `AbortSignal` to each backend request.
 
 ## Application bindings
 
@@ -27,6 +28,7 @@
 ## Validation
 
 - Server-side boundaries validate with Effect Schema. Client-side code validates with Zod. The rationale for this split lives in the [validation-libraries convention](./agent/code-conventions.md).
+- The wizard router rejects unknown input and response keys. It maps approved backend statuses to stable tRPC codes and frontend-owned public messages. It discards backend error text.
 
 ## Database
 
@@ -41,5 +43,6 @@
 
 ## Testing status
 
-- The suite currently has **zero test files**. `passWithNoTests: true` is set in `vitest.config.ts` so `pnpm run test` remains a valid commit gate; remove it once tests land.
-- Highest-value first targets, per the root risk-based coverage rule: upload validation branches in `src/routes/api/upload.ts`, environment parsing and the bindings invariant in the application-bindings middleware, and wizard constants wiring (import the production constants in assertions).
+- The suite has caller-level Vitest tests for the server-only wizard router. The tests cover requests, runtime validation, safe error mapping, cancellation signals, and duplicate scrub success.
+- Vitest requires at least one test file. The configuration does not use `passWithNoTests`.
+- Other high-value targets include upload route validation, environment parsing, and the application-bindings invariant.
