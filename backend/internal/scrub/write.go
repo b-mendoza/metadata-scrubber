@@ -7,11 +7,11 @@ import (
 )
 
 func verifyScrubbedPDF(outputBytes []byte) error {
-	_, verificationAnalysis, err := readAndAnalyzePDF(outputBytes, PostWriteVerification)
+	fields, err := InspectPDF(outputBytes, PostWriteVerification)
 	if err != nil {
 		return err
 	}
-	if len(verificationAnalysis.fields) != 0 {
+	if len(fields) != 0 {
 		return errors.New("PDF metadata remained after scrub")
 	}
 	return nil
