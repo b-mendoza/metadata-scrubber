@@ -98,12 +98,12 @@ func storageFromRequest(w http.ResponseWriter, request *http.Request) storage.St
 	return requestBindings.Storage
 }
 
-func acquirePermit(ctx context.Context, permits chan struct{}, beforeSelect func()) (func(), error) {
+func acquirePermit(ctx context.Context, permits chan struct{}, timeout time.Duration, beforeSelect func()) (func(), error) {
 	if err := ctx.Err(); err != nil {
 		return nil, err
 	}
 
-	admissionContext, cancel := context.WithTimeout(ctx, admissionTimeout)
+	admissionContext, cancel := context.WithTimeout(ctx, timeout)
 	defer cancel()
 	beforeSelect()
 	select {
@@ -111,10 +111,6 @@ func acquirePermit(ctx context.Context, permits chan struct{}, beforeSelect func
 		if err := ctx.Err(); err != nil {
 			<-permits
 			return nil, err
-		}
-		if errors.Is(admissionContext.Err(), context.DeadlineExceeded) {
-			<-permits
-			return nil, errAdmissionTimeout
 		}
 		return func() { <-permits }, nil
 	case <-admissionContext.Done():
