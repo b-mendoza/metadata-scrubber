@@ -2,7 +2,6 @@
 package handler
 
 import (
-	"context"
 	"crypto/rand"
 	"errors"
 	"log/slog"
@@ -41,7 +40,6 @@ type (
 	inspectPDFOperation func([]byte, scrub.InspectionOrigin) ([]scrub.Field, error)
 	cleanPDFOperation   func([]byte) ([]byte, error)
 	entropyOperation    func([]byte) (int, error)
-	acquireOperation    func(context.Context, chan struct{}, time.Duration, func()) (func(), error)
 )
 
 // Handler owns the process-lifetime dependencies shared by the JSON workflow.
@@ -51,7 +49,6 @@ type Handler struct {
 	inspect             inspectPDFOperation
 	clean               cleanPDFOperation
 	entropy             entropyOperation
-	acquire             acquireOperation
 	admissionTimeout    time.Duration
 	beforeAcquireSelect func()
 }
@@ -126,7 +123,6 @@ func newHandler(
 		inspect:             inspect,
 		clean:               clean,
 		entropy:             entropy,
-		acquire:             acquirePermit,
 		admissionTimeout:    admissionTimeout,
 		beforeAcquireSelect: func() {},
 	}
