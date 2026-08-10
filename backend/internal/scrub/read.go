@@ -15,24 +15,14 @@ type metadataEntrySnapshot struct {
 	value      types.Object
 }
 
-type indirectObjectIdentity struct {
-	objectNumber     int
-	generationNumber int
-}
-
 func preflightMetadataEntries(context *model.Context, snapshots []metadataEntrySnapshot) error {
 	remainingDecodeBytes := int64(maxDecodedMetadataBytes)
-	decodedIndirectObjects := make(map[indirectObjectIdentity]struct{})
+	decodedIndirectObjects := make(map[types.IndirectRef]struct{})
 
 	for _, snapshot := range snapshots {
 		indirectReference, indirect := snapshot.value.(types.IndirectRef)
-		identity := indirectObjectIdentity{}
 		if indirect {
-			identity = indirectObjectIdentity{
-				objectNumber:     indirectReference.ObjectNumber.Value(),
-				generationNumber: indirectReference.GenerationNumber.Value(),
-			}
-			if _, decoded := decodedIndirectObjects[identity]; decoded {
+			if _, decoded := decodedIndirectObjects[indirectReference]; decoded {
 				continue
 			}
 		}
@@ -49,7 +39,7 @@ func preflightMetadataEntries(context *model.Context, snapshots []metadataEntryS
 		storeMetadataStreamContent(context, snapshot.dictionary, snapshot.key, snapshot.value, streamDictionary.Content)
 		remainingDecodeBytes -= int64(len(content))
 		if indirect {
-			decodedIndirectObjects[identity] = struct{}{}
+			decodedIndirectObjects[indirectReference] = struct{}{}
 		}
 	}
 
@@ -135,7 +125,7 @@ func storeMetadataStreamContent(
 	}
 }
 
-func snapshotMetadataEntries(context *model.Context) ([]metadataEntrySnapshot, bool, error) {
+func snapshotMetadataEntries(context *model.Context) ([]metadataEntrySnapshot, error) {
 	snapshots := make([]metadataEntrySnapshot, 0)
 	walker := structuralWalker{
 		context: context,
@@ -149,14 +139,14 @@ func snapshotMetadataEntries(context *model.Context) ([]metadataEntrySnapshot, b
 		entry := context.Table[objectNumber]
 		err := walker.walkObject(entry.Object, nil)
 		if errors.Is(err, ErrSignedPDF) {
-			return nil, true, nil
+			return nil, ErrSignedPDF
 		}
 		if err != nil {
-			return nil, false, err
+			return nil, err
 		}
 	}
 
-	return snapshots, false, nil
+	return snapshots, nil
 }
 
 func restoreMetadataEntries(snapshots []metadataEntrySnapshot) {
