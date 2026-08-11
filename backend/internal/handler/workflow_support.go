@@ -22,11 +22,11 @@ import (
 	"metadata-scrubber/internal/storage"
 )
 
-func (handler *Handler) newFileID() (string, error) {
+func (handler *Handler) newFileID() (string, bool) {
 	var uuidBytes [16]byte
 	n, err := handler.entropy(uuidBytes[:])
 	if err != nil || n != len(uuidBytes) {
-		return "", errors.New("could not generate file ID")
+		return "", false
 	}
 	uuidBytes[6] = (uuidBytes[6] & 0x0f) | 0x40
 	uuidBytes[8] = (uuidBytes[8] & 0x3f) | 0x80
@@ -41,7 +41,7 @@ func (handler *Handler) newFileID() (string, error) {
 	hex.Encode(encoded[19:23], uuidBytes[8:10])
 	encoded[23] = '-'
 	hex.Encode(encoded[24:36], uuidBytes[10:16])
-	return string(encoded), nil
+	return string(encoded), true
 }
 
 func decodeJSONRequest(w http.ResponseWriter, request *http.Request, destination any) bool {

@@ -148,8 +148,8 @@ func (handler *Handler) Upload(w http.ResponseWriter, request *http.Request) {
 		return
 	}
 
-	fileID, err := handler.newFileID()
-	if err != nil {
+	fileID, ok := handler.newFileID()
+	if !ok {
 		httpx.WriteError(w, http.StatusInternalServerError, "could not create upload")
 		return
 	}
