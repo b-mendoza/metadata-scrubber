@@ -88,21 +88,21 @@ func storageFromRequest(w http.ResponseWriter, request *http.Request) storage.St
 	return requestBindings.Storage
 }
 
-func acquirePermit(ctx context.Context, permits chan struct{}, timeout time.Duration, beforeSelect func()) (func(), error) {
+func (handler *Handler) acquirePermit(ctx context.Context) (func(), error) {
 	if err := ctx.Err(); err != nil {
 		return nil, err
 	}
 
-	admissionContext, cancel := context.WithTimeout(ctx, timeout)
+	admissionContext, cancel := context.WithTimeout(ctx, handler.admissionTimeout)
 	defer cancel()
-	beforeSelect()
+	handler.beforeAcquireSelect()
 	select {
-	case permits <- struct{}{}:
+	case handler.permits <- struct{}{}:
 		if err := ctx.Err(); err != nil {
-			<-permits
+			<-handler.permits
 			return nil, err
 		}
-		return func() { <-permits }, nil
+		return func() { <-handler.permits }, nil
 	case <-admissionContext.Done():
 		if err := ctx.Err(); err != nil {
 			return nil, err
