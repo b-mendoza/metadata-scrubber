@@ -1,6 +1,6 @@
 # Agent Guide — backend
 
-Go HTTP service that receives uploaded files and returns metadata-free bytes.
+Go HTTP service that grants direct uploads to private storage, inspects stored PDF files, and returns download grants for metadata-free copies.
 
 **Task runner:** [Task](https://taskfile.dev) — `task <target>` is the command interface for this service.
 
