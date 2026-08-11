@@ -6,6 +6,6 @@ Passing tests is a floor, not proof that the change is correct (the root guide's
 - Report a check as passing only when you ran it against the current state of the change and saw it pass. Report results as they are — failures and warnings included — rather than summarizing them into a cleaner story.
 - Confirm that any file, path, or symbol you reference actually exists on disk. Do not point documentation or code at something you have not verified.
 - Generated and tooling-managed files (lockfiles such as `pnpm-lock.yaml` and `go.sum` among them) are owned by their tools: change the source or generator and regenerate, letting the tool produce the diff.
-- If the change alters a service's architecture, file conventions, or commands, update the matching short-lived reference doc under that service's `docs/` directory in the same change. Short-lived docs describe what exists on disk — never aspirations.
+- If the change alters repository or service architecture, file conventions, or commands, update the matching short-lived reference doc under the affected `docs/` directory (root or service) in the same change. Short-lived docs describe what exists on disk — never aspirations.
 
 Disclose what the checks cannot see. Where part of a change cannot be exercised, or a service has no automated check for something, say so plainly and treat it as a known gap — not as permission to skip verification or to let green output imply coverage it lacks.
