@@ -47,12 +47,15 @@ type (
 
 // Handler owns the process-lifetime dependencies shared by the JSON workflow.
 type Handler struct {
-	logger              *slog.Logger
-	permits             chan struct{}
-	inspect             inspectPDFOperation
-	clean               cleanPDFOperation
-	entropy             entropyOperation
-	admissionTimeout    time.Duration
+	logger           *slog.Logger
+	permits          chan struct{}
+	inspect          inspectPDFOperation
+	clean            cleanPDFOperation
+	entropy          entropyOperation
+	admissionTimeout time.Duration
+	// beforeAcquireSelect must stay a non-nil no-op in production: acquirePermit calls it
+	// unconditionally, and replacing it is the only way a test can observe a request that
+	// reached the admission select while both permits are held.
 	beforeAcquireSelect func()
 }
 
