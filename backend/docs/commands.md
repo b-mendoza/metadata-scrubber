@@ -17,4 +17,8 @@ All commands are [Task](https://taskfile.dev) targets defined in `Taskfile.yml`.
 
 ## Let tooling own generated files
 
-Change dependencies with `task tidy` and apply formatting or lint auto-fixes with `task fix`. These regenerate `go.sum` and rewrite source for you; see the root [Verifying your work](../../docs/agent/verification.md) guide on not hand-editing tool-managed files.
+The targets above regenerate `go.sum` and rewrite source for you; see the root [Verifying your work](../../docs/agent/verification.md) guide on not hand-editing tool-managed files.
+
+## Environment
+
+`task run` starts the process with your shell environment; there is no `.env` loader. The service validates `PORT` (default 8080) and the required `R2_ACCOUNT_ID`, `R2_ACCESS_KEY_ID`, `R2_SECRET_ACCESS_KEY`, and `R2_BUCKET` before startup. `backend/.env.example` lists them with example values.
