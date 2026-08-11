@@ -22,6 +22,8 @@ const (
 	maxJSONBodyBytes = 4 << 10
 	maxFileNameBytes = 255
 
+	storageKeyPrefix = "uploads/"
+
 	uploadGrantExpiry   = 5 * time.Minute
 	downloadGrantExpiry = 15 * time.Minute
 	admissionTimeout    = 2 * time.Second
@@ -33,7 +35,7 @@ const (
 
 var (
 	errAdmissionTimeout = errors.New("admission timeout")
-	storageKeyPattern   = regexp.MustCompile(`^uploads/([0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12})$`)
+	storageKeyPattern   = regexp.MustCompile("^" + storageKeyPrefix + `([0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12})$`)
 )
 
 type (

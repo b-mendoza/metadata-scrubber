@@ -77,7 +77,7 @@ func validFileName(fileName string) bool {
 }
 
 func formatStorageKey(fileID string) string {
-	return "uploads/" + fileID
+	return storageKeyPrefix + fileID
 }
 
 func parseStorageKey(storageKey string) (string, bool) {
