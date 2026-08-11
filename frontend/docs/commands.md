@@ -18,6 +18,7 @@ Server code decodes `process.env` against `envSchema` in `src/shared/config/env/
 - `pnpm run test` — run the test suite once (`vitest run`); `test:watch` and `test:coverage` variants exist.
 - `pnpm run lint` — run all checks in parallel: `eslint`, `oxfmt --check`, `oxlint`, and `tsc --build` (`lint:eslint`, `lint:oxfmt`, `lint:oxlint`, `lint:types`).
 - `pnpm run fix` — auto-fix sequentially: `eslint --fix`, `oxfmt --write`, `oxlint --fix`.
+- Route generation: the TanStack Router plugin rewrites `src/routeTree.gen.ts` during `pnpm run dev` and `pnpm run build`; there is no separate script. Never edit that file by hand. After you add or rename a route file, run one of those commands to regenerate it.
 
 ## Database
 
