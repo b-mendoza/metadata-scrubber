@@ -4,7 +4,7 @@
 
 This folder records dependency, tooling, and framework issues that affect local development or production builds.
 
-## Active Issues
+## Issues
 
 | Issue | Area | Status | Workaround |
 | --- | --- | --- | --- |
