@@ -20,5 +20,5 @@
 
 ## Per-service current-state references
 
-- Backend: [architecture](../backend/docs/architecture.md), [commands](../backend/docs/commands.md).
-- Frontend: [architecture](../frontend/docs/architecture.md), [file structure and conventions](../frontend/docs/conventions.md), [commands](../frontend/docs/commands.md).
+- Backend: see the reference list in [backend/AGENTS.md](../backend/AGENTS.md).
+- Frontend: see the reference list in [frontend/AGENTS.md](../frontend/AGENTS.md).
