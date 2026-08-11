@@ -29,7 +29,7 @@ func (handler *Handler) DryRun(w http.ResponseWriter, request *http.Request) {
 
 	release, err := handler.acquirePermit(request.Context())
 	if err != nil {
-		handler.writeAdmissionFailure(w, err)
+		writeAdmissionFailure(w, err)
 		return
 	}
 
@@ -107,7 +107,7 @@ func (handler *Handler) Scrub(w http.ResponseWriter, request *http.Request) {
 
 	release, err := handler.acquirePermit(request.Context())
 	if err != nil {
-		handler.writeAdmissionFailure(w, err)
+		writeAdmissionFailure(w, err)
 		return
 	}
 

@@ -111,7 +111,7 @@ func (handler *Handler) acquirePermit(ctx context.Context) (func(), error) {
 	}
 }
 
-func (handler *Handler) writeAdmissionFailure(w http.ResponseWriter, err error) {
+func writeAdmissionFailure(w http.ResponseWriter, err error) {
 	if errors.Is(err, errAdmissionTimeout) {
 		w.Header().Set(header.RetryAfter, admissionRetryAfter)
 		httpx.WriteError(w, http.StatusServiceUnavailable, admissionTimeoutMessage)
