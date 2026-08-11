@@ -166,10 +166,7 @@ func (handler *Handler) Upload(w http.ResponseWriter, request *http.Request) {
 		uploadGrantExpiry,
 	)
 	if err != nil {
-		if writeCancellation(w, err) {
-			return
-		}
-		httpx.WriteError(w, http.StatusInternalServerError, "could not create upload")
+		writeUnexpectedFailure(w, err, "could not create upload")
 		return
 	}
 

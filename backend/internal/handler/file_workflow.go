@@ -97,10 +97,7 @@ func (handler *Handler) Scrub(w http.ResponseWriter, request *http.Request) {
 
 	exists, err := objectStorage.SanitizedExists(request.Context(), fileID, input.ETag)
 	if err != nil {
-		if writeCancellation(w, err) {
-			return
-		}
-		httpx.WriteError(w, http.StatusInternalServerError, "could not check scrubbed file")
+		writeUnexpectedFailure(w, err, "could not check scrubbed file")
 		return
 	}
 	if exists {
@@ -138,10 +135,7 @@ func (handler *Handler) Scrub(w http.ResponseWriter, request *http.Request) {
 	handler.logStage(request.Context(), "scrubbed", input.StorageKey, "success", startedAt)
 
 	if err := objectStorage.UploadSanitized(request.Context(), fileID, input.ETag, cleanedBytes); err != nil {
-		if writeCancellation(w, err) {
-			return
-		}
-		httpx.WriteError(w, http.StatusInternalServerError, "could not store scrubbed file")
+		writeUnexpectedFailure(w, err, "could not store scrubbed file")
 		return
 	}
 	handler.presignScrubbed(w, request, objectStorage, fileID, input, "success", startedAt)
@@ -163,10 +157,7 @@ func (handler *Handler) presignScrubbed(
 		downloadGrantExpiry,
 	)
 	if err != nil {
-		if writeCancellation(w, err) {
-			return
-		}
-		httpx.WriteError(w, http.StatusInternalServerError, "could not create download")
+		writeUnexpectedFailure(w, err, "could not create download")
 		return
 	}
 

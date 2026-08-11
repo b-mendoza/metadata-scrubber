@@ -117,18 +117,15 @@ func (handler *Handler) writeAdmissionFailure(w http.ResponseWriter, err error) 
 		httpx.WriteError(w, http.StatusServiceUnavailable, admissionTimeoutMessage)
 		return
 	}
-	if writeCancellation(w, err) {
-		return
-	}
-	httpx.WriteError(w, http.StatusInternalServerError, "could not start PDF processing")
+	writeUnexpectedFailure(w, err, "could not start PDF processing")
 }
 
-func writeCancellation(w http.ResponseWriter, err error) bool {
-	if !errors.Is(err, context.Canceled) && !errors.Is(err, context.DeadlineExceeded) {
-		return false
+func writeUnexpectedFailure(w http.ResponseWriter, err error, internalMessage string) {
+	if errors.Is(err, context.Canceled) || errors.Is(err, context.DeadlineExceeded) {
+		httpx.WriteError(w, http.StatusRequestTimeout, cancellationMessage)
+		return
 	}
-	httpx.WriteError(w, http.StatusRequestTimeout, cancellationMessage)
-	return true
+	httpx.WriteError(w, http.StatusInternalServerError, internalMessage)
 }
 
 type pipelineFailure struct {
