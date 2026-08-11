@@ -1,7 +1,6 @@
 package handler
 
 import (
-	"errors"
 	"net/http"
 	"time"
 
@@ -147,8 +146,6 @@ func (handler *Handler) Scrub(w http.ResponseWriter, request *http.Request) {
 	}
 	handler.presignScrubbed(w, request, objectStorage, fileID, input, "success", startedAt)
 }
-
-var errNotPDF = errors.New("not a PDF candidate")
 
 func (handler *Handler) presignScrubbed(
 	w http.ResponseWriter,
