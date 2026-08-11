@@ -6,4 +6,4 @@ General testing principles (what to test, how to assert, how to organize) live i
 
 - Use `expect.objectContaining` for call assertions, matching only the fields our code controls.
 - Do not use `expectTypeOf` to re-verify contracts TypeScript's annotations already enforce. If it compiles, the type is correct.
-- Prefer the suite's shared render helpers for component tests over ad-hoc render setup, so provider wiring stays in one place.
+- Prefer the suite's shared render helpers for component tests over ad-hoc render setup, so render setup stays in one place.
