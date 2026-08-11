@@ -38,7 +38,7 @@
 ## File uploads
 
 - `src/routes/api/upload.ts` accepts a `POST` with form data, validates the file with an Effect Schema (`Schema.File` plus size/MIME filters) against `MAX_FILE_SIZE_BYTES` and `UPLOADABLE_MIME_TYPES` from `src/domains/wizard/constants/wizard.mod.ts`, and returns file metadata plus a generated `storageKey`. The handler body is an Effect program executed with `Effect.runPromise` at the route boundary.
-- **No storage backend is implemented yet.** The route does not persist the file. S3 SDK dependencies and `@uppy/react` are installed in anticipation, but there is no storage module under `src/`.
+- **No storage backend is implemented in this service yet.** The route does not persist the file. S3 SDK dependencies and `@uppy/react` are installed in anticipation, but there is no storage module under `src/`. The Go backend already owns storage and scrubbing (upload grants, Cloudflare R2, presigned downloads); read the service-integration section of the root [architecture reference](../../docs/architecture.md) before you add storage code here.
 
 ## Testing status
 
