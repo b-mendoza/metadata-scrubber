@@ -24,10 +24,10 @@ const (
 
 	storageKeyPrefix = "uploads/"
 
-	uploadGrantExpiry   = 5 * time.Minute
-	downloadGrantExpiry = 15 * time.Minute
-	admissionTimeout    = 2 * time.Second
-	admissionRetryAfter = "2"
+	uploadGrantExpiry       = 5 * time.Minute
+	downloadGrantExpiry     = 15 * time.Minute
+	defaultAdmissionTimeout = 2 * time.Second
+	admissionRetryAfter     = "2"
 
 	admissionTimeoutMessage = "processing capacity temporarily unavailable"
 	cancellationMessage     = "request canceled"
@@ -125,7 +125,7 @@ func newHandler(
 		inspect:             inspect,
 		clean:               clean,
 		entropy:             entropy,
-		admissionTimeout:    admissionTimeout,
+		admissionTimeout:    defaultAdmissionTimeout,
 		beforeAcquireSelect: func() {},
 	}
 }
