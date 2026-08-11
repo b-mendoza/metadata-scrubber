@@ -6,6 +6,10 @@
 
 - `scripts/setup-node.sh` — bootstrap and smoke test: installs the pinned Node.js (see `.nvmrc`) and pnpm via fnm/corepack, installs dependencies, then runs lint, fix, test, coverage, and a production build. When to run it is governed by the `Always` section in [`AGENTS.md`](../AGENTS.md).
 
+## Environment
+
+Server code decodes `process.env` against `envSchema` in `src/shared/config/env/env.mod.server.ts` on every request. `BACKEND_URL` is required (an `http` or `https` URL). `DATABASE_URL` is optional until the database client is wired in. There is no `.env.example` in this service; the schema file is the current list.
+
 ## Core commands
 
 - `pnpm run dev` — start the development server.
