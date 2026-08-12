@@ -125,6 +125,10 @@ func preflightMetadataEntries(context *model.Context, snapshots []metadataEntryS
 	return nil
 }
 
+// metadataStreamForPreflight returns a pointer to a copy of the value held by
+// the xref-table entry or the parent dictionary, so a write through it never
+// reaches that owner. storeMetadataStreamContent must re-resolve the entry to
+// cache decoded content.
 func metadataStreamForPreflight(context *model.Context, object types.Object) *types.StreamDict {
 	if indirectReference, indirect := object.(types.IndirectRef); indirect {
 		entry, streamDictionary, found := resolveIndirectMetadataStream(context, indirectReference)
