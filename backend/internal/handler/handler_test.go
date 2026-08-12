@@ -398,6 +398,37 @@ func TestDryRunReturnsNonNullEmptyFieldsForCleanPDF(t *testing.T) {
 	require.JSONEq(t, `{"etag":"revision-one","fields":[]}`, recorder.Body.String())
 }
 
+func TestDryRunRejectsInvalidInspectionFieldAction(t *testing.T) {
+	fake := storage.NewFake()
+	require.NoError(t, fake.SetSource(fileIDOne, storage.SourceObject{PDFBytes: []byte("%PDF-source"), ETag: "revision-one"}))
+	var logs bytes.Buffer
+	handler := newTestHandlerWithLogger(
+		t,
+		make(chan struct{}, ProcessingPermitCount),
+		slog.New(slog.NewJSONHandler(&logs, nil)),
+		func([]byte, scrub.InspectionOrigin) ([]scrub.Field, error) {
+			return []scrub.Field{{
+				Name:    "title",
+				Preview: "private",
+				Action:  scrub.FieldAction("invalid-action"),
+			}}, nil
+		},
+		nil,
+		nil,
+	)
+
+	recorder := serveJSONRequest(t, handler, fake, dryRunMethod, dryRunRequest{StorageKey: formatStorageKey(fileIDOne)})
+
+	require.Equal(t, http.StatusInternalServerError, recorder.Code, recorder.Body.String())
+	require.Equal(t, "could not inspect PDF", errorMessage(t, recorder))
+	require.NotContains(t, recorder.Body.String(), "invalid-action")
+	require.Empty(t, handler.permits)
+	require.Equal(t, []pipelineLogRecord{
+		{Message: "sniffed", Level: "INFO", StorageKey: formatStorageKey(fileIDOne), Outcome: "accepted"},
+		{Message: "dry-run", Level: "ERROR", StorageKey: formatStorageKey(fileIDOne), Outcome: "failed"},
+	}, withoutLogDurations(readLogRecords(t, logs.Bytes())))
+}
+
 func TestDryRunIntegratesWithPublicPDFInspection(t *testing.T) {
 	pdfBytes, err := os.ReadFile("testdata/with-property.pdf")
 	require.NoError(t, err)

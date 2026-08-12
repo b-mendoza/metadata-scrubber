@@ -59,15 +59,12 @@ func (handler *Handler) DryRun(w http.ResponseWriter, request *http.Request) {
 		return
 	}
 
-	fields := make([]publicField, 0, len(inspectedFields))
-	for _, field := range inspectedFields {
-		fields = append(fields, publicField{
-			Name:             field.Name,
-			Label:            field.Label,
-			Preview:          field.Preview,
-			OriginalByteSize: field.OriginalByteSize,
-			Action:           string(field.Action),
-		})
+	fields, err := convertPublicFields(inspectedFields)
+	if err != nil {
+		failure := classifyPipelineFailure(err, "could not inspect PDF")
+		handler.logStage(request.Context(), pipelineStageDryRun, input.StorageKey, failure.outcome, startedAt)
+		httpx.WriteError(w, failure.status, failure.message)
+		return
 	}
 
 	handler.logStage(request.Context(), pipelineStageDryRun, input.StorageKey, pipelineOutcomeSuccess, startedAt)
