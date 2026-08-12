@@ -175,17 +175,17 @@ func TestPDFPathsRejectOversizedCompressedCatalogMetadataBeforeValidation(t *tes
 	require.Less(t, len(pdfBytes), MaxInputBytes)
 	work := &observedPDFWork{}
 	validationCalls := 0
-	originalValidatePDFContext := validatePDFContext
-	validatePDFContext = func(context *model.Context) error {
-		validationCalls++
-		return originalValidatePDFContext(context)
-	}
-	t.Cleanup(func() { validatePDFContext = originalValidatePDFContext })
 
+	context, readErr := readPDFWithValidator(pdfBytes, func(context *model.Context) error {
+		validationCalls++
+		return api.ValidateContext(context)
+	})
 	fields, inspectErr := InspectPDF(pdfBytes, PublicInput)
 	outputBytes, scrubErr := CleanPDF(pdfBytes)
 	observedOutputBytes, observedScrubErr := work.clean(pdfBytes)
 
+	require.ErrorIs(t, readErr, ErrInspectionLimit)
+	require.Nil(t, context)
 	requireInspectionLimit(t, fields, inspectErr)
 	requireInspectionLimit(t, outputBytes, scrubErr)
 	requireInspectionLimit(t, observedOutputBytes, observedScrubErr)

@@ -74,9 +74,6 @@ var (
 	ErrInspectionLimit = errors.New("PDF metadata exceeds inspection limits")
 	// ErrMalformedPDF classifies public PDF candidates that cannot be parsed or validated.
 	ErrMalformedPDF = errors.New("malformed PDF")
-
-	// validatePDFContext is a narrow seam for proving preflight failures precede validation.
-	validatePDFContext = api.ValidateContext
 )
 
 type cleanPDFOperations struct {
@@ -167,9 +164,18 @@ func readAndAnalyzePDF(inputBytes []byte, origin InspectionOrigin) (*model.Conte
 	return context, analysis, nil
 }
 
+type validatePDFContextOperation func(*model.Context) error
+
 func readPDF(inputBytes []byte) (*model.Context, error) {
+	return readPDFWithValidator(inputBytes, api.ValidateContext)
+}
+
+func readPDFWithValidator(inputBytes []byte, validate validatePDFContextOperation) (*model.Context, error) {
 	if len(inputBytes) > MaxInputBytes {
 		return nil, ErrInputTooLarge
+	}
+	if validate == nil {
+		return nil, errors.New("PDF context validator is nil")
 	}
 
 	configuration := boundedPDFConfiguration()
@@ -190,7 +196,7 @@ func readPDF(inputBytes []byte) (*model.Context, error) {
 	if err := preflightMetadataEntries(context, metadataEntries); err != nil {
 		return nil, err
 	}
-	if err := validatePDFContext(context); err != nil {
+	if err := validate(context); err != nil {
 		return nil, err
 	}
 	restoreMetadataEntries(metadataEntries)
