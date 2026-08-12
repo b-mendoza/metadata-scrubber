@@ -207,13 +207,13 @@ func readPDFWithValidator(inputBytes []byte, validate validatePDFContextOperatio
 		return nil, err
 	}
 
-	// pdfcpu v0.13.0 validation drops later parent links to an already-validated
+	// pdfcpu v0.14.0 validation drops later parent links to an already-validated
 	// metadata stream. Preserve those links so inspection and removal stay symmetric.
 	metadataEntries, err := snapshotMetadataEntries(context)
 	if err != nil {
 		return nil, err
 	}
-	// pdfcpu v0.13.0 catalog validation calls StreamDict.Decode with its 512 MiB
+	// pdfcpu v0.14.0 catalog validation calls StreamDict.Decode with its 512 MiB
 	// default. Decode every discovered metadata stream under our aggregate ceiling
 	// and keep the bounded content cached through validation.
 	if err := preflightMetadataEntries(context, metadataEntries); err != nil {
