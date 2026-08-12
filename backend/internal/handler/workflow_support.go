@@ -57,14 +57,11 @@ func decodeJSONRequest(w http.ResponseWriter, request *http.Request, destination
 }
 
 func validFileName(fileName string) bool {
-	if len(fileName) > maxFileNameBytes ||
-		strings.ContainsRune(fileName, utf8.RuneError) {
-		return false
-	}
-	if strings.TrimSpace(fileName) == "" || strings.ContainsAny(fileName, `/\`) {
-		return false
-	}
-	return strings.IndexFunc(fileName, unicode.IsControl) < 0
+	return len(fileName) <= maxFileNameBytes &&
+		!strings.ContainsRune(fileName, utf8.RuneError) &&
+		strings.TrimSpace(fileName) != "" &&
+		!strings.ContainsAny(fileName, `/\`) &&
+		!strings.ContainsFunc(fileName, unicode.IsControl)
 }
 
 func formatStorageKey(fileID string) string {
