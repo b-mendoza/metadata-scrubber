@@ -14,6 +14,11 @@ type objectRole struct {
 	pageNumber int
 }
 
+type dictionaryKey struct {
+	encoded string
+	logical string
+}
+
 type metadataTargetIdentity struct {
 	objectNumber int
 	path         []int
@@ -101,18 +106,14 @@ func (walker structuralWalker) walkDictionary(dictionary types.Dict, path []int)
 		return err
 	}
 	for keyIndex, key := range keys {
-		logicalKey, err := types.DecodeName(key)
-		if err != nil {
-			return fmt.Errorf("decode PDF dictionary key: %w", err)
-		}
-		if logicalKey == "Metadata" {
-			if err := walker.inspectMetadata(dictionary, key, path); err != nil {
+		if key.logical == "Metadata" {
+			if err := walker.inspectMetadata(dictionary, key.encoded, path); err != nil {
 				return err
 			}
 			continue
 		}
 
-		value := dictionary[key]
+		value := dictionary[key.encoded]
 		if _, indirect := value.(types.IndirectRef); indirect {
 			continue
 		}
@@ -194,21 +195,21 @@ func pdfHasCachedSignature(context *model.Context) bool {
 	return false
 }
 
-func sortedDictionaryKeys(dictionary types.Dict) ([]string, error) {
-	keys := make([]string, 0, len(dictionary))
-	logicalKeys := make(map[string]string, len(dictionary))
+// sortedDictionaryKeys returns every dictionary key with its decoded logical
+// name, so that callers never decode the same key a second time.
+func sortedDictionaryKeys(dictionary types.Dict) ([]dictionaryKey, error) {
+	keys := make([]dictionaryKey, 0, len(dictionary))
 	for key := range dictionary {
 		logicalKey, err := types.DecodeName(key)
 		if err != nil {
 			return nil, fmt.Errorf("decode PDF dictionary key: %w", err)
 		}
-		keys = append(keys, key)
-		logicalKeys[key] = logicalKey
+		keys = append(keys, dictionaryKey{encoded: key, logical: logicalKey})
 	}
-	slices.SortFunc(keys, func(firstKey, secondKey string) int {
+	slices.SortFunc(keys, func(firstKey, secondKey dictionaryKey) int {
 		return cmp.Or(
-			cmp.Compare(logicalKeys[firstKey], logicalKeys[secondKey]),
-			cmp.Compare(firstKey, secondKey),
+			cmp.Compare(firstKey.logical, secondKey.logical),
+			cmp.Compare(firstKey.encoded, secondKey.encoded),
 		)
 	})
 	return keys, nil
