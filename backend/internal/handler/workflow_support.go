@@ -35,7 +35,7 @@ func (handler *Handler) newFileID() (string, bool) {
 		uuidBytes[0:4], uuidBytes[4:6], uuidBytes[6:8], uuidBytes[8:10], uuidBytes[10:16]), true
 }
 
-func decodeJSONRequest(w http.ResponseWriter, request *http.Request, destination any) bool {
+func decodeJSONRequest[T any](w http.ResponseWriter, request *http.Request, destination *T) bool {
 	contentType, _, err := mime.ParseMediaType(request.Header.Get(header.ContentType))
 	if err != nil || contentType != mediatype.JSON {
 		httpx.WriteError(w, http.StatusUnsupportedMediaType, "Content-Type must be application/json")
