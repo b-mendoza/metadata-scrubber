@@ -70,7 +70,7 @@ func (builder *summaryBuilder) discardFields() {
 
 func truncateUTF8(value string) string {
 	previewLength := min(len(value), maxFieldPreviewBytes)
-	for !utf8.ValidString(value[:previewLength]) {
+	for previewLength > 0 && !utf8.ValidString(value[:previewLength]) {
 		previewLength--
 	}
 	return strings.Clone(value[:previewLength])
