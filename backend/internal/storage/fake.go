@@ -2,7 +2,6 @@ package storage
 
 import (
 	"context"
-	"fmt"
 	"maps"
 	"net/http"
 	"net/url"
@@ -26,6 +25,17 @@ const (
 	// FakeUploadSanitized identifies sanitized PDF writes.
 	FakeUploadSanitized FakeOperation = "upload sanitized object"
 )
+
+// fakeOperationLabels maps a recorded fake operation to the shared operation
+// label that appears inside wrapped error text, so one call cannot report one
+// operation and name another.
+var fakeOperationLabels = map[FakeOperation]string{
+	FakePresignSourceUpload:      operationPresignSourceUpload,
+	FakePresignSanitizedDownload: operationPresignSanitizedDownload,
+	FakeDownloadSource:           operationDownloadSource,
+	FakeSanitizedExists:          operationCheckSanitizedObject,
+	FakeUploadSanitized:          operationUploadSanitized,
+}
 
 // FakeCall records the logical and derived inputs observed by a Fake operation.
 type FakeCall struct {
@@ -121,35 +131,12 @@ func (fake *Fake) Calls() []FakeCall {
 	return append([]FakeCall(nil), fake.calls...)
 }
 
-// operationLabel maps a recorded fake operation to the shared operation label
-// that appears inside wrapped error text, so one call cannot report one
-// operation and name another.
-func operationLabel(operation FakeOperation) (string, bool) {
-	switch operation {
-	case FakePresignSourceUpload:
-		return operationPresignSourceUpload, true
-	case FakePresignSanitizedDownload:
-		return operationPresignSanitizedDownload, true
-	case FakeDownloadSource:
-		return operationDownloadSource, true
-	case FakeSanitizedExists:
-		return operationCheckSanitizedObject, true
-	case FakeUploadSanitized:
-		return operationUploadSanitized, true
-	default:
-		return "", false
-	}
-}
-
 // recordAttemptLocked appends the call and only then applies any injected
 // failure: Calls reports every validated attempt, including attempts that fail
 // through injection, while input-validation failures never reach this method
 // and are therefore never recorded.
 func (fake *Fake) recordAttemptLocked(ctx context.Context, call FakeCall) error {
-	operation, known := operationLabel(call.Operation)
-	if !known {
-		return fmt.Errorf("unsupported fake operation %q", call.Operation)
-	}
+	operation := fakeOperationLabels[call.Operation]
 	if err := contextError(ctx, operation); err != nil {
 		return err
 	}
