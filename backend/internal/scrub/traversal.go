@@ -14,12 +14,39 @@ type objectRole struct {
 	pageNumber int
 }
 
+type metadataTargetIdentity struct {
+	objectNumber int
+	path         []int
+	key          string
+}
+
+type metadataTargetTracker struct {
+	identities []metadataTargetIdentity
+}
+
+func (tracker *metadataTargetTracker) contains(objectNumber int, path []int, key string) bool {
+	for _, identity := range tracker.identities {
+		if identity.objectNumber == objectNumber && identity.key == key && slices.Equal(identity.path, path) {
+			return true
+		}
+	}
+	return false
+}
+
+func (tracker *metadataTargetTracker) add(objectNumber int, path []int, key string) {
+	tracker.identities = append(tracker.identities, metadataTargetIdentity{
+		objectNumber: objectNumber,
+		path:         slices.Clone(path),
+		key:          key,
+	})
+}
+
 type traversalState struct {
 	analysis        *pdfAnalysis
 	builder         *summaryBuilder
 	context         *model.Context
 	roles           map[int]objectRole
-	seenTargets     map[string]struct{}
+	seenTargets     *metadataTargetTracker
 	metadataOrdinal int
 	objectNumber    int
 }

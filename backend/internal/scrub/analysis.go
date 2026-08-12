@@ -125,7 +125,7 @@ func analyzeObjectMetadata(context *model.Context, analysis *pdfAnalysis, builde
 		return err
 	}
 
-	seenTargets := make(map[string]struct{})
+	seenTargets := &metadataTargetTracker{}
 	for _, objectNumber := range sortedLiveObjectNumbers(context) {
 		entry := context.Table[objectNumber]
 		state := traversalState{
@@ -145,8 +145,7 @@ func analyzeObjectMetadata(context *model.Context, analysis *pdfAnalysis, builde
 }
 
 func (state *traversalState) inspectMetadataEntry(dictionary types.Dict, key string, path []int) error {
-	targetIdentity := fmt.Sprintf("%d:%v:%s", state.objectNumber, path, key)
-	if _, exists := state.seenTargets[targetIdentity]; exists {
+	if state.seenTargets.contains(state.objectNumber, path, key) {
 		return nil
 	}
 
@@ -179,7 +178,7 @@ func (state *traversalState) inspectMetadataEntry(dictionary types.Dict, key str
 	if err := state.builder.addMetadataBytes(name, label, content, ActionRemove); err != nil {
 		return err
 	}
-	state.seenTargets[targetIdentity] = struct{}{}
+	state.seenTargets.add(state.objectNumber, path, key)
 	state.analysis.metadataTargets = append(state.analysis.metadataTargets, dictionaryEntryTarget{dictionary: dictionary, key: key})
 
 	return nil
