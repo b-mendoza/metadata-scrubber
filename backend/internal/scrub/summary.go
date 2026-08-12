@@ -59,6 +59,15 @@ func (builder *summaryBuilder) addPreview(name, label, preview string, originalB
 	return nil
 }
 
+// discardFields empties the summary and its byte accounting, so a later add
+// starts from the same state as a new builder. The field list stays non-nil
+// because InspectPDF returns it to the caller.
+func (builder *summaryBuilder) discardFields() {
+	builder.fields = []Field{}
+	builder.totalBytes = 0
+	builder.decodedMetadataBytes = 0
+}
+
 func truncateUTF8(value string) string {
 	previewLength := min(len(value), maxFieldPreviewBytes)
 	for !utf8.ValidString(value[:previewLength]) {
