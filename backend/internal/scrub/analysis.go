@@ -92,16 +92,12 @@ func analyzeInfoDictionary(context *model.Context, analysis *pdfAnalysis, builde
 
 	customFieldNumber := 0
 	for _, key := range keys {
-		logicalKey, err := types.DecodeName(key)
+		logicalValue, err := infoObjectValue(context, infoDictionary[key.encoded])
 		if err != nil {
-			return fmt.Errorf("decode PDF Info key: %w", err)
-		}
-		logicalValue, err := infoObjectValue(context, infoDictionary[key])
-		if err != nil {
-			return fmt.Errorf("decode PDF Info field %q: %w", logicalKey, err)
+			return fmt.Errorf("decode PDF Info field %q: %w", key.logical, err)
 		}
 
-		field, standard := standardInfoFields[logicalKey]
+		field, standard := standardInfoFields[key.logical]
 		name, label, action := field.name, field.label, field.action
 		if !standard {
 			customFieldNumber++
@@ -113,7 +109,7 @@ func analyzeInfoDictionary(context *model.Context, analysis *pdfAnalysis, builde
 		if err := builder.add(name, label, logicalValue, action); err != nil {
 			return err
 		}
-		analysis.infoTargets = append(analysis.infoTargets, dictionaryEntryTarget{dictionary: infoDictionary, key: key})
+		analysis.infoTargets = append(analysis.infoTargets, dictionaryEntryTarget{dictionary: infoDictionary, key: key.encoded})
 	}
 
 	return nil
