@@ -76,10 +76,33 @@ var (
 	ErrMalformedPDF = errors.New("malformed PDF")
 )
 
+type (
+	removePDFMetadataOperation func(*model.Context, *pdfAnalysis)
+	writePDFOperation          func(*model.Context, io.Writer) error
+	verifyPDFOperation         func([]byte) error
+)
+
 type cleanPDFOperations struct {
-	remove func(*model.Context, *pdfAnalysis)
-	write  func(*model.Context, io.Writer) error
-	verify func([]byte) error
+	remove removePDFMetadataOperation
+	write  writePDFOperation
+	verify verifyPDFOperation
+}
+
+func newCleanPDFOperations(
+	remove removePDFMetadataOperation,
+	write writePDFOperation,
+	verify verifyPDFOperation,
+) (cleanPDFOperations, error) {
+	if remove == nil {
+		return cleanPDFOperations{}, errors.New("clean PDF remove operation is nil")
+	}
+	if write == nil {
+		return cleanPDFOperations{}, errors.New("clean PDF write operation is nil")
+	}
+	if verify == nil {
+		return cleanPDFOperations{}, errors.New("clean PDF verify operation is nil")
+	}
+	return cleanPDFOperations{remove: remove, write: write, verify: verify}, nil
 }
 
 // DisableConfigDir prevents pdfcpu from creating or reading a per-user config
@@ -111,11 +134,11 @@ func InspectPDF(inputBytes []byte, origin InspectionOrigin) ([]Field, error) {
 
 // CleanPDF removes supported metadata from PDF bytes.
 func CleanPDF(inputBytes []byte) ([]byte, error) {
-	return cleanPDF(inputBytes, cleanPDFOperations{
-		remove: removeAnalyzedMetadata,
-		write:  api.WriteContext,
-		verify: verifyScrubbedPDF,
-	})
+	operations, err := newCleanPDFOperations(removeAnalyzedMetadata, api.WriteContext, verifyScrubbedPDF)
+	if err != nil {
+		return nil, err
+	}
+	return cleanPDF(inputBytes, operations)
 }
 
 func cleanPDF(inputBytes []byte, operations cleanPDFOperations) ([]byte, error) {
