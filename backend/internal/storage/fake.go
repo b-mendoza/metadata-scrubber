@@ -2,6 +2,7 @@ package storage
 
 import (
 	"context"
+	"fmt"
 	"maps"
 	"net/http"
 	"net/url"
@@ -120,11 +121,35 @@ func (fake *Fake) Calls() []FakeCall {
 	return append([]FakeCall(nil), fake.calls...)
 }
 
+// operationLabel maps a recorded fake operation to the shared operation label
+// that appears inside wrapped error text, so one call cannot report one
+// operation and name another.
+func operationLabel(operation FakeOperation) (string, bool) {
+	switch operation {
+	case FakePresignSourceUpload:
+		return operationPresignSourceUpload, true
+	case FakePresignSanitizedDownload:
+		return operationPresignSanitizedDownload, true
+	case FakeDownloadSource:
+		return operationDownloadSource, true
+	case FakeSanitizedExists:
+		return operationCheckSanitizedObject, true
+	case FakeUploadSanitized:
+		return operationUploadSanitized, true
+	default:
+		return "", false
+	}
+}
+
 // recordAttemptLocked appends the call and only then applies any injected
 // failure: Calls reports every validated attempt, including attempts that fail
 // through injection, while input-validation failures never reach this method
 // and are therefore never recorded.
-func (fake *Fake) recordAttemptLocked(ctx context.Context, operation string, call FakeCall) error {
+func (fake *Fake) recordAttemptLocked(ctx context.Context, call FakeCall) error {
+	operation, known := operationLabel(call.Operation)
+	if !known {
+		return fmt.Errorf("unsupported fake operation %q", call.Operation)
+	}
 	if err := contextError(ctx, operation); err != nil {
 		return err
 	}
@@ -154,7 +179,7 @@ func (fake *Fake) PresignSourceUpload(
 
 	fake.mu.Lock()
 	defer fake.mu.Unlock()
-	if err := fake.recordAttemptLocked(ctx, operationPresignSourceUpload, FakeCall{
+	if err := fake.recordAttemptLocked(ctx, FakeCall{
 		Operation: FakePresignSourceUpload,
 		FileID:    fileID,
 		ObjectKey: objectKey,
@@ -191,7 +216,7 @@ func (fake *Fake) PresignSanitizedDownload(
 
 	fake.mu.Lock()
 	defer fake.mu.Unlock()
-	if err := fake.recordAttemptLocked(ctx, operationPresignSanitizedDownload, FakeCall{
+	if err := fake.recordAttemptLocked(ctx, FakeCall{
 		Operation:  FakePresignSanitizedDownload,
 		FileID:     fileID,
 		SourceETag: sourceETag,
@@ -224,7 +249,7 @@ func (fake *Fake) DownloadSource(
 
 	fake.mu.Lock()
 	defer fake.mu.Unlock()
-	if err := fake.recordAttemptLocked(ctx, operationDownloadSource, FakeCall{
+	if err := fake.recordAttemptLocked(ctx, FakeCall{
 		Operation:  FakeDownloadSource,
 		FileID:     fileID,
 		SourceETag: expectedETag,
@@ -263,7 +288,7 @@ func (fake *Fake) SanitizedExists(
 
 	fake.mu.Lock()
 	defer fake.mu.Unlock()
-	if err := fake.recordAttemptLocked(ctx, operationCheckSanitizedObject, FakeCall{
+	if err := fake.recordAttemptLocked(ctx, FakeCall{
 		Operation:  FakeSanitizedExists,
 		FileID:     fileID,
 		SourceETag: sourceETag,
@@ -293,7 +318,7 @@ func (fake *Fake) UploadSanitized(
 
 	fake.mu.Lock()
 	defer fake.mu.Unlock()
-	if err := fake.recordAttemptLocked(ctx, operationUploadSanitized, FakeCall{
+	if err := fake.recordAttemptLocked(ctx, FakeCall{
 		Operation:  FakeUploadSanitized,
 		FileID:     fileID,
 		SourceETag: sourceETag,
