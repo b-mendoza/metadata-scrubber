@@ -663,8 +663,10 @@ func TestMetadataTraversalDeduplicatesOneParentEntryTarget(t *testing.T) {
 		objectNumber: context.Root.ObjectNumber.Value(),
 	}
 
-	require.NoError(t, state.inspectObject(catalog, nil))
-	require.NoError(t, state.inspectObject(catalog, nil))
+	walker := structuralWalker{context: context, inspectMetadata: state.inspectMetadataEntry}
+
+	require.NoError(t, walker.walkObject(catalog, nil))
+	require.NoError(t, walker.walkObject(catalog, nil))
 
 	require.Len(t, analysis.fields, 1)
 	require.Len(t, analysis.metadataTargets, 1)
