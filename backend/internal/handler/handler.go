@@ -15,8 +15,9 @@ import (
 )
 
 type (
-	pipelineStage   string
-	pipelineOutcome string
+	pipelineStage     string
+	pipelineOutcome   string
+	publicFieldAction string
 
 	inspectPDFOperation func([]byte, scrub.InspectionOrigin) ([]scrub.Field, error)
 	cleanPDFOperation   func([]byte) ([]byte, error)
@@ -60,11 +61,15 @@ const (
 	pipelineOutcomeSigned          pipelineOutcome = "signed"
 	pipelineOutcomeInspectionLimit pipelineOutcome = "inspection-limit"
 	pipelineOutcomeFailed          pipelineOutcome = "failed"
+
+	publicFieldActionRemove  publicFieldAction = "remove"
+	publicFieldActionReplace publicFieldAction = "replace"
 )
 
 var (
-	errAdmissionTimeout = errors.New("admission timeout")
-	errNotPDF           = errors.New("not a PDF candidate")
+	errAdmissionTimeout         = errors.New("admission timeout")
+	errNotPDF                   = errors.New("not a PDF candidate")
+	errInvalidPublicFieldAction = errors.New("invalid public field action")
 	storageKeyPattern           = regexp.MustCompile("^" + storageKeyPrefix + `([0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12})$`)
 )
 
@@ -100,11 +105,11 @@ type dryRunRequest struct {
 }
 
 type publicField struct {
-	Name             string `json:"name"`
-	Label            string `json:"label"`
-	Preview          string `json:"preview"`
-	OriginalByteSize int    `json:"originalByteSize"`
-	Action           string `json:"action"`
+	Name             string            `json:"name"`
+	Label            string            `json:"label"`
+	Preview          string            `json:"preview"`
+	OriginalByteSize int               `json:"originalByteSize"`
+	Action           publicFieldAction `json:"action"`
 }
 
 type dryRunResponse struct {

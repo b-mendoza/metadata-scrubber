@@ -76,6 +76,29 @@ func parseStorageKey(storageKey string) (string, bool) {
 	return matches[1], true
 }
 
+func convertPublicFields(inspectedFields []scrub.Field) ([]publicField, error) {
+	fields := make([]publicField, 0, len(inspectedFields))
+	for _, field := range inspectedFields {
+		var action publicFieldAction
+		switch field.Action {
+		case scrub.ActionRemove:
+			action = publicFieldActionRemove
+		case scrub.ActionReplace:
+			action = publicFieldActionReplace
+		default:
+			return nil, errInvalidPublicFieldAction
+		}
+		fields = append(fields, publicField{
+			Name:             field.Name,
+			Label:            field.Label,
+			Preview:          field.Preview,
+			OriginalByteSize: field.OriginalByteSize,
+			Action:           action,
+		})
+	}
+	return fields, nil
+}
+
 func storageFromRequest(w http.ResponseWriter, request *http.Request) storage.Storage {
 	requestBindings, ok := bindings.FromContext(request.Context())
 	if !ok || requestBindings.Storage == nil {
