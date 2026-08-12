@@ -58,7 +58,7 @@ func analyzePDF(context *model.Context, origin InspectionOrigin) (*pdfAnalysis, 
 	}
 
 	if origin == PostWriteVerification && hasNeutralPDFCPUTrio(context, analysis) {
-		analysis.fields = []Field{}
+		analysis.discardFields()
 		return analysis, nil
 	}
 
