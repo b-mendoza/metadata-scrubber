@@ -76,29 +76,27 @@ func (r2 *R2) PresignSourceUpload(
 	sizeBytes int64,
 	expiry time.Duration,
 ) (PresignedRequest, error) {
-	const operation = "presigning source upload"
-
-	if err := contextError(ctx, operation); err != nil {
+	if err := contextError(ctx, operationPresignSourceUpload); err != nil {
 		return PresignedRequest{}, err
 	}
-	validatedInput, err := newSourceUploadInput(fileID, sizeBytes, expiry)
+	objectKey, err := validateSourceUploadInput(fileID, sizeBytes, expiry)
 	if err != nil {
 		return PresignedRequest{}, err
 	}
 
 	presigned, err := r2.presigner.PresignPutObject(ctx, &s3.PutObjectInput{
 		Bucket:        aws.String(r2.bucket),
-		Key:           aws.String(validatedInput.objectKey),
+		Key:           aws.String(objectKey),
 		ContentType:   aws.String(PDFContentType),
-		ContentLength: aws.Int64(validatedInput.sizeBytes),
+		ContentLength: aws.Int64(sizeBytes),
 	},
-		s3.WithPresignExpires(validatedInput.expiry),
+		s3.WithPresignExpires(expiry),
 		s3.WithPresignClientFromClientOptions(func(options *s3.Options) {
 			options.APIOptions = append(options.APIOptions, pinPDFContentType)
 		}),
 	)
 	if err != nil {
-		return PresignedRequest{}, r2OperationError(ctx, operation)
+		return PresignedRequest{}, r2OperationError(ctx, operationPresignSourceUpload)
 	}
 
 	requiredHeaders := browserRequestHeaders(presigned.SignedHeader)
@@ -117,22 +115,20 @@ func (r2 *R2) PresignSanitizedDownload(
 	sourceETag string,
 	expiry time.Duration,
 ) (PresignedRequest, error) {
-	const operation = "presigning sanitized download"
-
-	if err := contextError(ctx, operation); err != nil {
+	if err := contextError(ctx, operationPresignSanitizedDownload); err != nil {
 		return PresignedRequest{}, err
 	}
-	validatedInput, err := newSanitizedDownloadInput(fileID, sourceETag, expiry)
+	objectKey, err := validateSanitizedDownloadInput(fileID, sourceETag, expiry)
 	if err != nil {
 		return PresignedRequest{}, err
 	}
 
 	presigned, err := r2.presigner.PresignGetObject(ctx, &s3.GetObjectInput{
 		Bucket: aws.String(r2.bucket),
-		Key:    aws.String(validatedInput.objectKey),
-	}, s3.WithPresignExpires(validatedInput.expiry))
+		Key:    aws.String(objectKey),
+	}, s3.WithPresignExpires(expiry))
 	if err != nil {
-		return PresignedRequest{}, r2OperationError(ctx, operation)
+		return PresignedRequest{}, r2OperationError(ctx, operationPresignSanitizedDownload)
 	}
 
 	return PresignedRequest{
@@ -147,57 +143,52 @@ func (r2 *R2) DownloadSource(
 	fileID string,
 	expectedETag string,
 ) (SourceObject, error) {
-	const operation = "downloading source object"
-
-	if err := contextError(ctx, operation); err != nil {
+	if err := contextError(ctx, operationDownloadSource); err != nil {
 		return SourceObject{}, err
 	}
-	validatedInput, err := newSourceReadInput(fileID, expectedETag)
+	objectKey, err := validateSourceReadInput(fileID, expectedETag)
 	if err != nil {
 		return SourceObject{}, err
 	}
 
 	input := &s3.GetObjectInput{
 		Bucket: aws.String(r2.bucket),
-		Key:    aws.String(validatedInput.objectKey),
+		Key:    aws.String(objectKey),
 	}
-	if validatedInput.expectedETag != "" {
-		input.IfMatch = aws.String("\"" + validatedInput.expectedETag + "\"")
+	if expectedETag != "" {
+		input.IfMatch = aws.String("\"" + expectedETag + "\"")
 	}
 
 	output, err := r2.client.GetObject(ctx, input)
 	if err != nil {
 		statusCode := httpStatusCode(err)
-		if validatedInput.expectedETag != "" && statusCode == http.StatusPreconditionFailed {
-			return SourceObject{}, operationError(operation, ErrSourceRevisionConflict)
+		if expectedETag != "" && statusCode == http.StatusPreconditionFailed {
+			return SourceObject{}, operationError(operationDownloadSource, ErrSourceRevisionConflict)
 		}
 		if statusCode == http.StatusNotFound {
-			return SourceObject{}, operationError(operation, ErrSourceNotFound)
+			return SourceObject{}, operationError(operationDownloadSource, ErrSourceNotFound)
 		}
-		return SourceObject{}, r2OperationError(ctx, operation)
+		return SourceObject{}, r2OperationError(ctx, operationDownloadSource)
 	}
 	if output.Body == nil || output.ETag == nil {
 		if output.Body != nil {
 			_ = output.Body.Close()
 		}
-		return SourceObject{}, operationError(operation, ErrDependency)
+		return SourceObject{}, operationError(operationDownloadSource, ErrDependency)
 	}
 
 	pdfBytes, readErr := io.ReadAll(io.LimitReader(output.Body, MaxSourceObjectBytes+1))
 	closeErr := output.Body.Close()
 	if readErr != nil || closeErr != nil {
-		if err := contextError(ctx, operation); err != nil {
-			return SourceObject{}, err
-		}
-		return SourceObject{}, operationError(operation, ErrDependency)
+		return SourceObject{}, r2OperationError(ctx, operationDownloadSource)
 	}
 	if len(pdfBytes) > MaxSourceObjectBytes {
-		return SourceObject{}, operationError(operation, ErrSourceObjectTooLarge)
+		return SourceObject{}, operationError(operationDownloadSource, ErrSourceObjectTooLarge)
 	}
 
 	normalizedETag, err := NormalizeProviderETag(*output.ETag)
 	if err != nil {
-		return SourceObject{}, operationError(operation, ErrDependency)
+		return SourceObject{}, operationError(operationDownloadSource, ErrDependency)
 	}
 
 	return SourceObject{
@@ -213,19 +204,17 @@ func (r2 *R2) SanitizedExists(
 	fileID string,
 	sourceETag string,
 ) (bool, error) {
-	const operation = "checking sanitized object"
-
-	if err := contextError(ctx, operation); err != nil {
+	if err := contextError(ctx, operationCheckSanitizedObject); err != nil {
 		return false, err
 	}
-	validatedInput, err := newSanitizedObjectInput(fileID, sourceETag)
+	objectKey, err := SanitizedObjectKey(fileID, sourceETag)
 	if err != nil {
 		return false, err
 	}
 
 	_, err = r2.client.HeadObject(ctx, &s3.HeadObjectInput{
 		Bucket: aws.String(r2.bucket),
-		Key:    aws.String(validatedInput.objectKey),
+		Key:    aws.String(objectKey),
 	})
 	if err == nil {
 		return true, nil
@@ -234,7 +223,7 @@ func (r2 *R2) SanitizedExists(
 		return false, nil
 	}
 
-	return false, r2OperationError(ctx, operation)
+	return false, r2OperationError(ctx, operationCheckSanitizedObject)
 }
 
 // UploadSanitized writes PDF bytes to the exact immutable revision key.
@@ -244,24 +233,22 @@ func (r2 *R2) UploadSanitized(
 	sourceETag string,
 	pdfBytes []byte,
 ) error {
-	const operation = "uploading sanitized object"
-
-	if err := contextError(ctx, operation); err != nil {
+	if err := contextError(ctx, operationUploadSanitized); err != nil {
 		return err
 	}
-	validatedInput, err := newSanitizedObjectInput(fileID, sourceETag)
+	objectKey, err := SanitizedObjectKey(fileID, sourceETag)
 	if err != nil {
 		return err
 	}
 
 	_, err = r2.client.PutObject(ctx, &s3.PutObjectInput{
 		Bucket:      aws.String(r2.bucket),
-		Key:         aws.String(validatedInput.objectKey),
+		Key:         aws.String(objectKey),
 		Body:        bytes.NewReader(pdfBytes),
 		ContentType: aws.String(PDFContentType),
 	})
 	if err != nil {
-		return r2OperationError(ctx, operation)
+		return r2OperationError(ctx, operationUploadSanitized)
 	}
 
 	return nil
