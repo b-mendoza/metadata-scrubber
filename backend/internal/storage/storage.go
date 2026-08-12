@@ -79,6 +79,104 @@ type SourceObject struct {
 	ETag     string
 }
 
+type sourceUploadInput struct {
+	fileID    string
+	objectKey string
+	sizeBytes int64
+	expiry    time.Duration
+}
+
+type sanitizedDownloadInput struct {
+	fileID     string
+	sourceETag string
+	objectKey  string
+	expiry     time.Duration
+}
+
+type sourceReadInput struct {
+	fileID       string
+	expectedETag string
+	objectKey    string
+}
+
+type sanitizedObjectInput struct {
+	fileID     string
+	sourceETag string
+	objectKey  string
+}
+
+func newSourceUploadInput(fileID string, sizeBytes int64, expiry time.Duration) (sourceUploadInput, error) {
+	objectKey, err := SourceObjectKey(fileID)
+	if err != nil {
+		return sourceUploadInput{}, err
+	}
+	if err := validateSourceUploadSize(sizeBytes); err != nil {
+		return sourceUploadInput{}, err
+	}
+	if err := validatePresignExpiry(expiry); err != nil {
+		return sourceUploadInput{}, err
+	}
+
+	return sourceUploadInput{
+		fileID:    fileID,
+		objectKey: objectKey,
+		sizeBytes: sizeBytes,
+		expiry:    expiry,
+	}, nil
+}
+
+func newSanitizedDownloadInput(
+	fileID string,
+	sourceETag string,
+	expiry time.Duration,
+) (sanitizedDownloadInput, error) {
+	sanitizedInput, err := newSanitizedObjectInput(fileID, sourceETag)
+	if err != nil {
+		return sanitizedDownloadInput{}, err
+	}
+	if err := validatePresignExpiry(expiry); err != nil {
+		return sanitizedDownloadInput{}, err
+	}
+
+	return sanitizedDownloadInput{
+		fileID:     sanitizedInput.fileID,
+		sourceETag: sanitizedInput.sourceETag,
+		objectKey:  sanitizedInput.objectKey,
+		expiry:     expiry,
+	}, nil
+}
+
+func newSourceReadInput(fileID string, expectedETag string) (sourceReadInput, error) {
+	objectKey, err := SourceObjectKey(fileID)
+	if err != nil {
+		return sourceReadInput{}, err
+	}
+	if expectedETag != "" {
+		if err := validateCanonicalETag(expectedETag); err != nil {
+			return sourceReadInput{}, err
+		}
+	}
+
+	return sourceReadInput{
+		fileID:       fileID,
+		expectedETag: expectedETag,
+		objectKey:    objectKey,
+	}, nil
+}
+
+func newSanitizedObjectInput(fileID string, sourceETag string) (sanitizedObjectInput, error) {
+	objectKey, err := SanitizedObjectKey(fileID, sourceETag)
+	if err != nil {
+		return sanitizedObjectInput{}, err
+	}
+
+	return sanitizedObjectInput{
+		fileID:     fileID,
+		sourceETag: sourceETag,
+		objectKey:  objectKey,
+	}, nil
+}
+
 // SourceObjectKey derives the private source-object key for a logical file ID.
 func SourceObjectKey(fileID string) (string, error) {
 	if err := validateFileID(fileID); err != nil {
