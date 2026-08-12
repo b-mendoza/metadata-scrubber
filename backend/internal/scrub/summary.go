@@ -1,7 +1,6 @@
 package scrub
 
 import (
-	"errors"
 	"fmt"
 	"strconv"
 	"strings"
@@ -23,9 +22,6 @@ func (builder *summaryBuilder) remainingDecodedMetadataBytes() int64 {
 }
 
 func (builder *summaryBuilder) addMetadataBytes(name, label string, value []byte, action FieldAction) error {
-	if !utf8.Valid(value) {
-		return errors.New("metadata preview is not valid UTF-8")
-	}
 	if int64(len(value)) > builder.remainingDecodedMetadataBytes() {
 		return ErrInspectionLimit
 	}
