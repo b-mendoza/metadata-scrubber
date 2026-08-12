@@ -54,8 +54,7 @@ type Handler struct {
 	entropy          entropyOperation
 	admissionTimeout time.Duration
 	// beforeAcquireSelect must stay a non-nil no-op in production: acquirePermit calls it
-	// unconditionally, and replacing it is the only way a test can observe a request that
-	// reached the admission select while both permits are held.
+	// unconditionally, and only a test replaces it to observe the admission select.
 	beforeAcquireSelect func()
 }
 
