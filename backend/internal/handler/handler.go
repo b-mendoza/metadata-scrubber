@@ -67,10 +67,9 @@ const (
 )
 
 var (
-	errAdmissionTimeout         = errors.New("admission timeout")
-	errNotPDF                   = errors.New("not a PDF candidate")
-	errInvalidPublicFieldAction = errors.New("invalid public field action")
-	storageKeyPattern           = regexp.MustCompile("^" + storageKeyPrefix + `([0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12})$`)
+	errAdmissionTimeout = errors.New("admission timeout")
+	errNotPDF           = errors.New("not a PDF candidate")
+	storageKeyPattern   = regexp.MustCompile("^" + storageKeyPrefix + `([0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12})$`)
 )
 
 // Handler owns the process-lifetime dependencies shared by the JSON workflow.
