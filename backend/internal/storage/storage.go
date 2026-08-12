@@ -22,6 +22,16 @@ const (
 	maximumPresignExpiry = 7 * 24 * time.Hour
 )
 
+// Operation labels appear inside wrapped error text, so both implementations
+// must name one operation with one exact string.
+const (
+	operationPresignSourceUpload      = "presigning source upload"
+	operationPresignSanitizedDownload = "presigning sanitized download"
+	operationDownloadSource           = "downloading source object"
+	operationCheckSanitizedObject     = "checking sanitized object"
+	operationUploadSanitized          = "uploading sanitized object"
+)
+
 var (
 	// ErrSourceRevisionConflict means the source no longer has the reviewed ETag.
 	ErrSourceRevisionConflict = errors.New("source revision changed")
@@ -79,102 +89,55 @@ type SourceObject struct {
 	ETag     string
 }
 
-type sourceUploadInput struct {
-	fileID    string
-	objectKey string
-	sizeBytes int64
-	expiry    time.Duration
-}
-
-type sanitizedDownloadInput struct {
-	fileID     string
-	sourceETag string
-	objectKey  string
-	expiry     time.Duration
-}
-
-type sourceReadInput struct {
-	fileID       string
-	expectedETag string
-	objectKey    string
-}
-
-type sanitizedObjectInput struct {
-	fileID     string
-	sourceETag string
-	objectKey  string
-}
-
-func newSourceUploadInput(fileID string, sizeBytes int64, expiry time.Duration) (sourceUploadInput, error) {
+// validateSourceUploadInput checks a source upload in the order file ID, size,
+// expiry, and returns the source object key.
+func validateSourceUploadInput(fileID string, sizeBytes int64, expiry time.Duration) (string, error) {
 	objectKey, err := SourceObjectKey(fileID)
 	if err != nil {
-		return sourceUploadInput{}, err
+		return "", err
 	}
 	if err := validateSourceUploadSize(sizeBytes); err != nil {
-		return sourceUploadInput{}, err
+		return "", err
 	}
 	if err := validatePresignExpiry(expiry); err != nil {
-		return sourceUploadInput{}, err
+		return "", err
 	}
 
-	return sourceUploadInput{
-		fileID:    fileID,
-		objectKey: objectKey,
-		sizeBytes: sizeBytes,
-		expiry:    expiry,
-	}, nil
+	return objectKey, nil
 }
 
-func newSanitizedDownloadInput(
+// validateSanitizedDownloadInput checks a sanitized download in the order file
+// ID, ETag, expiry, and returns the sanitized revision key.
+func validateSanitizedDownloadInput(
 	fileID string,
 	sourceETag string,
 	expiry time.Duration,
-) (sanitizedDownloadInput, error) {
-	sanitizedInput, err := newSanitizedObjectInput(fileID, sourceETag)
+) (string, error) {
+	objectKey, err := SanitizedObjectKey(fileID, sourceETag)
 	if err != nil {
-		return sanitizedDownloadInput{}, err
+		return "", err
 	}
 	if err := validatePresignExpiry(expiry); err != nil {
-		return sanitizedDownloadInput{}, err
+		return "", err
 	}
 
-	return sanitizedDownloadInput{
-		fileID:     sanitizedInput.fileID,
-		sourceETag: sanitizedInput.sourceETag,
-		objectKey:  sanitizedInput.objectKey,
-		expiry:     expiry,
-	}, nil
+	return objectKey, nil
 }
 
-func newSourceReadInput(fileID string, expectedETag string) (sourceReadInput, error) {
+// validateSourceReadInput checks a source read in the order file ID then
+// optional expected ETag, and returns the source object key.
+func validateSourceReadInput(fileID string, expectedETag string) (string, error) {
 	objectKey, err := SourceObjectKey(fileID)
 	if err != nil {
-		return sourceReadInput{}, err
+		return "", err
 	}
 	if expectedETag != "" {
 		if err := validateCanonicalETag(expectedETag); err != nil {
-			return sourceReadInput{}, err
+			return "", err
 		}
 	}
 
-	return sourceReadInput{
-		fileID:       fileID,
-		expectedETag: expectedETag,
-		objectKey:    objectKey,
-	}, nil
-}
-
-func newSanitizedObjectInput(fileID string, sourceETag string) (sanitizedObjectInput, error) {
-	objectKey, err := SanitizedObjectKey(fileID, sourceETag)
-	if err != nil {
-		return sanitizedObjectInput{}, err
-	}
-
-	return sanitizedObjectInput{
-		fileID:     fileID,
-		sourceETag: sourceETag,
-		objectKey:  objectKey,
-	}, nil
+	return objectKey, nil
 }
 
 // SourceObjectKey derives the private source-object key for a logical file ID.

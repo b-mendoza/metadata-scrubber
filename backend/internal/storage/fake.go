@@ -58,7 +58,7 @@ func NewFake() *Fake {
 
 // SetSource replaces the current source revision for fileID using copied state.
 func (fake *Fake) SetSource(fileID string, source SourceObject) error {
-	if _, err := SourceObjectKey(fileID); err != nil {
+	if err := validateFileID(fileID); err != nil {
 		return err
 	}
 	if err := validateCanonicalETag(source.ETag); err != nil {
@@ -144,34 +144,32 @@ func (fake *Fake) PresignSourceUpload(
 	sizeBytes int64,
 	expiry time.Duration,
 ) (PresignedRequest, error) {
-	const operation = "presigning source upload"
-
-	if err := contextError(ctx, operation); err != nil {
+	if err := contextError(ctx, operationPresignSourceUpload); err != nil {
 		return PresignedRequest{}, err
 	}
-	validatedInput, err := newSourceUploadInput(fileID, sizeBytes, expiry)
+	objectKey, err := validateSourceUploadInput(fileID, sizeBytes, expiry)
 	if err != nil {
 		return PresignedRequest{}, err
 	}
 
 	fake.mu.Lock()
 	defer fake.mu.Unlock()
-	if err := fake.recordAttemptLocked(ctx, operation, FakeCall{
+	if err := fake.recordAttemptLocked(ctx, operationPresignSourceUpload, FakeCall{
 		Operation: FakePresignSourceUpload,
-		FileID:    validatedInput.fileID,
-		ObjectKey: validatedInput.objectKey,
-		SizeBytes: validatedInput.sizeBytes,
-		Expiry:    validatedInput.expiry,
+		FileID:    fileID,
+		ObjectKey: objectKey,
+		SizeBytes: sizeBytes,
+		Expiry:    expiry,
 	}); err != nil {
 		return PresignedRequest{}, err
 	}
 
 	fake.grantSequence++
 	return PresignedRequest{
-		URL: fakeGrantURL(validatedInput.objectKey, fake.grantSequence),
+		URL: fakeGrantURL(objectKey, fake.grantSequence),
 		RequiredHeaders: http.Header{
 			"Content-Type":   []string{PDFContentType},
-			"Content-Length": []string{strconv.FormatInt(validatedInput.sizeBytes, 10)},
+			"Content-Length": []string{strconv.FormatInt(sizeBytes, 10)},
 		},
 	}, nil
 }
@@ -183,31 +181,29 @@ func (fake *Fake) PresignSanitizedDownload(
 	sourceETag string,
 	expiry time.Duration,
 ) (PresignedRequest, error) {
-	const operation = "presigning sanitized download"
-
-	if err := contextError(ctx, operation); err != nil {
+	if err := contextError(ctx, operationPresignSanitizedDownload); err != nil {
 		return PresignedRequest{}, err
 	}
-	validatedInput, err := newSanitizedDownloadInput(fileID, sourceETag, expiry)
+	objectKey, err := validateSanitizedDownloadInput(fileID, sourceETag, expiry)
 	if err != nil {
 		return PresignedRequest{}, err
 	}
 
 	fake.mu.Lock()
 	defer fake.mu.Unlock()
-	if err := fake.recordAttemptLocked(ctx, operation, FakeCall{
+	if err := fake.recordAttemptLocked(ctx, operationPresignSanitizedDownload, FakeCall{
 		Operation:  FakePresignSanitizedDownload,
-		FileID:     validatedInput.fileID,
-		SourceETag: validatedInput.sourceETag,
-		ObjectKey:  validatedInput.objectKey,
-		Expiry:     validatedInput.expiry,
+		FileID:     fileID,
+		SourceETag: sourceETag,
+		ObjectKey:  objectKey,
+		Expiry:     expiry,
 	}); err != nil {
 		return PresignedRequest{}, err
 	}
 
 	fake.grantSequence++
 	return PresignedRequest{
-		URL:             fakeGrantURL(validatedInput.objectKey, fake.grantSequence),
+		URL:             fakeGrantURL(objectKey, fake.grantSequence),
 		RequiredHeaders: make(http.Header),
 	}, nil
 }
@@ -218,36 +214,34 @@ func (fake *Fake) DownloadSource(
 	fileID string,
 	expectedETag string,
 ) (SourceObject, error) {
-	const operation = "downloading source object"
-
-	if err := contextError(ctx, operation); err != nil {
+	if err := contextError(ctx, operationDownloadSource); err != nil {
 		return SourceObject{}, err
 	}
-	validatedInput, err := newSourceReadInput(fileID, expectedETag)
+	objectKey, err := validateSourceReadInput(fileID, expectedETag)
 	if err != nil {
 		return SourceObject{}, err
 	}
 
 	fake.mu.Lock()
 	defer fake.mu.Unlock()
-	if err := fake.recordAttemptLocked(ctx, operation, FakeCall{
+	if err := fake.recordAttemptLocked(ctx, operationDownloadSource, FakeCall{
 		Operation:  FakeDownloadSource,
-		FileID:     validatedInput.fileID,
-		SourceETag: validatedInput.expectedETag,
-		ObjectKey:  validatedInput.objectKey,
+		FileID:     fileID,
+		SourceETag: expectedETag,
+		ObjectKey:  objectKey,
 	}); err != nil {
 		return SourceObject{}, err
 	}
 
-	source, exists := fake.sources[validatedInput.fileID]
+	source, exists := fake.sources[fileID]
 	if !exists {
-		return SourceObject{}, operationError(operation, ErrSourceNotFound)
+		return SourceObject{}, operationError(operationDownloadSource, ErrSourceNotFound)
 	}
-	if validatedInput.expectedETag != "" && source.ETag != validatedInput.expectedETag {
-		return SourceObject{}, operationError(operation, ErrSourceRevisionConflict)
+	if expectedETag != "" && source.ETag != expectedETag {
+		return SourceObject{}, operationError(operationDownloadSource, ErrSourceRevisionConflict)
 	}
 	if len(source.PDFBytes) > MaxSourceObjectBytes {
-		return SourceObject{}, operationError(operation, ErrSourceObjectTooLarge)
+		return SourceObject{}, operationError(operationDownloadSource, ErrSourceObjectTooLarge)
 	}
 
 	return copySourceObject(source), nil
@@ -259,28 +253,26 @@ func (fake *Fake) SanitizedExists(
 	fileID string,
 	sourceETag string,
 ) (bool, error) {
-	const operation = "checking sanitized object"
-
-	if err := contextError(ctx, operation); err != nil {
+	if err := contextError(ctx, operationCheckSanitizedObject); err != nil {
 		return false, err
 	}
-	validatedInput, err := newSanitizedObjectInput(fileID, sourceETag)
+	objectKey, err := SanitizedObjectKey(fileID, sourceETag)
 	if err != nil {
 		return false, err
 	}
 
 	fake.mu.Lock()
 	defer fake.mu.Unlock()
-	if err := fake.recordAttemptLocked(ctx, operation, FakeCall{
+	if err := fake.recordAttemptLocked(ctx, operationCheckSanitizedObject, FakeCall{
 		Operation:  FakeSanitizedExists,
-		FileID:     validatedInput.fileID,
-		SourceETag: validatedInput.sourceETag,
-		ObjectKey:  validatedInput.objectKey,
+		FileID:     fileID,
+		SourceETag: sourceETag,
+		ObjectKey:  objectKey,
 	}); err != nil {
 		return false, err
 	}
 
-	_, exists := fake.sanitizedObjects[validatedInput.objectKey]
+	_, exists := fake.sanitizedObjects[objectKey]
 	return exists, nil
 }
 
@@ -291,28 +283,26 @@ func (fake *Fake) UploadSanitized(
 	sourceETag string,
 	pdfBytes []byte,
 ) error {
-	const operation = "uploading sanitized object"
-
-	if err := contextError(ctx, operation); err != nil {
+	if err := contextError(ctx, operationUploadSanitized); err != nil {
 		return err
 	}
-	validatedInput, err := newSanitizedObjectInput(fileID, sourceETag)
+	objectKey, err := SanitizedObjectKey(fileID, sourceETag)
 	if err != nil {
 		return err
 	}
 
 	fake.mu.Lock()
 	defer fake.mu.Unlock()
-	if err := fake.recordAttemptLocked(ctx, operation, FakeCall{
+	if err := fake.recordAttemptLocked(ctx, operationUploadSanitized, FakeCall{
 		Operation:  FakeUploadSanitized,
-		FileID:     validatedInput.fileID,
-		SourceETag: validatedInput.sourceETag,
-		ObjectKey:  validatedInput.objectKey,
+		FileID:     fileID,
+		SourceETag: sourceETag,
+		ObjectKey:  objectKey,
 	}); err != nil {
 		return err
 	}
 
-	fake.sanitizedObjects[validatedInput.objectKey] = copyBytes(pdfBytes)
+	fake.sanitizedObjects[objectKey] = copyBytes(pdfBytes)
 	return nil
 }
 
