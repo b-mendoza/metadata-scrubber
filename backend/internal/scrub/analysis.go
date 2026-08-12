@@ -157,18 +157,14 @@ func (state *traversalState) inspectMetadataEntry(dictionary types.Dict, key str
 	if streamDictionary == nil {
 		return errors.New("PDF metadata entry does not reference a stream")
 	}
-	defer releaseDecodedMetadataStream(state.context, dictionary, key, streamObject, streamDictionary)
+	defer func() {
+		streamDictionary.Content = nil
+		storeMetadataStreamContent(state.context, dictionary, key, streamObject, nil)
+	}()
 
-	remainingDecodeBytes := state.builder.remainingDecodedMetadataBytes()
-	if remainingDecodeBytes == 0 {
-		return ErrInspectionLimit
-	}
-	content, err := streamDictionary.DecodeLengthWithLimit(-1, min(maxPDFDecodeBytes, remainingDecodeBytes))
-	if errors.Is(err, filter.ErrDecodeLimitExceeded) {
-		return ErrInspectionLimit
-	}
+	content, err := decodeMetadataStreamWithinBudget(streamDictionary, state.builder.remainingDecodedMetadataBytes(), "decode PDF metadata stream")
 	if err != nil {
-		return fmt.Errorf("decode PDF metadata stream: %w", err)
+		return err
 	}
 	if !utf8.Valid(content) {
 		return errors.New("PDF metadata stream is not valid UTF-8")
@@ -184,15 +180,21 @@ func (state *traversalState) inspectMetadataEntry(dictionary types.Dict, key str
 	return nil
 }
 
-func releaseDecodedMetadataStream(
-	context *model.Context,
-	dictionary types.Dict,
-	key string,
-	streamObject types.Object,
-	streamDictionary *types.StreamDict,
-) {
-	streamDictionary.Content = nil
-	storeMetadataStreamContent(context, dictionary, key, streamObject, nil)
+// decodeMetadataStreamWithinBudget decodes one metadata stream under the remaining
+// aggregate budget and reports every limit breach as ErrInspectionLimit. Each caller
+// supplies its own message for an underlying decode failure.
+func decodeMetadataStreamWithinBudget(streamDictionary *types.StreamDict, remainingDecodeBytes int64, decodeErrorContext string) ([]byte, error) {
+	if remainingDecodeBytes <= 0 {
+		return nil, ErrInspectionLimit
+	}
+	content, err := streamDictionary.DecodeLengthWithLimit(-1, min(maxPDFDecodeBytes, remainingDecodeBytes))
+	if errors.Is(err, filter.ErrDecodeLimitExceeded) {
+		return nil, ErrInspectionLimit
+	}
+	if err != nil {
+		return nil, fmt.Errorf("%s: %w", decodeErrorContext, err)
+	}
+	return content, nil
 }
 
 func (state *traversalState) metadataIdentity(path []int) (string, string) {

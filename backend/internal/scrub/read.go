@@ -3,11 +3,9 @@ package scrub
 import (
 	"bytes"
 	"errors"
-	"fmt"
 
 	"github.com/pdfcpu/pdfcpu/pkg/api"
 	pdfcpu "github.com/pdfcpu/pdfcpu/pkg/pdfcpu"
-	"github.com/pdfcpu/pdfcpu/pkg/filter"
 	"github.com/pdfcpu/pdfcpu/pkg/pdfcpu/model"
 	"github.com/pdfcpu/pdfcpu/pkg/pdfcpu/types"
 )
@@ -151,12 +149,9 @@ func decodeMetadataStreamForPreflight(streamDictionary *types.StreamDict, remain
 	content := streamDictionary.Content
 	if content == nil {
 		var err error
-		content, err = streamDictionary.DecodeLengthWithLimit(-1, min(maxPDFDecodeBytes, remainingDecodeBytes))
-		if errors.Is(err, filter.ErrDecodeLimitExceeded) {
-			return nil, ErrInspectionLimit
-		}
+		content, err = decodeMetadataStreamWithinBudget(streamDictionary, remainingDecodeBytes, "preflight PDF metadata stream")
 		if err != nil {
-			return nil, fmt.Errorf("preflight PDF metadata stream: %w", err)
+			return nil, err
 		}
 	}
 	if int64(len(content)) > remainingDecodeBytes {
