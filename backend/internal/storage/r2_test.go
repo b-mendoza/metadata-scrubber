@@ -355,6 +355,23 @@ func TestR2RejectsInvalidInputsBeforeStorageRequests(t *testing.T) {
 	require.Zero(t, requestCount.Load())
 }
 
+func TestR2CanceledContextTakesPriorityOverInvalidInput(t *testing.T) {
+	t.Parallel()
+
+	var requestCount atomic.Int64
+	adapter := newTestR2Server(t, http.HandlerFunc(func(http.ResponseWriter, *http.Request) {
+		requestCount.Add(1)
+	}))
+	ctx, cancel := context.WithCancel(context.Background())
+	cancel()
+
+	_, err := adapter.PresignSourceUpload(ctx, "folder/file", 0, 0)
+
+	require.ErrorIs(t, err, context.Canceled)
+	require.NotErrorIs(t, err, ErrInvalidFileID)
+	require.Zero(t, requestCount.Load())
+}
+
 func TestR2ProductionRequestsHaveABoundedOverallDuration(t *testing.T) {
 	t.Parallel()
 
