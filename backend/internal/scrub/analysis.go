@@ -131,7 +131,8 @@ func analyzeObjectMetadata(context *model.Context, analysis *pdfAnalysis) error 
 			seenTargets:  seenTargets,
 			objectNumber: objectNumber,
 		}
-		if err := state.inspectObject(entry.Object, nil); err != nil {
+		walker := structuralWalker{context: context, inspectMetadata: state.inspectMetadataEntry}
+		if err := walker.walkObject(entry.Object, nil); err != nil {
 			return err
 		}
 	}

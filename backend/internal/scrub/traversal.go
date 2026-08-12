@@ -138,11 +138,6 @@ func (walker structuralWalker) walkArray(array types.Array, path []int) error {
 	return nil
 }
 
-func (state *traversalState) inspectObject(object types.Object, path []int) error {
-	walker := structuralWalker{context: state.context, inspectMetadata: state.inspectMetadataEntry}
-	return walker.walkObject(object, path)
-}
-
 func pdfObjectRoles(context *model.Context) (map[int]objectRole, error) {
 	roles := make(map[int]objectRole, context.PageCount+1)
 	if context.Root != nil {
