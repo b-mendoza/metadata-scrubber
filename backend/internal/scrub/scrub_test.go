@@ -624,7 +624,7 @@ func TestMetadataTraversalDeduplicatesOneParentEntryTarget(t *testing.T) {
 		builder:      builder,
 		context:      context,
 		roles:        map[int]objectRole{context.Root.ObjectNumber.Value(): {catalog: true}},
-		seenTargets:  map[string]struct{}{},
+		seenTargets:  &metadataTargetTracker{},
 		objectNumber: context.Root.ObjectNumber.Value(),
 	}
 
