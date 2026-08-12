@@ -309,6 +309,7 @@ func TestFakeRejectsInvalidExpiryBeforeRecordingCalls(t *testing.T) {
 		{name: "zero", expiry: 0},
 		{name: "negative", expiry: -time.Second},
 		{name: "below one second", expiry: time.Millisecond},
+		{name: "fractional second", expiry: time.Second + time.Millisecond},
 		{name: "beyond seven days", expiry: 7*24*time.Hour + time.Second},
 	} {
 		t.Run(testCase.name, func(t *testing.T) {
