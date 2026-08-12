@@ -115,7 +115,7 @@ func preflightMetadataEntries(context *model.Context, snapshots []metadataEntryS
 		if err != nil {
 			return err
 		}
-		storeMetadataStreamContent(context, snapshot.dictionary, snapshot.key, snapshot.value, streamDictionary.Content)
+		storeMetadataStreamContent(context, snapshot.dictionary, snapshot.key, snapshot.value, content)
 		remainingDecodeBytes -= int64(len(content))
 		if indirect {
 			decodedIndirectObjects[indirectReference] = struct{}{}
