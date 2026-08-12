@@ -385,7 +385,7 @@ func TestDryRunReturnsReviewedRevisionAndBackendOwnedFields(t *testing.T) {
 	require.Len(t, calls, 1)
 	require.Equal(t, storage.FakeDownloadSource, calls[0].Operation)
 	require.Empty(t, calls[0].SourceETag)
-	require.Empty(t, handler.permits)
+	requireAllPermitsReleased(t, handler)
 }
 
 func TestDryRunReturnsNonNullEmptyFieldsForCleanPDF(t *testing.T) {
@@ -422,7 +422,7 @@ func TestDryRunRejectsInvalidInspectionFieldAction(t *testing.T) {
 	require.Equal(t, http.StatusInternalServerError, recorder.Code, recorder.Body.String())
 	require.Equal(t, "could not inspect PDF", errorMessage(t, recorder))
 	require.NotContains(t, recorder.Body.String(), "invalid-action")
-	require.Empty(t, handler.permits)
+	requireAllPermitsReleased(t, handler)
 	require.Equal(t, []pipelineLogRecord{
 		{Message: "sniffed", Level: "INFO", StorageKey: formatStorageKey(fileIDOne), Outcome: "accepted"},
 		{Message: "dry-run", Level: "ERROR", StorageKey: formatStorageKey(fileIDOne), Outcome: "failed"},
@@ -449,7 +449,7 @@ func TestConstructedDryRunRejectsStructurallySignedPDFFixtureWithoutMutation(t *
 	require.NoError(t, err)
 	fake := storage.NewFake()
 	require.NoError(t, fake.SetSource(fileIDOne, storage.SourceObject{PDFBytes: pdfBytes, ETag: "revision-one"}))
-	workflow := New(slog.New(slog.NewTextHandler(io.Discard, nil)), make(chan struct{}, 2))
+	workflow := New(slog.New(slog.NewTextHandler(io.Discard, nil)), make(chan struct{}, ProcessingPermitCount))
 	recorder := serveJSONRequest(t, workflow, fake, dryRunMethod, dryRunRequest{StorageKey: formatStorageKey(fileIDOne)})
 
 	require.Equal(t, http.StatusUnprocessableEntity, recorder.Code, recorder.Body.String())
@@ -458,7 +458,7 @@ func TestConstructedDryRunRejectsStructurallySignedPDFFixtureWithoutMutation(t *
 	_, exists, err := fake.SanitizedBytes(fileIDOne, "revision-one")
 	require.NoError(t, err)
 	require.False(t, exists)
-	require.Empty(t, workflow.permits)
+	requireAllPermitsReleased(t, workflow)
 }
 
 func TestDryRunClassifiesContentAndDependencyFailuresWithoutLeakingDetails(t *testing.T) {
@@ -501,7 +501,7 @@ func TestDryRunClassifiesContentAndDependencyFailuresWithoutLeakingDetails(t *te
 			if len(testCase.pdfBytes) == 0 || !bytes.HasPrefix(testCase.pdfBytes, []byte("%PDF-")) {
 				require.Zero(t, inspectCalls)
 			}
-			require.Empty(t, handler.permits)
+			requireAllPermitsReleased(t, handler)
 		})
 	}
 }
@@ -509,7 +509,7 @@ func TestDryRunClassifiesContentAndDependencyFailuresWithoutLeakingDetails(t *te
 func TestScrubCacheHitBypassesAdmissionAndReusesExactRevision(t *testing.T) {
 	fake := storage.NewFake()
 	require.NoError(t, fake.SetSanitized(fileIDThree, "revision-three", []byte("already-clean")))
-	permits := make(chan struct{}, 2)
+	permits := make(chan struct{}, ProcessingPermitCount)
 	permits <- struct{}{}
 	permits <- struct{}{}
 	inspectCalls, cleanCalls := 0, 0
@@ -524,7 +524,7 @@ func TestScrubCacheHitBypassesAdmissionAndReusesExactRevision(t *testing.T) {
 
 	require.Equal(t, http.StatusOK, recorder.Code, recorder.Body.String())
 	require.Contains(t, recorder.Body.String(), `"status":"done"`)
-	require.Len(t, permits, 2)
+	require.Len(t, permits, ProcessingPermitCount)
 	require.Zero(t, inspectCalls)
 	require.Zero(t, cleanCalls)
 	calls := fake.Calls()
@@ -538,7 +538,7 @@ func TestScrubCacheHitBypassesAdmissionAndReusesExactRevision(t *testing.T) {
 func TestScrubCacheMissBindsEveryOperationToReviewedRevision(t *testing.T) {
 	fake := storage.NewFake()
 	require.NoError(t, fake.SetSource(fileIDOne, storage.SourceObject{PDFBytes: []byte("%PDF-source"), ETag: "revision-one"}))
-	permits := make(chan struct{}, 2)
+	permits := make(chan struct{}, ProcessingPermitCount)
 	cleaned := []byte("%PDF-cleaned")
 	cleanCalls := 0
 	handler := newTestHandlerWithLogger(t, permits, slog.New(slog.NewTextHandler(io.Discard, nil)), nil, func(input []byte) ([]byte, error) {
@@ -601,7 +601,7 @@ func TestScrubReturnsConflictBeforePDFOrWriteWork(t *testing.T) {
 	require.Equal(t, "source file changed since review", errorMessage(t, recorder))
 	require.Zero(t, cleanCalls)
 	require.Equal(t, []storage.FakeOperation{storage.FakeSanitizedExists, storage.FakeDownloadSource}, callOperations(fake.Calls()))
-	require.Empty(t, handler.permits)
+	requireAllPermitsReleased(t, handler)
 }
 
 func TestScrubFailuresStopAtTheFailedStage(t *testing.T) {
@@ -690,7 +690,7 @@ func TestScrubFailuresStopAtTheFailedStage(t *testing.T) {
 			require.Equal(t, testCase.wantCalls, callOperations(fake.Calls()))
 			require.NotContains(t, recorder.Body.String(), "provider-secret")
 			require.NotContains(t, recorder.Body.String(), "pdf-secret")
-			require.Empty(t, handler.permits)
+			requireAllPermitsReleased(t, handler)
 			if !bytes.HasPrefix(testCase.pdfBytes, []byte("%PDF-")) || testCase.failureOp == storage.FakeSanitizedExists {
 				require.Zero(t, cleanCalls)
 			}
@@ -751,7 +751,8 @@ func TestCancellationWhileWaitingReturnsSanitizedResponseWithoutStorageWork(t *t
 	}, 2)
 
 	enteredWait := make(chan struct{})
-	handler.beforeAcquireSelect = func() { close(enteredWait) }
+	// sync.OnceFunc keeps the later follow-up requests from closing enteredWait twice.
+	handler.beforeAcquireSelect = sync.OnceFunc(func() { close(enteredWait) })
 
 	ctx, cancel := context.WithCancel(context.Background())
 	response := make(chan *httptest.ResponseRecorder, 1)
@@ -762,7 +763,7 @@ func TestCancellationWhileWaitingReturnsSanitizedResponseWithoutStorageWork(t *t
 
 	select {
 	case <-enteredWait:
-		require.Len(t, handler.permits, 2, "waiting request reached the acquisition select with both permits held")
+		requireAllPermitsHeld(t, handler, "waiting request reached the acquisition select with both permits held")
 	case <-time.After(time.Second):
 		require.FailNow(t, "timed out waiting for request to reach the acquisition select")
 	}
@@ -776,7 +777,6 @@ func TestCancellationWhileWaitingReturnsSanitizedResponseWithoutStorageWork(t *t
 	case <-time.After(time.Second):
 		require.FailNow(t, "canceled admission wait did not complete promptly")
 	}
-	handler.beforeAcquireSelect = func() {}
 
 	require.Equal(t, http.StatusRequestTimeout, recorder.Code)
 	require.Equal(t, cancellationMessage, errorMessage(t, recorder))
@@ -794,7 +794,7 @@ func TestCancellationWhileWaitingReturnsSanitizedResponseWithoutStorageWork(t *t
 		{method: dryRunMethod, fileID: fileIDOne},
 		{method: dryRunMethod, fileID: fileIDTwo},
 	}, 2)
-	require.Len(t, handler.permits, 2)
+	requireAllPermitsHeld(t, handler)
 	followUpObserver.releaseDownloads()
 	requireResponsesSuccess(t, followUpResponses, 2, "timed out waiting for holder response")
 }
@@ -845,7 +845,7 @@ func TestSharedAdmissionNeverExceedsTwoAndReleasesAfterEveryTerminalPath(t *test
 		observer.releaseDownloads()
 		requireResponsesSuccess(t, responses, len(requests), "timed out waiting for mixed guarded workflow")
 		require.Equal(t, 2, observer.peakDownloads())
-		require.Empty(t, handler.permits)
+		requireAllPermitsReleased(t, handler)
 	})
 
 	terminalCases := []struct {
@@ -920,17 +920,17 @@ func TestSharedAdmissionNeverExceedsTwoAndReleasesAfterEveryTerminalPath(t *test
 				recorder := serveRequest(context.Background(), t, handler, observer, testCase.method, mediatype.JSON, body)
 				require.Equal(t, testCase.wantStatus, recorder.Code, recorder.Body.String())
 			}
-			require.Empty(t, handler.permits)
+			requireAllPermitsReleased(t, handler)
 
 			followUpResponses := startGuardedRequests(t, handler, observer, []guardedRequest{
 				{method: dryRunMethod, fileID: fileIDTwo},
 				{method: scrubMethod, fileID: fileIDThree},
 			}, 2)
-			require.Len(t, handler.permits, 2, "both follow-up workflows must acquire after terminal path")
+			requireAllPermitsHeld(t, handler, "both follow-up workflows must acquire after terminal path")
 			require.Equal(t, 2, observer.peakDownloads())
 			observer.releaseDownloads()
 			requireResponsesSuccess(t, followUpResponses, 2, "timed out waiting for holder response")
-			require.Empty(t, handler.permits)
+			requireAllPermitsReleased(t, handler)
 		})
 	}
 }
@@ -950,13 +950,13 @@ func TestScrubReleasesPermitBeforeUploadingSanitizedBytes(t *testing.T) {
 		firstResponse <- serveRequest(context.Background(), t, handler, observer, scrubMethod, mediatype.JSON, body)
 	}()
 	observer.waitForUpload(t, fileIDOne)
-	require.Empty(t, handler.permits, "upload must start after guarded permit release")
+	requireAllPermitsReleased(t, handler, "upload must start after guarded permit release")
 
 	holderResponses := startGuardedRequests(t, handler, observer, []guardedRequest{
 		{method: dryRunMethod, fileID: fileIDTwo},
 		{method: dryRunMethod, fileID: fileIDThree},
 	}, 2)
-	require.Len(t, handler.permits, 2)
+	requireAllPermitsHeld(t, handler)
 
 	observer.releaseUploads()
 	require.Equal(t, http.StatusOK, (<-firstResponse).Code)
@@ -969,7 +969,7 @@ func TestPipelineLogsRecordAllApprovedSuccessStages(t *testing.T) {
 	seedCandidateSources(t, fake, fileIDOne, fileIDTwo)
 	var logs bytes.Buffer
 	logger := slog.New(slog.NewJSONHandler(&logs, nil))
-	handler := newTestHandlerWithLogger(t, make(chan struct{}, 2), logger, nil, nil, nil)
+	handler := newTestHandlerWithLogger(t, make(chan struct{}, ProcessingPermitCount), logger, nil, nil, nil)
 
 	requests := []struct {
 		method handlerMethod
@@ -1122,7 +1122,7 @@ func TestPipelineLogsShortCircuitFailuresAndDescribeCacheHitsTruthfully(t *testi
 			var logs bytes.Buffer
 			handler := newTestHandlerWithLogger(
 				t,
-				make(chan struct{}, 2),
+				make(chan struct{}, ProcessingPermitCount),
 				slog.New(slog.NewJSONHandler(&logs, nil)),
 				testCase.inspect,
 				testCase.clean,
@@ -1149,7 +1149,7 @@ func TestPipelineLogsExcludeSeededSensitiveValues(t *testing.T) {
 	var logs bytes.Buffer
 	handler := newTestHandlerWithLogger(
 		t,
-		make(chan struct{}, 2),
+		make(chan struct{}, ProcessingPermitCount),
 		slog.New(slog.NewJSONHandler(&logs, nil)),
 		func([]byte, scrub.InspectionOrigin) ([]scrub.Field, error) {
 			return []scrub.Field{{Name: "title", Preview: "metadata-preview-secret", Action: scrub.ActionRemove}}, nil
@@ -1234,7 +1234,7 @@ func newTestHandler(
 	entropy entropyOperation,
 ) *Handler {
 	t.Helper()
-	return newTestHandlerWithLogger(t, make(chan struct{}, 2), slog.New(slog.NewTextHandler(io.Discard, nil)), inspect, clean, entropy)
+	return newTestHandlerWithLogger(t, make(chan struct{}, ProcessingPermitCount), slog.New(slog.NewTextHandler(io.Discard, nil)), inspect, clean, entropy)
 }
 
 func newTestHandlerWithLogger(
@@ -1256,6 +1256,18 @@ func newTestHandlerWithLogger(
 		entropy = deterministicEntropy
 	}
 	return newHandler(logger, permits, inspect, clean, entropy)
+}
+
+// A workflow takes a permit by sending into the gate, so an empty gate means every
+// permit came back and a full gate means the gate is saturated.
+func requireAllPermitsReleased(t *testing.T, handler *Handler, messageAndArguments ...any) {
+	t.Helper()
+	require.Empty(t, handler.permits, messageAndArguments...)
+}
+
+func requireAllPermitsHeld(t *testing.T, handler *Handler, messageAndArguments ...any) {
+	t.Helper()
+	require.Len(t, handler.permits, ProcessingPermitCount, messageAndArguments...)
 }
 
 func serveRequest(
