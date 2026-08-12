@@ -91,9 +91,13 @@ func DisableConfigDir() {
 	api.DisableConfigDir()
 }
 
+func (origin InspectionOrigin) valid() bool {
+	return origin == PublicInput || origin == PostWriteVerification
+}
+
 // InspectPDF returns bounded descriptions of all supported PDF metadata fields.
 func InspectPDF(inputBytes []byte, origin InspectionOrigin) ([]Field, error) {
-	if origin != PublicInput && origin != PostWriteVerification {
+	if !origin.valid() {
 		return nil, fmt.Errorf("invalid inspection origin %q", origin)
 	}
 
