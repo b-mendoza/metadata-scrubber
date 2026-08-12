@@ -638,7 +638,10 @@ func TestSaturatedAdmissionReturnsRetryable503WithoutDownloadingWaitingSource(t 
 	// clock, and load can only increase elapsed time, never trip it.
 	handler.admissionTimeout = 75 * time.Millisecond
 
-	holderResponses := startDryRunHolders(t, handler, observer, fileIDOne, fileIDTwo)
+	holderResponses := startGuardedRequests(t, handler, observer, []guardedRequest{
+		{method: dryRunMethod, fileID: fileIDOne},
+		{method: dryRunMethod, fileID: fileIDTwo},
+	}, 2)
 	startedAt := time.Now()
 	body := mustJSON(t, dryRunRequest{StorageKey: formatStorageKey(fileIDThree)})
 	recorder := serveRequest(context.Background(), t, handler, observer, dryRunMethod, mediatype.JSON, body)
@@ -671,7 +674,10 @@ func TestCancellationWhileWaitingReturnsSanitizedResponseWithoutStorageWork(t *t
 		}
 		return bytes.Clone(input), nil
 	}, nil)
-	holderResponses := startDryRunHolders(t, handler, observer, fileIDOne, fileIDTwo)
+	holderResponses := startGuardedRequests(t, handler, observer, []guardedRequest{
+		{method: dryRunMethod, fileID: fileIDOne},
+		{method: dryRunMethod, fileID: fileIDTwo},
+	}, 2)
 
 	enteredWait := make(chan struct{})
 	handler.beforeAcquireSelect = func() { close(enteredWait) }
@@ -713,7 +719,10 @@ func TestCancellationWhileWaitingReturnsSanitizedResponseWithoutStorageWork(t *t
 	requireResponsesSuccess(t, holderResponses, 2, "timed out waiting for holder response")
 
 	followUpObserver := newBlockingStorage(fake, fileIDOne, fileIDTwo)
-	followUpResponses := startDryRunHolders(t, handler, followUpObserver, fileIDOne, fileIDTwo)
+	followUpResponses := startGuardedRequests(t, handler, followUpObserver, []guardedRequest{
+		{method: dryRunMethod, fileID: fileIDOne},
+		{method: dryRunMethod, fileID: fileIDTwo},
+	}, 2)
 	require.Len(t, handler.permits, 2)
 	followUpObserver.releaseDownloads()
 	requireResponsesSuccess(t, followUpResponses, 2, "timed out waiting for holder response")
@@ -725,7 +734,10 @@ func TestExactRevisionCacheHitSucceedsWhileBothPermitsAreHeld(t *testing.T) {
 	seedCandidateSources(t, fake, fileIDOne, fileIDTwo)
 	require.NoError(t, fake.SetSanitized(fileIDThree, "revision-three", []byte("clean")))
 	handler := newTestHandler(t, nil, nil, nil)
-	holderResponses := startDryRunHolders(t, handler, observer, fileIDOne, fileIDTwo)
+	holderResponses := startGuardedRequests(t, handler, observer, []guardedRequest{
+		{method: dryRunMethod, fileID: fileIDOne},
+		{method: dryRunMethod, fileID: fileIDTwo},
+	}, 2)
 
 	body := mustJSON(t, scrubRequest{StorageKey: formatStorageKey(fileIDThree), ETag: "revision-three"})
 	recorder := serveRequest(context.Background(), t, handler, observer, scrubMethod, mediatype.JSON, body)
@@ -745,21 +757,13 @@ func TestSharedAdmissionNeverExceedsTwoAndReleasesAfterEveryTerminalPath(t *test
 		seedCandidateSources(t, fake, fileIDOne, fileIDTwo, fileIDThree)
 		handler := newTestHandler(t, nil, nil, nil)
 
-		requests := []struct {
-			method handlerMethod
-			body   string
-		}{
-			{method: dryRunMethod, body: mustJSON(t, dryRunRequest{StorageKey: formatStorageKey(fileIDOne)})},
-			{method: scrubMethod, body: mustJSON(t, scrubRequest{StorageKey: formatStorageKey(fileIDTwo), ETag: "revision-" + fileIDTwo})},
-			{method: dryRunMethod, body: mustJSON(t, dryRunRequest{StorageKey: formatStorageKey(fileIDThree)})},
+		requests := []guardedRequest{
+			{method: dryRunMethod, fileID: fileIDOne},
+			{method: scrubMethod, fileID: fileIDTwo},
+			{method: dryRunMethod, fileID: fileIDThree},
 		}
-		responses := make(chan *httptest.ResponseRecorder, len(requests))
-		for _, request := range requests {
-			go func(method handlerMethod, body string) {
-				responses <- serveRequest(context.Background(), t, handler, observer, method, mediatype.JSON, body)
-			}(request.method, request.body)
-		}
-		observer.waitForDownloads(t, 2)
+		// Three requests start, but the admission gate only lets two downloads begin.
+		responses := startGuardedRequests(t, handler, observer, requests, 2)
 		require.Equal(t, 2, observer.peakDownloads())
 		select {
 		case fileID := <-observer.downloadStarted:
@@ -847,7 +851,10 @@ func TestSharedAdmissionNeverExceedsTwoAndReleasesAfterEveryTerminalPath(t *test
 			}
 			require.Empty(t, handler.permits)
 
-			followUpResponses := startMixedGuardedHolders(t, handler, observer, fileIDTwo, fileIDThree)
+			followUpResponses := startGuardedRequests(t, handler, observer, []guardedRequest{
+				{method: dryRunMethod, fileID: fileIDTwo},
+				{method: scrubMethod, fileID: fileIDThree},
+			}, 2)
 			require.Len(t, handler.permits, 2, "both follow-up workflows must acquire after terminal path")
 			require.Equal(t, 2, observer.peakDownloads())
 			observer.releaseDownloads()
@@ -874,7 +881,10 @@ func TestScrubReleasesPermitBeforeUploadingSanitizedBytes(t *testing.T) {
 	observer.waitForUpload(t, fileIDOne)
 	require.Empty(t, handler.permits, "upload must start after guarded permit release")
 
-	holderResponses := startDryRunHolders(t, handler, observer, fileIDTwo, fileIDThree)
+	holderResponses := startGuardedRequests(t, handler, observer, []guardedRequest{
+		{method: dryRunMethod, fileID: fileIDTwo},
+		{method: dryRunMethod, fileID: fileIDThree},
+	}, 2)
 	require.Len(t, handler.permits, 2)
 
 	observer.releaseUploads()
@@ -1423,45 +1433,38 @@ func (observer *blockingStorage) peakDownloads() int {
 	return observer.peak
 }
 
-func startDryRunHolders(
-	t *testing.T,
-	handler *Handler,
-	observer *blockingStorage,
-	fileIDs ...string,
-) <-chan *httptest.ResponseRecorder {
-	t.Helper()
-	responses := make(chan *httptest.ResponseRecorder, len(fileIDs))
-	for _, fileID := range fileIDs {
-		go func(id string) {
-			body := mustJSON(t, dryRunRequest{StorageKey: formatStorageKey(id)})
-			responses <- serveRequest(context.Background(), t, handler, observer, dryRunMethod, mediatype.JSON, body)
-		}(fileID)
-	}
-	observer.waitForDownloads(t, len(fileIDs))
-	return responses
+type guardedRequest struct {
+	method handlerMethod
+	fileID string
 }
 
-func startMixedGuardedHolders(
+// startGuardedRequests serves every request in its own goroutine, then blocks until
+// wantDownloads downloads have started. The count is explicit because a caller may start more
+// requests than the admission gate lets through.
+func startGuardedRequests(
 	t *testing.T,
 	handler *Handler,
 	observer *blockingStorage,
-	dryRunFileID string,
-	scrubFileID string,
+	requests []guardedRequest,
+	wantDownloads int,
 ) <-chan *httptest.ResponseRecorder {
 	t.Helper()
-	responses := make(chan *httptest.ResponseRecorder, 2)
-	dryRunBody := mustJSON(t, dryRunRequest{StorageKey: formatStorageKey(dryRunFileID)})
-	scrubBody := mustJSON(t, scrubRequest{
-		StorageKey: formatStorageKey(scrubFileID),
-		ETag:       "revision-" + scrubFileID,
-	})
-	go func() {
-		responses <- serveRequest(context.Background(), t, handler, observer, dryRunMethod, mediatype.JSON, dryRunBody)
-	}()
-	go func() {
-		responses <- serveRequest(context.Background(), t, handler, observer, scrubMethod, mediatype.JSON, scrubBody)
-	}()
-	observer.waitForDownloads(t, 2)
+	responses := make(chan *httptest.ResponseRecorder, len(requests))
+	for _, request := range requests {
+		var body string
+		if request.method == scrubMethod {
+			body = mustJSON(t, scrubRequest{
+				StorageKey: formatStorageKey(request.fileID),
+				ETag:       "revision-" + request.fileID,
+			})
+		} else {
+			body = mustJSON(t, dryRunRequest{StorageKey: formatStorageKey(request.fileID)})
+		}
+		go func() {
+			responses <- serveRequest(context.Background(), t, handler, observer, request.method, mediatype.JSON, body)
+		}()
+	}
+	observer.waitForDownloads(t, wantDownloads)
 	return responses
 }
 
