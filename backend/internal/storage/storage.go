@@ -57,7 +57,9 @@ var (
 // store rejects uploads whose byte count differs. DownloadSource reports a
 // missing source as ErrSourceNotFound. UploadSanitized may overwrite: a
 // revision key encodes its exact source ETag, so every write to it carries an
-// equivalent sanitized copy of the same source revision.
+// equivalent sanitized copy of the same source revision. Every implementation
+// returns a SourceObject that the caller owns, Metadata included, so no
+// implementation keeps a reference to the returned state.
 type Storage interface {
 	PresignSourceUpload(
 		ctx context.Context,
