@@ -105,6 +105,20 @@ func TestJSONEndpointsValidateEveryBoundaryBeforeWork(t *testing.T) {
 		},
 	}
 
+	// Every subtest below needs its own handler with fresh inspect and clean counters.
+	newCountingHandler := func(t *testing.T) (*Handler, *int, *int) {
+		t.Helper()
+		inspectCalls, cleanCalls := 0, 0
+		handler := newTestHandler(t, func([]byte, scrub.InspectionOrigin) ([]scrub.Field, error) {
+			inspectCalls++
+			return nil, nil
+		}, func(input []byte) ([]byte, error) {
+			cleanCalls++
+			return bytes.Clone(input), nil
+		}, nil)
+		return handler, &inspectCalls, &cleanCalls
+	}
+
 	for _, endpoint := range endpoints {
 		t.Run(endpoint.name, func(t *testing.T) {
 			tests := []struct {
@@ -128,14 +142,7 @@ func TestJSONEndpointsValidateEveryBoundaryBeforeWork(t *testing.T) {
 			for _, testCase := range tests {
 				t.Run(testCase.name, func(t *testing.T) {
 					fake := storage.NewFake()
-					inspectCalls, cleanCalls := 0, 0
-					handler := newTestHandler(t, func([]byte, scrub.InspectionOrigin) ([]scrub.Field, error) {
-						inspectCalls++
-						return nil, nil
-					}, func(input []byte) ([]byte, error) {
-						cleanCalls++
-						return bytes.Clone(input), nil
-					}, nil)
+					handler, inspectCalls, cleanCalls := newCountingHandler(t)
 					recorder := serveRequest(
 						context.Background(),
 						t,
@@ -150,8 +157,8 @@ func TestJSONEndpointsValidateEveryBoundaryBeforeWork(t *testing.T) {
 					require.Equal(t, mediatype.JSON, recorder.Header().Get(header.ContentType))
 					require.NotEmpty(t, errorMessage(t, recorder))
 					require.Empty(t, fake.Calls())
-					require.Zero(t, inspectCalls)
-					require.Zero(t, cleanCalls)
+					require.Zero(t, *inspectCalls)
+					require.Zero(t, *cleanCalls)
 				})
 			}
 
@@ -160,14 +167,7 @@ func TestJSONEndpointsValidateEveryBoundaryBeforeWork(t *testing.T) {
 				if endpoint.configureAccepted != nil {
 					endpoint.configureAccepted(t, fake)
 				}
-				inspectCalls, cleanCalls := 0, 0
-				handler := newTestHandler(t, func([]byte, scrub.InspectionOrigin) ([]scrub.Field, error) {
-					inspectCalls++
-					return nil, nil
-				}, func(input []byte) ([]byte, error) {
-					cleanCalls++
-					return bytes.Clone(input), nil
-				}, nil)
+				handler, inspectCalls, cleanCalls := newCountingHandler(t)
 
 				recorder := serveRequest(
 					context.Background(),
@@ -196,8 +196,8 @@ func TestJSONEndpointsValidateEveryBoundaryBeforeWork(t *testing.T) {
 					require.NotEmpty(t, response.Result.DownloadURL)
 				}
 				require.Equal(t, endpoint.wantAcceptedOperations, callOperations(fake.Calls()))
-				require.Equal(t, endpoint.wantInspectCalls, inspectCalls)
-				require.Equal(t, endpoint.wantCleanCalls, cleanCalls)
+				require.Equal(t, endpoint.wantInspectCalls, *inspectCalls)
+				require.Equal(t, endpoint.wantCleanCalls, *cleanCalls)
 			})
 		})
 	}
