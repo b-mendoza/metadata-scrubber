@@ -655,10 +655,8 @@ func TestMetadataTraversalDeduplicatesOneParentEntryTarget(t *testing.T) {
 	catalog, err := context.Catalog()
 	require.NoError(t, err)
 	analysis := &pdfAnalysis{}
-	builder := &summaryBuilder{}
 	state := traversalState{
 		analysis:     analysis,
-		builder:      builder,
 		context:      context,
 		roles:        map[int]objectRole{context.Root.ObjectNumber.Value(): {catalog: true}},
 		seenTargets:  &metadataTargetTracker{},
@@ -668,7 +666,7 @@ func TestMetadataTraversalDeduplicatesOneParentEntryTarget(t *testing.T) {
 	require.NoError(t, state.inspectObject(catalog, nil))
 	require.NoError(t, state.inspectObject(catalog, nil))
 
-	require.Len(t, builder.fields, 1)
+	require.Len(t, analysis.fields, 1)
 	require.Len(t, analysis.metadataTargets, 1)
 }
 

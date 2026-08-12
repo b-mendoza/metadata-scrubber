@@ -48,7 +48,6 @@ func (tracker *metadataTargetTracker) add(objectNumber int, path []int, key stri
 
 type traversalState struct {
 	analysis        *pdfAnalysis
-	builder         *summaryBuilder
 	context         *model.Context
 	roles           map[int]objectRole
 	seenTargets     *metadataTargetTracker

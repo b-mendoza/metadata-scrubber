@@ -17,8 +17,10 @@ type dictionaryEntryTarget struct {
 	key        string
 }
 
+// pdfAnalysis embeds the summaryBuilder so that the inspected field list has a
+// single owner from the first append through to the sorted result.
 type pdfAnalysis struct {
-	fields          []Field
+	summaryBuilder
 	infoTargets     []dictionaryEntryTarget
 	metadataTargets []dictionaryEntryTarget
 }
@@ -46,13 +48,12 @@ func analyzePDF(context *model.Context, origin InspectionOrigin) (*pdfAnalysis, 
 		return nil, ErrSignedPDF
 	}
 
-	analysis := &pdfAnalysis{}
-	builder := &summaryBuilder{fields: make([]Field, 0)}
+	analysis := &pdfAnalysis{summaryBuilder: summaryBuilder{fields: make([]Field, 0)}}
 
-	if err := analyzeInfoDictionary(context, analysis, builder); err != nil {
+	if err := analyzeInfoDictionary(context, analysis); err != nil {
 		return nil, err
 	}
-	if err := analyzeObjectMetadata(context, analysis, builder); err != nil {
+	if err := analyzeObjectMetadata(context, analysis); err != nil {
 		return nil, err
 	}
 
@@ -61,18 +62,17 @@ func analyzePDF(context *model.Context, origin InspectionOrigin) (*pdfAnalysis, 
 		return analysis, nil
 	}
 
-	slices.SortStableFunc(builder.fields, func(firstField, secondField Field) int {
+	slices.SortStableFunc(analysis.fields, func(firstField, secondField Field) int {
 		return cmp.Or(
 			cmp.Compare(firstField.Name, secondField.Name),
 			cmp.Compare(firstField.Label, secondField.Label),
 		)
 	})
-	analysis.fields = builder.fields
 
 	return analysis, nil
 }
 
-func analyzeInfoDictionary(context *model.Context, analysis *pdfAnalysis, builder *summaryBuilder) error {
+func analyzeInfoDictionary(context *model.Context, analysis *pdfAnalysis) error {
 	if context.Info == nil {
 		return nil
 	}
@@ -106,7 +106,7 @@ func analyzeInfoDictionary(context *model.Context, analysis *pdfAnalysis, builde
 			action = ActionRemove
 		}
 
-		if err := builder.add(name, label, logicalValue, action); err != nil {
+		if err := analysis.add(name, label, logicalValue, action); err != nil {
 			return err
 		}
 		analysis.infoTargets = append(analysis.infoTargets, dictionaryEntryTarget{dictionary: infoDictionary, key: key.encoded})
@@ -115,7 +115,7 @@ func analyzeInfoDictionary(context *model.Context, analysis *pdfAnalysis, builde
 	return nil
 }
 
-func analyzeObjectMetadata(context *model.Context, analysis *pdfAnalysis, builder *summaryBuilder) error {
+func analyzeObjectMetadata(context *model.Context, analysis *pdfAnalysis) error {
 	roles, err := pdfObjectRoles(context)
 	if err != nil {
 		return err
@@ -126,7 +126,6 @@ func analyzeObjectMetadata(context *model.Context, analysis *pdfAnalysis, builde
 		entry := context.Table[objectNumber]
 		state := traversalState{
 			analysis:     analysis,
-			builder:      builder,
 			context:      context,
 			roles:        roles,
 			seenTargets:  seenTargets,
@@ -158,7 +157,7 @@ func (state *traversalState) inspectMetadataEntry(dictionary types.Dict, key str
 		storeMetadataStreamContent(state.context, dictionary, key, streamObject, nil)
 	}()
 
-	content, err := decodeMetadataStreamWithinBudget(streamDictionary, state.builder.remainingDecodedMetadataBytes(), "decode PDF metadata stream")
+	content, err := decodeMetadataStreamWithinBudget(streamDictionary, state.analysis.remainingDecodedMetadataBytes(), "decode PDF metadata stream")
 	if err != nil {
 		return err
 	}
@@ -167,7 +166,7 @@ func (state *traversalState) inspectMetadataEntry(dictionary types.Dict, key str
 	}
 
 	name, label := state.metadataIdentity(path)
-	if err := state.builder.addMetadataBytes(name, label, content, ActionRemove); err != nil {
+	if err := state.analysis.addMetadataBytes(name, label, content, ActionRemove); err != nil {
 		return err
 	}
 	state.seenTargets.add(state.objectNumber, path, key)
