@@ -77,16 +77,16 @@ func parseStorageKey(storageKey string) (string, bool) {
 	return matches[1], true
 }
 
+var publicFieldActions = map[scrub.FieldAction]publicFieldAction{
+	scrub.ActionRemove:  publicFieldActionRemove,
+	scrub.ActionReplace: publicFieldActionReplace,
+}
+
 func convertPublicFields(inspectedFields []scrub.Field) ([]publicField, error) {
 	fields := make([]publicField, 0, len(inspectedFields))
 	for _, field := range inspectedFields {
-		var action publicFieldAction
-		switch field.Action {
-		case scrub.ActionRemove:
-			action = publicFieldActionRemove
-		case scrub.ActionReplace:
-			action = publicFieldActionReplace
-		default:
+		action, ok := publicFieldActions[field.Action]
+		if !ok {
 			return nil, errInvalidPublicFieldAction
 		}
 		fields = append(fields, publicField{
