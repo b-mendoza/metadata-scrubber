@@ -649,7 +649,7 @@ func TestSaturatedAdmissionReturnsRetryable503WithoutDownloadingWaitingSource(t 
 	require.Equal(t, admissionTimeoutMessage, errorMessage(t, recorder))
 	require.GreaterOrEqual(t, elapsed, 75*time.Millisecond)
 	require.False(t, observer.downloadObserved(fileIDThree))
-	requireNoFakeDownloadFor(t, fake, fileIDThree)
+	require.NotContains(t, callOperationsFor(fake.Calls(), fileIDThree), storage.FakeDownloadSource)
 
 	observer.releaseDownloads()
 	requireResponsesSuccess(t, holderResponses, 2, "timed out waiting for holder response")
@@ -705,7 +705,7 @@ func TestCancellationWhileWaitingReturnsSanitizedResponseWithoutStorageWork(t *t
 	require.Equal(t, cancellationMessage, errorMessage(t, recorder))
 	require.Empty(t, recorder.Header().Get(header.RetryAfter))
 	require.False(t, observer.downloadObserved(fileIDThree))
-	requireNoFakeCallFor(t, fake, fileIDThree)
+	require.Empty(t, callOperationsFor(fake.Calls(), fileIDThree))
 	require.Zero(t, canceledInspectCalls.Load())
 	require.Zero(t, canceledCleanCalls.Load())
 
@@ -1479,20 +1479,6 @@ func requireResponsesSuccess(
 		case <-time.After(time.Second):
 			require.FailNow(t, timeoutMessage)
 		}
-	}
-}
-
-func requireNoFakeDownloadFor(t *testing.T, fake *storage.Fake, fileID string) {
-	t.Helper()
-	for _, call := range fake.Calls() {
-		require.False(t, call.FileID == fileID && call.Operation == storage.FakeDownloadSource)
-	}
-}
-
-func requireNoFakeCallFor(t *testing.T, fake *storage.Fake, fileID string) {
-	t.Helper()
-	for _, call := range fake.Calls() {
-		require.NotEqual(t, fileID, call.FileID)
 	}
 }
 
