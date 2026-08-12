@@ -418,6 +418,20 @@ func TestFakePropagatesContextCancellationWithoutMutation(t *testing.T) {
 	require.False(t, exists)
 }
 
+func TestFakeCanceledContextTakesPriorityOverInvalidInput(t *testing.T) {
+	t.Parallel()
+
+	fake := storage.NewFake()
+	ctx, cancel := context.WithCancel(context.Background())
+	cancel()
+
+	_, err := fake.PresignSourceUpload(ctx, "folder/file", 0, 0)
+
+	require.ErrorIs(t, err, context.Canceled)
+	require.NotErrorIs(t, err, storage.ErrInvalidFileID)
+	require.Empty(t, fake.Calls())
+}
+
 func TestFakeInjectsIndependentOrdinaryFailuresForEveryOperation(t *testing.T) {
 	t.Parallel()
 
