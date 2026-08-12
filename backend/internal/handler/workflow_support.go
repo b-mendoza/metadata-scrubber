@@ -28,6 +28,7 @@ func (handler *Handler) newFileID() (string, bool) {
 	if err != nil || n != len(uuidBytes) {
 		return "", false
 	}
+	// The RFC 9562 version (0x40) and variant (0x80) bits are the contract with storageKeyPattern, which admits only UUIDv4 keys.
 	uuidBytes[6] = (uuidBytes[6] & 0x0f) | 0x40
 	uuidBytes[8] = (uuidBytes[8] & 0x3f) | 0x80
 
