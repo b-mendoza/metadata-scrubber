@@ -319,19 +319,11 @@ func TestInspectPDFBoundsIdentitiesDerivedFromLongCustomKeys(t *testing.T) {
 func TestInspectPDFEnforcesFieldCountAtomically(t *testing.T) {
 	work := &observedPDFWork{}
 
-	acceptedEntries := make(map[string]string, maxInspectionFields)
-	for index := range maxInspectionFields {
-		acceptedEntries[fmt.Sprintf("Custom%03d", index)] = pdfString("x")
-	}
-	acceptedFields, err := InspectPDF(buildPDFWithInfo(t, acceptedEntries), PublicInput)
+	acceptedFields, err := InspectPDF(buildPDFWithInfo(t, customInfoEntries(maxInspectionFields, "x")), PublicInput)
 	require.NoError(t, err)
 	require.Len(t, acceptedFields, maxInspectionFields)
 
-	rejectedEntries := make(map[string]string, maxInspectionFields+1)
-	for index := range maxInspectionFields + 1 {
-		rejectedEntries[fmt.Sprintf("Custom%03d", index)] = pdfString("x")
-	}
-	rejectedPDF := buildPDFWithInfo(t, rejectedEntries)
+	rejectedPDF := buildPDFWithInfo(t, customInfoEntries(maxInspectionFields+1, "x"))
 	fields, err := InspectPDF(rejectedPDF, PublicInput)
 	requireInspectionLimit(t, fields, err)
 
@@ -342,11 +334,7 @@ func TestInspectPDFEnforcesFieldCountAtomically(t *testing.T) {
 
 func TestInspectPDFEnforcesAggregateSummaryBudgetAtomically(t *testing.T) {
 	work := &observedPDFWork{}
-	entries := make(map[string]string, maxInspectionFields)
-	for index := range maxInspectionFields {
-		entries[fmt.Sprintf("Custom%03d", index)] = pdfString(strings.Repeat("v", maxFieldPreviewBytes+1))
-	}
-	pdfBytes := buildPDFWithInfo(t, entries)
+	pdfBytes := buildPDFWithInfo(t, customInfoEntries(maxInspectionFields, strings.Repeat("v", maxFieldPreviewBytes+1)))
 
 	fields, err := InspectPDF(pdfBytes, PublicInput)
 	requireInspectionLimit(t, fields, err)
@@ -611,11 +599,7 @@ func TestCleanPDFFailurePathsReturnNilOutput(t *testing.T) {
 			require.Nil(t, outputBytes)
 			require.Equal(t, 1, work.mutations)
 			require.Equal(t, 1, work.writes)
-			if testCase.wantVerifications == 0 {
-				require.Zero(t, work.verifications)
-			} else {
-				require.Equal(t, 1, work.verifications)
-			}
+			require.Equal(t, testCase.wantVerifications, work.verifications)
 		})
 	}
 }
@@ -662,7 +646,6 @@ func TestMetadataTraversalDeduplicatesOneParentEntryTarget(t *testing.T) {
 		seenTargets:  &metadataTargetTracker{},
 		objectNumber: context.Root.ObjectNumber.Value(),
 	}
-
 	walker := structuralWalker{context: context, inspectMetadata: state.inspectMetadataEntry}
 
 	require.NoError(t, walker.walkObject(catalog, nil))
@@ -817,10 +800,8 @@ func compressedMetadataStreamObject(t *testing.T, content string) string {
 	return fmt.Sprintf("<< /Type /Metadata /Subtype /XML /Filter /FlateDecode /Length %d >>\nstream\n%s\nendstream", compressed.Len(), compressed.String())
 }
 
-func primeMetadataStreamCaches(t *testing.T, context *model.Context, decodedStreamBytes int) int {
-	t.Helper()
-
-	primed := 0
+func forEachMetadataStream(context *model.Context, visit func(*model.XRefTableEntry, types.StreamDict)) int {
+	visited := 0
 	for _, entry := range context.Table {
 		if entry == nil || entry.Object == nil {
 			continue
@@ -829,29 +810,28 @@ func primeMetadataStreamCaches(t *testing.T, context *model.Context, decodedStre
 		if !ok || stream.Type() == nil || *stream.Type() != "Metadata" {
 			continue
 		}
+		visit(entry, stream)
+		visited++
+	}
+	return visited
+}
+
+func primeMetadataStreamCaches(t *testing.T, context *model.Context, decodedStreamBytes int) int {
+	t.Helper()
+
+	return forEachMetadataStream(context, func(entry *model.XRefTableEntry, stream types.StreamDict) {
 		stream.Content = bytes.Repeat([]byte("x"), decodedStreamBytes)
 		entry.Object = stream
-		primed++
-	}
-	return primed
+	})
 }
 
 func requireMetadataStreamCachesCleared(t *testing.T, context *model.Context) {
 	t.Helper()
 
-	metadataStreamCount := 0
-	for _, entry := range context.Table {
-		if entry == nil || entry.Object == nil {
-			continue
-		}
-		stream, ok := entry.Object.(types.StreamDict)
-		if !ok || stream.Type() == nil || *stream.Type() != "Metadata" {
-			continue
-		}
-		metadataStreamCount++
+	metadataStreamCount := forEachMetadataStream(context, func(_ *model.XRefTableEntry, stream types.StreamDict) {
 		require.Nil(t, stream.Content)
 		require.NotEmpty(t, stream.Raw)
-	}
+	})
 	require.Positive(t, metadataStreamCount)
 }
 
@@ -1212,14 +1192,17 @@ func structFieldNames(structType reflect.Type) []string {
 }
 
 func mergeInfoEntries(baseEntries, replacements map[string]string) map[string]string {
-	mergedEntries := make(map[string]string, len(baseEntries)+len(replacements))
-	for key, value := range baseEntries {
-		mergedEntries[key] = value
-	}
-	for key, value := range replacements {
-		mergedEntries[key] = value
-	}
+	mergedEntries := maps.Clone(baseEntries)
+	maps.Copy(mergedEntries, replacements)
 	return mergedEntries
+}
+
+func customInfoEntries(count int, value string) map[string]string {
+	entries := make(map[string]string, count)
+	for index := range count {
+		entries[fmt.Sprintf("Custom%03d", index)] = pdfString(value)
+	}
+	return entries
 }
 
 func neutralTrioFieldNames() []string {
