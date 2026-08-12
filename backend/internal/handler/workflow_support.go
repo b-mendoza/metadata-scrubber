@@ -82,22 +82,18 @@ var publicFieldActions = map[scrub.FieldAction]publicFieldAction{
 	scrub.ActionReplace: publicFieldActionReplace,
 }
 
-func convertPublicFields(inspectedFields []scrub.Field) ([]publicField, error) {
+func convertPublicFields(inspectedFields []scrub.Field) []publicField {
 	fields := make([]publicField, 0, len(inspectedFields))
 	for _, field := range inspectedFields {
-		action, ok := publicFieldActions[field.Action]
-		if !ok {
-			return nil, errInvalidPublicFieldAction
-		}
 		fields = append(fields, publicField{
 			Name:             field.Name,
 			Label:            field.Label,
 			Preview:          field.Preview,
 			OriginalByteSize: field.OriginalByteSize,
-			Action:           action,
+			Action:           publicFieldActions[field.Action],
 		})
 	}
-	return fields, nil
+	return fields
 }
 
 func storageFromRequest(w http.ResponseWriter, request *http.Request) storage.Storage {

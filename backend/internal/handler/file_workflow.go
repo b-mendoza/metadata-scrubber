@@ -52,10 +52,6 @@ func (handler *Handler) DryRun(w http.ResponseWriter, request *http.Request) {
 		}
 		return source.ETag, fields, nil
 	}()
-	var fields []publicField
-	if err == nil {
-		fields, err = convertPublicFields(inspectedFields)
-	}
 	if err != nil {
 		failure := classifyPipelineFailure(err, "could not inspect PDF")
 		handler.logStage(request.Context(), pipelineStageDryRun, input.StorageKey, failure.outcome, startedAt)
@@ -63,6 +59,7 @@ func (handler *Handler) DryRun(w http.ResponseWriter, request *http.Request) {
 		return
 	}
 
+	fields := convertPublicFields(inspectedFields)
 	handler.logStage(request.Context(), pipelineStageDryRun, input.StorageKey, pipelineOutcomeSuccess, startedAt)
 	httpx.WriteJSON(w, http.StatusOK, dryRunResponse{ETag: etag, Fields: fields})
 }
