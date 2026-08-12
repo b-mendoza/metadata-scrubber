@@ -330,6 +330,16 @@ func TestInspectPDFEnforcesAggregateSummaryBudgetAtomically(t *testing.T) {
 	requireNoPDFWork(t, work)
 }
 
+func TestSummaryBuilderRejectsUnknownFieldActions(t *testing.T) {
+	builder := &summaryBuilder{}
+
+	err := builder.add("n", "l", "v", FieldAction("unknown"))
+
+	require.EqualError(t, err, `invalid field action "unknown"`)
+	require.Empty(t, builder.fields)
+	require.Zero(t, builder.totalBytes)
+}
+
 func TestSummaryBuilderAcceptsExactAggregateBudgetAndRejectsNextByte(t *testing.T) {
 	const fieldBytes = len("n") + len("l") + len("v") + len(ActionRemove) + len("1")
 

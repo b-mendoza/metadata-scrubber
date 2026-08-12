@@ -2,6 +2,7 @@ package scrub
 
 import (
 	"errors"
+	"fmt"
 	"strconv"
 	"strings"
 	"unicode/utf8"
@@ -38,6 +39,9 @@ func (builder *summaryBuilder) addMetadataBytes(name, label string, value []byte
 }
 
 func (builder *summaryBuilder) addPreview(name, label, preview string, originalByteSize int, action FieldAction) error {
+	if !action.valid() {
+		return fmt.Errorf("invalid field action %q", action)
+	}
 	if len(builder.fields) >= maxInspectionFields {
 		return ErrInspectionLimit
 	}
