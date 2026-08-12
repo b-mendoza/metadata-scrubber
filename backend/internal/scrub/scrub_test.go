@@ -3,6 +3,7 @@ package scrub
 import (
 	"bytes"
 	"compress/zlib"
+	"context"
 	"errors"
 	"fmt"
 	"io"
@@ -656,6 +657,45 @@ func TestInspectPDFRejectsEverySignedStructureBeforeMutationOrWriting(t *testing
 
 			requireSignedPDF(t, fields, outputBytes, inspectErr, scrubErr)
 			requireNoPDFWork(t, work)
+		})
+	}
+}
+
+func TestSignatureTypeInspectionReturnsMalformedValuesAsErrors(t *testing.T) {
+	decodeError := errors.New("decode Type object")
+	lazyType := types.NewLazyObjectStreamObject(
+		&types.ObjectStreamDict{StreamDict: types.StreamDict{Content: []byte("Type")}},
+		0,
+		-1,
+		func(context.Context, string) (types.Object, error) { return nil, decodeError },
+	)
+	testCases := []struct {
+		name       string
+		context    *model.Context
+		dictionary types.Dict
+		expected   string
+	}{
+		{
+			name: "dereference failure",
+			context: &model.Context{XRefTable: &model.XRefTable{Table: map[int]*model.XRefTableEntry{
+				99: model.NewXRefTableEntryGen0(lazyType),
+			}}},
+			dictionary: types.Dict{"Type": *types.NewIndirectRef(99, 0)},
+			expected:   "dereference PDF dictionary Type",
+		},
+		{
+			name:       "name decode failure",
+			context:    &model.Context{XRefTable: &model.XRefTable{}},
+			dictionary: types.Dict{"Type": types.Name("Sig#")},
+			expected:   "decode PDF dictionary Type",
+		},
+	}
+	for _, testCase := range testCases {
+		t.Run(testCase.name, func(t *testing.T) {
+			hasSignatureType, err := dictionaryHasSignatureType(testCase.context, testCase.dictionary)
+
+			require.ErrorContains(t, err, testCase.expected)
+			require.False(t, hasSignatureType)
 		})
 	}
 }
