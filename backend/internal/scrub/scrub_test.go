@@ -37,6 +37,32 @@ func TestInspectPDFRequiresKnownOrigin(t *testing.T) {
 	require.Nil(t, fields)
 }
 
+func TestCleanPDFOperationsRejectNilDependencies(t *testing.T) {
+	remove := removePDFMetadataOperation(removeAnalyzedMetadata)
+	write := writePDFOperation(api.WriteContext)
+	verify := verifyPDFOperation(verifyScrubbedPDF)
+
+	testCases := []struct {
+		name     string
+		remove   removePDFMetadataOperation
+		write    writePDFOperation
+		verify   verifyPDFOperation
+		expected string
+	}{
+		{name: "remove", write: write, verify: verify, expected: "clean PDF remove operation is nil"},
+		{name: "write", remove: remove, verify: verify, expected: "clean PDF write operation is nil"},
+		{name: "verify", remove: remove, write: write, expected: "clean PDF verify operation is nil"},
+	}
+	for _, testCase := range testCases {
+		t.Run(testCase.name, func(t *testing.T) {
+			operations, err := newCleanPDFOperations(testCase.remove, testCase.write, testCase.verify)
+
+			require.EqualError(t, err, testCase.expected)
+			require.Equal(t, cleanPDFOperations{}, operations)
+		})
+	}
+}
+
 func TestCleanPDFRejectsInvalidPDFWithNoOutput(t *testing.T) {
 	outputBytes, err := CleanPDF([]byte("not a pdf"))
 
@@ -1146,31 +1172,35 @@ type observedPDFWork struct {
 }
 
 func (work *observedPDFWork) clean(inputBytes []byte) ([]byte, error) {
-	return cleanPDF(inputBytes, cleanPDFOperations{
-		remove: func(context *model.Context, analysis *pdfAnalysis) {
+	operations, err := newCleanPDFOperations(
+		func(context *model.Context, analysis *pdfAnalysis) {
 			work.mutations++
 			removeAnalyzedMetadata(context, analysis)
 		},
-		write: func(context *model.Context, writer io.Writer) error {
+		func(context *model.Context, writer io.Writer) error {
 			work.writes++
 			work.writeLimits = append(work.writeLimits, context.Conf.Limits)
 			if work.writeError != nil {
 				return work.writeError
 			}
 			if work.writeOutput != nil {
-				_, err := writer.Write(work.writeOutput)
-				return err
+				_, writeErr := writer.Write(work.writeOutput)
+				return writeErr
 			}
 			return api.WriteContext(context, writer)
 		},
-		verify: func(outputBytes []byte) error {
+		func(outputBytes []byte) error {
 			work.verifications++
 			if work.verifyError != nil {
 				return work.verifyError
 			}
 			return verifyScrubbedPDF(outputBytes)
 		},
-	})
+	)
+	if err != nil {
+		return nil, err
+	}
+	return cleanPDF(inputBytes, operations)
 }
 
 func structFieldNames(structType reflect.Type) []string {
