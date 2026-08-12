@@ -14,6 +14,15 @@ import (
 	"metadata-scrubber/internal/storage"
 )
 
+type (
+	pipelineStage   string
+	pipelineOutcome string
+
+	inspectPDFOperation func([]byte, scrub.InspectionOrigin) ([]scrub.Field, error)
+	cleanPDFOperation   func([]byte) ([]byte, error)
+	entropyOperation    func([]byte) (int, error)
+)
+
 const (
 	// ProcessingPermitCount is the fixed, non-configurable capacity of the
 	// server-owned PDF-processing admission gate.
@@ -31,18 +40,32 @@ const (
 
 	admissionTimeoutMessage = "processing capacity temporarily unavailable"
 	cancellationMessage     = "request canceled"
+
+	pipelineStageUploadCreated pipelineStage = "upload-created"
+	pipelineStageSniffed       pipelineStage = "sniffed"
+	pipelineStageDryRun        pipelineStage = "dry-run"
+	pipelineStageScrubbed      pipelineStage = "scrubbed"
+	pipelineStagePresigned     pipelineStage = "presigned"
+
+	pipelineOutcomeSuccess         pipelineOutcome = "success"
+	pipelineOutcomeAccepted        pipelineOutcome = "accepted"
+	pipelineOutcomeRejected        pipelineOutcome = "rejected"
+	pipelineOutcomeCacheHit        pipelineOutcome = "cache-hit"
+	pipelineOutcomeCanceled        pipelineOutcome = "canceled"
+	pipelineOutcomeNotFound        pipelineOutcome = "not-found"
+	pipelineOutcomeTooLarge        pipelineOutcome = "too-large"
+	pipelineOutcomeConflict        pipelineOutcome = "conflict"
+	pipelineOutcomeNotPDF          pipelineOutcome = "not-pdf"
+	pipelineOutcomeMalformed       pipelineOutcome = "malformed"
+	pipelineOutcomeSigned          pipelineOutcome = "signed"
+	pipelineOutcomeInspectionLimit pipelineOutcome = "inspection-limit"
+	pipelineOutcomeFailed          pipelineOutcome = "failed"
 )
 
 var (
 	errAdmissionTimeout = errors.New("admission timeout")
 	errNotPDF           = errors.New("not a PDF candidate")
-	storageKeyPattern   = regexp.MustCompile("^" + storageKeyPrefix + `([0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12})$`)
-)
-
-type (
-	inspectPDFOperation func([]byte, scrub.InspectionOrigin) ([]scrub.Field, error)
-	cleanPDFOperation   func([]byte) ([]byte, error)
-	entropyOperation    func([]byte) (int, error)
+	storageKeyPattern           = regexp.MustCompile("^" + storageKeyPrefix + `([0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12})$`)
 )
 
 // Handler owns the process-lifetime dependencies shared by the JSON workflow.
@@ -181,6 +204,6 @@ func (handler *Handler) Upload(w http.ResponseWriter, request *http.Request) {
 		return
 	}
 
-	handler.logStage(request.Context(), "upload-created", storageKey, "success", startedAt)
+	handler.logStage(request.Context(), pipelineStageUploadCreated, storageKey, pipelineOutcomeSuccess, startedAt)
 	httpx.WriteJSON(w, http.StatusOK, uploadResponse{StorageKey: storageKey, UploadURL: grant.URL})
 }

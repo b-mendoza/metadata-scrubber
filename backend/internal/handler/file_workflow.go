@@ -41,10 +41,10 @@ func (handler *Handler) DryRun(w http.ResponseWriter, request *http.Request) {
 			return "", nil, downloadErr
 		}
 		if !sniff.IsPDFCandidate(source.PDFBytes) {
-			handler.logStage(request.Context(), "sniffed", input.StorageKey, "rejected", startedAt)
+			handler.logStage(request.Context(), pipelineStageSniffed, input.StorageKey, pipelineOutcomeRejected, startedAt)
 			return "", nil, errNotPDF
 		}
-		handler.logStage(request.Context(), "sniffed", input.StorageKey, "accepted", startedAt)
+		handler.logStage(request.Context(), pipelineStageSniffed, input.StorageKey, pipelineOutcomeAccepted, startedAt)
 
 		fields, inspectErr := handler.inspect(source.PDFBytes, scrub.PublicInput)
 		if inspectErr != nil {
@@ -54,7 +54,7 @@ func (handler *Handler) DryRun(w http.ResponseWriter, request *http.Request) {
 	}()
 	if err != nil {
 		failure := classifyPipelineFailure(err, "could not inspect PDF")
-		handler.logStage(request.Context(), "dry-run", input.StorageKey, failure.outcome, startedAt)
+		handler.logStage(request.Context(), pipelineStageDryRun, input.StorageKey, failure.outcome, startedAt)
 		httpx.WriteError(w, failure.status, failure.message)
 		return
 	}
@@ -70,7 +70,7 @@ func (handler *Handler) DryRun(w http.ResponseWriter, request *http.Request) {
 		})
 	}
 
-	handler.logStage(request.Context(), "dry-run", input.StorageKey, "success", startedAt)
+	handler.logStage(request.Context(), pipelineStageDryRun, input.StorageKey, pipelineOutcomeSuccess, startedAt)
 	httpx.WriteJSON(w, http.StatusOK, dryRunResponse{ETag: etag, Fields: fields})
 }
 
@@ -101,7 +101,7 @@ func (handler *Handler) Scrub(w http.ResponseWriter, request *http.Request) {
 		return
 	}
 	if exists {
-		handler.presignScrubbed(w, request, objectStorage, fileID, input, "cache-hit", startedAt)
+		handler.presignScrubbed(w, request, objectStorage, fileID, input, pipelineOutcomeCacheHit, startedAt)
 		return
 	}
 
@@ -119,26 +119,26 @@ func (handler *Handler) Scrub(w http.ResponseWriter, request *http.Request) {
 			return nil, downloadErr
 		}
 		if !sniff.IsPDFCandidate(source.PDFBytes) {
-			handler.logStage(request.Context(), "sniffed", input.StorageKey, "rejected", startedAt)
+			handler.logStage(request.Context(), pipelineStageSniffed, input.StorageKey, pipelineOutcomeRejected, startedAt)
 			return nil, errNotPDF
 		}
-		handler.logStage(request.Context(), "sniffed", input.StorageKey, "accepted", startedAt)
+		handler.logStage(request.Context(), pipelineStageSniffed, input.StorageKey, pipelineOutcomeAccepted, startedAt)
 
 		return handler.clean(source.PDFBytes)
 	}()
 	if err != nil {
 		failure := classifyPipelineFailure(err, "could not scrub PDF")
-		handler.logStage(request.Context(), "scrubbed", input.StorageKey, failure.outcome, startedAt)
+		handler.logStage(request.Context(), pipelineStageScrubbed, input.StorageKey, failure.outcome, startedAt)
 		httpx.WriteError(w, failure.status, failure.message)
 		return
 	}
-	handler.logStage(request.Context(), "scrubbed", input.StorageKey, "success", startedAt)
+	handler.logStage(request.Context(), pipelineStageScrubbed, input.StorageKey, pipelineOutcomeSuccess, startedAt)
 
 	if err := objectStorage.UploadSanitized(request.Context(), fileID, input.ETag, cleanedBytes); err != nil {
 		writeUnexpectedFailure(w, err, "could not store scrubbed file")
 		return
 	}
-	handler.presignScrubbed(w, request, objectStorage, fileID, input, "success", startedAt)
+	handler.presignScrubbed(w, request, objectStorage, fileID, input, pipelineOutcomeSuccess, startedAt)
 }
 
 func (handler *Handler) presignScrubbed(
@@ -147,7 +147,7 @@ func (handler *Handler) presignScrubbed(
 	objectStorage storage.Storage,
 	fileID string,
 	input scrubRequest,
-	outcome string,
+	outcome pipelineOutcome,
 	startedAt time.Time,
 ) {
 	grant, err := objectStorage.PresignSanitizedDownload(
@@ -161,7 +161,7 @@ func (handler *Handler) presignScrubbed(
 		return
 	}
 
-	handler.logStage(request.Context(), "presigned", input.StorageKey, outcome, startedAt)
+	handler.logStage(request.Context(), pipelineStagePresigned, input.StorageKey, outcome, startedAt)
 	httpx.WriteJSON(w, http.StatusOK, scrubResponse{
 		Status: "done",
 		Result: scrubResponseResult{DownloadURL: grant.URL},

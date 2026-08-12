@@ -128,50 +128,50 @@ func writeUnexpectedFailure(w http.ResponseWriter, err error, internalMessage st
 type pipelineFailure struct {
 	status  int
 	message string
-	outcome string
+	outcome pipelineOutcome
 }
 
 func classifyPipelineFailure(err error, internalMessage string) pipelineFailure {
 	switch {
 	case errors.Is(err, context.Canceled), errors.Is(err, context.DeadlineExceeded):
-		return pipelineFailure{http.StatusRequestTimeout, cancellationMessage, "canceled"}
+		return pipelineFailure{http.StatusRequestTimeout, cancellationMessage, pipelineOutcomeCanceled}
 	case errors.Is(err, storage.ErrSourceNotFound):
-		return pipelineFailure{http.StatusNotFound, "source file not found", "not-found"}
+		return pipelineFailure{http.StatusNotFound, "source file not found", pipelineOutcomeNotFound}
 	case errors.Is(err, storage.ErrSourceObjectTooLarge), errors.Is(err, scrub.ErrInputTooLarge):
-		return pipelineFailure{http.StatusRequestEntityTooLarge, "source file exceeds 10 MB limit", "too-large"}
+		return pipelineFailure{http.StatusRequestEntityTooLarge, "source file exceeds 10 MB limit", pipelineOutcomeTooLarge}
 	case errors.Is(err, storage.ErrSourceRevisionConflict):
-		return pipelineFailure{http.StatusConflict, "source file changed since review", "conflict"}
+		return pipelineFailure{http.StatusConflict, "source file changed since review", pipelineOutcomeConflict}
 	case errors.Is(err, errNotPDF):
-		return pipelineFailure{http.StatusUnsupportedMediaType, "file is not a PDF", "not-pdf"}
+		return pipelineFailure{http.StatusUnsupportedMediaType, "file is not a PDF", pipelineOutcomeNotPDF}
 	case errors.Is(err, scrub.ErrMalformedPDF):
-		return pipelineFailure{http.StatusBadRequest, "invalid PDF", "malformed"}
+		return pipelineFailure{http.StatusBadRequest, "invalid PDF", pipelineOutcomeMalformed}
 	case errors.Is(err, scrub.ErrSignedPDF):
-		return pipelineFailure{http.StatusUnprocessableEntity, "signed PDFs are not supported in v1", "signed"}
+		return pipelineFailure{http.StatusUnprocessableEntity, "signed PDFs are not supported in v1", pipelineOutcomeSigned}
 	case errors.Is(err, scrub.ErrInspectionLimit):
-		return pipelineFailure{http.StatusBadRequest, "PDF metadata exceeds inspection limits", "inspection-limit"}
+		return pipelineFailure{http.StatusBadRequest, "PDF metadata exceeds inspection limits", pipelineOutcomeInspectionLimit}
 	default:
-		return pipelineFailure{http.StatusInternalServerError, internalMessage, "failed"}
+		return pipelineFailure{http.StatusInternalServerError, internalMessage, pipelineOutcomeFailed}
 	}
 }
 
 func (handler *Handler) logStage(
 	ctx context.Context,
-	stage string,
+	stage pipelineStage,
 	storageKey string,
-	outcome string,
+	outcome pipelineOutcome,
 	startedAt time.Time,
 ) {
 	// "failed" marks unclassified internal errors; every other outcome is expected traffic.
 	level := slog.LevelInfo
-	if outcome == "failed" {
+	if outcome == pipelineOutcomeFailed {
 		level = slog.LevelError
 	}
 	handler.logger.Log(
 		ctx,
 		level,
-		stage,
+		string(stage),
 		"storage_key", storageKey,
-		"outcome", outcome,
+		"outcome", string(outcome),
 		"duration_ms", time.Since(startedAt).Milliseconds(),
 	)
 }
