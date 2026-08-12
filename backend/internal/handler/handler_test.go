@@ -8,9 +8,11 @@ import (
 	"errors"
 	"io"
 	"log/slog"
+	"maps"
 	"net/http"
 	"net/http/httptest"
 	"os"
+	"slices"
 	"strings"
 	"sync"
 	"sync/atomic"
@@ -234,7 +236,7 @@ func TestUploadValidatesIntakeAndCreatesOpaqueGrant(t *testing.T) {
 
 			var response map[string]json.RawMessage
 			require.NoError(t, json.Unmarshal(recorder.Body.Bytes(), &response))
-			require.ElementsMatch(t, []string{"storageKey", "uploadUrl"}, mapKeys(response))
+			require.ElementsMatch(t, []string{"storageKey", "uploadUrl"}, slices.Collect(maps.Keys(response)))
 			var storageKey, uploadURL string
 			require.NoError(t, json.Unmarshal(response["storageKey"], &storageKey))
 			require.NoError(t, json.Unmarshal(response["uploadUrl"], &uploadURL))
@@ -331,11 +333,11 @@ func TestDryRunReturnsReviewedRevisionAndBackendOwnedFields(t *testing.T) {
 	require.Equal(t, http.StatusOK, recorder.Code, recorder.Body.String())
 	var response map[string]json.RawMessage
 	require.NoError(t, json.Unmarshal(recorder.Body.Bytes(), &response))
-	require.ElementsMatch(t, []string{"etag", "fields"}, mapKeys(response))
+	require.ElementsMatch(t, []string{"etag", "fields"}, slices.Collect(maps.Keys(response)))
 	var fields []map[string]json.RawMessage
 	require.NoError(t, json.Unmarshal(response["fields"], &fields))
 	require.Len(t, fields, 1)
-	require.ElementsMatch(t, []string{"name", "label", "preview", "originalByteSize", "action"}, mapKeys(fields[0]))
+	require.ElementsMatch(t, []string{"name", "label", "preview", "originalByteSize", "action"}, slices.Collect(maps.Keys(fields[0])))
 	require.NotContains(t, recorder.Body.String(), "digest")
 	require.Equal(t, 1, inspectCalls)
 
@@ -1238,14 +1240,6 @@ func errorMessage(t *testing.T, recorder *httptest.ResponseRecorder) string {
 	}
 	require.NoError(t, json.Unmarshal(recorder.Body.Bytes(), &body))
 	return body.Error
-}
-
-func mapKeys[V any](values map[string]V) []string {
-	keys := make([]string, 0, len(values))
-	for key := range values {
-		keys = append(keys, key)
-	}
-	return keys
 }
 
 func callOperations(calls []storage.FakeCall) []storage.FakeOperation {
