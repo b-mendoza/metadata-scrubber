@@ -161,11 +161,11 @@ func (r2 *R2) DownloadSource(
 
 	output, err := r2.client.GetObject(ctx, input)
 	if err != nil {
-		statusCode := httpStatusCode(err)
-		if expectedETag != "" && statusCode == http.StatusPreconditionFailed {
+		statusCode, hasStatusCode := httpStatusCode(err)
+		if hasStatusCode && expectedETag != "" && statusCode == http.StatusPreconditionFailed {
 			return SourceObject{}, operationError(operationDownloadSource, ErrSourceRevisionConflict)
 		}
-		if statusCode == http.StatusNotFound {
+		if hasStatusCode && statusCode == http.StatusNotFound {
 			return SourceObject{}, operationError(operationDownloadSource, ErrSourceNotFound)
 		}
 		return SourceObject{}, r2OperationError(ctx, operationDownloadSource)
@@ -219,7 +219,7 @@ func (r2 *R2) SanitizedExists(
 	if err == nil {
 		return true, nil
 	}
-	if httpStatusCode(err) == http.StatusNotFound {
+	if statusCode, hasStatusCode := httpStatusCode(err); hasStatusCode && statusCode == http.StatusNotFound {
 		return false, nil
 	}
 
@@ -292,11 +292,14 @@ func r2OperationError(ctx context.Context, operation string) error {
 	return operationError(operation, ErrDependency)
 }
 
-func httpStatusCode(err error) int {
+// httpStatusCode reports the provider status code carried by err. The second
+// result separates "no status code" from a status code that happens to be zero,
+// so a transport failure can never match a status comparison.
+func httpStatusCode(err error) (int, bool) {
 	var responseError interface{ HTTPStatusCode() int }
 	if errors.As(err, &responseError) {
-		return responseError.HTTPStatusCode()
+		return responseError.HTTPStatusCode(), true
 	}
 
-	return 0
+	return 0, false
 }
