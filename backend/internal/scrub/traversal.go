@@ -88,7 +88,11 @@ func (walker structuralWalker) walkObject(object types.Object, path []int) error
 }
 
 func (walker structuralWalker) walkDictionary(dictionary types.Dict, path []int) error {
-	if dictionaryHasSignatureType(walker.context, dictionary) {
+	hasSignatureType, err := dictionaryHasSignatureType(walker.context, dictionary)
+	if err != nil {
+		return err
+	}
+	if hasSignatureType {
 		return ErrSignedPDF
 	}
 
@@ -156,21 +160,24 @@ func pdfObjectRoles(context *model.Context) (map[int]objectRole, error) {
 	return roles, nil
 }
 
-func dictionaryHasSignatureType(context *model.Context, dictionary types.Dict) bool {
+func dictionaryHasSignatureType(context *model.Context, dictionary types.Dict) (bool, error) {
 	typeObject, exists := dictionary.Find("Type")
 	if !exists {
-		return false
+		return false, nil
 	}
 	dereferencedType, err := context.Dereference(typeObject)
 	if err != nil {
-		return false
+		return false, fmt.Errorf("dereference PDF dictionary Type: %w", err)
 	}
 	name, ok := dereferencedType.(types.Name)
 	if !ok {
-		return false
+		return false, nil
 	}
 	decodedName, err := types.DecodeName(name.Value())
-	return err == nil && (decodedName == "Sig" || decodedName == "DocTimeStamp")
+	if err != nil {
+		return false, fmt.Errorf("decode PDF dictionary Type: %w", err)
+	}
+	return decodedName == "Sig" || decodedName == "DocTimeStamp", nil
 }
 
 func pdfHasCachedSignature(context *model.Context) bool {
