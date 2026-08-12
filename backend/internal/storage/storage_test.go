@@ -323,6 +323,58 @@ func TestFakeRejectsInvalidExpiryBeforeRecordingCalls(t *testing.T) {
 	}
 }
 
+func TestFakeKeepsInputValidationOrder(t *testing.T) {
+	t.Parallel()
+
+	for _, testCase := range []struct {
+		name    string
+		invoke  func(*storage.Fake) error
+		wantErr error
+	}{
+		{
+			name: "source upload file ID before size and expiry",
+			invoke: func(fake *storage.Fake) error {
+				_, err := fake.PresignSourceUpload(context.Background(), "folder/file", 0, 0)
+				return err
+			},
+			wantErr: storage.ErrInvalidFileID,
+		},
+		{
+			name: "source upload size before expiry",
+			invoke: func(fake *storage.Fake) error {
+				_, err := fake.PresignSourceUpload(context.Background(), "file-1", 0, 0)
+				return err
+			},
+			wantErr: storage.ErrInvalidSourceSize,
+		},
+		{
+			name: "sanitized download file ID before ETag and expiry",
+			invoke: func(fake *storage.Fake) error {
+				_, err := fake.PresignSanitizedDownload(context.Background(), "folder/file", "", 0)
+				return err
+			},
+			wantErr: storage.ErrInvalidFileID,
+		},
+		{
+			name: "sanitized download ETag before expiry",
+			invoke: func(fake *storage.Fake) error {
+				_, err := fake.PresignSanitizedDownload(context.Background(), "file-1", "", 0)
+				return err
+			},
+			wantErr: storage.ErrInvalidETag,
+		},
+	} {
+		t.Run(testCase.name, func(t *testing.T) {
+			fake := storage.NewFake()
+
+			err := testCase.invoke(fake)
+
+			require.ErrorIs(t, err, testCase.wantErr)
+			require.Empty(t, fake.Calls())
+		})
+	}
+}
+
 func TestFakeRejectsInvalidUploadSizesBeforeRecordingCalls(t *testing.T) {
 	t.Parallel()
 
