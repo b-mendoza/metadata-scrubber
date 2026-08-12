@@ -216,7 +216,11 @@ func hasNeutralPDFCPUTrio(context *model.Context, analysis *pdfAnalysis) bool {
 		return false
 	}
 
-	values := make(map[string]string, 3)
+	var trio struct {
+		producer     string
+		creationDate string
+		modDate      string
+	}
 	for key, object := range infoDictionary {
 		logicalKey, err := types.DecodeName(key)
 		if err != nil {
@@ -229,12 +233,20 @@ func hasNeutralPDFCPUTrio(context *model.Context, analysis *pdfAnalysis) bool {
 		if err != nil {
 			return false
 		}
-		values[logicalKey] = value
+
+		switch logicalKey {
+		case "Producer":
+			trio.producer = value
+		case "CreationDate":
+			trio.creationDate = value
+		case "ModDate":
+			trio.modDate = value
+		}
 	}
 
-	if values["Producer"] != "pdfcpu "+model.VersionStr || values["CreationDate"] != values["ModDate"] {
+	if trio.producer != "pdfcpu "+model.VersionStr || trio.creationDate != trio.modDate {
 		return false
 	}
-	_, validDate := types.DateTime(values["CreationDate"], false)
+	_, validDate := types.DateTime(trio.creationDate, false)
 	return validDate
 }
