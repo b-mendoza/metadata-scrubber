@@ -81,24 +81,18 @@ func (r2 *R2) PresignSourceUpload(
 	if err := contextError(ctx, operation); err != nil {
 		return PresignedRequest{}, err
 	}
-	objectKey, err := SourceObjectKey(fileID)
+	validatedInput, err := newSourceUploadInput(fileID, sizeBytes, expiry)
 	if err != nil {
-		return PresignedRequest{}, err
-	}
-	if err := validateSourceUploadSize(sizeBytes); err != nil {
-		return PresignedRequest{}, err
-	}
-	if err := validatePresignExpiry(expiry); err != nil {
 		return PresignedRequest{}, err
 	}
 
 	presigned, err := r2.presigner.PresignPutObject(ctx, &s3.PutObjectInput{
 		Bucket:        aws.String(r2.bucket),
-		Key:           aws.String(objectKey),
+		Key:           aws.String(validatedInput.objectKey),
 		ContentType:   aws.String(PDFContentType),
-		ContentLength: aws.Int64(sizeBytes),
+		ContentLength: aws.Int64(validatedInput.sizeBytes),
 	},
-		s3.WithPresignExpires(expiry),
+		s3.WithPresignExpires(validatedInput.expiry),
 		s3.WithPresignClientFromClientOptions(func(options *s3.Options) {
 			options.APIOptions = append(options.APIOptions, pinPDFContentType)
 		}),
@@ -128,18 +122,15 @@ func (r2 *R2) PresignSanitizedDownload(
 	if err := contextError(ctx, operation); err != nil {
 		return PresignedRequest{}, err
 	}
-	objectKey, err := SanitizedObjectKey(fileID, sourceETag)
+	validatedInput, err := newSanitizedDownloadInput(fileID, sourceETag, expiry)
 	if err != nil {
-		return PresignedRequest{}, err
-	}
-	if err := validatePresignExpiry(expiry); err != nil {
 		return PresignedRequest{}, err
 	}
 
 	presigned, err := r2.presigner.PresignGetObject(ctx, &s3.GetObjectInput{
 		Bucket: aws.String(r2.bucket),
-		Key:    aws.String(objectKey),
-	}, s3.WithPresignExpires(expiry))
+		Key:    aws.String(validatedInput.objectKey),
+	}, s3.WithPresignExpires(validatedInput.expiry))
 	if err != nil {
 		return PresignedRequest{}, r2OperationError(ctx, operation)
 	}
@@ -161,26 +152,23 @@ func (r2 *R2) DownloadSource(
 	if err := contextError(ctx, operation); err != nil {
 		return SourceObject{}, err
 	}
-	objectKey, err := SourceObjectKey(fileID)
+	validatedInput, err := newSourceReadInput(fileID, expectedETag)
 	if err != nil {
 		return SourceObject{}, err
 	}
 
 	input := &s3.GetObjectInput{
 		Bucket: aws.String(r2.bucket),
-		Key:    aws.String(objectKey),
+		Key:    aws.String(validatedInput.objectKey),
 	}
-	if expectedETag != "" {
-		if err := validateCanonicalETag(expectedETag); err != nil {
-			return SourceObject{}, err
-		}
-		input.IfMatch = aws.String("\"" + expectedETag + "\"")
+	if validatedInput.expectedETag != "" {
+		input.IfMatch = aws.String("\"" + validatedInput.expectedETag + "\"")
 	}
 
 	output, err := r2.client.GetObject(ctx, input)
 	if err != nil {
 		statusCode := httpStatusCode(err)
-		if expectedETag != "" && statusCode == http.StatusPreconditionFailed {
+		if validatedInput.expectedETag != "" && statusCode == http.StatusPreconditionFailed {
 			return SourceObject{}, operationError(operation, ErrSourceRevisionConflict)
 		}
 		if statusCode == http.StatusNotFound {
@@ -230,14 +218,14 @@ func (r2 *R2) SanitizedExists(
 	if err := contextError(ctx, operation); err != nil {
 		return false, err
 	}
-	objectKey, err := SanitizedObjectKey(fileID, sourceETag)
+	validatedInput, err := newSanitizedObjectInput(fileID, sourceETag)
 	if err != nil {
 		return false, err
 	}
 
 	_, err = r2.client.HeadObject(ctx, &s3.HeadObjectInput{
 		Bucket: aws.String(r2.bucket),
-		Key:    aws.String(objectKey),
+		Key:    aws.String(validatedInput.objectKey),
 	})
 	if err == nil {
 		return true, nil
@@ -261,14 +249,14 @@ func (r2 *R2) UploadSanitized(
 	if err := contextError(ctx, operation); err != nil {
 		return err
 	}
-	objectKey, err := SanitizedObjectKey(fileID, sourceETag)
+	validatedInput, err := newSanitizedObjectInput(fileID, sourceETag)
 	if err != nil {
 		return err
 	}
 
 	_, err = r2.client.PutObject(ctx, &s3.PutObjectInput{
 		Bucket:      aws.String(r2.bucket),
-		Key:         aws.String(objectKey),
+		Key:         aws.String(validatedInput.objectKey),
 		Body:        bytes.NewReader(pdfBytes),
 		ContentType: aws.String(PDFContentType),
 	})
