@@ -1,13 +1,94 @@
 package scrub
 
 import (
+	"bytes"
 	"errors"
 	"fmt"
 
+	"github.com/pdfcpu/pdfcpu/pkg/api"
+	pdfcpu "github.com/pdfcpu/pdfcpu/pkg/pdfcpu"
 	"github.com/pdfcpu/pdfcpu/pkg/filter"
 	"github.com/pdfcpu/pdfcpu/pkg/pdfcpu/model"
 	"github.com/pdfcpu/pdfcpu/pkg/pdfcpu/types"
 )
+
+// PDF limits assume a 10 MB input and cap decoded/image amplification separately.
+const (
+	maxPDFStreamBytes       int64 = MaxInputBytes
+	maxPDFDecodeBytes       int64 = 20_000_000
+	maxPDFImagePixels       int64 = 10_000_000
+	maxPDFImageBytes        int64 = 40_000_000
+	maxPDFObjectCount             = 100_000
+	maxPDFObjectStreamCount       = 50_000
+	maxPDFObjectStreamFirst int64 = 2_000_000
+	maxPDFXRefEntries             = 100_000
+	maxPDFRecursionDepth          = 64
+)
+
+type validatePDFContextOperation func(*model.Context) error
+
+func readPDF(inputBytes []byte) (*model.Context, error) {
+	return readPDFWithValidator(inputBytes, api.ValidateContext)
+}
+
+func readPDFWithValidator(inputBytes []byte, validate validatePDFContextOperation) (*model.Context, error) {
+	if len(inputBytes) > MaxInputBytes {
+		return nil, ErrInputTooLarge
+	}
+	if validate == nil {
+		return nil, errors.New("PDF context validator is nil")
+	}
+
+	configuration := boundedPDFConfiguration()
+	context, err := api.ReadContext(bytes.NewReader(inputBytes), configuration)
+	if err != nil {
+		return nil, err
+	}
+
+	// pdfcpu v0.14.0 validation drops later parent links to an already-validated
+	// metadata stream. Preserve those links so inspection and removal stay symmetric.
+	metadataEntries, err := snapshotMetadataEntries(context)
+	if err != nil {
+		return nil, err
+	}
+	// pdfcpu v0.14.0 catalog validation calls StreamDict.Decode with its 512 MiB
+	// default. Decode every discovered metadata stream under our aggregate ceiling
+	// and keep the bounded content cached through validation.
+	if err := preflightMetadataEntries(context, metadataEntries); err != nil {
+		return nil, err
+	}
+	if err := validate(context); err != nil {
+		return nil, err
+	}
+	restoreMetadataEntries(metadataEntries)
+	if err := api.OptimizeContext(context); err != nil {
+		return nil, err
+	}
+	if err := pdfcpu.CacheFormFonts(context); err != nil {
+		return nil, err
+	}
+
+	return context, nil
+}
+
+func boundedPDFConfiguration() *model.Configuration {
+	configuration := model.NewDefaultConfiguration()
+	configuration.Cmd = model.REMOVEPROPERTIES
+	configuration.PostProcessValidate = true
+	configuration.Limits = model.ResourceLimits{
+		MaxStreamBytes:       maxPDFStreamBytes,
+		MaxDecodeBytes:       maxPDFDecodeBytes,
+		MaxImagePixels:       maxPDFImagePixels,
+		MaxImageBytes:        maxPDFImageBytes,
+		MaxObjectCount:       maxPDFObjectCount,
+		MaxObjectStreamCount: maxPDFObjectStreamCount,
+		MaxObjectStreamFirst: maxPDFObjectStreamFirst,
+		MaxXRefEntries:       maxPDFXRefEntries,
+		MaxRecursionDepth:    maxPDFRecursionDepth,
+	}
+
+	return configuration
+}
 
 type metadataEntrySnapshot struct {
 	dictionary types.Dict
