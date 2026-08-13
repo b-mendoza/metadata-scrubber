@@ -18,6 +18,7 @@ const cases = [
   ["schema-import-boundaries", "schema-boundary.server.ts", 1],
   ["schema-import-boundaries", "schema-boundary.browser.ts", 1],
   ["schema-import-boundaries", "schema-boundary.shared.ts", 1],
+  ["use-shared-render-helper", "use-shared-render-helper.test.tsx", 1],
 ] as const satisfies readonly FixtureCase[];
 
 const pluginDir = dirname(fileURLToPath(import.meta.url));
