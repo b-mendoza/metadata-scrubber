@@ -632,6 +632,7 @@ export default defineConfig({
     "metadata-scrubber/hoist-effect-schema-compilers": "error",
     "metadata-scrubber/no-classes": "error",
     "metadata-scrubber/no-expect-type-of": "error",
+    "metadata-scrubber/no-hardcoded-backend-host": "error",
     "import/newline-after-import": "error",
     "no-restricted-imports": [
       "error",
