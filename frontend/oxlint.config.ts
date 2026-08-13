@@ -633,6 +633,7 @@ export default defineConfig({
     "metadata-scrubber/no-classes": "error",
     "metadata-scrubber/no-expect-type-of": "error",
     "metadata-scrubber/no-hardcoded-backend-host": "error",
+    "metadata-scrubber/no-mutable-module-state-in-server-code": "error",
     "import/newline-after-import": "error",
     "no-restricted-imports": [
       "error",
