@@ -3,6 +3,7 @@ package scrub
 import (
 	"bytes"
 	"errors"
+	"fmt"
 
 	"github.com/pdfcpu/pdfcpu/pkg/api"
 	pdfcpu "github.com/pdfcpu/pdfcpu/pkg/pdfcpu"
@@ -37,36 +38,37 @@ func readPDFWithValidator(inputBytes []byte, validate validatePDFContextOperatio
 		return nil, errors.New("PDF context validator is nil")
 	}
 
-	configuration := boundedPDFConfiguration()
-	context, err := api.ReadContext(bytes.NewReader(inputBytes), configuration)
+	context, err := api.ReadContext(bytes.NewReader(inputBytes), boundedPDFConfiguration())
 	if err != nil {
 		return nil, err
 	}
+	if err := validateAndOptimizePDFContext(context, validate); err != nil {
+		return nil, err
+	}
+	return context, nil
+}
 
+func validateAndOptimizePDFContext(context *model.Context, validate validatePDFContextOperation) error {
 	// pdfcpu v0.15.0 validation drops later parent links to an already-validated
 	// metadata stream. Preserve those links so inspection and removal stay symmetric.
 	metadataEntries, err := snapshotMetadataEntries(context)
 	if err != nil {
-		return nil, err
+		return err
 	}
 	// pdfcpu v0.15.0 catalog validation calls StreamDict.Decode with its 512 MiB
 	// default. Decode every discovered metadata stream under our aggregate ceiling
 	// and keep the bounded content cached through validation.
 	if err := preflightMetadataEntries(context, metadataEntries); err != nil {
-		return nil, err
+		return err
 	}
 	if err := validate(context); err != nil {
-		return nil, err
+		return err
 	}
 	restoreMetadataEntries(metadataEntries)
 	if err := api.OptimizeContext(context); err != nil {
-		return nil, err
+		return err
 	}
-	if err := pdfcpu.CacheFormFonts(context); err != nil {
-		return nil, err
-	}
-
-	return context, nil
+	return pdfcpu.CacheFormFonts(context)
 }
 
 func boundedPDFConfiguration() *model.Configuration {
@@ -99,30 +101,45 @@ func preflightMetadataEntries(context *model.Context, snapshots []metadataEntryS
 	decodedIndirectObjects := make(map[types.IndirectRef]struct{})
 
 	for _, snapshot := range snapshots {
-		indirectReference, indirect := snapshot.value.(types.IndirectRef)
-		if indirect {
-			if _, decoded := decodedIndirectObjects[indirectReference]; decoded {
-				continue
-			}
-		}
-
-		streamDictionary := metadataStreamForPreflight(context, snapshot.value)
-		if streamDictionary == nil {
-			continue
-		}
-
-		content, err := decodeMetadataStreamForPreflight(streamDictionary, remainingDecodeBytes)
+		decodedBytes, err := preflightMetadataEntry(context, snapshot, remainingDecodeBytes, decodedIndirectObjects)
 		if err != nil {
 			return err
 		}
-		storeMetadataStreamContent(context, snapshot.dictionary, snapshot.key, snapshot.value, content)
-		remainingDecodeBytes -= int64(len(content))
-		if indirect {
-			decodedIndirectObjects[indirectReference] = struct{}{}
+		remainingDecodeBytes -= decodedBytes
+	}
+	return nil
+}
+
+func preflightMetadataEntry(
+	context *model.Context,
+	snapshot metadataEntrySnapshot,
+	remainingDecodeBytes int64,
+	decodedIndirectObjects map[types.IndirectRef]struct{},
+) (int64, error) {
+	indirectReference, indirect := snapshot.value.(types.IndirectRef)
+	if indirect {
+		if _, decoded := decodedIndirectObjects[indirectReference]; decoded {
+			return 0, nil
 		}
 	}
 
-	return nil
+	streamDictionary := metadataStreamForPreflight(context, snapshot.value)
+	if streamDictionary == nil {
+		return 0, nil
+	}
+	content, err := decodeMetadataStreamForPreflight(streamDictionary, remainingDecodeBytes)
+	if err != nil {
+		return 0, err
+	}
+	if err := storeMetadataStreamContent(context, metadataStreamContent{
+		dictionary: snapshot.dictionary, key: snapshot.key, streamObject: snapshot.value, content: content,
+	}); err != nil {
+		return 0, err
+	}
+	if indirect {
+		decodedIndirectObjects[indirectReference] = struct{}{}
+	}
+	return int64(len(content)), nil
 }
 
 // metadataStreamForPreflight returns a pointer to a copy of the value held by
@@ -182,25 +199,50 @@ func resolveIndirectMetadataStream(
 	return entry, streamDictionary, true
 }
 
-func storeMetadataStreamContent(
-	context *model.Context,
-	dictionary types.Dict,
-	key string,
-	streamObject types.Object,
-	content []byte,
-) {
-	switch stream := streamObject.(type) {
-	case types.IndirectRef:
-		entry, storedStream, found := resolveIndirectMetadataStream(context, stream)
-		if !found {
-			return
-		}
-		storedStream.Content = content
-		entry.Object = storedStream
-	case types.StreamDict:
-		stream.Content = content
-		dictionary[key] = stream
+type metadataStreamContent struct {
+	dictionary   types.Dict
+	key          string
+	streamObject types.Object
+	content      []byte
+}
+
+type metadataStreamContentStore func(*model.Context, metadataStreamContent) error
+
+var metadataStreamContentStores = map[string]metadataStreamContentStore{
+	"types.IndirectRef": storeIndirectMetadataStreamContent,
+	"types.StreamDict":  storeDirectMetadataStreamContent,
+}
+
+func storeMetadataStreamContent(context *model.Context, streamContent metadataStreamContent) error {
+	store, known := metadataStreamContentStores[fmt.Sprintf("%T", streamContent.streamObject)]
+	if !known {
+		return fmt.Errorf("unsupported metadata stream type %T", streamContent.streamObject)
 	}
+	return store(context, streamContent)
+}
+
+func storeIndirectMetadataStreamContent(context *model.Context, streamContent metadataStreamContent) error {
+	stream, ok := streamContent.streamObject.(types.IndirectRef)
+	if !ok {
+		return fmt.Errorf("unsupported indirect metadata stream type %T", streamContent.streamObject)
+	}
+	entry, storedStream, found := resolveIndirectMetadataStream(context, stream)
+	if !found {
+		return nil
+	}
+	storedStream.Content = streamContent.content
+	entry.Object = storedStream
+	return nil
+}
+
+func storeDirectMetadataStreamContent(_ *model.Context, streamContent metadataStreamContent) error {
+	stream, ok := streamContent.streamObject.(types.StreamDict)
+	if !ok {
+		return fmt.Errorf("unsupported direct metadata stream type %T", streamContent.streamObject)
+	}
+	stream.Content = streamContent.content
+	streamContent.dictionary[streamContent.key] = stream
+	return nil
 }
 
 func snapshotMetadataEntries(context *model.Context) ([]metadataEntrySnapshot, error) {

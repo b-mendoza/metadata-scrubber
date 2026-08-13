@@ -14,7 +14,9 @@ type summaryBuilder struct {
 }
 
 func (builder *summaryBuilder) add(name, label, value string, action FieldAction) error {
-	return builder.addPreview(name, label, truncateUTF8(value), len(value), action)
+	return builder.addField(Field{
+		Name: name, Label: label, Preview: truncateUTF8(value), OriginalByteSize: len(value), Action: action,
+	})
 }
 
 func (builder *summaryBuilder) remainingDecodedMetadataBytes() int64 {
@@ -27,28 +29,23 @@ func (builder *summaryBuilder) addMetadataBytes(name, label string, value []byte
 	}
 
 	preview := truncateUTF8(string(value[:min(len(value), maxFieldPreviewBytes)]))
-	if err := builder.addPreview(name, label, preview, len(value), action); err != nil {
+	if err := builder.addField(Field{
+		Name: name, Label: label, Preview: preview, OriginalByteSize: len(value), Action: action,
+	}); err != nil {
 		return err
 	}
 	builder.decodedMetadataBytes += int64(len(value))
 	return nil
 }
 
-func (builder *summaryBuilder) addPreview(name, label, preview string, originalByteSize int, action FieldAction) error {
-	if !action.valid() {
-		return fmt.Errorf("invalid field action %q", action)
+func (builder *summaryBuilder) addField(field Field) error {
+	if !field.Action.valid() {
+		return fmt.Errorf("invalid field action %q", field.Action)
 	}
 	if len(builder.fields) >= maxInspectionFields {
 		return ErrInspectionLimit
 	}
 
-	field := Field{
-		Name:             name,
-		Label:            label,
-		Preview:          preview,
-		OriginalByteSize: originalByteSize,
-		Action:           action,
-	}
 	fieldBytes := len(field.Name) + len(field.Label) + len(field.Preview) + len(field.Action) + len(strconv.Itoa(field.OriginalByteSize))
 	if builder.totalBytes+fieldBytes > maxInspectionBytes {
 		return ErrInspectionLimit

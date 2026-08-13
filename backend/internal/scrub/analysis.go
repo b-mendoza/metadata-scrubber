@@ -31,6 +31,14 @@ type standardInfoFieldDescriptor struct {
 	action FieldAction
 }
 
+type neutralPDFCPUInfo struct {
+	producer     string
+	creationDate string
+	modDate      string
+}
+
+type neutralPDFCPUValueSetter func(*neutralPDFCPUInfo, string)
+
 var standardInfoFields = map[string]standardInfoFieldDescriptor{
 	"Author":       {name: "info.author", label: "Author", action: ActionRemove},
 	"CreationDate": {name: "info.creation_date", label: "Creation date", action: ActionReplace},
@@ -41,6 +49,12 @@ var standardInfoFields = map[string]standardInfoFieldDescriptor{
 	"Subject":      {name: "info.subject", label: "Subject", action: ActionRemove},
 	"Title":        {name: "info.title", label: "Title", action: ActionRemove},
 	"Trapped":      {name: "info.trapped", label: "Trapped", action: ActionRemove},
+}
+
+var neutralPDFCPUValueSetters = map[string]neutralPDFCPUValueSetter{
+	"Producer":     func(info *neutralPDFCPUInfo, value string) { info.producer = value },
+	"CreationDate": func(info *neutralPDFCPUInfo, value string) { info.creationDate = value },
+	"ModDate":      func(info *neutralPDFCPUInfo, value string) { info.modDate = value },
 }
 
 func analyzePDF(context *model.Context, origin InspectionOrigin) (*pdfAnalysis, error) {
@@ -73,16 +87,9 @@ func analyzePDF(context *model.Context, origin InspectionOrigin) (*pdfAnalysis, 
 }
 
 func analyzeInfoDictionary(context *model.Context, analysis *pdfAnalysis) error {
-	if context.Info == nil {
-		return nil
-	}
-
-	infoDictionary, err := context.DereferenceDict(*context.Info)
-	if err != nil {
-		return fmt.Errorf("dereference PDF Info dictionary: %w", err)
-	}
-	if infoDictionary == nil {
-		return nil
+	infoDictionary, err := dereferenceInfoDictionary(context)
+	if err != nil || infoDictionary == nil {
+		return err
 	}
 
 	keys, err := sortedDictionaryKeys(infoDictionary)
@@ -92,27 +99,56 @@ func analyzeInfoDictionary(context *model.Context, analysis *pdfAnalysis) error 
 
 	customFieldNumber := 0
 	for _, key := range keys {
-		logicalValue, err := infoObjectValue(context, infoDictionary[key.encoded])
+		customFieldNumber, err = analyzeInfoEntry(context, infoEntryAnalysis{
+			analysis: analysis, infoDictionary: infoDictionary, key: key, customFieldNumber: customFieldNumber,
+		})
 		if err != nil {
-			return fmt.Errorf("decode PDF Info field %q: %w", key.logical, err)
-		}
-
-		field, standard := standardInfoFields[key.logical]
-		name, label, action := field.name, field.label, field.action
-		if !standard {
-			customFieldNumber++
-			name = fmt.Sprintf("info.custom.%03d", customFieldNumber)
-			label = fmt.Sprintf("Custom document property %d", customFieldNumber)
-			action = ActionRemove
-		}
-
-		if err := analysis.add(name, label, logicalValue, action); err != nil {
 			return err
 		}
-		analysis.infoTargets = append(analysis.infoTargets, dictionaryEntryTarget{dictionary: infoDictionary, key: key.encoded})
+	}
+	return nil
+}
+
+func dereferenceInfoDictionary(context *model.Context) (types.Dict, error) {
+	if context.Info == nil {
+		return types.Dict{}, nil
+	}
+	infoDictionary, err := context.DereferenceDict(*context.Info)
+	if err != nil {
+		return nil, fmt.Errorf("dereference PDF Info dictionary: %w", err)
+	}
+	return infoDictionary, nil
+}
+
+type infoEntryAnalysis struct {
+	analysis          *pdfAnalysis
+	infoDictionary    types.Dict
+	key               dictionaryKey
+	customFieldNumber int
+}
+
+func analyzeInfoEntry(context *model.Context, entryAnalysis infoEntryAnalysis) (int, error) {
+	logicalValue, err := infoObjectValue(context, entryAnalysis.infoDictionary[entryAnalysis.key.encoded])
+	if err != nil {
+		return entryAnalysis.customFieldNumber, fmt.Errorf("decode PDF Info field %q: %w", entryAnalysis.key.logical, err)
 	}
 
-	return nil
+	field, standard := standardInfoFields[entryAnalysis.key.logical]
+	if !standard {
+		entryAnalysis.customFieldNumber++
+		field = standardInfoFieldDescriptor{
+			name:   fmt.Sprintf("info.custom.%03d", entryAnalysis.customFieldNumber),
+			label:  fmt.Sprintf("Custom document property %d", entryAnalysis.customFieldNumber),
+			action: ActionRemove,
+		}
+	}
+	if err := entryAnalysis.analysis.add(field.name, field.label, logicalValue, field.action); err != nil {
+		return entryAnalysis.customFieldNumber, err
+	}
+	entryAnalysis.analysis.infoTargets = append(entryAnalysis.analysis.infoTargets, dictionaryEntryTarget{
+		dictionary: entryAnalysis.infoDictionary, key: entryAnalysis.key.encoded,
+	})
+	return entryAnalysis.customFieldNumber, nil
 }
 
 func analyzeObjectMetadata(context *model.Context, analysis *pdfAnalysis) error {
@@ -155,7 +191,9 @@ func (state *traversalState) inspectMetadataEntry(dictionary types.Dict, key str
 	}
 	defer func() {
 		streamDictionary.Content = nil
-		storeMetadataStreamContent(state.context, dictionary, key, streamObject, nil)
+		_ = storeMetadataStreamContent(state.context, metadataStreamContent{
+			dictionary: dictionary, key: key, streamObject: streamObject,
+		})
 	}()
 
 	content, err := decodeMetadataStreamWithinBudget(streamDictionary, state.analysis.remainingDecodedMetadataBytes(), "decode PDF metadata stream")
@@ -208,45 +246,38 @@ func (state *traversalState) metadataIdentity(path []int) (string, string) {
 }
 
 func hasNeutralPDFCPUTrio(context *model.Context, analysis *pdfAnalysis) bool {
-	if len(analysis.metadataTargets) != 0 || len(analysis.infoTargets) != 3 || context.Info == nil {
+	if len(analysis.metadataTargets) != 0 || len(analysis.infoTargets) != 3 {
 		return false
 	}
-	infoDictionary, err := context.DereferenceDict(*context.Info)
+	infoDictionary, err := dereferenceInfoDictionary(context)
 	if err != nil || len(infoDictionary) != 3 {
 		return false
 	}
 
-	var trio struct {
-		producer     string
-		creationDate string
-		modDate      string
-	}
-	for key, object := range infoDictionary {
-		logicalKey, err := types.DecodeName(key)
-		if err != nil {
-			return false
-		}
-		if logicalKey != "Producer" && logicalKey != "CreationDate" && logicalKey != "ModDate" {
-			return false
-		}
-		value, err := infoObjectValue(context, object)
-		if err != nil {
-			return false
-		}
-
-		switch logicalKey {
-		case "Producer":
-			trio.producer = value
-		case "CreationDate":
-			trio.creationDate = value
-		case "ModDate":
-			trio.modDate = value
-		}
-	}
-
-	if trio.producer != "pdfcpu "+model.VersionStr || trio.creationDate != trio.modDate {
+	trio, ok := readNeutralPDFCPUInfo(context, infoDictionary)
+	if !ok || trio.producer != "pdfcpu "+model.VersionStr || trio.creationDate != trio.modDate {
 		return false
 	}
 	_, validDate := types.DateTime(trio.creationDate, false)
 	return validDate
+}
+
+func readNeutralPDFCPUInfo(context *model.Context, infoDictionary types.Dict) (neutralPDFCPUInfo, bool) {
+	var trio neutralPDFCPUInfo
+	for key, object := range infoDictionary {
+		logicalKey, err := types.DecodeName(key)
+		if err != nil {
+			return neutralPDFCPUInfo{}, false
+		}
+		setValue, known := neutralPDFCPUValueSetters[logicalKey]
+		if !known {
+			return neutralPDFCPUInfo{}, false
+		}
+		value, err := infoObjectValue(context, object)
+		if err != nil {
+			return neutralPDFCPUInfo{}, false
+		}
+		setValue(&trio, value)
+	}
+	return trio, true
 }

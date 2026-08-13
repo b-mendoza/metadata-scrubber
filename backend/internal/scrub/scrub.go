@@ -175,22 +175,53 @@ func readAndAnalyzePDF(inputBytes []byte, origin InspectionOrigin) (*model.Conte
 	return context, analysis, nil
 }
 
+type infoObjectDecoder func(types.Object) (string, error)
+
+var infoObjectDecoders = map[string]infoObjectDecoder{
+	"types.StringLiteral": decodeStringLiteralInfoObject,
+	"types.HexLiteral":    decodeHexLiteralInfoObject,
+	"types.Name":          decodeNameInfoObject,
+	"types.Boolean":       decodeScalarInfoObject,
+	"types.Integer":       decodeScalarInfoObject,
+	"types.Float":         decodeScalarInfoObject,
+}
+
 func infoObjectValue(context *model.Context, object types.Object) (string, error) {
 	dereferencedObject, err := context.Dereference(object)
 	if err != nil {
 		return "", err
 	}
-
-	switch value := dereferencedObject.(type) {
-	case types.StringLiteral:
-		return types.StringLiteralToString(value)
-	case types.HexLiteral:
-		return types.HexLiteralToString(value)
-	case types.Name:
-		return types.DecodeName(value.Value())
-	case types.Boolean, types.Integer, types.Float:
-		return value.PDFString(), nil
-	default:
+	decode, known := infoObjectDecoders[fmt.Sprintf("%T", dereferencedObject)]
+	if !known {
 		return "", fmt.Errorf("unsupported Info value type %T", dereferencedObject)
 	}
+	return decode(dereferencedObject)
+}
+
+func decodeStringLiteralInfoObject(object types.Object) (string, error) {
+	value, ok := object.(types.StringLiteral)
+	if !ok {
+		return "", fmt.Errorf("unsupported string literal Info value type %T", object)
+	}
+	return types.StringLiteralToString(value)
+}
+
+func decodeHexLiteralInfoObject(object types.Object) (string, error) {
+	value, ok := object.(types.HexLiteral)
+	if !ok {
+		return "", fmt.Errorf("unsupported hex literal Info value type %T", object)
+	}
+	return types.HexLiteralToString(value)
+}
+
+func decodeNameInfoObject(object types.Object) (string, error) {
+	value, ok := object.(types.Name)
+	if !ok {
+		return "", fmt.Errorf("unsupported name Info value type %T", object)
+	}
+	return types.DecodeName(value.Value())
+}
+
+func decodeScalarInfoObject(object types.Object) (string, error) {
+	return object.PDFString(), nil
 }

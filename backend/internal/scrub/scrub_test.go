@@ -674,7 +674,9 @@ func TestInspectPDFRejectsEverySignedStructureBeforeMutationOrWriting(t *testing
 			fields, inspectErr := InspectPDF(pdfBytes, PublicInput)
 			outputBytes, scrubErr := work.clean(pdfBytes)
 
-			requireSignedPDF(t, fields, outputBytes, inspectErr, scrubErr)
+			requireSignedPDF(t, signedPDFResults{
+				fields: fields, outputBytes: outputBytes, inspectErr: inspectErr, scrubErr: scrubErr,
+			})
 			requireNoPDFWork(t, work)
 		})
 	}
@@ -987,33 +989,31 @@ const (
 	cachedSignedForm
 )
 
+var signedPDFFixtures = map[signedPDFVariant]map[int]string{
+	signedDictionary: {
+		1: "<< /Type /Catalog /Pages 2 0 R /AcroForm << /Fields [5 0 R] /SigFlags 3 >> >>",
+		3: "<< /Type /Page /Parent 2 0 R /MediaBox [0 0 200 200] /Resources << >> /Contents 4 0 R /Annots [5 0 R] >>",
+		5: "<< /Type /Annot /Subtype /Widget /FT /Sig /T (Signature1) /Rect [0 0 0 0] /V 6 0 R /P 3 0 R >>",
+		6: "<< /Type /Sig /Filter /Adobe.PPKLite /SubFilter /adbe.pkcs7.detached /ByteRange [0 0 0 0] /Contents <> /M (D:20260102030405+00'00') >>",
+	},
+	documentTimestampDictionary: {1: "<< /Type /Catalog /Pages 2 0 R /SyntheticTimestamp 5 0 R >>", 5: "<< /Type /DocTimeStamp /Filter /Adobe.PPKLite >>"},
+	certificationPermission:     {1: "<< /Type /Catalog /Pages 2 0 R /Perms << /DocMDP 5 0 R >> >>", 5: "<< /Filter /Adobe.PPKLite >>"},
+	usageRightsPermission:       {1: "<< /Type /Catalog /Pages 2 0 R /Perms << /UR3 5 0 R >> >>", 5: "<< /Filter /Adobe.PPKLite >>"},
+	cachedSignedForm: {
+		1: "<< /Type /Catalog /Pages 2 0 R /AcroForm << /Fields [5 0 R] >> >>",
+		3: "<< /Type /Page /Parent 2 0 R /MediaBox [0 0 200 200] /Resources << >> /Contents 4 0 R /Annots [5 0 R] >>",
+		5: "<< /Type /Annot /Subtype /Widget /FT /Sig /T (Signature1) /Rect [0 0 0 0] /V 6 0 R /P 3 0 R >>",
+		6: "<< /Filter /Adobe.PPKLite /SubFilter /adbe.pkcs7.detached /ByteRange [0 0 0 0] /Contents <> >>",
+	},
+}
+
 func buildSignedPDF(t *testing.T, variant signedPDFVariant) []byte {
 	t.Helper()
 
 	objects := onePagePDFObjects("BT 20 100 Td (Signed synthetic page) Tj ET")
-
-	switch variant {
-	case signedDictionary:
-		objects[1] = "<< /Type /Catalog /Pages 2 0 R /AcroForm << /Fields [5 0 R] /SigFlags 3 >> >>"
-		objects[3] = "<< /Type /Page /Parent 2 0 R /MediaBox [0 0 200 200] /Resources << >> /Contents 4 0 R /Annots [5 0 R] >>"
-		objects[5] = "<< /Type /Annot /Subtype /Widget /FT /Sig /T (Signature1) /Rect [0 0 0 0] /V 6 0 R /P 3 0 R >>"
-		objects[6] = "<< /Type /Sig /Filter /Adobe.PPKLite /SubFilter /adbe.pkcs7.detached /ByteRange [0 0 0 0] /Contents <> /M (D:20260102030405+00'00') >>"
-	case documentTimestampDictionary:
-		objects[1] = "<< /Type /Catalog /Pages 2 0 R /SyntheticTimestamp 5 0 R >>"
-		objects[5] = "<< /Type /DocTimeStamp /Filter /Adobe.PPKLite >>"
-	case certificationPermission:
-		objects[1] = "<< /Type /Catalog /Pages 2 0 R /Perms << /DocMDP 5 0 R >> >>"
-		objects[5] = "<< /Filter /Adobe.PPKLite >>"
-	case usageRightsPermission:
-		objects[1] = "<< /Type /Catalog /Pages 2 0 R /Perms << /UR3 5 0 R >> >>"
-		objects[5] = "<< /Filter /Adobe.PPKLite >>"
-	case cachedSignedForm:
-		objects[1] = "<< /Type /Catalog /Pages 2 0 R /AcroForm << /Fields [5 0 R] >> >>"
-		objects[3] = "<< /Type /Page /Parent 2 0 R /MediaBox [0 0 200 200] /Resources << >> /Contents 4 0 R /Annots [5 0 R] >>"
-		objects[5] = "<< /Type /Annot /Subtype /Widget /FT /Sig /T (Signature1) /Rect [0 0 0 0] /V 6 0 R /P 3 0 R >>"
-		objects[6] = "<< /Filter /Adobe.PPKLite /SubFilter /adbe.pkcs7.detached /ByteRange [0 0 0 0] /Contents <> >>"
-	}
-
+	fixtureObjects, known := signedPDFFixtures[variant]
+	require.True(t, known, "unknown signed PDF variant")
+	maps.Copy(objects, fixtureObjects)
 	return buildPDF(t, pdfFixture{objects: objects, rootObjectNumber: 1})
 }
 
@@ -1273,13 +1273,20 @@ func requireNoPDFWork(t *testing.T, work *observedPDFWork) {
 	require.Zero(t, work.verifications)
 }
 
-func requireSignedPDF(t *testing.T, fields []Field, outputBytes []byte, inspectErr error, scrubErr error) {
+type signedPDFResults struct {
+	fields      []Field
+	outputBytes []byte
+	inspectErr  error
+	scrubErr    error
+}
+
+func requireSignedPDF(t *testing.T, results signedPDFResults) {
 	t.Helper()
 
-	require.ErrorIs(t, inspectErr, ErrSignedPDF)
-	require.Nil(t, fields)
-	require.ErrorIs(t, scrubErr, ErrSignedPDF)
-	require.Nil(t, outputBytes)
+	require.ErrorIs(t, results.inspectErr, ErrSignedPDF)
+	require.Nil(t, results.fields)
+	require.ErrorIs(t, results.scrubErr, ErrSignedPDF)
+	require.Nil(t, results.outputBytes)
 }
 
 func requireNotSignedPDF(t *testing.T, err error) {
