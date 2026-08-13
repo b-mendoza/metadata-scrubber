@@ -2,6 +2,7 @@
   "compilerOptions": {
     "tsBuildInfoFile": "./node_modules/.cache/tsconfig.node.tsbuildinfo",
 
+    "allowImportingTsExtensions": true,
     "allowJs": true,
     "allowUnreachableCode": false,
     "allowUnusedLabels": false,
@@ -35,6 +36,11 @@
   "include": [
     "drizzle.config.ts",
     "eslint.config.js",
+    "oxlint.config.ts",
+    "oxlint-plugin-metadata-scrubber/check-fixtures.ts",
+    "oxlint-plugin-metadata-scrubber/index.ts",
+    "oxlint-plugin-metadata-scrubber/rules/**/*.ts",
+    "oxlint-plugin-metadata-scrubber/utils.ts",
     "scripts/**/*",
     "vite.config.ts",
     "vitest.config.ts"
