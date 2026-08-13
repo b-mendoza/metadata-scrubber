@@ -10,6 +10,7 @@ type FixtureCase = readonly [
 
 const cases = [
   ["hoist-effect-schema-compilers", "schema-compiler.server.ts", 1],
+  ["no-classes", "no-classes.ts", 2],
 ] as const satisfies readonly FixtureCase[];
 
 const pluginDir = dirname(fileURLToPath(import.meta.url));
