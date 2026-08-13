@@ -208,12 +208,7 @@ func TestNewServerSharesOneCapacityTwoGateAcrossDryRunAndScrubMisses(t *testing.
 	require.Equal(t, 2, observer.peakDownloads())
 
 	observer.releaseOneDownload()
-	select {
-	case fileID := <-observer.downloadStarted:
-		require.Equal(t, thirdFileID, fileID)
-	case <-time.After(time.Second):
-		require.FailNow(t, "scrub miss did not enter shared gate after one permit was released")
-	}
+	observer.requireDownloadStarts(t, thirdFileID)
 	require.Equal(t, 2, observer.peakDownloads())
 
 	observer.releaseOneDownload()
@@ -300,6 +295,16 @@ func (observer *serverAdmissionStorage) SanitizedExists(
 		observer.scrubLookupSignalOnce.Do(func() { close(observer.observedScrubLookup) })
 	}
 	return exists, err
+}
+
+func (observer *serverAdmissionStorage) requireDownloadStarts(t *testing.T, expectedFileID string) {
+	t.Helper()
+	select {
+	case fileID := <-observer.downloadStarted:
+		require.Equal(t, expectedFileID, fileID)
+	case <-time.After(time.Second):
+		require.FailNow(t, "scrub miss did not enter shared gate after one permit was released")
+	}
 }
 
 func (observer *serverAdmissionStorage) waitForTwoDownloads(t *testing.T) {
