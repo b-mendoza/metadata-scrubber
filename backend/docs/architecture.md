@@ -14,6 +14,15 @@
 | `config` | Environment-driven service and Cloudflare R2 connection configuration, validated before startup. |
 | `storage` | Private PDF storage contract with a synchronized in-memory fake and Cloudflare R2 adapter; upload grants bind the expected size, source reads distinguish missing objects from revision conflicts, and production R2 requests have an overall HTTP timeout. |
 
+## Tooling layout
+
+| Package | Responsibility |
+| --- | --- |
+| `lint/noswitch` | Reports expression switches and type switches. |
+| `lint/nohiddentestsignal` | Reports test skips and `time.Sleep` calls in Go test files. |
+| `lint/checkedpolicylookup` | Requires comma-ok lookups for maps marked with `//policy:map`. |
+| `lint/cmd/backendlint` | Runs all custom backend analyzers. |
+
 ## Runtime
 
 - main.go configures JSON slog logging, validates the complete environment, constructs one long-lived R2 adapter from that validated configuration without contacting R2, and passes it into server construction.
