@@ -28,9 +28,9 @@ func (handler *Handler) newFileID() (string, bool) {
 	if err != nil || n != len(uuidBytes) {
 		return "", false
 	}
-	// The RFC 9562 version (0x40) and variant (0x80) bits are the contract with storageKeyPattern, which admits only UUIDv4 keys.
-	uuidBytes[6] = (uuidBytes[6] & 0x0f) | 0x40
-	uuidBytes[8] = (uuidBytes[8] & 0x3f) | 0x80
+	// The RFC 9562 version and variant bits are the contract with storageKeyPattern, which admits only UUIDv4 keys.
+	uuidBytes[6] = (uuidBytes[6] & uuidVersionMask) | uuidVersionFour
+	uuidBytes[8] = (uuidBytes[8] & uuidVariantMask) | uuidVariantRFC
 
 	return fmt.Sprintf("%x-%x-%x-%x-%x",
 		uuidBytes[0:4], uuidBytes[4:6], uuidBytes[6:8], uuidBytes[8:10], uuidBytes[10:16]), true
@@ -151,83 +151,83 @@ type pipelineFailure struct {
 	outcome pipelineOutcome
 }
 
+type pipelineFailureClassification struct {
+	matches func(error) bool
+	failure pipelineFailure
+}
+
+var pipelineFailureClassifications = []pipelineFailureClassification{
+	{
+		matches: func(err error) bool {
+			return errors.Is(err, context.Canceled) || errors.Is(err, context.DeadlineExceeded)
+		},
+		failure: pipelineFailure{status: http.StatusRequestTimeout, message: cancellationMessage, outcome: pipelineOutcomeCanceled},
+	},
+	{
+		matches: func(err error) bool { return errors.Is(err, storage.ErrSourceNotFound) },
+		failure: pipelineFailure{status: http.StatusNotFound, message: "source file not found", outcome: pipelineOutcomeNotFound},
+	},
+	{
+		matches: func(err error) bool {
+			return errors.Is(err, storage.ErrSourceObjectTooLarge) || errors.Is(err, scrub.ErrInputTooLarge)
+		},
+		failure: pipelineFailure{status: http.StatusRequestEntityTooLarge, message: "source file exceeds 10 MB limit", outcome: pipelineOutcomeTooLarge},
+	},
+	{
+		matches: func(err error) bool { return errors.Is(err, storage.ErrSourceRevisionConflict) },
+		failure: pipelineFailure{status: http.StatusConflict, message: "source file changed since review", outcome: pipelineOutcomeConflict},
+	},
+	{
+		matches: func(err error) bool { return errors.Is(err, errNotPDF) },
+		failure: pipelineFailure{status: http.StatusUnsupportedMediaType, message: "file is not a PDF", outcome: pipelineOutcomeNotPDF},
+	},
+	{
+		matches: func(err error) bool { return errors.Is(err, scrub.ErrMalformedPDF) },
+		failure: pipelineFailure{status: http.StatusBadRequest, message: "invalid PDF", outcome: pipelineOutcomeMalformed},
+	},
+	{
+		matches: func(err error) bool { return errors.Is(err, scrub.ErrSignedPDF) },
+		failure: pipelineFailure{status: http.StatusUnprocessableEntity, message: "signed PDFs are not supported in v1", outcome: pipelineOutcomeSigned},
+	},
+	{
+		matches: func(err error) bool { return errors.Is(err, scrub.ErrInspectionLimit) },
+		failure: pipelineFailure{status: http.StatusBadRequest, message: "PDF metadata exceeds inspection limits", outcome: pipelineOutcomeInspectionLimit},
+	},
+}
+
 func classifyPipelineFailure(err error, internalMessage string) pipelineFailure {
-	switch {
-	case errors.Is(err, context.Canceled), errors.Is(err, context.DeadlineExceeded):
-		return pipelineFailure{
-			status:  http.StatusRequestTimeout,
-			message: cancellationMessage,
-			outcome: pipelineOutcomeCanceled,
+	for _, classification := range pipelineFailureClassifications {
+		if classification.matches(err) {
+			return classification.failure
 		}
-	case errors.Is(err, storage.ErrSourceNotFound):
-		return pipelineFailure{
-			status:  http.StatusNotFound,
-			message: "source file not found",
-			outcome: pipelineOutcomeNotFound,
-		}
-	case errors.Is(err, storage.ErrSourceObjectTooLarge), errors.Is(err, scrub.ErrInputTooLarge):
-		return pipelineFailure{
-			status:  http.StatusRequestEntityTooLarge,
-			message: "source file exceeds 10 MB limit",
-			outcome: pipelineOutcomeTooLarge,
-		}
-	case errors.Is(err, storage.ErrSourceRevisionConflict):
-		return pipelineFailure{
-			status:  http.StatusConflict,
-			message: "source file changed since review",
-			outcome: pipelineOutcomeConflict,
-		}
-	case errors.Is(err, errNotPDF):
-		return pipelineFailure{
-			status:  http.StatusUnsupportedMediaType,
-			message: "file is not a PDF",
-			outcome: pipelineOutcomeNotPDF,
-		}
-	case errors.Is(err, scrub.ErrMalformedPDF):
-		return pipelineFailure{
-			status:  http.StatusBadRequest,
-			message: "invalid PDF",
-			outcome: pipelineOutcomeMalformed,
-		}
-	case errors.Is(err, scrub.ErrSignedPDF):
-		return pipelineFailure{
-			status:  http.StatusUnprocessableEntity,
-			message: "signed PDFs are not supported in v1",
-			outcome: pipelineOutcomeSigned,
-		}
-	case errors.Is(err, scrub.ErrInspectionLimit):
-		return pipelineFailure{
-			status:  http.StatusBadRequest,
-			message: "PDF metadata exceeds inspection limits",
-			outcome: pipelineOutcomeInspectionLimit,
-		}
-	default:
-		return pipelineFailure{
-			status:  http.StatusInternalServerError,
-			message: internalMessage,
-			outcome: pipelineOutcomeFailed,
-		}
+	}
+	return pipelineFailure{
+		status:  http.StatusInternalServerError,
+		message: internalMessage,
+		outcome: pipelineOutcomeFailed,
 	}
 }
 
-func (handler *Handler) logStage(
-	ctx context.Context,
-	stage pipelineStage,
-	storageKey string,
-	outcome pipelineOutcome,
-	startedAt time.Time,
-) {
+type pipelineLogEvent struct {
+	ctx        context.Context
+	stage      pipelineStage
+	storageKey string
+	outcome    pipelineOutcome
+	startedAt  time.Time
+}
+
+func (handler *Handler) logStage(event pipelineLogEvent) {
 	// "failed" marks unclassified internal errors; every other outcome is expected traffic.
 	level := slog.LevelInfo
-	if outcome == pipelineOutcomeFailed {
+	if event.outcome == pipelineOutcomeFailed {
 		level = slog.LevelError
 	}
 	handler.logger.Log(
-		ctx,
+		event.ctx,
 		level,
-		string(stage),
-		"storage_key", storageKey,
-		"outcome", string(outcome),
-		"duration_ms", time.Since(startedAt).Milliseconds(),
+		string(event.stage),
+		"storage_key", event.storageKey,
+		"outcome", string(event.outcome),
+		"duration_ms", time.Since(event.startedAt).Milliseconds(),
 	)
 }

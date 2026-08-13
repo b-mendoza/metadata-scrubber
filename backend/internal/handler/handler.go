@@ -32,6 +32,11 @@ const (
 	maxJSONBodyBytes = 4 << 10
 	maxFileNameBytes = 255
 
+	uuidVersionMask = 0x0f
+	uuidVersionFour = 0x40
+	uuidVariantMask = 0x3f
+	uuidVariantRFC  = 0x80
+
 	storageKeyPrefix = "uploads/"
 
 	uploadGrantExpiry       = 5 * time.Minute
@@ -67,6 +72,7 @@ const (
 )
 
 var (
+	errAdmissionFailure = errors.New("admission failure")
 	errAdmissionTimeout = errors.New("admission timeout")
 	errNotPDF           = errors.New("not a PDF candidate")
 	storageKeyPattern   = regexp.MustCompile("^" + storageKeyPrefix + `([0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12})$`)
@@ -130,40 +136,44 @@ type scrubResponseResult struct {
 	DownloadURL string `json:"downloadUrl"`
 }
 
-// New constructs the JSON workflow handler around one server-owned admission gate.
-func New(logger *slog.Logger, permits chan struct{}) *Handler {
-	return newHandler(logger, permits, scrub.InspectPDF, scrub.CleanPDF, rand.Read)
+type handlerOperations struct {
+	inspect inspectPDFOperation
+	clean   cleanPDFOperation
+	entropy entropyOperation
 }
 
-func newHandler(
-	logger *slog.Logger,
-	permits chan struct{},
-	inspect inspectPDFOperation,
-	clean cleanPDFOperation,
-	entropy entropyOperation,
-) *Handler {
+// New constructs the JSON workflow handler around one server-owned admission gate.
+func New(logger *slog.Logger, permits chan struct{}) *Handler {
+	return newHandler(logger, permits, handlerOperations{
+		inspect: scrub.InspectPDF,
+		clean:   scrub.CleanPDF,
+		entropy: rand.Read,
+	})
+}
+
+func newHandler(logger *slog.Logger, permits chan struct{}, operations handlerOperations) *Handler {
 	if logger == nil {
 		logger = slog.Default()
 	}
 	if permits == nil || cap(permits) != ProcessingPermitCount {
 		panic("handler admission gate must have capacity 2")
 	}
-	if inspect == nil {
+	if operations.inspect == nil {
 		panic("handler inspect operation must not be nil")
 	}
-	if clean == nil {
+	if operations.clean == nil {
 		panic("handler clean operation must not be nil")
 	}
-	if entropy == nil {
+	if operations.entropy == nil {
 		panic("handler entropy operation must not be nil")
 	}
 
 	return &Handler{
 		logger:              logger,
 		permits:             permits,
-		inspect:             inspect,
-		clean:               clean,
-		entropy:             entropy,
+		inspect:             operations.inspect,
+		clean:               operations.clean,
+		entropy:             operations.entropy,
 		admissionTimeout:    defaultAdmissionTimeout,
 		beforeAcquireSelect: func() {},
 	}
@@ -208,6 +218,6 @@ func (handler *Handler) Upload(w http.ResponseWriter, request *http.Request) {
 		return
 	}
 
-	handler.logStage(request.Context(), pipelineStageUploadCreated, storageKey, pipelineOutcomeSuccess, startedAt)
+	handler.logStage(pipelineLogEvent{ctx: request.Context(), stage: pipelineStageUploadCreated, storageKey: storageKey, outcome: pipelineOutcomeSuccess, startedAt: startedAt})
 	httpx.WriteJSON(w, http.StatusOK, uploadResponse{StorageKey: storageKey, UploadURL: grant.URL})
 }

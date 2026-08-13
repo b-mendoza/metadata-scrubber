@@ -78,7 +78,11 @@ func TestNewHandlerRejectsNilOperations(t *testing.T) {
 	for _, testCase := range tests {
 		t.Run(testCase.name, func(t *testing.T) {
 			require.PanicsWithValue(t, testCase.wantPanic, func() {
-				newHandler(nil, make(chan struct{}, ProcessingPermitCount), testCase.inspect, testCase.clean, testCase.entropy)
+				newHandler(nil, make(chan struct{}, ProcessingPermitCount), handlerOperations{
+					inspect: testCase.inspect,
+					clean:   testCase.clean,
+					entropy: testCase.entropy,
+				})
 			})
 		})
 	}
@@ -183,15 +187,10 @@ func TestJSONEndpointsValidateEveryBoundaryBeforeWork(t *testing.T) {
 				t.Run(testCase.name, func(t *testing.T) {
 					fake := storage.NewFake()
 					handler, inspectCalls, cleanCalls := newCountingHandler(t)
-					recorder := serveRequest(
-						context.Background(),
-						t,
-						handler,
-						fake,
-						endpoint.method,
-						testCase.contentType,
-						testCase.body,
-					)
+					recorder := serveRequest(t, handlerRequest{
+						ctx: context.Background(), handler: handler, objectStorage: fake,
+						method: endpoint.method, contentType: testCase.contentType, body: testCase.body,
+					})
 
 					require.Equal(t, testCase.wantStatus, recorder.Code, recorder.Body.String())
 					require.Equal(t, mediatype.JSON, recorder.Header().Get(header.ContentType))
@@ -209,32 +208,17 @@ func TestJSONEndpointsValidateEveryBoundaryBeforeWork(t *testing.T) {
 				}
 				handler, inspectCalls, cleanCalls := newCountingHandler(t)
 
-				recorder := serveRequest(
-					context.Background(),
-					t,
-					handler,
-					fake,
-					endpoint.method,
-					mediatype.JSON+"; charset=utf-8; profile=safe",
-					endpoint.acceptedParameterBody,
-				)
+				recorder := serveRequest(t, handlerRequest{
+					ctx: context.Background(), handler: handler, objectStorage: fake,
+					method: endpoint.method, contentType: mediatype.JSON + "; charset=utf-8; profile=safe",
+					body: endpoint.acceptedParameterBody,
+				})
 
 				require.Equal(t, http.StatusOK, recorder.Code, recorder.Body.String())
 				require.Equal(t, mediatype.JSON, recorder.Header().Get(header.ContentType))
-				switch endpoint.method {
-				case uploadMethod:
-					var response uploadResponse
-					require.NoError(t, json.Unmarshal(recorder.Body.Bytes(), &response))
-					require.Equal(t, formatStorageKey(generatedFileID), response.StorageKey)
-					require.NotEmpty(t, response.UploadURL)
-				case dryRunMethod:
-					require.JSONEq(t, `{"etag":"revision-one","fields":[]}`, recorder.Body.String())
-				case scrubMethod:
-					var response scrubResponse
-					require.NoError(t, json.Unmarshal(recorder.Body.Bytes(), &response))
-					require.Equal(t, "done", response.Status)
-					require.NotEmpty(t, response.Result.DownloadURL)
-				}
+				assertResponse, known := acceptedResponseAssertions[endpoint.method]
+				require.True(t, known, "unknown handler method")
+				assertResponse(t, recorder)
 				require.Equal(t, endpoint.wantAcceptedOperations, callOperations(fake.Calls()))
 				require.Equal(t, endpoint.wantInspectCalls, *inspectCalls)
 				require.Equal(t, endpoint.wantCleanCalls, *cleanCalls)
@@ -266,7 +250,7 @@ func TestUploadValidatesIntakeAndCreatesOpaqueGrant(t *testing.T) {
 			fake := storage.NewFake()
 			handler := newTestHandler(t, nil, nil, nil)
 			body := mustJSON(t, uploadRequest{FileName: testCase.fileName, FileSizeBytes: testCase.size})
-			recorder := serveRequest(context.Background(), t, handler, fake, uploadMethod, mediatype.JSON+"; charset=utf-8", body)
+			recorder := serveRequest(t, handlerRequest{ctx: context.Background(), handler: handler, objectStorage: fake, method: uploadMethod, contentType: mediatype.JSON + "; charset=utf-8", body: body})
 
 			require.Equal(t, testCase.wantStatus, recorder.Code, recorder.Body.String())
 			if testCase.wantStatus != http.StatusOK {
@@ -300,7 +284,7 @@ func TestUploadRejectsInvalidUTF8FilenameBeforeStorage(t *testing.T) {
 	handler := newTestHandler(t, nil, nil, nil)
 	body := `{"fileName":"` + string([]byte{0xff}) + `","fileSizeBytes":1}`
 
-	recorder := serveRequest(context.Background(), t, handler, fake, uploadMethod, mediatype.JSON, body)
+	recorder := serveRequest(t, handlerRequest{ctx: context.Background(), handler: handler, objectStorage: fake, method: uploadMethod, contentType: mediatype.JSON, body: body})
 
 	require.Equal(t, http.StatusBadRequest, recorder.Code)
 	require.Empty(t, fake.Calls())
@@ -311,7 +295,7 @@ func TestUploadStopsBeforeStorageWhenEntropyFails(t *testing.T) {
 	handler := newTestHandler(t, nil, nil, func([]byte) (int, error) {
 		return 0, errors.New("entropy-secret")
 	})
-	recorder := serveJSONRequest(t, handler, fake, uploadMethod, uploadRequest{FileName: "report.pdf", FileSizeBytes: 1})
+	recorder := serveJSONRequest(t, jsonHandlerRequest{handler: handler, objectStorage: fake, method: uploadMethod, body: uploadRequest{FileName: "report.pdf", FileSizeBytes: 1}})
 
 	require.Equal(t, http.StatusInternalServerError, recorder.Code)
 	require.Equal(t, "could not create upload", errorMessage(t, recorder))
@@ -323,7 +307,7 @@ func TestUploadPresignFailureIsSanitized(t *testing.T) {
 	fake := storage.NewFake()
 	fake.SetFailure(storage.FakePresignSourceUpload, errors.New("provider-secret"))
 	handler := newTestHandler(t, nil, nil, nil)
-	recorder := serveJSONRequest(t, handler, fake, uploadMethod, uploadRequest{FileName: "report.pdf", FileSizeBytes: 1})
+	recorder := serveJSONRequest(t, jsonHandlerRequest{handler: handler, objectStorage: fake, method: uploadMethod, body: uploadRequest{FileName: "report.pdf", FileSizeBytes: 1}})
 
 	require.Equal(t, http.StatusInternalServerError, recorder.Code)
 	require.Equal(t, "could not create upload", errorMessage(t, recorder))
@@ -340,7 +324,7 @@ func TestPublicStorageKeysAndETagsAreValidatedBeforeStorage(t *testing.T) {
 		t.Run("key "+invalidKey, func(t *testing.T) {
 			fake := storage.NewFake()
 			handler := newTestHandler(t, nil, nil, nil)
-			recorder := serveJSONRequest(t, handler, fake, dryRunMethod, dryRunRequest{StorageKey: invalidKey})
+			recorder := serveJSONRequest(t, jsonHandlerRequest{handler: handler, objectStorage: fake, method: dryRunMethod, body: dryRunRequest{StorageKey: invalidKey}})
 			require.Equal(t, http.StatusBadRequest, recorder.Code)
 			require.Empty(t, fake.Calls())
 		})
@@ -351,7 +335,7 @@ func TestPublicStorageKeysAndETagsAreValidatedBeforeStorage(t *testing.T) {
 		t.Run("etag "+invalidETag, func(t *testing.T) {
 			fake := storage.NewFake()
 			handler := newTestHandler(t, nil, nil, nil)
-			recorder := serveJSONRequest(t, handler, fake, scrubMethod, scrubRequest{StorageKey: formatStorageKey(fileIDOne), ETag: invalidETag})
+			recorder := serveJSONRequest(t, jsonHandlerRequest{handler: handler, objectStorage: fake, method: scrubMethod, body: scrubRequest{StorageKey: formatStorageKey(fileIDOne), ETag: invalidETag}})
 			require.Equal(t, http.StatusBadRequest, recorder.Code)
 			require.Empty(t, fake.Calls())
 		})
@@ -368,7 +352,7 @@ func TestDryRunReturnsReviewedRevisionAndBackendOwnedFields(t *testing.T) {
 		require.Equal(t, scrub.PublicInput, origin)
 		return []scrub.Field{{Name: "title", Label: "Title", Preview: "private", OriginalByteSize: 7, Action: scrub.ActionRemove}}, nil
 	}, nil, nil)
-	recorder := serveJSONRequest(t, handler, fake, dryRunMethod, dryRunRequest{StorageKey: formatStorageKey(fileIDOne)})
+	recorder := serveJSONRequest(t, jsonHandlerRequest{handler: handler, objectStorage: fake, method: dryRunMethod, body: dryRunRequest{StorageKey: formatStorageKey(fileIDOne)}})
 
 	require.Equal(t, http.StatusOK, recorder.Code, recorder.Body.String())
 	var response map[string]json.RawMessage
@@ -392,7 +376,7 @@ func TestDryRunReturnsNonNullEmptyFieldsForCleanPDF(t *testing.T) {
 	fake := storage.NewFake()
 	require.NoError(t, fake.SetSource(fileIDOne, storage.SourceObject{PDFBytes: []byte("%PDF-clean"), ETag: "revision-one"}))
 	handler := newTestHandler(t, nil, nil, nil)
-	recorder := serveJSONRequest(t, handler, fake, dryRunMethod, dryRunRequest{StorageKey: formatStorageKey(fileIDOne)})
+	recorder := serveJSONRequest(t, jsonHandlerRequest{handler: handler, objectStorage: fake, method: dryRunMethod, body: dryRunRequest{StorageKey: formatStorageKey(fileIDOne)}})
 
 	require.Equal(t, http.StatusOK, recorder.Code)
 	require.JSONEq(t, `{"etag":"revision-one","fields":[]}`, recorder.Body.String())
@@ -404,7 +388,7 @@ func TestDryRunIntegratesWithPublicPDFInspection(t *testing.T) {
 	fake := storage.NewFake()
 	require.NoError(t, fake.SetSource(fileIDOne, storage.SourceObject{PDFBytes: pdfBytes, ETag: "revision-one"}))
 	handler := newTestHandler(t, scrub.InspectPDF, nil, nil)
-	recorder := serveJSONRequest(t, handler, fake, dryRunMethod, dryRunRequest{StorageKey: formatStorageKey(fileIDOne)})
+	recorder := serveJSONRequest(t, jsonHandlerRequest{handler: handler, objectStorage: fake, method: dryRunMethod, body: dryRunRequest{StorageKey: formatStorageKey(fileIDOne)}})
 
 	require.Equal(t, http.StatusOK, recorder.Code, recorder.Body.String())
 	var response dryRunResponse
@@ -419,7 +403,7 @@ func TestConstructedDryRunRejectsStructurallySignedPDFFixtureWithoutMutation(t *
 	fake := storage.NewFake()
 	require.NoError(t, fake.SetSource(fileIDOne, storage.SourceObject{PDFBytes: pdfBytes, ETag: "revision-one"}))
 	workflow := New(slog.New(slog.NewTextHandler(io.Discard, nil)), make(chan struct{}, ProcessingPermitCount))
-	recorder := serveJSONRequest(t, workflow, fake, dryRunMethod, dryRunRequest{StorageKey: formatStorageKey(fileIDOne)})
+	recorder := serveJSONRequest(t, jsonHandlerRequest{handler: workflow, objectStorage: fake, method: dryRunMethod, body: dryRunRequest{StorageKey: formatStorageKey(fileIDOne)}})
 
 	require.Equal(t, http.StatusUnprocessableEntity, recorder.Code, recorder.Body.String())
 	require.Equal(t, "signed PDFs are not supported in v1", errorMessage(t, recorder))
@@ -461,7 +445,7 @@ func TestDryRunClassifiesContentAndDependencyFailuresWithoutLeakingDetails(t *te
 				inspectCalls++
 				return nil, testCase.inspectErr
 			}, nil, nil)
-			recorder := serveJSONRequest(t, handler, fake, dryRunMethod, dryRunRequest{StorageKey: formatStorageKey(fileIDOne)})
+			recorder := serveJSONRequest(t, jsonHandlerRequest{handler: handler, objectStorage: fake, method: dryRunMethod, body: dryRunRequest{StorageKey: formatStorageKey(fileIDOne)}})
 
 			require.Equal(t, testCase.wantStatus, recorder.Code, recorder.Body.String())
 			require.Equal(t, testCase.wantMessage, errorMessage(t, recorder))
@@ -482,14 +466,14 @@ func TestScrubCacheHitBypassesAdmissionAndReusesExactRevision(t *testing.T) {
 	permits <- struct{}{}
 	permits <- struct{}{}
 	inspectCalls, cleanCalls := 0, 0
-	handler := newTestHandlerWithLogger(t, permits, slog.New(slog.NewTextHandler(io.Discard, nil)), func([]byte, scrub.InspectionOrigin) ([]scrub.Field, error) {
+	handler := newTestHandlerWithLogger(t, testHandlerOptions{permits: permits, logger: slog.New(slog.NewTextHandler(io.Discard, nil)), inspect: func([]byte, scrub.InspectionOrigin) ([]scrub.Field, error) {
 		inspectCalls++
 		return nil, nil
-	}, func([]byte) ([]byte, error) {
+	}, clean: func([]byte) ([]byte, error) {
 		cleanCalls++
 		return nil, nil
-	}, nil)
-	recorder := serveJSONRequest(t, handler, fake, scrubMethod, scrubRequest{StorageKey: formatStorageKey(fileIDThree), ETag: "revision-three"})
+	}})
+	recorder := serveJSONRequest(t, jsonHandlerRequest{handler: handler, objectStorage: fake, method: scrubMethod, body: scrubRequest{StorageKey: formatStorageKey(fileIDThree), ETag: "revision-three"}})
 
 	require.Equal(t, http.StatusOK, recorder.Code, recorder.Body.String())
 	require.Contains(t, recorder.Body.String(), `"status":"done"`)
@@ -510,13 +494,13 @@ func TestScrubCacheMissBindsEveryOperationToReviewedRevision(t *testing.T) {
 	permits := make(chan struct{}, ProcessingPermitCount)
 	cleaned := []byte("%PDF-cleaned")
 	cleanCalls := 0
-	handler := newTestHandlerWithLogger(t, permits, slog.New(slog.NewTextHandler(io.Discard, nil)), nil, func(input []byte) ([]byte, error) {
+	handler := newTestHandlerWithLogger(t, testHandlerOptions{permits: permits, logger: slog.New(slog.NewTextHandler(io.Discard, nil)), clean: func(input []byte) ([]byte, error) {
 		cleanCalls++
 		require.Len(t, permits, 1, "clean must run while admitted")
 		require.Equal(t, []byte("%PDF-source"), input)
 		return cleaned, nil
-	}, nil)
-	recorder := serveJSONRequest(t, handler, fake, scrubMethod, scrubRequest{StorageKey: formatStorageKey(fileIDOne), ETag: "revision-one"})
+	}})
+	recorder := serveJSONRequest(t, jsonHandlerRequest{handler: handler, objectStorage: fake, method: scrubMethod, body: scrubRequest{StorageKey: formatStorageKey(fileIDOne), ETag: "revision-one"}})
 
 	require.Equal(t, http.StatusOK, recorder.Code, recorder.Body.String())
 	require.Equal(t, 1, cleanCalls)
@@ -545,7 +529,7 @@ func TestScrubIntegratesWithDeepPDFCleaning(t *testing.T) {
 	fake := storage.NewFake()
 	require.NoError(t, fake.SetSource(fileIDOne, storage.SourceObject{PDFBytes: pdfBytes, ETag: "revision-one"}))
 	handler := newTestHandler(t, scrub.InspectPDF, scrub.CleanPDF, nil)
-	recorder := serveJSONRequest(t, handler, fake, scrubMethod, scrubRequest{StorageKey: formatStorageKey(fileIDOne), ETag: "revision-one"})
+	recorder := serveJSONRequest(t, jsonHandlerRequest{handler: handler, objectStorage: fake, method: scrubMethod, body: scrubRequest{StorageKey: formatStorageKey(fileIDOne), ETag: "revision-one"}})
 
 	require.Equal(t, http.StatusOK, recorder.Code, recorder.Body.String())
 	stored, exists, err := fake.SanitizedBytes(fileIDOne, "revision-one")
@@ -564,7 +548,7 @@ func TestScrubReturnsConflictBeforePDFOrWriteWork(t *testing.T) {
 		cleanCalls++
 		return nil, nil
 	}, nil)
-	recorder := serveJSONRequest(t, handler, fake, scrubMethod, scrubRequest{StorageKey: formatStorageKey(fileIDOne), ETag: "revision-reviewed"})
+	recorder := serveJSONRequest(t, jsonHandlerRequest{handler: handler, objectStorage: fake, method: scrubMethod, body: scrubRequest{StorageKey: formatStorageKey(fileIDOne), ETag: "revision-reviewed"}})
 
 	require.Equal(t, http.StatusConflict, recorder.Code)
 	require.Equal(t, "source file changed since review", errorMessage(t, recorder))
@@ -573,16 +557,18 @@ func TestScrubReturnsConflictBeforePDFOrWriteWork(t *testing.T) {
 	requireAllPermitsReleased(t, handler)
 }
 
+type scrubFailureTestCase struct {
+	name        string
+	pdfBytes    []byte
+	failureOp   storage.FakeOperation
+	cleanErr    error
+	wantStatus  int
+	wantMessage string
+	wantCalls   []storage.FakeOperation
+}
+
 func TestScrubFailuresStopAtTheFailedStage(t *testing.T) {
-	tests := []struct {
-		name        string
-		pdfBytes    []byte
-		failureOp   storage.FakeOperation
-		cleanErr    error
-		wantStatus  int
-		wantMessage string
-		wantCalls   []storage.FakeOperation
-	}{
+	tests := []scrubFailureTestCase{
 		{
 			name:        "lookup failure",
 			pdfBytes:    []byte("%PDF-source"),
@@ -638,32 +624,38 @@ func TestScrubFailuresStopAtTheFailedStage(t *testing.T) {
 	}
 
 	for _, testCase := range tests {
-		t.Run(testCase.name, func(t *testing.T) {
-			fake := storage.NewFake()
-			require.NoError(t, fake.SetSource(fileIDOne, storage.SourceObject{PDFBytes: testCase.pdfBytes, ETag: "revision-one"}))
-			if testCase.failureOp != "" {
-				fake.SetFailure(testCase.failureOp, errors.New("provider-secret"))
-			}
-			cleanCalls := 0
-			handler := newTestHandler(t, nil, func(input []byte) ([]byte, error) {
-				cleanCalls++
-				if testCase.cleanErr != nil {
-					return nil, testCase.cleanErr
-				}
-				return bytes.Clone(input), nil
-			}, nil)
-			recorder := serveJSONRequest(t, handler, fake, scrubMethod, scrubRequest{StorageKey: formatStorageKey(fileIDOne), ETag: "revision-one"})
+		t.Run(testCase.name, func(t *testing.T) { runScrubFailureTest(t, testCase) })
+	}
+}
 
-			require.Equal(t, testCase.wantStatus, recorder.Code, recorder.Body.String())
-			require.Equal(t, testCase.wantMessage, errorMessage(t, recorder))
-			require.Equal(t, testCase.wantCalls, callOperations(fake.Calls()))
-			require.NotContains(t, recorder.Body.String(), "provider-secret")
-			require.NotContains(t, recorder.Body.String(), "pdf-secret")
-			requireAllPermitsReleased(t, handler)
-			if !bytes.HasPrefix(testCase.pdfBytes, []byte("%PDF-")) || testCase.failureOp == storage.FakeSanitizedExists {
-				require.Zero(t, cleanCalls)
-			}
-		})
+func runScrubFailureTest(t *testing.T, testCase scrubFailureTestCase) {
+	t.Helper()
+	fake := storage.NewFake()
+	require.NoError(t, fake.SetSource(fileIDOne, storage.SourceObject{PDFBytes: testCase.pdfBytes, ETag: "revision-one"}))
+	if testCase.failureOp != "" {
+		fake.SetFailure(testCase.failureOp, errors.New("provider-secret"))
+	}
+	cleanCalls := 0
+	handler := newTestHandler(t, nil, func(input []byte) ([]byte, error) {
+		cleanCalls++
+		if testCase.cleanErr != nil {
+			return nil, testCase.cleanErr
+		}
+		return bytes.Clone(input), nil
+	}, nil)
+	recorder := serveJSONRequest(t, jsonHandlerRequest{
+		handler: handler, objectStorage: fake, method: scrubMethod,
+		body: scrubRequest{StorageKey: formatStorageKey(fileIDOne), ETag: "revision-one"},
+	})
+
+	require.Equal(t, testCase.wantStatus, recorder.Code, recorder.Body.String())
+	require.Equal(t, testCase.wantMessage, errorMessage(t, recorder))
+	require.Equal(t, testCase.wantCalls, callOperations(fake.Calls()))
+	require.NotContains(t, recorder.Body.String(), "provider-secret")
+	require.NotContains(t, recorder.Body.String(), "pdf-secret")
+	requireAllPermitsReleased(t, handler)
+	if !bytes.HasPrefix(testCase.pdfBytes, []byte("%PDF-")) || testCase.failureOp == storage.FakeSanitizedExists {
+		require.Zero(t, cleanCalls)
 	}
 }
 
@@ -681,10 +673,10 @@ func TestSaturatedAdmissionReturnsRetryable503WithoutDownloadingWaitingSource(t 
 	holderResponses := startGuardedRequests(t, handler, observer, []guardedRequest{
 		{method: dryRunMethod, fileID: fileIDOne},
 		{method: dryRunMethod, fileID: fileIDTwo},
-	}, 2)
+	})
 	startedAt := time.Now()
 	body := mustJSON(t, dryRunRequest{StorageKey: formatStorageKey(fileIDThree)})
-	recorder := serveRequest(context.Background(), t, handler, observer, dryRunMethod, mediatype.JSON, body)
+	recorder := serveRequest(t, handlerRequest{ctx: context.Background(), handler: handler, objectStorage: observer, method: dryRunMethod, contentType: mediatype.JSON, body: body})
 	elapsed := time.Since(startedAt)
 
 	require.Equal(t, http.StatusServiceUnavailable, recorder.Code, recorder.Body.String())
@@ -717,7 +709,7 @@ func TestCancellationWhileWaitingReturnsSanitizedResponseWithoutStorageWork(t *t
 	holderResponses := startGuardedRequests(t, handler, observer, []guardedRequest{
 		{method: dryRunMethod, fileID: fileIDOne},
 		{method: dryRunMethod, fileID: fileIDTwo},
-	}, 2)
+	})
 
 	enteredWait := make(chan struct{})
 	// sync.OnceFunc keeps the later follow-up requests from closing enteredWait twice.
@@ -727,7 +719,7 @@ func TestCancellationWhileWaitingReturnsSanitizedResponseWithoutStorageWork(t *t
 	response := make(chan *httptest.ResponseRecorder, 1)
 	go func() {
 		body := mustJSON(t, dryRunRequest{StorageKey: formatStorageKey(fileIDThree)})
-		response <- serveRequest(ctx, t, handler, observer, dryRunMethod, mediatype.JSON, body)
+		response <- serveRequest(t, handlerRequest{ctx: ctx, handler: handler, objectStorage: observer, method: dryRunMethod, contentType: mediatype.JSON, body: body})
 	}()
 
 	select {
@@ -762,7 +754,7 @@ func TestCancellationWhileWaitingReturnsSanitizedResponseWithoutStorageWork(t *t
 	followUpResponses := startGuardedRequests(t, handler, followUpObserver, []guardedRequest{
 		{method: dryRunMethod, fileID: fileIDOne},
 		{method: dryRunMethod, fileID: fileIDTwo},
-	}, 2)
+	})
 	requireAllPermitsHeld(t, handler)
 	followUpObserver.releaseDownloads()
 	requireResponsesSuccess(t, followUpResponses, 2, "timed out waiting for holder response")
@@ -777,10 +769,10 @@ func TestExactRevisionCacheHitSucceedsWhileBothPermitsAreHeld(t *testing.T) {
 	holderResponses := startGuardedRequests(t, handler, observer, []guardedRequest{
 		{method: dryRunMethod, fileID: fileIDOne},
 		{method: dryRunMethod, fileID: fileIDTwo},
-	}, 2)
+	})
 
 	body := mustJSON(t, scrubRequest{StorageKey: formatStorageKey(fileIDThree), ETag: "revision-three"})
-	recorder := serveRequest(context.Background(), t, handler, observer, scrubMethod, mediatype.JSON, body)
+	recorder := serveRequest(t, handlerRequest{ctx: context.Background(), handler: handler, objectStorage: observer, method: scrubMethod, contentType: mediatype.JSON, body: body})
 
 	require.Equal(t, http.StatusOK, recorder.Code, recorder.Body.String())
 	require.Equal(t, 2, observer.peakDownloads())
@@ -791,43 +783,49 @@ func TestExactRevisionCacheHitSucceedsWhileBothPermitsAreHeld(t *testing.T) {
 }
 
 func TestSharedAdmissionNeverExceedsTwoAndReleasesAfterEveryTerminalPath(t *testing.T) {
-	t.Run("mixed dry run and scrub misses peak at two", func(t *testing.T) {
-		fake := storage.NewFake()
-		observer := newBlockingStorage(fake, fileIDOne, fileIDTwo, fileIDThree)
-		seedCandidateSources(t, fake, fileIDOne, fileIDTwo, fileIDThree)
-		handler := newTestHandler(t, nil, nil, nil)
+	t.Run("mixed dry run and scrub misses peak at two", testMixedWorkflowsPeakAtTwo)
+	testTerminalPathsReleasePermits(t)
+}
 
-		requests := []guardedRequest{
-			{method: dryRunMethod, fileID: fileIDOne},
-			{method: scrubMethod, fileID: fileIDTwo},
-			{method: dryRunMethod, fileID: fileIDThree},
-		}
-		// Three requests start, but the admission gate only lets two downloads begin.
-		responses := startGuardedRequests(t, handler, observer, requests, 2)
-		require.Equal(t, 2, observer.peakDownloads())
-		select {
-		case fileID := <-observer.downloadStarted:
-			require.FailNow(t, "third guarded workflow exceeded shared capacity", "downloaded %s", fileID)
-		case <-time.After(100 * time.Millisecond):
-		}
+func testMixedWorkflowsPeakAtTwo(t *testing.T) {
+	fake := storage.NewFake()
+	observer := newBlockingStorage(fake, fileIDOne, fileIDTwo, fileIDThree)
+	seedCandidateSources(t, fake, fileIDOne, fileIDTwo, fileIDThree)
+	handler := newTestHandler(t, nil, nil, nil)
 
-		observer.releaseDownloads()
-		requireResponsesSuccess(t, responses, len(requests), "timed out waiting for mixed guarded workflow")
-		require.Equal(t, 2, observer.peakDownloads())
-		requireAllPermitsReleased(t, handler)
-	})
+	requests := []guardedRequest{
+		{method: dryRunMethod, fileID: fileIDOne},
+		{method: scrubMethod, fileID: fileIDTwo},
+		{method: dryRunMethod, fileID: fileIDThree},
+	}
+	responses := startGuardedRequests(t, handler, observer, requests)
+	require.Equal(t, 2, observer.peakDownloads())
+	select {
+	case fileID := <-observer.downloadStarted:
+		require.FailNow(t, "third guarded workflow exceeded shared capacity", "downloaded %s", fileID)
+	case <-time.After(100 * time.Millisecond):
+	}
 
-	terminalCases := []struct {
-		name          string
-		method        handlerMethod
-		downloadErr   error
-		downloadPanic string
-		inspectErr    error
-		inspectPanic  string
-		cleanErr      error
-		cleanPanic    string
-		wantStatus    int
-	}{
+	observer.releaseDownloads()
+	requireResponsesSuccess(t, responses, len(requests), "timed out waiting for mixed guarded workflow")
+	require.Equal(t, 2, observer.peakDownloads())
+	requireAllPermitsReleased(t, handler)
+}
+
+type terminalPathTestCase struct {
+	name          string
+	method        handlerMethod
+	downloadErr   error
+	downloadPanic string
+	inspectErr    error
+	inspectPanic  string
+	cleanErr      error
+	cleanPanic    string
+	wantStatus    int
+}
+
+func testTerminalPathsReleasePermits(t *testing.T) {
+	terminalCases := []terminalPathTestCase{
 		{name: "dry run success", method: dryRunMethod, wantStatus: http.StatusOK},
 		{name: "scrub success", method: scrubMethod, wantStatus: http.StatusOK},
 		{name: "download error", method: dryRunMethod, downloadErr: errors.New("download failed"), wantStatus: http.StatusInternalServerError},
@@ -842,66 +840,87 @@ func TestSharedAdmissionNeverExceedsTwoAndReleasesAfterEveryTerminalPath(t *test
 	}
 
 	for _, testCase := range terminalCases {
-		t.Run(testCase.name+" returns both permits", func(t *testing.T) {
-			fake := storage.NewFake()
-			seedCandidateSources(t, fake, fileIDOne, fileIDTwo, fileIDThree)
-			observer := newBlockingStorage(fake, fileIDTwo, fileIDThree)
-			if testCase.downloadErr != nil {
-				observer.failDownload(fileIDOne, testCase.downloadErr)
-			}
-			if testCase.downloadPanic != "" {
-				observer.panicDownload(fileIDOne, testCase.downloadPanic)
-			}
-			handler := newTestHandler(t, func(input []byte, _ scrub.InspectionOrigin) ([]scrub.Field, error) {
-				if bytes.Contains(input, []byte(fileIDOne)) {
-					if testCase.inspectPanic != "" {
-						panic(testCase.inspectPanic)
-					}
-					if testCase.inspectErr != nil {
-						return nil, testCase.inspectErr
-					}
-				}
-				return nil, nil
-			}, func(input []byte) ([]byte, error) {
-				if bytes.Contains(input, []byte(fileIDOne)) {
-					if testCase.cleanPanic != "" {
-						panic(testCase.cleanPanic)
-					}
-					if testCase.cleanErr != nil {
-						return nil, testCase.cleanErr
-					}
-				}
-				return bytes.Clone(input), nil
-			}, nil)
-
-			var body string
-			if testCase.method == dryRunMethod {
-				body = mustJSON(t, dryRunRequest{StorageKey: formatStorageKey(fileIDOne)})
-			} else {
-				body = mustJSON(t, scrubRequest{StorageKey: formatStorageKey(fileIDOne), ETag: "revision-" + fileIDOne})
-			}
-			panicValue := testCase.downloadPanic + testCase.inspectPanic + testCase.cleanPanic
-			if panicValue != "" {
-				require.PanicsWithValue(t, panicValue, func() {
-					serveRequest(context.Background(), t, handler, observer, testCase.method, mediatype.JSON, body)
-				})
-			} else {
-				recorder := serveRequest(context.Background(), t, handler, observer, testCase.method, mediatype.JSON, body)
-				require.Equal(t, testCase.wantStatus, recorder.Code, recorder.Body.String())
-			}
-			requireAllPermitsReleased(t, handler)
-
-			followUpResponses := startGuardedRequests(t, handler, observer, []guardedRequest{
-				{method: dryRunMethod, fileID: fileIDTwo},
-				{method: scrubMethod, fileID: fileIDThree},
-			}, 2)
-			requireAllPermitsHeld(t, handler, "both follow-up workflows must acquire after terminal path")
-			require.Equal(t, 2, observer.peakDownloads())
-			observer.releaseDownloads()
-			requireResponsesSuccess(t, followUpResponses, 2, "timed out waiting for holder response")
-			requireAllPermitsReleased(t, handler)
-		})
+		t.Run(testCase.name+" returns both permits", func(t *testing.T) { runTerminalPathTest(t, testCase) })
 	}
+}
+
+func runTerminalPathTest(t *testing.T, testCase terminalPathTestCase) {
+	t.Helper()
+	fake := storage.NewFake()
+	seedCandidateSources(t, fake, fileIDOne, fileIDTwo, fileIDThree)
+	observer := newBlockingStorage(fake, fileIDTwo, fileIDThree)
+	configureTerminalDownload(observer, testCase)
+	handler := newTerminalPathHandler(t, testCase)
+	request := terminalPathRequest(t, handler, observer, testCase)
+	panicValue := testCase.downloadPanic + testCase.inspectPanic + testCase.cleanPanic
+	if panicValue != "" {
+		require.PanicsWithValue(t, panicValue, func() { serveRequest(t, request) })
+	} else {
+		recorder := serveRequest(t, request)
+		require.Equal(t, testCase.wantStatus, recorder.Code, recorder.Body.String())
+	}
+	requireAllPermitsReleased(t, handler)
+	assertFollowUpWorkflowsAcquire(t, handler, observer)
+}
+
+func configureTerminalDownload(observer *blockingStorage, testCase terminalPathTestCase) {
+	if testCase.downloadErr != nil {
+		observer.failDownload(fileIDOne, testCase.downloadErr)
+	}
+	if testCase.downloadPanic != "" {
+		observer.panicDownload(fileIDOne, testCase.downloadPanic)
+	}
+}
+
+func newTerminalPathHandler(t *testing.T, testCase terminalPathTestCase) *Handler {
+	return newTestHandler(t, terminalInspectOperation(testCase), terminalCleanOperation(testCase), nil)
+}
+
+func terminalInspectOperation(testCase terminalPathTestCase) inspectPDFOperation {
+	return func(input []byte, _ scrub.InspectionOrigin) ([]scrub.Field, error) {
+		if !bytes.Contains(input, []byte(fileIDOne)) {
+			return nil, nil
+		}
+		if testCase.inspectPanic != "" {
+			panic(testCase.inspectPanic)
+		}
+		return nil, testCase.inspectErr
+	}
+}
+
+func terminalCleanOperation(testCase terminalPathTestCase) cleanPDFOperation {
+	return func(input []byte) ([]byte, error) {
+		if !bytes.Contains(input, []byte(fileIDOne)) {
+			return bytes.Clone(input), nil
+		}
+		if testCase.cleanPanic != "" {
+			panic(testCase.cleanPanic)
+		}
+		if testCase.cleanErr != nil {
+			return nil, testCase.cleanErr
+		}
+		return bytes.Clone(input), nil
+	}
+}
+
+func terminalPathRequest(t *testing.T, handler *Handler, observer *blockingStorage, testCase terminalPathTestCase) handlerRequest {
+	body := mustJSON(t, dryRunRequest{StorageKey: formatStorageKey(fileIDOne)})
+	if testCase.method == scrubMethod {
+		body = mustJSON(t, scrubRequest{StorageKey: formatStorageKey(fileIDOne), ETag: "revision-" + fileIDOne})
+	}
+	return handlerRequest{ctx: context.Background(), handler: handler, objectStorage: observer, method: testCase.method, contentType: mediatype.JSON, body: body}
+}
+
+func assertFollowUpWorkflowsAcquire(t *testing.T, handler *Handler, observer *blockingStorage) {
+	followUpResponses := startGuardedRequests(t, handler, observer, []guardedRequest{
+		{method: dryRunMethod, fileID: fileIDTwo},
+		{method: scrubMethod, fileID: fileIDThree},
+	})
+	requireAllPermitsHeld(t, handler, "both follow-up workflows must acquire after terminal path")
+	require.Equal(t, 2, observer.peakDownloads())
+	observer.releaseDownloads()
+	requireResponsesSuccess(t, followUpResponses, 2, "timed out waiting for holder response")
+	requireAllPermitsReleased(t, handler)
 }
 
 func TestScrubReleasesPermitBeforeUploadingSanitizedBytes(t *testing.T) {
@@ -916,7 +935,7 @@ func TestScrubReleasesPermitBeforeUploadingSanitizedBytes(t *testing.T) {
 	firstResponse := make(chan *httptest.ResponseRecorder, 1)
 	go func() {
 		body := mustJSON(t, scrubRequest{StorageKey: formatStorageKey(fileIDOne), ETag: "revision-" + fileIDOne})
-		firstResponse <- serveRequest(context.Background(), t, handler, observer, scrubMethod, mediatype.JSON, body)
+		firstResponse <- serveRequest(t, handlerRequest{ctx: context.Background(), handler: handler, objectStorage: observer, method: scrubMethod, contentType: mediatype.JSON, body: body})
 	}()
 	observer.waitForUpload(t, fileIDOne)
 	requireAllPermitsReleased(t, handler, "upload must start after guarded permit release")
@@ -924,7 +943,7 @@ func TestScrubReleasesPermitBeforeUploadingSanitizedBytes(t *testing.T) {
 	holderResponses := startGuardedRequests(t, handler, observer, []guardedRequest{
 		{method: dryRunMethod, fileID: fileIDTwo},
 		{method: dryRunMethod, fileID: fileIDThree},
-	}, 2)
+	})
 	requireAllPermitsHeld(t, handler)
 
 	observer.releaseUploads()
@@ -938,7 +957,7 @@ func TestPipelineLogsRecordAllApprovedSuccessStages(t *testing.T) {
 	seedCandidateSources(t, fake, fileIDOne, fileIDTwo)
 	var logs bytes.Buffer
 	logger := slog.New(slog.NewJSONHandler(&logs, nil))
-	handler := newTestHandlerWithLogger(t, make(chan struct{}, ProcessingPermitCount), logger, nil, nil, nil)
+	handler := newTestHandlerWithLogger(t, testHandlerOptions{permits: make(chan struct{}, ProcessingPermitCount), logger: logger})
 
 	requests := []struct {
 		method handlerMethod
@@ -950,7 +969,7 @@ func TestPipelineLogsRecordAllApprovedSuccessStages(t *testing.T) {
 	}
 	recorders := make([]*httptest.ResponseRecorder, 0, len(requests))
 	for _, request := range requests {
-		recorders = append(recorders, serveRequest(context.Background(), t, handler, fake, request.method, mediatype.JSON, request.body))
+		recorders = append(recorders, serveRequest(t, handlerRequest{ctx: context.Background(), handler: handler, objectStorage: fake, method: request.method, contentType: mediatype.JSON, body: request.body}))
 	}
 
 	for _, recorder := range recorders {
@@ -1089,16 +1108,14 @@ func TestPipelineLogsShortCircuitFailuresAndDescribeCacheHitsTruthfully(t *testi
 			fake := storage.NewFake()
 			testCase.configure(t, fake)
 			var logs bytes.Buffer
-			handler := newTestHandlerWithLogger(
-				t,
-				make(chan struct{}, ProcessingPermitCount),
-				slog.New(slog.NewJSONHandler(&logs, nil)),
-				testCase.inspect,
-				testCase.clean,
-				nil,
-			)
+			handler := newTestHandlerWithLogger(t, testHandlerOptions{
+				permits: make(chan struct{}, ProcessingPermitCount),
+				logger:  slog.New(slog.NewJSONHandler(&logs, nil)),
+				inspect: testCase.inspect,
+				clean:   testCase.clean,
+			})
 
-			recorder := serveRequest(context.Background(), t, handler, fake, testCase.method, mediatype.JSON, testCase.body)
+			recorder := serveRequest(t, handlerRequest{ctx: context.Background(), handler: handler, objectStorage: fake, method: testCase.method, contentType: mediatype.JSON, body: testCase.body})
 
 			require.Equal(t, testCase.wantStatus, recorder.Code, recorder.Body.String())
 			records := readLogRecords(t, logs.Bytes())
@@ -1116,45 +1133,30 @@ func TestPipelineLogsExcludeSeededSensitiveValues(t *testing.T) {
 	}))
 	objectStorage := &sensitiveGrantStorage{Storage: fake}
 	var logs bytes.Buffer
-	handler := newTestHandlerWithLogger(
-		t,
-		make(chan struct{}, ProcessingPermitCount),
-		slog.New(slog.NewJSONHandler(&logs, nil)),
-		func([]byte, scrub.InspectionOrigin) ([]scrub.Field, error) {
+	handler := newTestHandlerWithLogger(t, testHandlerOptions{
+		permits: make(chan struct{}, ProcessingPermitCount),
+		logger:  slog.New(slog.NewJSONHandler(&logs, nil)),
+		inspect: func([]byte, scrub.InspectionOrigin) ([]scrub.Field, error) {
 			return []scrub.Field{{Name: "title", Preview: "metadata-preview-secret", Action: scrub.ActionRemove}}, nil
 		},
-		nil,
-		nil,
-	)
+	})
 
-	uploadRecorder := serveRequest(
-		context.Background(),
-		t,
-		handler,
-		objectStorage,
-		uploadMethod,
-		mediatype.JSON,
-		mustJSON(t, uploadRequest{FileName: "request-name-secret.pdf", FileSizeBytes: 1}),
-	)
-	dryRunRecorder := serveRequest(
-		context.Background(),
-		t,
-		handler,
-		objectStorage,
-		dryRunMethod,
-		mediatype.JSON,
-		mustJSON(t, dryRunRequest{StorageKey: formatStorageKey(fileIDOne)}),
-	)
+	uploadRecorder := serveRequest(t, handlerRequest{
+		ctx: context.Background(), handler: handler, objectStorage: objectStorage,
+		method: uploadMethod, contentType: mediatype.JSON,
+		body: mustJSON(t, uploadRequest{FileName: "request-name-secret.pdf", FileSizeBytes: 1}),
+	})
+	dryRunRecorder := serveRequest(t, handlerRequest{
+		ctx: context.Background(), handler: handler, objectStorage: objectStorage,
+		method: dryRunMethod, contentType: mediatype.JSON,
+		body: mustJSON(t, dryRunRequest{StorageKey: formatStorageKey(fileIDOne)}),
+	})
 	fake.SetFailure(storage.FakeDownloadSource, errors.New("dependency-error-sensitive-marker"))
-	dependencyFailureRecorder := serveRequest(
-		context.Background(),
-		t,
-		handler,
-		objectStorage,
-		dryRunMethod,
-		mediatype.JSON,
-		mustJSON(t, dryRunRequest{StorageKey: formatStorageKey(fileIDTwo)}),
-	)
+	dependencyFailureRecorder := serveRequest(t, handlerRequest{
+		ctx: context.Background(), handler: handler, objectStorage: objectStorage,
+		method: dryRunMethod, contentType: mediatype.JSON,
+		body: mustJSON(t, dryRunRequest{StorageKey: formatStorageKey(fileIDTwo)}),
+	})
 
 	require.Equal(t, http.StatusOK, uploadRecorder.Code, uploadRecorder.Body.String())
 	require.Equal(t, http.StatusOK, dryRunRecorder.Code, dryRunRecorder.Body.String())
@@ -1196,6 +1198,32 @@ const (
 	scrubMethod
 )
 
+type acceptedResponseAssertion func(*testing.T, *httptest.ResponseRecorder)
+
+var acceptedResponseAssertions = map[handlerMethod]acceptedResponseAssertion{
+	uploadMethod: func(t *testing.T, recorder *httptest.ResponseRecorder) {
+		var response uploadResponse
+		require.NoError(t, json.Unmarshal(recorder.Body.Bytes(), &response))
+		require.Equal(t, formatStorageKey(generatedFileID), response.StorageKey)
+		require.NotEmpty(t, response.UploadURL)
+	},
+	dryRunMethod: func(t *testing.T, recorder *httptest.ResponseRecorder) {
+		require.JSONEq(t, `{"etag":"revision-one","fields":[]}`, recorder.Body.String())
+	},
+	scrubMethod: func(t *testing.T, recorder *httptest.ResponseRecorder) {
+		var response scrubResponse
+		require.NoError(t, json.Unmarshal(recorder.Body.Bytes(), &response))
+		require.Equal(t, "done", response.Status)
+		require.NotEmpty(t, response.Result.DownloadURL)
+	},
+}
+
+var handlerMethods = map[handlerMethod]func(*Handler) http.HandlerFunc{
+	uploadMethod: func(handler *Handler) http.HandlerFunc { return handler.Upload },
+	dryRunMethod: func(handler *Handler) http.HandlerFunc { return handler.DryRun },
+	scrubMethod:  func(handler *Handler) http.HandlerFunc { return handler.Scrub },
+}
+
 func newTestHandler(
 	t *testing.T,
 	inspect inspectPDFOperation,
@@ -1203,28 +1231,37 @@ func newTestHandler(
 	entropy entropyOperation,
 ) *Handler {
 	t.Helper()
-	return newTestHandlerWithLogger(t, make(chan struct{}, ProcessingPermitCount), slog.New(slog.NewTextHandler(io.Discard, nil)), inspect, clean, entropy)
+	return newTestHandlerWithLogger(t, testHandlerOptions{
+		permits: make(chan struct{}, ProcessingPermitCount),
+		logger:  slog.New(slog.NewTextHandler(io.Discard, nil)),
+		inspect: inspect,
+		clean:   clean,
+		entropy: entropy,
+	})
 }
 
-func newTestHandlerWithLogger(
-	t *testing.T,
-	permits chan struct{},
-	logger *slog.Logger,
-	inspect inspectPDFOperation,
-	clean cleanPDFOperation,
-	entropy entropyOperation,
-) *Handler {
+type testHandlerOptions struct {
+	permits chan struct{}
+	logger  *slog.Logger
+	inspect inspectPDFOperation
+	clean   cleanPDFOperation
+	entropy entropyOperation
+}
+
+func newTestHandlerWithLogger(t *testing.T, options testHandlerOptions) *Handler {
 	t.Helper()
-	if inspect == nil {
-		inspect = func([]byte, scrub.InspectionOrigin) ([]scrub.Field, error) { return nil, nil }
+	if options.inspect == nil {
+		options.inspect = func([]byte, scrub.InspectionOrigin) ([]scrub.Field, error) { return nil, nil }
 	}
-	if clean == nil {
-		clean = func(input []byte) ([]byte, error) { return bytes.Clone(input), nil }
+	if options.clean == nil {
+		options.clean = func(input []byte) ([]byte, error) { return bytes.Clone(input), nil }
 	}
-	if entropy == nil {
-		entropy = deterministicEntropy
+	if options.entropy == nil {
+		options.entropy = deterministicEntropy
 	}
-	return newHandler(logger, permits, inspect, clean, entropy)
+	return newHandler(options.logger, options.permits, handlerOperations{
+		inspect: options.inspect, clean: options.clean, entropy: options.entropy,
+	})
 }
 
 // A workflow takes a permit by sending into the gate, so an empty gate means every
@@ -1239,46 +1276,47 @@ func requireAllPermitsHeld(t *testing.T, handler *Handler, messageAndArguments .
 	require.Len(t, handler.permits, ProcessingPermitCount, messageAndArguments...)
 }
 
-func serveRequest(
-	ctx context.Context,
-	t *testing.T,
-	handler *Handler,
-	objectStorage storage.Storage,
-	method handlerMethod,
-	contentType string,
-	body string,
-) *httptest.ResponseRecorder {
+type handlerRequest struct {
+	ctx           context.Context
+	handler       *Handler
+	objectStorage storage.Storage
+	method        handlerMethod
+	contentType   string
+	body          string
+}
+
+func serveRequest(t *testing.T, input handlerRequest) *httptest.ResponseRecorder {
 	t.Helper()
-	request := httptest.NewRequest(http.MethodPost, "/", strings.NewReader(body)).WithContext(ctx)
-	if contentType != "" {
-		request.Header.Set(header.ContentType, contentType)
+	request := httptest.NewRequest(http.MethodPost, "/", strings.NewReader(input.body)).WithContext(input.ctx)
+	if input.contentType != "" {
+		request.Header.Set(header.ContentType, input.contentType)
 	}
 	recorder := httptest.NewRecorder()
 
-	var endpoint http.HandlerFunc
-	switch method {
-	case uploadMethod:
-		endpoint = handler.Upload
-	case dryRunMethod:
-		endpoint = handler.DryRun
-	case scrubMethod:
-		endpoint = handler.Scrub
-	default:
-		require.FailNow(t, "unknown handler method")
-	}
-	bindings.Inject(bindings.Bindings{Storage: objectStorage})(endpoint).ServeHTTP(recorder, request)
+	endpointForMethod, known := handlerMethods[input.method]
+	require.True(t, known, "unknown handler method")
+	endpoint := endpointForMethod(input.handler)
+	bindings.Inject(bindings.Bindings{Storage: input.objectStorage})(endpoint).ServeHTTP(recorder, request)
 	return recorder
 }
 
-func serveJSONRequest(
-	t *testing.T,
-	handler *Handler,
-	objectStorage storage.Storage,
-	method handlerMethod,
-	body any,
-) *httptest.ResponseRecorder {
+type jsonHandlerRequest struct {
+	handler       *Handler
+	objectStorage storage.Storage
+	method        handlerMethod
+	body          any
+}
+
+func serveJSONRequest(t *testing.T, input jsonHandlerRequest) *httptest.ResponseRecorder {
 	t.Helper()
-	return serveRequest(context.Background(), t, handler, objectStorage, method, mediatype.JSON, mustJSON(t, body))
+	return serveRequest(t, handlerRequest{
+		ctx:           context.Background(),
+		handler:       input.handler,
+		objectStorage: input.objectStorage,
+		method:        input.method,
+		contentType:   mediatype.JSON,
+		body:          mustJSON(t, input.body),
+	})
 }
 
 func deterministicEntropy(destination []byte) (int, error) {
@@ -1490,15 +1528,13 @@ type guardedRequest struct {
 	fileID string
 }
 
-// startGuardedRequests serves every request in its own goroutine, then blocks until
-// wantDownloads downloads have started. The count is explicit because a caller may start more
-// requests than the admission gate lets through.
+// startGuardedRequests serves every request in its own goroutine. It waits until
+// the shared admission gate starts both allowed downloads.
 func startGuardedRequests(
 	t *testing.T,
 	handler *Handler,
 	observer *blockingStorage,
 	requests []guardedRequest,
-	wantDownloads int,
 ) <-chan *httptest.ResponseRecorder {
 	t.Helper()
 	responses := make(chan *httptest.ResponseRecorder, len(requests))
@@ -1513,10 +1549,10 @@ func startGuardedRequests(
 			body = mustJSON(t, dryRunRequest{StorageKey: formatStorageKey(request.fileID)})
 		}
 		go func() {
-			responses <- serveRequest(context.Background(), t, handler, observer, request.method, mediatype.JSON, body)
+			responses <- serveRequest(t, handlerRequest{ctx: context.Background(), handler: handler, objectStorage: observer, method: request.method, contentType: mediatype.JSON, body: body})
 		}()
 	}
-	observer.waitForDownloads(t, wantDownloads)
+	observer.waitForDownloads(t, ProcessingPermitCount)
 	return responses
 }
 
