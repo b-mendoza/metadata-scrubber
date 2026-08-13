@@ -1,6 +1,9 @@
 {
-  "jsPlugins": ["./index.ts"],
+  "jsPlugins": [
+    "./index.ts"
+  ],
   "rules": {
-    "metadata-scrubber/hoist-effect-schema-compilers": "error"
+    "metadata-scrubber/hoist-effect-schema-compilers": "error",
+    "metadata-scrubber/no-classes": "error"
   }
 }

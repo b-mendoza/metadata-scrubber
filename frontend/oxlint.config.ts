@@ -630,6 +630,7 @@ export default defineConfig({
     "simple-import-sort/imports": "error",
     "simple-import-sort/exports": "error",
     "metadata-scrubber/hoist-effect-schema-compilers": "error",
+    "metadata-scrubber/no-classes": "error",
     "import/newline-after-import": "error",
     "no-restricted-imports": [
       "error",
