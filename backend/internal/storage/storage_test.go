@@ -432,6 +432,30 @@ func TestFakeCanceledContextTakesPriorityOverInvalidInput(t *testing.T) {
 	require.Empty(t, fake.Calls())
 }
 
+type fakeOperationInvocation func(*storage.Fake) error
+
+var fakeOperationInvocations = map[storage.FakeOperation]fakeOperationInvocation{
+	storage.FakePresignSourceUpload: func(fake *storage.Fake) error {
+		_, err := fake.PresignSourceUpload(context.Background(), "file-1", 1024, time.Minute)
+		return err
+	},
+	storage.FakePresignSanitizedDownload: func(fake *storage.Fake) error {
+		_, err := fake.PresignSanitizedDownload(context.Background(), "file-1", "revision-1", time.Minute)
+		return err
+	},
+	storage.FakeDownloadSource: func(fake *storage.Fake) error {
+		_, err := fake.DownloadSource(context.Background(), "file-1", "")
+		return err
+	},
+	storage.FakeSanitizedExists: func(fake *storage.Fake) error {
+		_, err := fake.SanitizedExists(context.Background(), "file-1", "revision-1")
+		return err
+	},
+	storage.FakeUploadSanitized: func(fake *storage.Fake) error {
+		return fake.UploadSanitized(context.Background(), "file-1", "revision-1", []byte("not stored"))
+	},
+}
+
 func TestFakeInjectsIndependentOrdinaryFailuresForEveryOperation(t *testing.T) {
 	t.Parallel()
 
@@ -447,29 +471,9 @@ func TestFakeInjectsIndependentOrdinaryFailuresForEveryOperation(t *testing.T) {
 			fake := storage.NewFake()
 			fake.SetFailure(operation, injectedErr)
 
-			var err error
-			switch operation {
-			case storage.FakePresignSourceUpload:
-				_, err = fake.PresignSourceUpload(context.Background(), "file-1", 1024, time.Minute)
-			case storage.FakePresignSanitizedDownload:
-				_, err = fake.PresignSanitizedDownload(
-					context.Background(),
-					"file-1",
-					"revision-1",
-					time.Minute,
-				)
-			case storage.FakeDownloadSource:
-				_, err = fake.DownloadSource(context.Background(), "file-1", "")
-			case storage.FakeSanitizedExists:
-				_, err = fake.SanitizedExists(context.Background(), "file-1", "revision-1")
-			case storage.FakeUploadSanitized:
-				err = fake.UploadSanitized(
-					context.Background(),
-					"file-1",
-					"revision-1",
-					[]byte("not stored"),
-				)
-			}
+			invoke, known := fakeOperationInvocations[operation]
+			require.True(t, known, "unknown fake operation")
+			err := invoke(fake)
 
 			require.ErrorIs(t, err, injectedErr)
 			require.NotErrorIs(t, err, storage.ErrSourceRevisionConflict)
