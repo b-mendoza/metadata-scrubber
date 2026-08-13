@@ -227,16 +227,22 @@ func TestR2SanitizedExistenceUsesOnlyTheExactRevisionKey(t *testing.T) {
 	revisionTwoKey, err := SanitizedObjectKey("file-1", "revision-2")
 	require.NoError(t, err)
 
-	requests := make(chan observedStorageRequest, 2)
-	adapter := newTestR2Server(t, http.HandlerFunc(func(response http.ResponseWriter, request *http.Request) {
-		switch request.URL.Path {
-		case "/" + testBucket + "/" + revisionOneKey:
+	responsesByPath := map[string]func(http.ResponseWriter){
+		"/" + testBucket + "/" + revisionOneKey: func(response http.ResponseWriter) {
 			response.Header().Set("ETag", `"ignored-output-etag"`)
 			response.Header().Set("X-Amz-Meta-Source-Etag", "ignored-metadata")
-		case "/" + testBucket + "/" + revisionTwoKey:
+		},
+		"/" + testBucket + "/" + revisionTwoKey: func(response http.ResponseWriter) {
 			response.WriteHeader(http.StatusNotFound)
-		default:
+		},
+	}
+	requests := make(chan observedStorageRequest, 2)
+	adapter := newTestR2Server(t, http.HandlerFunc(func(response http.ResponseWriter, request *http.Request) {
+		writeResponse, known := responsesByPath[request.URL.Path]
+		if !known {
 			response.WriteHeader(http.StatusInternalServerError)
+		} else {
+			writeResponse(response)
 		}
 		requests <- observedStorageRequest{method: request.Method, path: request.URL.Path}
 	}))
