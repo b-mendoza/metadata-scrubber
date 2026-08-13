@@ -175,6 +175,7 @@ export default defineConfig(
     files: [
       "drizzle.config.ts",
       "eslint.config.js",
+      "oxlint-plugin-metadata-scrubber/**/*.ts",
       "scripts/**/*.ts",
       "vite.config.ts",
       "vitest.config.ts",
@@ -229,8 +230,28 @@ export default defineConfig(
       "vitest/prefer-import-in-mock": ERROR,
     },
   },
-  globalIgnores([".output/", "coverage/", "src/routeTree.gen.ts"]),
-  oxlint.buildFromOxlintConfigFile("./.oxlintrc.json", {
+  oxlint.buildFromOxlintConfigFile("./oxlint.config.ts", {
     typeAware: true,
   }),
+  {
+    files: ["oxlint-plugin-metadata-scrubber/**/*.ts"],
+    ignores: ["oxlint-plugin-metadata-scrubber/fixtures/**"],
+    rules: {
+      "@typescript-eslint/no-magic-numbers": OFF,
+      "@typescript-eslint/prefer-destructuring": OFF,
+      "@typescript-eslint/prefer-string-starts-ends-with": OFF,
+      complexity: OFF,
+      "no-console": OFF,
+      "sonarjs/no-nested-conditional": OFF,
+      "sonarjs/no-nested-functions": OFF,
+      "sonarjs/super-linear-regex": OFF,
+    },
+  },
+  globalIgnores([
+    ".output/",
+    "coverage/",
+    "oxlint-plugin-metadata-scrubber/fixtures/",
+    "oxlint.config.ts",
+    "src/routeTree.gen.ts",
+  ]),
 );
