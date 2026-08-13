@@ -15,6 +15,9 @@ const cases = [
   ["no-hardcoded-backend-host", "no-hardcoded-backend-host.ts", 1],
   ["no-mutable-module-state-in-server-code", "mutable-module-state.server.ts", 1],
   ["no-silent-test-prerequisite", "no-silent-test-prerequisite.test.ts", 2],
+  ["schema-import-boundaries", "schema-boundary.server.ts", 1],
+  ["schema-import-boundaries", "schema-boundary.browser.ts", 1],
+  ["schema-import-boundaries", "schema-boundary.shared.ts", 1],
 ] as const satisfies readonly FixtureCase[];
 
 const pluginDir = dirname(fileURLToPath(import.meta.url));
