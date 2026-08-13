@@ -635,6 +635,7 @@ export default defineConfig({
     "metadata-scrubber/no-hardcoded-backend-host": "error",
     "metadata-scrubber/no-mutable-module-state-in-server-code": "error",
     "metadata-scrubber/no-silent-test-prerequisite": "error",
+    "metadata-scrubber/schema-import-boundaries": "error",
     "import/newline-after-import": "error",
     "no-restricted-imports": [
       "error",
