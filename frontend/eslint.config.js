@@ -254,14 +254,16 @@ export default defineConfig(
       // assert something.
       "vitest/expect-expect": OFF,
 
-      // Warn instead of error, and no autofix: we want a leftover `.only`
-      // visible in review, and a fix would delete it while someone debugs.
+      // Error, and no autofix: we want a leftover `.only` visible in review,
+      // and a fix would delete it while someone debugs.
       "vitest/no-focused-tests": [
-        WARN,
+        ERROR,
         {
           fixable: false,
         },
       ],
+      "vitest/no-disabled-tests": ERROR,
+      "testing-library/no-debugging-utils": ERROR,
 
       // Use the matcher that names the assertion, so the failure message says
       // which comparison broke.
