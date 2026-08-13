@@ -62,6 +62,18 @@ type structuralWalker struct {
 	inspectMetadata metadataEntryInspector
 }
 
+type structuralObjectWalker func(structuralWalker, types.Object, []int) error
+
+func newStructuralObjectWalkers() map[string]structuralObjectWalker {
+	return map[string]structuralObjectWalker{
+		"types.Dict":             walkDictionaryObject,
+		"types.StreamDict":       walkStreamDictionaryObject,
+		"types.ObjectStreamDict": walkObjectStreamDictionaryObject,
+		"types.XRefStreamDict":   walkXRefStreamDictionaryObject,
+		"types.Array":            walkArrayObject,
+	}
+}
+
 func sortedLiveObjectNumbers(context *model.Context) []int {
 	objectNumbers := make([]int, 0, len(context.Table))
 	for objectNumber, entry := range context.Table {
@@ -75,20 +87,51 @@ func sortedLiveObjectNumbers(context *model.Context) []int {
 }
 
 func (walker structuralWalker) walkObject(object types.Object, path []int) error {
-	switch value := object.(type) {
-	case types.Dict:
-		return walker.walkDictionary(value, path)
-	case types.StreamDict:
-		return walker.walkDictionary(value.Dict, path)
-	case types.ObjectStreamDict:
-		return walker.walkDictionary(value.Dict, path)
-	case types.XRefStreamDict:
-		return walker.walkDictionary(value.Dict, path)
-	case types.Array:
-		return walker.walkArray(value, path)
-	default:
+	walk, known := newStructuralObjectWalkers()[fmt.Sprintf("%T", object)]
+	if !known {
 		return nil
 	}
+	return walk(walker, object, path)
+}
+
+func walkDictionaryObject(walker structuralWalker, object types.Object, path []int) error {
+	value, ok := object.(types.Dict)
+	if !ok {
+		return fmt.Errorf("unsupported dictionary object type %T", object)
+	}
+	return walker.walkDictionary(value, path)
+}
+
+func walkStreamDictionaryObject(walker structuralWalker, object types.Object, path []int) error {
+	value, ok := object.(types.StreamDict)
+	if !ok {
+		return fmt.Errorf("unsupported stream dictionary object type %T", object)
+	}
+	return walker.walkDictionary(value.Dict, path)
+}
+
+func walkObjectStreamDictionaryObject(walker structuralWalker, object types.Object, path []int) error {
+	value, ok := object.(types.ObjectStreamDict)
+	if !ok {
+		return fmt.Errorf("unsupported object stream dictionary type %T", object)
+	}
+	return walker.walkDictionary(value.Dict, path)
+}
+
+func walkXRefStreamDictionaryObject(walker structuralWalker, object types.Object, path []int) error {
+	value, ok := object.(types.XRefStreamDict)
+	if !ok {
+		return fmt.Errorf("unsupported xref stream dictionary type %T", object)
+	}
+	return walker.walkDictionary(value.Dict, path)
+}
+
+func walkArrayObject(walker structuralWalker, object types.Object, path []int) error {
+	value, ok := object.(types.Array)
+	if !ok {
+		return fmt.Errorf("unsupported array object type %T", object)
+	}
+	return walker.walkArray(value, path)
 }
 
 func (walker structuralWalker) walkDictionary(dictionary types.Dict, path []int) error {
@@ -105,24 +148,28 @@ func (walker structuralWalker) walkDictionary(dictionary types.Dict, path []int)
 		return err
 	}
 	for keyIndex, key := range keys {
-		if key.logical == "Metadata" {
-			if err := walker.inspectMetadata(dictionary, key.encoded, path); err != nil {
-				return err
-			}
-			continue
-		}
-
-		value := dictionary[key.encoded]
-		if _, indirect := value.(types.IndirectRef); indirect {
-			continue
-		}
-		childPath := append(slices.Clone(path), keyIndex+1)
-		if err := walker.walkObject(value, childPath); err != nil {
+		if err := walker.walkDictionaryEntry(dictionary, key, keyIndex, path); err != nil {
 			return err
 		}
 	}
-
 	return nil
+}
+
+func (walker structuralWalker) walkDictionaryEntry(
+	dictionary types.Dict,
+	key dictionaryKey,
+	keyIndex int,
+	path []int,
+) error {
+	if key.logical == "Metadata" {
+		return walker.inspectMetadata(dictionary, key.encoded, path)
+	}
+	value := dictionary[key.encoded]
+	if _, indirect := value.(types.IndirectRef); indirect {
+		return nil
+	}
+	childPath := append(slices.Clone(path), keyIndex+1)
+	return walker.walkObject(value, childPath)
 }
 
 func (walker structuralWalker) walkArray(array types.Array, path []int) error {
@@ -176,9 +223,18 @@ func dictionaryHasSignatureType(context *model.Context, dictionary types.Dict) (
 }
 
 func pdfHasCachedSignature(context *model.Context) bool {
-	if context.SignatureExist || context.AppendOnly || len(context.URSignature) > 0 || context.CertifiedSigObjNr > 0 || !context.DTS.IsZero() {
-		return true
-	}
+	return pdfHasCachedSignatureState(context) || pdfHasSignedIncrement(context)
+}
+
+func pdfHasCachedSignatureState(context *model.Context) bool {
+	return context.SignatureExist ||
+		context.AppendOnly ||
+		len(context.URSignature) > 0 ||
+		context.CertifiedSigObjNr > 0 ||
+		!context.DTS.IsZero()
+}
+
+func pdfHasSignedIncrement(context *model.Context) bool {
 	for _, incrementSignatures := range context.Signatures {
 		for _, signature := range incrementSignatures {
 			if signature.Signed {
