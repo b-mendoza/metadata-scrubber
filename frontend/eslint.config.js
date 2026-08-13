@@ -18,6 +18,7 @@ import metadataScrubber from "./oxlint-plugin-metadata-scrubber/index.ts";
 const OFF = 0;
 const WARN = 1;
 const ERROR = 2;
+const MAX_COMPLEXITY = 8;
 
 const BASE_RESTRICTED_IMPORT_PATTERNS = [
   {
@@ -179,13 +180,14 @@ export default defineConfig(
        * @see https://eslint.org/docs/latest/rules/require-unicode-regexp
        */
       "require-unicode-regexp": OFF,
+      "sonarjs/cognitive-complexity": [ERROR, MAX_COMPLEXITY],
       "sonarjs/no-commented-code": WARN,
       "sonarjs/todo-tag": WARN,
       complexity: [
         ERROR,
         {
           variant: "modified",
-          max: 4,
+          max: MAX_COMPLEXITY,
         },
       ],
       eqeqeq: [
