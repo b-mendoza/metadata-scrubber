@@ -25,7 +25,8 @@
     "preview": "vite preview",
     "test": "vitest run",
     "test:coverage": "vitest run --coverage",
-    "test:watch": "vitest watch"
+    "test:watch": "vitest watch",
+    "lint:oxlint-plugin": "node oxlint-plugin-metadata-scrubber/check-fixtures.ts"
   },
   "dependencies": {
     "@ai-sdk/react": "4.0.69",
