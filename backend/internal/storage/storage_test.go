@@ -497,10 +497,7 @@ func TestFakeSupportsConcurrentExactRevisionOperations(t *testing.T) {
 	operationErrors := make(chan error, 60)
 	var waitGroup sync.WaitGroup
 	for index := range 20 {
-		waitGroup.Add(1)
-		go func() {
-			defer waitGroup.Done()
-
+		waitGroup.Go(func() {
 			_, readErr := fake.DownloadSource(context.Background(), "file-1", "revision-1")
 			operationErrors <- readErr
 			operationErrors <- fake.UploadSanitized(
@@ -511,7 +508,7 @@ func TestFakeSupportsConcurrentExactRevisionOperations(t *testing.T) {
 			)
 			_, lookupErr := fake.SanitizedExists(context.Background(), "file-1", "revision-1")
 			operationErrors <- lookupErr
-		}()
+		})
 	}
 	waitGroup.Wait()
 	close(operationErrors)
