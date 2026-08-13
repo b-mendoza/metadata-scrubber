@@ -19,6 +19,21 @@ const OFF = 0;
 const WARN = 1;
 const ERROR = 2;
 
+const BASE_RESTRICTED_IMPORT_PATTERNS = [
+  {
+    regex: "^zod\\/.+$",
+    message:
+      'Import Zod from the `zod` package root. Use `import * as z from "zod"` for runtime code or `import type * as z from "zod"` for type-only code. Replace every `zod/*` source with `zod`. The package root is the only supported project entry point.',
+  },
+];
+
+const BASE_RESTRICTED_SYNTAX = [
+  {
+    selector: "SwitchStatement",
+    message: "Use a lookup map that raises an error for unknown keys instead.",
+  },
+];
+
 export default defineConfig(
   eslint.configs.recommended,
   ...tseslint.configs.strictTypeChecked,
@@ -139,15 +154,10 @@ export default defineConfig(
       "no-restricted-imports": [
         ERROR,
         {
-          patterns: [
-            {
-              regex: "^zod\\/.+$",
-              message:
-                'Import Zod from the `zod` package root. Use `import * as z from "zod"` for runtime code or `import type * as z from "zod"` for type-only code. Replace every `zod/*` source with `zod`. The package root is the only supported project entry point.',
-            },
-          ],
+          patterns: BASE_RESTRICTED_IMPORT_PATTERNS,
         },
       ],
+      "no-restricted-syntax": [ERROR, ...BASE_RESTRICTED_SYNTAX],
       /**
        * Disabled because the `v` flag requires es2024, but our project targets es2023.
        * Re-enable when the project upgrades to es2024.
