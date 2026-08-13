@@ -629,6 +629,7 @@ export default defineConfig({
     "sonarjs/explicit-test-skip": "error",
     "simple-import-sort/imports": "error",
     "simple-import-sort/exports": "error",
+    "metadata-scrubber/hoist-effect-schema-compilers": "error",
     "import/newline-after-import": "error",
     "no-restricted-imports": [
       "error",
