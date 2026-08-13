@@ -43,16 +43,17 @@ tasks:
     cmds:
       - task: test
 
-  # Read-only umbrella (CI-safe, writes nothing): lint + verify formatting +
-  # vulnerability scan. golangci-lint's `run` checks the enabled formatters
-  # too, so a single command covers both — no parallel runner needed like
-  # the frontend. govulncheck queries the Go vulnerability database over the
-  # network, so a newly published advisory can fail this task without any
-  # code change.
+  # Read-only source gate. golangci-lint's `run` checks the enabled formatters
+  # too, so one command covers lint and formatting.
   lint:
-    desc: Lint, verify formatting, and scan for known vulnerabilities (read-only)
+    desc: Lint and verify formatting (read-only)
     cmds:
       - go tool golangci-lint run --config {{.GOLANGCI_LINT_CONFIG}}
+
+  # Advisory security scan. It queries the changing Go vulnerability database.
+  security:
+    desc: Scan dependencies for known vulnerabilities (networked)
+    cmds:
       - go tool govulncheck ./...
 
   # Write umbrella (destructive): apply lint auto-fixes, then format with
