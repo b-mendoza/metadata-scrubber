@@ -49,6 +49,12 @@ tasks:
     desc: Lint and verify formatting (read-only)
     cmds:
       - go tool golangci-lint run --config {{.GOLANGCI_LINT_CONFIG}}
+      - task: lint:analysis
+
+  lint:analysis:
+    desc: Run the custom backend analyzers (read-only)
+    cmds:
+      - go run ./lint/cmd/backendlint ./...
 
   # Advisory security scan. It queries the changing Go vulnerability database.
   security:
