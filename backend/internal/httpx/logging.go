@@ -1,6 +1,7 @@
 package httpx
 
 import (
+	"context"
 	"log/slog"
 	"net/http"
 	"time"
@@ -11,52 +12,68 @@ import (
 func RequestLogger(logger *slog.Logger) func(http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			startedAt := time.Now()
-			path := r.URL.Path
-
-			logger.LogAttrs(
-				r.Context(),
-				slog.LevelInfo,
-				"request started",
-				slog.String("method", r.Method),
-				slog.String("path", path),
-				slog.String("remote_addr", r.RemoteAddr),
-				slog.String("user_agent", r.UserAgent()),
-			)
-
-			recorder := &loggingResponseWriter{
-				ResponseWriter: w,
-				status:         http.StatusOK,
-			}
-			defer func() {
-				recovered := recover()
-				level := slog.LevelInfo
-				if recovered != nil {
-					if !recorder.wroteHeader {
-						recorder.status = http.StatusInternalServerError
-					}
-					level = slog.LevelError
-				}
-
-				attrs := []slog.Attr{
-					slog.String("method", r.Method),
-					slog.String("path", path),
-					slog.Int("status", recorder.status),
-					slog.Int("bytes", recorder.bytesWritten),
-					slog.Int64("duration_ms", time.Since(startedAt).Milliseconds()),
-				}
-				if recovered != nil {
-					attrs = append(attrs, slog.Bool("panicked", true))
-				}
-
-				logger.LogAttrs(r.Context(), level, "request completed", attrs...)
-				if recovered != nil {
-					panic(recovered)
-				}
-			}()
-
-			next.ServeHTTP(recorder, r)
+			serveLoggedRequest(logger, next, w, r)
 		})
+	}
+}
+
+func serveLoggedRequest(logger *slog.Logger, next http.Handler, w http.ResponseWriter, r *http.Request) {
+	startedAt := time.Now()
+	path := r.URL.Path
+	logger.LogAttrs(
+		r.Context(),
+		slog.LevelInfo,
+		"request started",
+		slog.String("method", r.Method),
+		slog.String("path", path),
+		slog.String("remote_addr", r.RemoteAddr),
+		slog.String("user_agent", r.UserAgent()),
+	)
+
+	recorder := &loggingResponseWriter{ResponseWriter: w, status: http.StatusOK}
+	defer logRequestCompletion(logger, requestLogContext{
+		request:   requestLogRequest{method: r.Method, path: path, context: r.Context()},
+		recorder:  recorder,
+		startedAt: startedAt,
+	})
+	next.ServeHTTP(recorder, r)
+}
+
+type requestLogRequest struct {
+	method  string
+	path    string
+	context context.Context
+}
+
+type requestLogContext struct {
+	request   requestLogRequest
+	recorder  *loggingResponseWriter
+	startedAt time.Time
+}
+
+func logRequestCompletion(logger *slog.Logger, logContext requestLogContext) {
+	recovered := recover()
+	level := slog.LevelInfo
+	if recovered != nil {
+		if !logContext.recorder.wroteHeader {
+			logContext.recorder.status = http.StatusInternalServerError
+		}
+		level = slog.LevelError
+	}
+
+	attrs := []slog.Attr{
+		slog.String("method", logContext.request.method),
+		slog.String("path", logContext.request.path),
+		slog.Int("status", logContext.recorder.status),
+		slog.Int("bytes", logContext.recorder.bytesWritten),
+		slog.Int64("duration_ms", time.Since(logContext.startedAt).Milliseconds()),
+	}
+	if recovered != nil {
+		attrs = append(attrs, slog.Bool("panicked", true))
+	}
+	logger.LogAttrs(logContext.request.context, level, "request completed", attrs...)
+	if recovered != nil {
+		panic(recovered)
 	}
 }
 
