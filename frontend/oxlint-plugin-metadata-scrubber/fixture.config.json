@@ -4,6 +4,7 @@
   ],
   "rules": {
     "metadata-scrubber/hoist-effect-schema-compilers": "error",
-    "metadata-scrubber/no-classes": "error"
+    "metadata-scrubber/no-classes": "error",
+    "metadata-scrubber/no-expect-type-of": "error"
   }
 }
