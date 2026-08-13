@@ -2,6 +2,14 @@
 
 **Package manager:** `pnpm`
 
+## Deployment target
+
+The service deploys to Vercel as a TanStack Start application, and not on a server that you control. Design and review with these properties:
+
+- One instance can serve many requests at the same time. Do not keep per-request state in module scope.
+- The platform injects the backend's URL as a service binding; read it from the validated environment, never from a hardcoded host.
+- The platform bounds request time and instance memory. Bound work that holds a large buffer for each request.
+
 ## Always
 
 - If Node.js (see `.nvmrc`) or pnpm is missing or on the wrong version, run `scripts/setup-node.sh` before doing anything else.
