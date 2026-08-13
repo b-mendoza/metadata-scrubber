@@ -162,15 +162,23 @@ func (r2 *R2) DownloadSource(
 
 	output, err := r2.client.GetObject(ctx, input)
 	if err != nil {
-		statusCode, hasStatusCode := httpStatusCode(err)
-		if hasStatusCode && expectedETag != "" && statusCode == http.StatusPreconditionFailed {
-			return SourceObject{}, operationError(operationDownloadSource, ErrSourceRevisionConflict)
-		}
-		if hasStatusCode && statusCode == http.StatusNotFound {
-			return SourceObject{}, operationError(operationDownloadSource, ErrSourceNotFound)
-		}
-		return SourceObject{}, r2OperationError(ctx, operationDownloadSource)
+		return SourceObject{}, classifySourceDownloadError(ctx, err, expectedETag)
 	}
+	return readSourceObject(ctx, output)
+}
+
+func classifySourceDownloadError(ctx context.Context, err error, expectedETag string) error {
+	statusCode, hasStatusCode := httpStatusCode(err)
+	if hasStatusCode && expectedETag != "" && statusCode == http.StatusPreconditionFailed {
+		return operationError(operationDownloadSource, ErrSourceRevisionConflict)
+	}
+	if hasStatusCode && statusCode == http.StatusNotFound {
+		return operationError(operationDownloadSource, ErrSourceNotFound)
+	}
+	return r2OperationError(ctx, operationDownloadSource)
+}
+
+func readSourceObject(ctx context.Context, output *s3.GetObjectOutput) (SourceObject, error) {
 	if output.Body == nil || output.ETag == nil {
 		if output.Body != nil {
 			_ = output.Body.Close()
@@ -191,12 +199,7 @@ func (r2 *R2) DownloadSource(
 	if err != nil {
 		return SourceObject{}, operationError(operationDownloadSource, ErrDependency)
 	}
-
-	return SourceObject{
-		PDFBytes: pdfBytes,
-		Metadata: maps.Clone(output.Metadata),
-		ETag:     normalizedETag,
-	}, nil
+	return SourceObject{PDFBytes: pdfBytes, Metadata: maps.Clone(output.Metadata), ETag: normalizedETag}, nil
 }
 
 // SanitizedExists reports whether the exact immutable sanitized revision exists.
