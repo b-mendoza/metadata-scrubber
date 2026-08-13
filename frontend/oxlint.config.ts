@@ -636,6 +636,7 @@ export default defineConfig({
     "metadata-scrubber/no-mutable-module-state-in-server-code": "error",
     "metadata-scrubber/no-silent-test-prerequisite": "error",
     "metadata-scrubber/schema-import-boundaries": "error",
+    "metadata-scrubber/use-shared-render-helper": "error",
     "import/newline-after-import": "error",
     "no-restricted-imports": [
       "error",

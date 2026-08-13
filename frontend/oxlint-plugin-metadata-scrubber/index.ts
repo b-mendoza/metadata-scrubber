@@ -7,6 +7,7 @@ import noHardcodedBackendHost from "./rules/no-hardcoded-backend-host.ts";
 import noMutableModuleStateInServerCode from "./rules/no-mutable-module-state-in-server-code.ts";
 import noSilentTestPrerequisite from "./rules/no-silent-test-prerequisite.ts";
 import schemaImportBoundaries from "./rules/schema-import-boundaries.ts";
+import useSharedRenderHelper from "./rules/use-shared-render-helper.ts";
 
 export default definePlugin({
   meta: {
@@ -20,5 +21,6 @@ export default definePlugin({
     "no-mutable-module-state-in-server-code": noMutableModuleStateInServerCode,
     "no-silent-test-prerequisite": noSilentTestPrerequisite,
     "schema-import-boundaries": schemaImportBoundaries,
+    "use-shared-render-helper": useSharedRenderHelper,
   },
 });
