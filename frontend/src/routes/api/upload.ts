@@ -22,6 +22,7 @@ const uploadedFileSchema = Schema.File.check(
     { message: "File MIME type is not uploadable" },
   ),
 );
+const decodeUploadedFile = Schema.decodeUnknownEffect(uploadedFileSchema);
 
 class RequestFormDataError extends Data.TaggedError("RequestFormDataError")<{
   readonly cause: unknown;
@@ -38,8 +39,7 @@ export const Route = createFileRoute("/api/upload")({
           });
 
           const unsafeFile = formData.get("file");
-          const validatedFile =
-            yield* Schema.decodeUnknownEffect(uploadedFileSchema)(unsafeFile);
+          const validatedFile = yield* decodeUploadedFile(unsafeFile);
 
           const storageKey = `uploads/${randomUUID()}`;
 
