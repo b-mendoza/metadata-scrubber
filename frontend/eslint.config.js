@@ -248,17 +248,10 @@ export default defineConfig(
     },
   },
   {
-    files: ["oxlint-plugin-metadata-scrubber/**/*.ts?(x)"],
-    ignores: ["oxlint-plugin-metadata-scrubber/fixtures/**"],
+    files: ["oxlint-plugin-metadata-scrubber/check-fixtures.ts"],
     rules: {
-      "@typescript-eslint/no-magic-numbers": OFF,
-      "@typescript-eslint/prefer-destructuring": OFF,
-      "@typescript-eslint/prefer-string-starts-ends-with": OFF,
-      complexity: OFF,
+      // This file is a CLI harness. Console output is its user interface.
       "no-console": OFF,
-      "sonarjs/no-nested-conditional": OFF,
-      "sonarjs/no-nested-functions": OFF,
-      "sonarjs/super-linear-regex": OFF,
     },
   },
   oxlint.buildFromOxlintConfigFile("./.oxlintrc.json", {
