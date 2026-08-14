@@ -13,7 +13,11 @@ const cases = [
   ["no-classes", "no-classes.ts", 2],
   ["no-expect-type-of", "no-expect-type-of.test.ts", 1],
   ["no-hardcoded-backend-host", "no-hardcoded-backend-host.ts", 1],
-  ["no-mutable-module-state-in-server-code", "mutable-module-state.server.ts", 1],
+  [
+    "no-mutable-module-state-in-server-code",
+    "mutable-module-state.server.ts",
+    1,
+  ],
   ["no-silent-test-prerequisite", "no-silent-test-prerequisite.test.ts", 2],
   ["schema-import-boundaries", "schema-boundary.server.ts", 1],
   ["schema-import-boundaries", "schema-boundary.browser.ts", 1],
@@ -25,15 +29,15 @@ const pluginDir = dirname(fileURLToPath(import.meta.url));
 const frontendDir = join(pluginDir, "..");
 const ruleName = (ruleId: string): string => `metadata-scrubber/${ruleId}`;
 
-type OxlintJsonMessage = {
+interface OxlintJsonMessage {
   readonly code?: string;
   readonly ruleId?: string;
-};
+}
 
-type OxlintJsonResult = {
+interface OxlintJsonResult {
   readonly diagnostics?: readonly OxlintJsonMessage[];
   readonly messages?: readonly OxlintJsonMessage[];
-};
+}
 
 const messageMatchesRule = (
   message: OxlintJsonMessage,
@@ -42,7 +46,7 @@ const messageMatchesRule = (
   const target = ruleName(ruleId);
   return (
     message.ruleId === target ||
-    message.code === `${target}` ||
+    message.code === target ||
     message.code === `metadata-scrubber(${ruleId})`
   );
 };
@@ -83,8 +87,10 @@ const countDiagnostics = (fixturePath: string, ruleId: string): number => {
       encoding: "utf8",
     },
   );
-  const output = `${result.stdout ?? ""}${result.stderr ?? ""}`;
-  const jsonStart = output.indexOf("{") === -1 ? output.indexOf("[") : output.indexOf("{");
+  const output = `${result.stdout}${result.stderr}`;
+  const jsonStart = output.includes("{")
+    ? output.indexOf("{")
+    : output.indexOf("[");
   const jsonText = jsonStart === -1 ? "[]" : output.slice(jsonStart);
   return parseMessages(jsonText).filter((message) =>
     messageMatchesRule(message, ruleId),
