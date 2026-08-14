@@ -61,21 +61,6 @@ export default defineConfig(
   love,
   {
     plugins: {
-      "metadata-scrubber": metadataScrubber,
-    },
-    rules: {
-      "metadata-scrubber/hoist-effect-schema-compilers": ERROR,
-      "metadata-scrubber/no-classes": ERROR,
-      "metadata-scrubber/no-expect-type-of": ERROR,
-      "metadata-scrubber/no-hardcoded-backend-host": ERROR,
-      "metadata-scrubber/no-mutable-module-state-in-server-code": ERROR,
-      "metadata-scrubber/no-silent-test-prerequisite": ERROR,
-      "metadata-scrubber/schema-import-boundaries": ERROR,
-      "metadata-scrubber/use-shared-render-helper": ERROR,
-    },
-  },
-  {
-    plugins: {
       unicorn,
     },
     rules: {
@@ -92,6 +77,21 @@ export default defineConfig(
     },
   },
   sonarjs.configs?.["recommended"],
+  {
+    plugins: {
+      "metadata-scrubber": metadataScrubber,
+    },
+    rules: {
+      "metadata-scrubber/hoist-effect-schema-compilers": ERROR,
+      "metadata-scrubber/no-classes": ERROR,
+      "metadata-scrubber/no-expect-type-of": ERROR,
+      "metadata-scrubber/no-hardcoded-backend-host": ERROR,
+      "metadata-scrubber/no-mutable-module-state-in-server-code": ERROR,
+      "metadata-scrubber/no-silent-test-prerequisite": ERROR,
+      "metadata-scrubber/schema-import-boundaries": ERROR,
+      "metadata-scrubber/use-shared-render-helper": ERROR,
+    },
+  },
   {
     plugins: {
       "simple-import-sort": simpleImportSort,
