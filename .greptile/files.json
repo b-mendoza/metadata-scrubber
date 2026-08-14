@@ -27,11 +27,6 @@
       "path": "frontend/docs/agent/code-conventions.md",
       "description": "Frontend TypeScript design guidance.",
       "scope": ["frontend/src/**"]
-    },
-    {
-      "path": "frontend/docs/agent/testing-principles.md",
-      "description": "Frontend test assertion guidance.",
-      "scope": ["frontend/src/**/*.test.*", "frontend/src/**/*.spec.*"]
     }
   ]
 }
