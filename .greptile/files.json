@@ -19,11 +19,6 @@
       ]
     },
     {
-      "path": "docs/agent/naming-conventions.md",
-      "description": "Repository guidance for clear names.",
-      "scope": ["backend/**", "frontend/src/**"]
-    },
-    {
       "path": "frontend/AGENTS.md",
       "description": "Frontend service guidance.",
       "scope": ["frontend/src/**"]
