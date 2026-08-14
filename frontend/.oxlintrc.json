@@ -1108,7 +1108,7 @@
       "plugins": ["vitest"]
     },
     {
-      "files": ["oxlint-plugin-metadata-scrubber/**/*.ts"],
+      "files": ["oxlint-plugin-metadata-scrubber/**/*.ts?(x)"],
       "rules": {
         "complexity": "off",
         "no-console": "off",

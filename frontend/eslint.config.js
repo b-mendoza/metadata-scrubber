@@ -248,7 +248,7 @@ export default defineConfig(
     },
   },
   {
-    files: ["oxlint-plugin-metadata-scrubber/**/*.ts"],
+    files: ["oxlint-plugin-metadata-scrubber/**/*.ts?(x)"],
     ignores: ["oxlint-plugin-metadata-scrubber/fixtures/**"],
     rules: {
       "@typescript-eslint/no-magic-numbers": OFF,
