@@ -9,6 +9,7 @@ import reactHooks from "eslint-plugin-react-hooks";
 import simpleImportSort from "eslint-plugin-simple-import-sort";
 import sonarjs from "eslint-plugin-sonarjs";
 import testingLibrary from "eslint-plugin-testing-library";
+import unicorn from "eslint-plugin-unicorn";
 import eslintPluginZod from "eslint-plugin-zod";
 import globals from "globals";
 import tseslint from "typescript-eslint";
@@ -57,6 +58,23 @@ export default defineConfig(
       "metadata-scrubber/no-silent-test-prerequisite": ERROR,
       "metadata-scrubber/schema-import-boundaries": ERROR,
       "metadata-scrubber/use-shared-render-helper": ERROR,
+    },
+  },
+  {
+    plugins: {
+      unicorn,
+    },
+    rules: {
+      "unicorn/error-message": ERROR,
+      "unicorn/no-array-fill-with-reference-type": ERROR,
+      "unicorn/no-array-sort": ERROR,
+      "unicorn/no-await-in-promise-methods": ERROR,
+      "unicorn/no-instanceof-builtins": ERROR,
+      "unicorn/no-invalid-fetch-options": ERROR,
+      "unicorn/no-invalid-remove-event-listener": ERROR,
+      "unicorn/no-thenable": ERROR,
+      "unicorn/prefer-response-static-json": ERROR,
+      "unicorn/prefer-structured-clone": ERROR,
     },
   },
   {
