@@ -39,10 +39,6 @@ export default defineConfig(
   eslint.configs.recommended,
   ...tseslint.configs.strictTypeChecked,
   ...tseslint.configs.stylisticTypeChecked,
-  // @ts-expect-error Type incompatibility between @typescript-eslint/utils re-exported types and defineConfig.
-  // This is a known issue with plugins using TSESLint.FlatConfig types.
-  // See: https://github.com/typescript-eslint/typescript-eslint/issues/11543
-  love,
   eslintReact.configs["strict-type-checked"],
   reactHooks.configs.flat["recommended-latest"],
   {
@@ -59,6 +55,10 @@ export default defineConfig(
       ],
     },
   },
+  // @ts-expect-error Type incompatibility between @typescript-eslint/utils re-exported types and defineConfig.
+  // This is a known issue with plugins using TSESLint.FlatConfig types.
+  // See: https://github.com/typescript-eslint/typescript-eslint/issues/11543
+  love,
   {
     plugins: {
       "metadata-scrubber": metadataScrubber,
