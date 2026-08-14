@@ -27,6 +27,7 @@ const cases = [
 
 const pluginDir = dirname(fileURLToPath(import.meta.url));
 const frontendDir = join(pluginDir, "..");
+const oxlintPath = join(frontendDir, "node_modules", ".bin", "oxlint");
 const ruleName = (ruleId: string): string => `metadata-scrubber/${ruleId}`;
 
 interface OxlintJsonMessage {
@@ -71,10 +72,8 @@ const parseMessages = (stdout: string): readonly OxlintJsonMessage[] => {
 
 const countDiagnostics = (fixturePath: string, ruleId: string): number => {
   const result = spawnSync(
-    "pnpm",
+    oxlintPath,
     [
-      "exec",
-      "oxlint",
       "-c",
       join("oxlint-plugin-metadata-scrubber", "fixture.config.json"),
       "--format",
