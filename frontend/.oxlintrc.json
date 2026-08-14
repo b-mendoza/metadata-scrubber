@@ -2,17 +2,17 @@
   "$schema": "./node_modules/oxlint/configuration_schema.json",
   "plugins": [
     "typescript",
-    "react",
-    "jsx-a11y",
     "node",
     "promise",
     "import",
-    "unicorn"
+    "react",
+    "unicorn",
+    "jsx-a11y"
   ],
   "jsPlugins": [
     "@eslint-community/eslint-plugin-eslint-comments",
-    "eslint-plugin-sonarjs",
     "./oxlint-plugin-metadata-scrubber/index.ts",
+    "eslint-plugin-sonarjs",
     "eslint-plugin-simple-import-sort"
   ],
   "categories": {
@@ -363,6 +363,14 @@
     "import/no-duplicates": ["error"],
     "import/no-named-default": ["error"],
     "import/no-webpack-loader-syntax": ["error"],
+    "metadata-scrubber/hoist-effect-schema-compilers": "error",
+    "metadata-scrubber/no-classes": "error",
+    "metadata-scrubber/no-expect-type-of": "error",
+    "metadata-scrubber/no-hardcoded-backend-host": "error",
+    "metadata-scrubber/no-mutable-module-state-in-server-code": "error",
+    "metadata-scrubber/no-silent-test-prerequisite": "error",
+    "metadata-scrubber/schema-import-boundaries": "error",
+    "metadata-scrubber/use-shared-render-helper": "error",
     "unicorn/error-message": "error",
     "unicorn/no-array-fill-with-reference-type": "error",
     "unicorn/no-array-sort": "error",
@@ -373,14 +381,6 @@
     "unicorn/no-thenable": "error",
     "unicorn/prefer-response-static-json": "error",
     "unicorn/prefer-structured-clone": "error",
-    "metadata-scrubber/hoist-effect-schema-compilers": "error",
-    "metadata-scrubber/no-classes": "error",
-    "metadata-scrubber/no-expect-type-of": "error",
-    "metadata-scrubber/no-hardcoded-backend-host": "error",
-    "metadata-scrubber/no-mutable-module-state-in-server-code": "error",
-    "metadata-scrubber/no-silent-test-prerequisite": "error",
-    "metadata-scrubber/schema-import-boundaries": "error",
-    "metadata-scrubber/use-shared-render-helper": "error",
     "jsx-a11y/alt-text": "error",
     "jsx-a11y/anchor-has-content": [
       "error",
@@ -1133,7 +1133,6 @@
     {
       "files": ["oxlint-plugin-metadata-scrubber/check-fixtures.ts"],
       "rules": {
-        // This file is a CLI harness. Console output is its user interface.
         "no-console": "off"
       }
     }
