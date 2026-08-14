@@ -6,8 +6,8 @@
 
 The service deploys to Vercel as a TanStack Start application, and not on a server that you control. Design and review with these properties:
 
-- One instance can serve many requests at the same time. Do not keep per-request state in module scope.
-- The platform injects the backend's URL as a service binding; read it from the validated environment, never from a hardcoded host.
+- One instance can serve many requests at the same time.
+- The platform injects the backend's URL as a service binding.
 - The platform bounds request time and instance memory. Bound work that holds a large buffer for each request.
 
 ## Always
@@ -18,8 +18,8 @@ The service deploys to Vercel as a TanStack Start application, and not on a serv
 
 ## Open when relevant (long-lived)
 
-- [TypeScript design conventions](docs/agent/code-conventions.md) — design guidance such as preferring factory functions over classes.
-- [Testing — frontend specifics](docs/agent/testing-principles.md) — Vitest assertion practices and shared render helpers for component tests.
+- [TypeScript design conventions](docs/agent/code-conventions.md) — TypeScript design guidance.
+- [Testing — frontend specifics](docs/agent/testing-principles.md) — frontend test guidance.
 
 ## Current-state references (short-lived; verify against the code)
 

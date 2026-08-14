@@ -34,7 +34,6 @@ The pattern to internalize: a bad name describes a value's shape or generic role
 | `properties` | `filePropertyList` | "Properties" of what? Anchor the noun to its subject. |
 | `err` (bare, far from its cause) | `removePropertiesErr` | Names the operation that failed, so the reader does not have to trace it. |
 | `b` (argument) | `bindings` | A single letter forces the reader to jump to the type to learn anything. |
-| `data`, `val`, `tmp`, `res` | the specific noun it holds | Placeholder names carry no information and tend to outlive their scope. |
 
 A quick test: read the name out loud and ask "of what?" or "for what?". If the name does not already answer the question, it is too vague.
 

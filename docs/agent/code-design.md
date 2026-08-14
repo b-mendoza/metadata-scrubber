@@ -16,7 +16,3 @@ Every entry point into a service — an HTTP endpoint, a server function, a CLI 
 ## Comments
 
 - Comment to explain **why** — a constraint, a trade-off, a non-obvious invariant the code cannot express — never to narrate **what** the code does or that it changed. Comments describing the change itself ("removed X", "now uses Y instead") belong in the commit message, not the source.
-
-## Dependency injection
-
-- Read injected dependencies (database, configuration, storage) from the request-scoped application bindings the service provides, never from module-level globals. Both services carry a bindings concept; each service's short-lived architecture reference under its `docs/` directory describes its mechanism.
