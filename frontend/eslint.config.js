@@ -182,6 +182,8 @@ export default defineConfig(
        */
       "require-unicode-regexp": OFF,
       "sonarjs/cognitive-complexity": [ERROR, MAX_COMPLEXITY],
+      "sonarjs/no-commented-code": ERROR,
+      "sonarjs/todo-tag": ERROR,
       complexity: [
         ERROR,
         {
