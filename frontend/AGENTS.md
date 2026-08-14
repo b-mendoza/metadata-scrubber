@@ -19,7 +19,6 @@ The service deploys to Vercel as a TanStack Start application, and not on a serv
 ## Open when relevant (long-lived)
 
 - [TypeScript design conventions](docs/agent/code-conventions.md) — TypeScript design guidance.
-- [Testing — frontend specifics](docs/agent/testing-principles.md) — frontend test guidance.
 
 ## Current-state references (short-lived; verify against the code)
 
