@@ -1,3 +1,3 @@
-import { z } from "zod";
+import * as z from "zod";
 
-export const valueSchema = z.string();
+export const valueSchema = z.string().trim();
