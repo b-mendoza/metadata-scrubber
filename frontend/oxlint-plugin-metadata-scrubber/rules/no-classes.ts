@@ -28,18 +28,36 @@ const isEffectBaseClassCall = (
   return isEffectBaseClassCall(node.callee);
 };
 
-const isAllowedEffectClass = (node: ESTree.Class): boolean => {
-  let superClass = node.superClass;
-  while (
-    superClass?.type === "TSInstantiationExpression" ||
-    superClass?.type === "TSAsExpression" ||
-    superClass?.type === "TSSatisfiesExpression" ||
-    superClass?.type === "TSNonNullExpression" ||
-    superClass?.type === "ParenthesizedExpression"
-  ) {
-    superClass = superClass.expression;
+type TransparentExpression =
+  | ESTree.ParenthesizedExpression
+  | ESTree.TSAsExpression
+  | ESTree.TSInstantiationExpression
+  | ESTree.TSNonNullExpression
+  | ESTree.TSSatisfiesExpression;
+
+const isTransparentExpression = (
+  node: ESTree.Expression,
+): node is TransparentExpression =>
+  node.type === "TSInstantiationExpression" ||
+  node.type === "TSAsExpression" ||
+  node.type === "TSSatisfiesExpression" ||
+  node.type === "TSNonNullExpression" ||
+  node.type === "ParenthesizedExpression";
+
+const unwrapTransparentExpressions = (
+  node: ESTree.Expression | null,
+): ESTree.Expression | null => {
+  let expression = node;
+  while (expression !== null && isTransparentExpression(expression)) {
+    const { expression: innerExpression } = expression;
+    expression = innerExpression;
   }
-  return isEffectBaseClassCall(superClass);
+  return expression;
+};
+
+const isAllowedEffectClass = (node: ESTree.Class): boolean => {
+  const { superClass } = node;
+  return isEffectBaseClassCall(unwrapTransparentExpressions(superClass));
 };
 
 export default defineRule({
