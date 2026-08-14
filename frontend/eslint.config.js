@@ -183,8 +183,6 @@ export default defineConfig(
       "@typescript-eslint/return-await": [ERROR, "in-try-catch"],
       "arrow-body-style": OFF,
       "import/newline-after-import": ERROR,
-      "object-shorthand": ERROR,
-      "react-hooks/exhaustive-deps": ERROR,
       "no-restricted-imports": [
         ERROR,
         {
@@ -192,6 +190,8 @@ export default defineConfig(
         },
       ],
       "no-restricted-syntax": [ERROR, ...BASE_RESTRICTED_SYNTAX],
+      "object-shorthand": ERROR,
+      "react-hooks/exhaustive-deps": ERROR,
       /**
        * Disabled because the `v` flag requires es2024, but our project targets es2023.
        * Re-enable when the project upgrades to es2024.
