@@ -1,0 +1,42 @@
+{
+  "files": [
+    {
+      "path": "AGENTS.md",
+      "description": "Repository guidance for language, design, testing, and review scope."
+    },
+    {
+      "path": "docs/agent/code-design.md",
+      "description": "Repository guidance for boundary contracts and simple design.",
+      "scope": ["backend/**", "frontend/src/**"]
+    },
+    {
+      "path": "docs/agent/testing.md",
+      "description": "Repository guidance for useful tests and partial assertions.",
+      "scope": [
+        "backend/**/*_test.go",
+        "frontend/src/**/*.test.*",
+        "frontend/src/**/*.spec.*"
+      ]
+    },
+    {
+      "path": "docs/agent/naming-conventions.md",
+      "description": "Repository guidance for clear names.",
+      "scope": ["backend/**", "frontend/src/**"]
+    },
+    {
+      "path": "frontend/AGENTS.md",
+      "description": "Frontend service guidance.",
+      "scope": ["frontend/src/**"]
+    },
+    {
+      "path": "frontend/docs/agent/code-conventions.md",
+      "description": "Frontend TypeScript design guidance.",
+      "scope": ["frontend/src/**"]
+    },
+    {
+      "path": "frontend/docs/agent/testing-principles.md",
+      "description": "Frontend test assertion guidance.",
+      "scope": ["frontend/src/**/*.test.*", "frontend/src/**/*.spec.*"]
+    }
+  ]
+}
