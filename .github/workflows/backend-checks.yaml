@@ -41,3 +41,16 @@ jobs:
         run: |
           go mod tidy
           git diff --exit-code -- go.mod go.sum
+
+  security:
+    name: Run backend security scan
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: "Setup Go and Task"
+        uses: ./.github/actions/backend/setup-env
+
+      - name: Run vulnerability scan
+        working-directory: ./backend
+        run: task security
