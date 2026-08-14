@@ -247,9 +247,6 @@ export default defineConfig(
       "vitest/prefer-import-in-mock": ERROR,
     },
   },
-  oxlint.buildFromOxlintConfigFile("./oxlint.config.ts", {
-    typeAware: true,
-  }),
   {
     files: ["oxlint-plugin-metadata-scrubber/**/*.ts"],
     ignores: ["oxlint-plugin-metadata-scrubber/fixtures/**"],
@@ -264,11 +261,13 @@ export default defineConfig(
       "sonarjs/super-linear-regex": OFF,
     },
   },
+  oxlint.buildFromOxlintConfigFile("./.oxlintrc.json", {
+    typeAware: true,
+  }),
   globalIgnores([
     ".output/",
     "coverage/",
     "oxlint-plugin-metadata-scrubber/fixtures/",
-    "oxlint.config.ts",
     "src/routeTree.gen.ts",
   ]),
 );
