@@ -5,6 +5,20 @@ const FUNCTION_TYPES = new Set<ESTree.Node["type"]>([
   "FunctionDeclaration",
   "FunctionExpression",
 ]);
+const EMPTY_SPECIFIER_COUNT = 0;
+const PATH_START_INDEX = 0;
+const REMOVE_LAST_CHARACTER_END = -1;
+
+const stripTrailingSlashes = (path: string): string => {
+  let pathWithoutTrailingSlashes = path;
+  while (pathWithoutTrailingSlashes.endsWith("/")) {
+    pathWithoutTrailingSlashes = pathWithoutTrailingSlashes.slice(
+      PATH_START_INDEX,
+      REMOVE_LAST_CHARACTER_END,
+    );
+  }
+  return pathWithoutTrailingSlashes;
+};
 
 export const getStaticPropertyName = (
   node: ESTree.Node | null | undefined,
@@ -53,7 +67,7 @@ export const normalizePath = (path: string): string =>
 
 export const toProjectPath = (filename: string, cwd: string): string => {
   const normalizedFilename = normalizePath(filename);
-  const normalizedCwd = normalizePath(cwd).replace(/\/+$/u, "");
+  const normalizedCwd = stripTrailingSlashes(normalizePath(cwd));
   const prefix = `${normalizedCwd}/`;
   return normalizedFilename.startsWith(prefix)
     ? normalizedFilename.slice(prefix.length)
@@ -62,7 +76,7 @@ export const toProjectPath = (filename: string, cwd: string): string => {
 
 export const isRuntimeImport = (node: ESTree.ImportDeclaration): boolean =>
   node.importKind !== "type" &&
-  (node.specifiers.length === 0 ||
+  (node.specifiers.length === EMPTY_SPECIFIER_COUNT ||
     node.specifiers.some(
       (specifier) =>
         specifier.type !== "ImportSpecifier" || specifier.importKind !== "type",
