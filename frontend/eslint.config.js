@@ -16,10 +16,8 @@ import tseslint from "typescript-eslint";
 import metadataScrubber from "./oxlint-plugin-metadata-scrubber/index.ts";
 
 const OFF = 0;
-const WARN = 1;
 const ERROR = 2;
 const MAX_COMPLEXITY = 8;
-const advisorySeverity = process.env["LINT_REPORT"] === "true" ? WARN : OFF;
 
 const BASE_RESTRICTED_IMPORT_PATTERNS = [
   {
@@ -182,8 +180,6 @@ export default defineConfig(
        */
       "require-unicode-regexp": OFF,
       "sonarjs/cognitive-complexity": [ERROR, MAX_COMPLEXITY],
-      "sonarjs/no-commented-code": advisorySeverity,
-      "sonarjs/todo-tag": advisorySeverity,
       complexity: [
         ERROR,
         {
