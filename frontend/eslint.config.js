@@ -167,6 +167,7 @@ export default defineConfig(
       "arrow-body-style": OFF,
       "import/newline-after-import": ERROR,
       "object-shorthand": ERROR,
+      "react-hooks/exhaustive-deps": ERROR,
       "no-restricted-imports": [
         ERROR,
         {
