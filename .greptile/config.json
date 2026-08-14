@@ -1,0 +1,59 @@
+{
+  "instructions": "Review only concerns that deterministic checks cannot enforce. Never waive, override, or discount a failing deterministic check. Keep this review advisory. Do not provide the only merge approval.",
+  "rules": [
+    {
+      "id": "backend-boundary-contracts",
+      "severity": "high",
+      "scope": ["backend/**"],
+      "rule": "Review boundary contracts. Require each boundary to declare and validate its input before domain logic runs. Require contract violations and unknown values to return an explicit error. Do not accept silent coercion, default values, or dropped input. Prefer construction that removes invalid states."
+    },
+    {
+      "id": "backend-partial-call-assertions",
+      "severity": "medium",
+      "scope": ["backend/**/*_test.go"],
+      "rule": "Review call assertions. Require partial assertions for values with fields that the code under test does not control. Do not require an exact full-structure assertion unless the code controls the complete value."
+    },
+    {
+      "id": "frontend-boundary-contracts",
+      "severity": "high",
+      "scope": ["frontend/src/**"],
+      "rule": "Review boundary contracts. Require each boundary to declare and validate external input before domain logic runs. Require contract violations and unknown values to fail with a clear error. Do not accept silent coercion, default values, or dropped input. Prefer construction that removes invalid states."
+    },
+    {
+      "id": "frontend-idiomatic-effect",
+      "severity": "high",
+      "scope": ["frontend/src/**"],
+      "rule": "Review server code for idiomatic Effect design. Effect tagged error classes are correct and must stay classes. Do not request object-literal replacements for tagged errors."
+    },
+    {
+      "id": "frontend-partial-call-assertions",
+      "severity": "medium",
+      "scope": ["frontend/src/**/*.test.*", "frontend/src/**/*.spec.*"],
+      "rule": "Review call assertions. Require expect.objectContaining or another partial matcher when the code controls only part of a value. Do not require an exact full-structure assertion unless the code controls the complete value."
+    },
+    {
+      "id": "design-intent-and-simplicity",
+      "severity": "medium",
+      "scope": ["backend/**", "frontend/src/**"],
+      "rule": "Review design intent and simplicity. Report unclear or needless abstractions. Check that the change solves the stated problem with the smallest clear design."
+    },
+    {
+      "id": "naming-quality",
+      "severity": "medium",
+      "scope": ["backend/**", "frontend/src/**"],
+      "rule": "Review names for clear domain meaning beyond any deterministic denylist. Accept established language names such as ctx, w, r, ok, err used near its cause, and short loop indexes."
+    },
+    {
+      "id": "markdown-asd-ste100",
+      "severity": "medium",
+      "scope": ["**/*.md"],
+      "rule": "Review Markdown for ASD-STE100 Simplified Technical English. Require short sentences in active voice. Require one idea in each sentence. Prefer the simplest word that keeps the meaning. Require one consistent word for one concept. Keep technical names, identifiers, commands, and code exact."
+    },
+    {
+      "id": "deterministic-rule-boundary",
+      "severity": "high",
+      "scope": ["backend/**", "frontend/src/**", "**/*.md"],
+      "rule": "Do not review complexity limits, switch statements, class syntax, lookup-map structure, formatting, or any other rule that deterministic checks own. Never waive, override, or discount a failing deterministic check."
+    }
+  ]
+}

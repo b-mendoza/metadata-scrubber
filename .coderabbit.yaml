@@ -1,0 +1,35 @@
+# Reviewers must never waive a failing deterministic check.
+# yaml-language-server: $schema=https://coderabbit.ai/integrations/schema.v2.json
+
+reviews:
+  path_instructions:
+    - path: "backend/**"
+      instructions: |
+        Review only concerns that deterministic checks cannot enforce.
+        Review boundary contracts. Require each boundary to declare and validate its input before domain logic runs. Require contract violations and unknown values to return an explicit error. Do not accept silent coercion, default values, or dropped input.
+        Review test call assertions. Require partial assertions for values with fields that the code under test does not control. Do not require an exact full-structure assertion unless the code controls the complete value.
+        Review design intent and simplicity. Prefer construction that removes invalid states. Report unclear or needless abstractions.
+        Review names for clear domain meaning beyond any deterministic denylist. Accept established Go names such as ctx, w, r, ok, and short loop indexes.
+        Do not review complexity limits, switch statements, lookup-map structure, formatting, or other rules that deterministic checks own.
+    - path: "frontend/src/**"
+      instructions: |
+        Review only concerns that deterministic checks cannot enforce.
+        Review boundary contracts. Require each boundary to declare and validate external input before domain logic runs. Require contract violations and unknown values to fail with a clear error. Do not accept silent coercion, default values, or dropped input.
+        Review server code for idiomatic Effect design. Effect tagged error classes are correct and must stay classes. Do not request object-literal replacements for tagged errors.
+        Review test call assertions. Require expect.objectContaining or another partial matcher when the code controls only part of a value. Do not require an exact full-structure assertion unless the code controls the complete value.
+        Review design intent and simplicity. Prefer construction that removes invalid states. Report unclear or needless abstractions.
+        Review names for clear domain meaning beyond any deterministic denylist.
+        Do not review complexity limits, switch statements, class syntax, lookup-map structure, formatting, or other rules that deterministic checks own.
+    - path: "**/*.md"
+      instructions: |
+        Review Markdown for ASD-STE100 Simplified Technical English.
+        Require short sentences in active voice. Require one idea in each sentence. Prefer the simplest word that keeps the meaning. Require one consistent word for one concept. Keep technical names, identifiers, commands, and code exact.
+        Review design intent, clarity, and simplicity. Do not report formatting that a deterministic check owns.
+
+knowledge_base:
+  code_guidelines:
+    enabled: true
+    filePatterns:
+      - "**/AGENTS.md"
+      - "docs/agent/**/*.md"
+      - "frontend/docs/agent/**/*.md"
