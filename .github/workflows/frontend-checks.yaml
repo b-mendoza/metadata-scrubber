@@ -31,3 +31,7 @@ jobs:
 
       - name: "Run linting, formatting and type checks"
         uses: ./.github/actions/frontend/quality-checks
+
+      - name: Run tests
+        working-directory: ./frontend
+        run: pnpm run test
