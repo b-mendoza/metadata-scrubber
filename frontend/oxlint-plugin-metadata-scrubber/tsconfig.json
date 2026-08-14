@@ -25,15 +25,13 @@
     "noUnusedLocals": true,
     "noUnusedParameters": true,
     "paths": {
-      "#/tests/utils/renderers/renderers.mod": [
-        "./fixtures/support/renderers.mod.ts"
-      ]
+      "#/fixtures/*": ["./fixtures/*"]
     },
     "skipLibCheck": true,
     "strict": true,
     "target": "es2023",
-    "types": ["node", "react", "@total-typescript/ts-reset"],
+    "types": ["node", "@total-typescript/ts-reset"],
     "verbatimModuleSyntax": true
   },
-  "include": ["**/*.ts", "**/*.tsx"]
+  "include": ["./**/*.ts", "./**/*.tsx"]
 }
