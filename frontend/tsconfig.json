@@ -6,6 +6,9 @@
     },
     {
       "path": "./tsconfig.node.json"
+    },
+    {
+      "path": "./oxlint-plugin-metadata-scrubber/tsconfig.json"
     }
   ]
 }

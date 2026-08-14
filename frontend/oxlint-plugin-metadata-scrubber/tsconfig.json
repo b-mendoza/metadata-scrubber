@@ -1,0 +1,39 @@
+{
+  "compilerOptions": {
+    "tsBuildInfoFile": "../node_modules/.cache/tsconfig.oxlint-plugin-metadata-scrubber.tsbuildinfo",
+
+    "allowImportingTsExtensions": true,
+    "allowJs": false,
+    "allowUnreachableCode": false,
+    "allowUnusedLabels": false,
+    "erasableSyntaxOnly": true,
+    "esModuleInterop": true,
+    "exactOptionalPropertyTypes": true,
+    "isolatedModules": true,
+    "jsx": "react-jsx",
+    "lib": ["ES2023", "DOM", "DOM.Iterable"],
+    "module": "esnext",
+    "moduleDetection": "force",
+    "moduleResolution": "bundler",
+    "noEmit": true,
+    "noFallthroughCasesInSwitch": true,
+    "noImplicitOverride": true,
+    "noImplicitReturns": true,
+    "noPropertyAccessFromIndexSignature": true,
+    "noUncheckedIndexedAccess": true,
+    "noUncheckedSideEffectImports": true,
+    "noUnusedLocals": true,
+    "noUnusedParameters": true,
+    "paths": {
+      "#/tests/utils/renderers/renderers.mod": [
+        "./fixtures/support/renderers.mod.ts"
+      ]
+    },
+    "skipLibCheck": true,
+    "strict": true,
+    "target": "es2023",
+    "types": ["node", "react", "@total-typescript/ts-reset"],
+    "verbatimModuleSyntax": true
+  },
+  "include": ["**/*.ts", "**/*.tsx"]
+}
