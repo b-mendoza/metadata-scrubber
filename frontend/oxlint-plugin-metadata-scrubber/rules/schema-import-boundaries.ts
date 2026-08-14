@@ -36,7 +36,7 @@ export default defineRule({
       ? "server"
       : isBrowserPath(path)
         ? "browser"
-        : isSharedPath(path) && !/\.server\.ts$/u.test(path)
+        : isSharedPath(path) && !path.endsWith(".server.ts")
           ? "shared"
           : undefined;
     if (boundary === undefined) return {};
