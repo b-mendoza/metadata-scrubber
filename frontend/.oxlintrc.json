@@ -2,11 +2,11 @@
   "$schema": "./node_modules/oxlint/configuration_schema.json",
   "plugins": [
     "typescript",
+    "react",
+    "jsx-a11y",
     "node",
     "promise",
     "import",
-    "react",
-    "jsx-a11y",
     "unicorn"
   ],
   "jsPlugins": [
