@@ -8,21 +8,43 @@ type FixtureCase = readonly [
   expectedNegativeCount: number,
 ];
 
+const FAILURE_EXIT_CODE = 1;
+const MISSING_JSON_START = -1;
+const NO_DIAGNOSTICS = 0;
+const SINGLE_DIAGNOSTIC = 1;
+const TWO_DIAGNOSTICS = 2;
+
 const cases = [
-  ["hoist-effect-schema-compilers", "schema-compiler.server.ts", 1],
-  ["no-classes", "no-classes.ts", 2],
-  ["no-expect-type-of", "no-expect-type-of.test.ts", 1],
-  ["no-hardcoded-backend-host", "no-hardcoded-backend-host.ts", 1],
+  [
+    "hoist-effect-schema-compilers",
+    "schema-compiler.server.ts",
+    SINGLE_DIAGNOSTIC,
+  ],
+  ["no-classes", "no-classes.ts", TWO_DIAGNOSTICS],
+  ["no-expect-type-of", "no-expect-type-of.test.ts", SINGLE_DIAGNOSTIC],
+  [
+    "no-hardcoded-backend-host",
+    "no-hardcoded-backend-host.ts",
+    SINGLE_DIAGNOSTIC,
+  ],
   [
     "no-mutable-module-state-in-server-code",
     "mutable-module-state.server.ts",
-    1,
+    SINGLE_DIAGNOSTIC,
   ],
-  ["no-silent-test-prerequisite", "no-silent-test-prerequisite.test.ts", 2],
-  ["schema-import-boundaries", "schema-boundary.server.ts", 1],
-  ["schema-import-boundaries", "schema-boundary.browser.ts", 1],
-  ["schema-import-boundaries", "schema-boundary.shared.ts", 1],
-  ["use-shared-render-helper", "use-shared-render-helper.test.tsx", 1],
+  [
+    "no-silent-test-prerequisite",
+    "no-silent-test-prerequisite.test.ts",
+    TWO_DIAGNOSTICS,
+  ],
+  ["schema-import-boundaries", "schema-boundary.server.ts", SINGLE_DIAGNOSTIC],
+  ["schema-import-boundaries", "schema-boundary.browser.ts", SINGLE_DIAGNOSTIC],
+  ["schema-import-boundaries", "schema-boundary.shared.ts", SINGLE_DIAGNOSTIC],
+  [
+    "use-shared-render-helper",
+    "use-shared-render-helper.test.tsx",
+    SINGLE_DIAGNOSTIC,
+  ],
 ] as const satisfies readonly FixtureCase[];
 
 const pluginDir = dirname(fileURLToPath(import.meta.url));
@@ -90,7 +112,8 @@ const countDiagnostics = (fixturePath: string, ruleId: string): number => {
   const jsonStart = output.includes("{")
     ? output.indexOf("{")
     : output.indexOf("[");
-  const jsonText = jsonStart === -1 ? "[]" : output.slice(jsonStart);
+  const jsonText =
+    jsonStart === MISSING_JSON_START ? "[]" : output.slice(jsonStart);
   return parseMessages(jsonText).filter((message) =>
     messageMatchesRule(message, ruleId),
   ).length;
@@ -112,7 +135,7 @@ for (const [ruleId, fixtureFile, expectedNegativeCount] of cases) {
   );
   const positiveCount = countDiagnostics(positivePath, ruleId);
   const negativeCount = countDiagnostics(negativePath, ruleId);
-  if (positiveCount !== 0) {
+  if (positiveCount !== NO_DIAGNOSTICS) {
     console.error(
       `${ruleId} positive ${fixtureFile}: expected 0, got ${String(positiveCount)}`,
     );
@@ -126,4 +149,4 @@ for (const [ruleId, fixtureFile, expectedNegativeCount] of cases) {
   }
 }
 
-if (hasFailure) process.exitCode = 1;
+if (hasFailure) process.exitCode = FAILURE_EXIT_CODE;
