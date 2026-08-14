@@ -10,7 +10,6 @@ These apply to every service, in any language. Test tooling and gotchas specific
 
 ## How to assert
 
-- **Assert only on the fields our code controls.** Avoid pinning the full structure of a call's arguments.
 - **Import production constants instead of duplicating them.** When a test must verify a specific constant is used, import it from the production module. This avoids string-duplication drift and intentionally causes the test to break when the constant changes.
 - **Give outsized-risk constants intentionally brittle tests.** When a single constant can silently change cost, behavior, or a contract (an AI model ID, a system prompt, a rate limit, a pricing tier), assert its exact wiring via the imported constant. The brittleness is the point: the suite may be the only line of defense against that regression.
 - **Use inline literals for simple test data.** Reach for builders or factories only when several tests share non-trivial setup; otherwise they add indirection without value.
@@ -22,6 +21,4 @@ These apply to every service, in any language. Test tooling and gotchas specific
 
 ## How to organize
 
-- **Group by behavior domain, not arbitrary codes.** Use descriptive group names (a `describe` block, a `t.Run` subtest): "MIME routing", "error handling" — not "Group A".
-- **Name tests in behavior-first active voice.** A name should read as a sentence describing what the system does ("routes PDF through the file content part"), with no alphanumeric prefixes.
 - **Classify tests by real importance.** A test covering one of two branches in core logic is core behavior, not an "edge case". Place it accordingly.
