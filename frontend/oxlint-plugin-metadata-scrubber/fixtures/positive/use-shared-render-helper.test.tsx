@@ -1,3 +1,3 @@
-import { renderComponent } from "#/tests/utils/renderers/renderers.mod";
+import { renderComponent } from "#/fixtures/support/renderers.mod";
 
 renderComponent(<div />);
