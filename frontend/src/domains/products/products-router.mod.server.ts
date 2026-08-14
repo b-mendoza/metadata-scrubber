@@ -15,9 +15,10 @@ const productSchema = Schema.Struct({
   id: Schema.String.check(Schema.isUUID()),
   name: Schema.Trim,
 });
+const decodeProduct = Schema.decodeUnknownSync(productSchema);
 
 const PRODUCTS = SEED_PRODUCT_NAMES.map((name) => {
-  return Schema.decodeUnknownSync(productSchema)({
+  return decodeProduct({
     id: randomUUID(),
     name,
   });
@@ -26,6 +27,9 @@ const PRODUCTS = SEED_PRODUCT_NAMES.map((name) => {
 const getMessageResponseSchema = Schema.Struct({
   status: Schema.Literal("reachable"),
 });
+const decodeGetMessageResponse = Schema.decodeUnknownEffect(
+  getMessageResponseSchema,
+);
 
 class BackendHealthCheckError extends Data.TaggedError(
   "BackendHealthCheckError",
@@ -54,9 +58,7 @@ export const productsRouter = createTRPCRouter({
         catch: (cause) => new BackendHealthCheckError({ cause }),
       });
 
-      return yield* Schema.decodeUnknownEffect(getMessageResponseSchema)(
-        responseBody,
-      );
+      return yield* decodeGetMessageResponse(responseBody);
     });
 
     return Effect.runPromise(backendHealthCheck);
