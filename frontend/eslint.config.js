@@ -166,6 +166,7 @@ export default defineConfig(
       "@typescript-eslint/return-await": [ERROR, "in-try-catch"],
       "arrow-body-style": OFF,
       "import/newline-after-import": ERROR,
+      "object-shorthand": ERROR,
       "no-restricted-imports": [
         ERROR,
         {
