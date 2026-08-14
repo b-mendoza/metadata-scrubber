@@ -1108,17 +1108,11 @@
       "plugins": ["vitest"]
     },
     {
-      "files": ["oxlint-plugin-metadata-scrubber/**/*.ts?(x)"],
+      "files": ["oxlint-plugin-metadata-scrubber/check-fixtures.ts"],
       "rules": {
-        "complexity": "off",
-        "no-console": "off",
-        "sonarjs/no-nested-conditional": "off",
-        "sonarjs/no-nested-functions": "off",
-        "sonarjs/super-linear-regex": "off",
-        "no-magic-numbers": "off",
-        "typescript/prefer-string-starts-ends-with": "off"
-      },
-      "jsPlugins": ["eslint-plugin-sonarjs"]
+        // This file is a CLI harness. Console output is its user interface.
+        "no-console": "off"
+      }
     }
   ]
 }
