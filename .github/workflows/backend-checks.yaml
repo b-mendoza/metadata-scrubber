@@ -31,3 +31,13 @@ jobs:
 
       - name: "Run linting, formatting and tests"
         uses: ./.github/actions/backend/quality-checks
+
+      - name: Verify modules
+        working-directory: ./backend
+        run: go mod verify
+
+      - name: Check module files are tidy
+        working-directory: ./backend
+        run: |
+          go mod tidy
+          git diff --exit-code -- go.mod go.sum
