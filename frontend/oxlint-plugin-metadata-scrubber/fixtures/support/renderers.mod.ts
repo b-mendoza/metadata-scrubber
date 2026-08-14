@@ -1,3 +1,1 @@
-import type { ReactNode } from "react";
-
-export const renderComponent = (_node: ReactNode): undefined => undefined;
+export const renderComponent = (_node: React.ReactNode): undefined => undefined;
