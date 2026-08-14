@@ -11,8 +11,8 @@
   ],
   "jsPlugins": [
     "@eslint-community/eslint-plugin-eslint-comments",
-    "./oxlint-plugin-metadata-scrubber/index.ts",
     "eslint-plugin-sonarjs",
+    "./oxlint-plugin-metadata-scrubber/index.ts",
     "eslint-plugin-simple-import-sort"
   ],
   "categories": {
