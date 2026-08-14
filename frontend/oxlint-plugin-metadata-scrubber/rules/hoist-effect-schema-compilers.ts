@@ -8,6 +8,8 @@ import {
 } from "../utils.ts";
 
 const COMPILER_NAME = /^(?:is|asserts|decode.*|encode.*)$/u;
+const FUNCTION_DEPTH_STEP = 1;
+const MODULE_SCOPE_FUNCTION_DEPTH = 0;
 
 const getSchemaCompiler = (
   node: ESTree.CallExpression,
@@ -32,12 +34,12 @@ export default defineRule({
   create(context) {
     if (!isServerModule(context.filename, context.cwd)) return {};
 
-    let functionDepth = 0;
+    let functionDepth = MODULE_SCOPE_FUNCTION_DEPTH;
     const enterFunction = (): void => {
-      functionDepth += 1;
+      functionDepth += FUNCTION_DEPTH_STEP;
     };
     const exitFunction = (): void => {
-      functionDepth -= 1;
+      functionDepth -= FUNCTION_DEPTH_STEP;
     };
 
     return {
@@ -48,7 +50,7 @@ export default defineRule({
       FunctionExpression: enterFunction,
       "FunctionExpression:exit": exitFunction,
       CallExpression(node) {
-        if (functionDepth === 0) return;
+        if (functionDepth === MODULE_SCOPE_FUNCTION_DEPTH) return;
         const compiler = getSchemaCompiler(node);
         if (compiler === undefined) return;
         context.report({
