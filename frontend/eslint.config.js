@@ -13,6 +13,8 @@ import eslintPluginZod from "eslint-plugin-zod";
 import globals from "globals";
 import tseslint from "typescript-eslint";
 
+import metadataScrubber from "./oxlint-plugin-metadata-scrubber/index.ts";
+
 const OFF = 0;
 const WARN = 1;
 const ERROR = 2;
@@ -27,6 +29,21 @@ export default defineConfig(
   love,
   eslintReact.configs["strict-type-checked"],
   reactHooks.configs.flat["recommended-latest"],
+  {
+    plugins: {
+      "metadata-scrubber": metadataScrubber,
+    },
+    rules: {
+      "metadata-scrubber/hoist-effect-schema-compilers": ERROR,
+      "metadata-scrubber/no-classes": ERROR,
+      "metadata-scrubber/no-expect-type-of": ERROR,
+      "metadata-scrubber/no-hardcoded-backend-host": ERROR,
+      "metadata-scrubber/no-mutable-module-state-in-server-code": ERROR,
+      "metadata-scrubber/no-silent-test-prerequisite": ERROR,
+      "metadata-scrubber/schema-import-boundaries": ERROR,
+      "metadata-scrubber/use-shared-render-helper": ERROR,
+    },
+  },
   {
     plugins: {
       "jsx-a11y": jsxA11y,
