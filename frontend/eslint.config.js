@@ -47,6 +47,20 @@ export default defineConfig(
   reactHooks.configs.flat["recommended-latest"],
   {
     plugins: {
+      "jsx-a11y": jsxA11y,
+    },
+    rules: {
+      ...jsxA11y.configs.strict.rules,
+      "jsx-a11y/anchor-has-content": [
+        ERROR,
+        {
+          components: ["Link", "NavLink"],
+        },
+      ],
+    },
+  },
+  {
+    plugins: {
       "metadata-scrubber": metadataScrubber,
     },
     rules: {
@@ -75,20 +89,6 @@ export default defineConfig(
       "unicorn/no-thenable": ERROR,
       "unicorn/prefer-response-static-json": ERROR,
       "unicorn/prefer-structured-clone": ERROR,
-    },
-  },
-  {
-    plugins: {
-      "jsx-a11y": jsxA11y,
-    },
-    rules: {
-      ...jsxA11y.configs.strict.rules,
-      "jsx-a11y/anchor-has-content": [
-        ERROR,
-        {
-          components: ["Link", "NavLink"],
-        },
-      ],
     },
   },
   sonarjs.configs?.["recommended"],
