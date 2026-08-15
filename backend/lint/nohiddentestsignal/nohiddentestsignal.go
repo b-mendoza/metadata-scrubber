@@ -16,9 +16,9 @@ const (
 )
 
 var forbiddenTestingMethods = map[string]string{
-	"Skip":    "do not hide a failing test signal with t.Skip",
-	"Skipf":   "do not hide a failing test signal with t.Skipf",
-	"SkipNow": "do not hide a failing test signal with t.SkipNow",
+	"Skip":    "remove t.Skip; make the test prerequisite explicit and fail when it is missing",
+	"Skipf":   "remove t.Skipf; make the test prerequisite explicit and fail when it is missing",
+	"SkipNow": "remove t.SkipNow; make the test prerequisite explicit and fail when it is missing",
 }
 
 // Analyzer reports test skips and sleeps in Go test files.
@@ -94,6 +94,6 @@ func reportForbiddenCall(pass *analysis.Pass, selector *ast.SelectorExpr, functi
 	}
 
 	if packagePath == timePackagePath && function.Name() == "Sleep" {
-		pass.Reportf(selector.Sel.Pos(), "do not hide a failing test signal with time.Sleep")
+		pass.Reportf(selector.Sel.Pos(), "replace time.Sleep with synchronization on the condition that the test needs")
 	}
 }
