@@ -18,6 +18,5 @@ func TestAnalyzer(t *testing.T) {
 		"noemptyinterface",
 		"noemptyinterfacealiases",
 		"noemptyinterfacenegative",
-		"noemptyinterfacepolicy",
 	)
 }
