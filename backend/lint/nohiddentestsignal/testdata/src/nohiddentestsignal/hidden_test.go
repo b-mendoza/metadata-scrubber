@@ -6,8 +6,8 @@ import (
 )
 
 func TestHiddenSignals(t *testing.T) {
-	t.Skip("missing prerequisite")        // want "do not hide a failing test signal with t.Skip"
-	t.Skipf("missing %s", "prerequisite") // want "do not hide a failing test signal with t.Skipf"
-	t.SkipNow()                           // want "do not hide a failing test signal with t.SkipNow"
-	time.Sleep(time.Second)               // want "do not hide a failing test signal with time.Sleep"
+	t.Skip("missing prerequisite")        // want "remove t\\.Skip; make the test prerequisite explicit and fail when it is missing"
+	t.Skipf("missing %s", "prerequisite") // want "remove t\\.Skipf; make the test prerequisite explicit and fail when it is missing"
+	t.SkipNow()                           // want "remove t\\.SkipNow; make the test prerequisite explicit and fail when it is missing"
+	time.Sleep(time.Second)               // want "replace time\\.Sleep with synchronization on the condition that the test needs"
 }
