@@ -1,4 +1,4 @@
-// Package httpx provides shared HTTP plumbing: JSON responses and middleware.
+// Package httpx provides shared HTTP plumbing: JSON error responses and middleware.
 package httpx
 
 import (
@@ -13,16 +13,9 @@ type errorResponse struct {
 	Error string `json:"error"`
 }
 
-// WriteJSON writes body as a JSON response with the given status code.
-//
-//policy:allow-any: a JSON response body accepts any encodable shape.
-func WriteJSON(w http.ResponseWriter, status int, body any) {
-	w.Header().Set(header.ContentType, mediatype.JSON)
-	w.WriteHeader(status)
-	_ = json.NewEncoder(w).Encode(body)
-}
-
 // WriteError writes msg as a JSON error response with the given status code.
 func WriteError(w http.ResponseWriter, status int, msg string) {
-	WriteJSON(w, status, errorResponse{Error: msg})
+	w.Header().Set(header.ContentType, mediatype.JSON)
+	w.WriteHeader(status)
+	_ = json.NewEncoder(w).Encode(errorResponse{Error: msg})
 }
