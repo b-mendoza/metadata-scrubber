@@ -7,6 +7,9 @@ reviews:
       instructions: |
         Review only concerns that deterministic checks cannot enforce.
         Review boundary contracts. Require each boundary to declare and validate its input before domain logic runs. Require contract violations and unknown values to return an explicit error. Do not accept silent coercion, default values, or dropped input.
+        Review application code for specific and explicit implementations. Do not accept one general function for many use cases. Require a helper that only avoids repeated code to be deleted and the code written at each call site. Accept duplication in application code.
+        Require structural fixes for lint failures. Do not accept lint-suppression comments or rule escape hatches. Accept a suppression only at a third-party API boundary that forces it.
+        Review test request and response payloads. Require each test to build payloads from the concrete typed contracts at the call site and serialize them there with errors checked. Accept raw wire literals only in dedicated wire-contract tests.
         Review test call assertions. Require partial assertions for values with fields that the code under test does not control. Do not require an exact full-structure assertion unless the code controls the complete value.
         Review design intent and simplicity. Prefer construction that removes invalid states. Report unclear or needless abstractions.
         Review names for clear domain meaning beyond any deterministic denylist. Accept established Go names such as ctx, w, r, ok, and short loop indexes.
@@ -15,11 +18,18 @@ reviews:
       instructions: |
         Review only concerns that deterministic checks cannot enforce.
         Review boundary contracts. Require each boundary to declare and validate external input before domain logic runs. Require contract violations and unknown values to fail with a clear error. Do not accept silent coercion, default values, or dropped input.
+        Review application code for specific and explicit implementations. Do not accept one general function for many use cases. Require a helper that only avoids repeated code to be deleted and the code written at each call site. Accept duplication in application code.
+        Require every generic type parameter to declare an explicit, meaningful constraint.
+        Require structural fixes for lint failures. Do not accept lint-suppression comments or rule escape hatches. Accept a suppression only at a third-party API boundary that forces it.
+        Review test request and response payloads. Require each test to build payloads from the concrete typed contracts at the call site and serialize them there with errors checked. Accept raw wire literals only in dedicated wire-contract tests.
         Review server code for idiomatic Effect design. Effect tagged error classes are correct and must stay classes. Do not request object-literal replacements for tagged errors.
         Review test call assertions. Require expect.objectContaining or another partial matcher when the code controls only part of a value. Do not require an exact full-structure assertion unless the code controls the complete value.
         Review design intent and simplicity. Prefer construction that removes invalid states. Report unclear or needless abstractions.
         Review names for clear domain meaning beyond any deterministic denylist.
         Do not review complexity limits, switch statements, class syntax, lookup-map structure, formatting, or other rules that deterministic checks own.
+    - path: "{backend/lint/**,frontend/oxlint-plugin-metadata-scrubber/**}"
+      instructions: |
+        Review custom lint rule messages. Require each message to be descriptive, actionable, and educational. Do not accept text that states how to silence or bypass the rule.
     - path: "**/*.md"
       instructions: |
         Review Markdown for ASD-STE100 Simplified Technical English.
