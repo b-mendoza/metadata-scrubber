@@ -8,8 +8,8 @@
 | --- | --- |
 | `scrub` | Parses and validates PDF bytes, inspects their metadata, and removes supported metadata. |
 | `sniff` | Applies the strict offset-zero `%PDF-` byte policy for PDF intake candidacy without establishing structural validity. |
-| `handler` | HTTP handlers for direct upload grants, dry-run metadata inspection, revision-bound scrubbing, strict JSON validation, storage-key parsing, and pipeline logging. |
-| `httpx` | HTTP helpers shared across handlers (CORS, safe request logging, responses), with `httpx/header` and `httpx/mediatype` subpackages for header and media-type handling. |
+| `handler` | HTTP handlers for direct upload grants, dry-run metadata inspection, revision-bound scrubbing, strict JSON validation, storage-key parsing, pipeline logging, and success JSON responses. |
+| `httpx` | HTTP helpers shared across handlers (CORS, safe request logging, and error responses), with `httpx/header` and `httpx/mediatype` subpackages for header and media-type handling. |
 | `bindings` | Middleware that attaches configuration and storage dependencies to each request context. |
 | `config` | Environment-driven service and Cloudflare R2 connection configuration, validated before startup. |
 | `storage` | Private PDF storage contract with a synchronized in-memory fake and Cloudflare R2 adapter; upload grants bind the expected size, source reads distinguish missing objects from revision conflicts, and production R2 requests have an overall HTTP timeout. |
