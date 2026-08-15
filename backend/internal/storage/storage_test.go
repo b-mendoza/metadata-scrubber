@@ -432,28 +432,28 @@ func TestFakeCanceledContextTakesPriorityOverInvalidInput(t *testing.T) {
 	require.Empty(t, fake.Calls())
 }
 
-type fakeOperationInvocation func(*storage.Fake) error
+func invokeFakeOperation(t *testing.T, fake *storage.Fake, operation storage.FakeOperation) error {
+	t.Helper()
 
-var fakeOperationInvocations = map[storage.FakeOperation]fakeOperationInvocation{
-	storage.FakePresignSourceUpload: func(fake *storage.Fake) error {
+	switch operation {
+	case storage.FakePresignSourceUpload:
 		_, err := fake.PresignSourceUpload(context.Background(), "file-1", 1024, time.Minute)
 		return err
-	},
-	storage.FakePresignSanitizedDownload: func(fake *storage.Fake) error {
+	case storage.FakePresignSanitizedDownload:
 		_, err := fake.PresignSanitizedDownload(context.Background(), "file-1", "revision-1", time.Minute)
 		return err
-	},
-	storage.FakeDownloadSource: func(fake *storage.Fake) error {
+	case storage.FakeDownloadSource:
 		_, err := fake.DownloadSource(context.Background(), "file-1", "")
 		return err
-	},
-	storage.FakeSanitizedExists: func(fake *storage.Fake) error {
+	case storage.FakeSanitizedExists:
 		_, err := fake.SanitizedExists(context.Background(), "file-1", "revision-1")
 		return err
-	},
-	storage.FakeUploadSanitized: func(fake *storage.Fake) error {
+	case storage.FakeUploadSanitized:
 		return fake.UploadSanitized(context.Background(), "file-1", "revision-1", []byte("not stored"))
-	},
+	default:
+		t.Fatalf("unknown fake operation %q", operation)
+		return nil
+	}
 }
 
 func TestFakeInjectsIndependentOrdinaryFailuresForEveryOperation(t *testing.T) {
@@ -471,9 +471,7 @@ func TestFakeInjectsIndependentOrdinaryFailuresForEveryOperation(t *testing.T) {
 			fake := storage.NewFake()
 			fake.SetFailure(operation, injectedErr)
 
-			invoke, known := fakeOperationInvocations[operation]
-			require.True(t, known, "unknown fake operation")
-			err := invoke(fake)
+			err := invokeFakeOperation(t, fake, operation)
 
 			require.ErrorIs(t, err, injectedErr)
 			require.NotErrorIs(t, err, storage.ErrSourceRevisionConflict)
