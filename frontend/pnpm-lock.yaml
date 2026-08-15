@@ -22,7 +22,7 @@ importers:
         version: 2.1.1
       '@hookform/resolvers':
         specifier: 5.7.1
-        version: 5.7.1(@standard-schema/spec@1.1.0)(effect@4.0.0-beta.107)(react-hook-form@7.85.0(react@19.2.8))(zod@4.4.3)
+        version: 5.7.1(@standard-schema/spec@1.1.0)(effect@4.0.0-rc.108)(react-hook-form@7.85.0(react@19.2.8))(zod@4.4.3)
       '@openrouter/ai-sdk-provider':
         specifier: 3.0.0
         version: 3.0.0(ai@7.0.62(zod@4.4.3))(zod@4.4.3)
@@ -82,10 +82,10 @@ importers:
         version: 5.9.0
       drizzle-orm:
         specifier: 1.0.0-rc.4
-        version: 1.0.0-rc.4(effect@4.0.0-beta.107)(postgres@3.4.9)(zod@4.4.3)
+        version: 1.0.0-rc.4(effect@4.0.0-rc.108)(postgres@3.4.9)(zod@4.4.3)
       effect:
-        specifier: 4.0.0-beta.107
-        version: 4.0.0-beta.107
+        specifier: 4.0.0-rc.108
+        version: 4.0.0-rc.108
       isbot:
         specifier: 5.2.1
         version: 5.2.1
@@ -230,7 +230,7 @@ importers:
         version: 20.11.2
       nitro:
         specifier: 3.0.260610-beta
-        version: 3.0.260610-beta(chokidar@5.0.0)(drizzle-orm@1.0.0-rc.4(effect@4.0.0-beta.107)(postgres@3.4.9)(zod@4.4.3))(jiti@2.7.0)(vite@8.2.1(@types/node@25.9.5)(jiti@2.7.0)(yaml@2.9.0))
+        version: 3.0.260610-beta(chokidar@5.0.0)(drizzle-orm@1.0.0-rc.4(effect@4.0.0-rc.108)(postgres@3.4.9)(zod@4.4.3))(jiti@2.7.0)(vite@8.2.1(@types/node@25.9.5)(jiti@2.7.0)(yaml@2.9.0))
       npm-run-all2:
         specifier: 9.0.3
         version: 9.0.3
@@ -2753,8 +2753,8 @@ packages:
     resolution: {integrity: sha512-KIN/nDJBQRcXw0MLVhZE9iQHmG68qAVIBg9CqmUYjmQIhgij9U5MFvrqkUL5FbtyyzZuOeOt0zdeRe4UY7ct+A==}
     engines: {node: '>= 0.4'}
 
-  effect@4.0.0-beta.107:
-    resolution: {integrity: sha512-OoBAv8eF+yanc+C6xhgEUnWeXUSHA6ynnscYqpkAY9GSnzZWystsIjBowVqCkLpHGlnRtdIqYT3wHwpOY6JDnQ==}
+  effect@4.0.0-rc.108:
+    resolution: {integrity: sha512-KmI3DlKZWPvCL4QQ2FMaPOuxMt/7DrKMENCY/gQ+MkDR5QYw25wgU5Zmh/wVLboNjIci1gNOgNCFe4xqgxli3A==}
 
   electron-to-chromium@1.5.401:
     resolution: {integrity: sha512-H6ViHN68nGYlChEvlIU67fn8O2/tpbWQPwck98yaJmh+08LSvHiydzDQ6oXNccLU3kNRVIRS9A4mA7CG+i6fLQ==}
@@ -5359,13 +5359,13 @@ snapshots:
 
   '@faker-js/faker@10.5.0': {}
 
-  '@hookform/resolvers@5.7.1(@standard-schema/spec@1.1.0)(effect@4.0.0-beta.107)(react-hook-form@7.85.0(react@19.2.8))(zod@4.4.3)':
+  '@hookform/resolvers@5.7.1(@standard-schema/spec@1.1.0)(effect@4.0.0-rc.108)(react-hook-form@7.85.0(react@19.2.8))(zod@4.4.3)':
     dependencies:
       '@standard-schema/utils': 0.3.0
       react-hook-form: 7.85.0(react@19.2.8)
     optionalDependencies:
       '@standard-schema/spec': 1.1.0
-      effect: 4.0.0-beta.107
+      effect: 4.0.0-rc.108
       zod: 4.4.3
 
   '@humanfs/core@0.19.2':
@@ -6984,9 +6984,9 @@ snapshots:
 
   dayjs@1.11.21: {}
 
-  db0@0.3.4(drizzle-orm@1.0.0-rc.4(effect@4.0.0-beta.107)(postgres@3.4.9)(zod@4.4.3)):
+  db0@0.3.4(drizzle-orm@1.0.0-rc.4(effect@4.0.0-rc.108)(postgres@3.4.9)(zod@4.4.3)):
     optionalDependencies:
-      drizzle-orm: 1.0.0-rc.4(effect@4.0.0-beta.107)(postgres@3.4.9)(zod@4.4.3)
+      drizzle-orm: 1.0.0-rc.4(effect@4.0.0-rc.108)(postgres@3.4.9)(zod@4.4.3)
 
   debug@3.2.7(supports-color@7.2.0):
     dependencies:
@@ -7046,9 +7046,9 @@ snapshots:
       get-tsconfig: 4.14.1
       jiti: 2.7.0
 
-  drizzle-orm@1.0.0-rc.4(effect@4.0.0-beta.107)(postgres@3.4.9)(zod@4.4.3):
+  drizzle-orm@1.0.0-rc.4(effect@4.0.0-rc.108)(postgres@3.4.9)(zod@4.4.3):
     optionalDependencies:
-      effect: 4.0.0-beta.107
+      effect: 4.0.0-rc.108
       postgres: 3.4.9
       zod: 4.4.3
 
@@ -7058,7 +7058,7 @@ snapshots:
       es-errors: 1.3.0
       gopd: 1.2.0
 
-  effect@4.0.0-beta.107:
+  effect@4.0.0-rc.108:
     dependencies:
       '@standard-schema/spec': 1.1.0
       fast-check: 4.9.0
@@ -8397,11 +8397,11 @@ snapshots:
 
   nf3@0.3.23: {}
 
-  nitro@3.0.260610-beta(chokidar@5.0.0)(drizzle-orm@1.0.0-rc.4(effect@4.0.0-beta.107)(postgres@3.4.9)(zod@4.4.3))(jiti@2.7.0)(vite@8.2.1(@types/node@25.9.5)(jiti@2.7.0)(yaml@2.9.0)):
+  nitro@3.0.260610-beta(chokidar@5.0.0)(drizzle-orm@1.0.0-rc.4(effect@4.0.0-rc.108)(postgres@3.4.9)(zod@4.4.3))(jiti@2.7.0)(vite@8.2.1(@types/node@25.9.5)(jiti@2.7.0)(yaml@2.9.0)):
     dependencies:
       consola: 3.4.2
       crossws: 0.4.10(srvx@0.11.22)
-      db0: 0.3.4(drizzle-orm@1.0.0-rc.4(effect@4.0.0-beta.107)(postgres@3.4.9)(zod@4.4.3))
+      db0: 0.3.4(drizzle-orm@1.0.0-rc.4(effect@4.0.0-rc.108)(postgres@3.4.9)(zod@4.4.3))
       env-runner: 0.1.16
       h3: 2.0.1-rc.22(crossws@0.4.10(srvx@0.11.22))
       hookable: 6.1.1
@@ -8412,7 +8412,7 @@ snapshots:
       rolldown: 1.2.2
       srvx: 0.11.22
       unenv: 2.0.0-rc.24
-      unstorage: 2.0.0-alpha.7(chokidar@5.0.0)(db0@0.3.4(drizzle-orm@1.0.0-rc.4(effect@4.0.0-beta.107)(postgres@3.4.9)(zod@4.4.3)))(ofetch@2.0.0-alpha.3)
+      unstorage: 2.0.0-alpha.7(chokidar@5.0.0)(db0@0.3.4(drizzle-orm@1.0.0-rc.4(effect@4.0.0-rc.108)(postgres@3.4.9)(zod@4.4.3)))(ofetch@2.0.0-alpha.3)
     optionalDependencies:
       jiti: 2.7.0
       vite: 8.2.1(@types/node@25.9.5)(jiti@2.7.0)(yaml@2.9.0)
@@ -9216,10 +9216,10 @@ snapshots:
       rolldown: 1.2.2
       vite: 8.2.1(@types/node@25.9.5)(jiti@2.7.0)(yaml@2.9.0)
 
-  unstorage@2.0.0-alpha.7(chokidar@5.0.0)(db0@0.3.4(drizzle-orm@1.0.0-rc.4(effect@4.0.0-beta.107)(postgres@3.4.9)(zod@4.4.3)))(ofetch@2.0.0-alpha.3):
+  unstorage@2.0.0-alpha.7(chokidar@5.0.0)(db0@0.3.4(drizzle-orm@1.0.0-rc.4(effect@4.0.0-rc.108)(postgres@3.4.9)(zod@4.4.3)))(ofetch@2.0.0-alpha.3):
     optionalDependencies:
       chokidar: 5.0.0
-      db0: 0.3.4(drizzle-orm@1.0.0-rc.4(effect@4.0.0-beta.107)(postgres@3.4.9)(zod@4.4.3))
+      db0: 0.3.4(drizzle-orm@1.0.0-rc.4(effect@4.0.0-rc.108)(postgres@3.4.9)(zod@4.4.3))
       ofetch: 2.0.0-alpha.3
 
   update-browserslist-db@1.2.3(browserslist@4.28.7):
