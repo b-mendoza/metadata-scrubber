@@ -37,8 +37,6 @@ type neutralPDFCPUInfo struct {
 	modDate      string
 }
 
-type neutralPDFCPUValueSetter func(*neutralPDFCPUInfo, string)
-
 var standardInfoFields = map[string]standardInfoFieldDescriptor{
 	"Author":       {name: "info.author", label: "Author", action: ActionRemove},
 	"CreationDate": {name: "info.creation_date", label: "Creation date", action: ActionReplace},
@@ -49,12 +47,6 @@ var standardInfoFields = map[string]standardInfoFieldDescriptor{
 	"Subject":      {name: "info.subject", label: "Subject", action: ActionRemove},
 	"Title":        {name: "info.title", label: "Title", action: ActionRemove},
 	"Trapped":      {name: "info.trapped", label: "Trapped", action: ActionRemove},
-}
-
-var neutralPDFCPUValueSetters = map[string]neutralPDFCPUValueSetter{
-	"Producer":     func(info *neutralPDFCPUInfo, value string) { info.producer = value },
-	"CreationDate": func(info *neutralPDFCPUInfo, value string) { info.creationDate = value },
-	"ModDate":      func(info *neutralPDFCPUInfo, value string) { info.modDate = value },
 }
 
 func analyzePDF(context *model.Context, origin InspectionOrigin) (*pdfAnalysis, error) {
@@ -269,15 +261,22 @@ func readNeutralPDFCPUInfo(context *model.Context, infoDictionary types.Dict) (n
 		if err != nil {
 			return neutralPDFCPUInfo{}, false
 		}
-		setValue, known := neutralPDFCPUValueSetters[logicalKey]
-		if !known {
+		var target *string
+		switch logicalKey {
+		case "Producer":
+			target = &trio.producer
+		case "CreationDate":
+			target = &trio.creationDate
+		case "ModDate":
+			target = &trio.modDate
+		default:
 			return neutralPDFCPUInfo{}, false
 		}
 		value, err := infoObjectValue(context, object)
 		if err != nil {
 			return neutralPDFCPUInfo{}, false
 		}
-		setValue(&trio, value)
+		*target = value
 	}
 	return trio, true
 }

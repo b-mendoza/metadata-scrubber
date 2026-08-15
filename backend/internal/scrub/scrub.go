@@ -175,27 +175,24 @@ func readAndAnalyzePDF(inputBytes []byte, origin InspectionOrigin) (*model.Conte
 	return context, analysis, nil
 }
 
-type infoObjectDecoder func(types.Object) (string, error)
-
-var infoObjectDecoders = map[string]infoObjectDecoder{
-	"types.StringLiteral": decodeStringLiteralInfoObject,
-	"types.HexLiteral":    decodeHexLiteralInfoObject,
-	"types.Name":          decodeNameInfoObject,
-	"types.Boolean":       decodeScalarInfoObject,
-	"types.Integer":       decodeScalarInfoObject,
-	"types.Float":         decodeScalarInfoObject,
-}
-
 func infoObjectValue(context *model.Context, object types.Object) (string, error) {
 	dereferencedObject, err := context.Dereference(object)
 	if err != nil {
 		return "", err
 	}
-	decode, known := infoObjectDecoders[fmt.Sprintf("%T", dereferencedObject)]
-	if !known {
+
+	switch dereferencedObject.(type) {
+	case types.StringLiteral:
+		return decodeStringLiteralInfoObject(dereferencedObject)
+	case types.HexLiteral:
+		return decodeHexLiteralInfoObject(dereferencedObject)
+	case types.Name:
+		return decodeNameInfoObject(dereferencedObject)
+	case types.Boolean, types.Integer, types.Float:
+		return decodeScalarInfoObject(dereferencedObject)
+	default:
 		return "", fmt.Errorf("unsupported Info value type %T", dereferencedObject)
 	}
-	return decode(dereferencedObject)
 }
 
 func decodeStringLiteralInfoObject(object types.Object) (string, error) {

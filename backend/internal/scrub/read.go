@@ -206,19 +206,15 @@ type metadataStreamContent struct {
 	content      []byte
 }
 
-type metadataStreamContentStore func(*model.Context, metadataStreamContent) error
-
-var metadataStreamContentStores = map[string]metadataStreamContentStore{
-	"types.IndirectRef": storeIndirectMetadataStreamContent,
-	"types.StreamDict":  storeDirectMetadataStreamContent,
-}
-
 func storeMetadataStreamContent(context *model.Context, streamContent metadataStreamContent) error {
-	store, known := metadataStreamContentStores[fmt.Sprintf("%T", streamContent.streamObject)]
-	if !known {
+	switch streamContent.streamObject.(type) {
+	case types.IndirectRef:
+		return storeIndirectMetadataStreamContent(context, streamContent)
+	case types.StreamDict:
+		return storeDirectMetadataStreamContent(context, streamContent)
+	default:
 		return fmt.Errorf("unsupported metadata stream type %T", streamContent.streamObject)
 	}
-	return store(context, streamContent)
 }
 
 func storeIndirectMetadataStreamContent(context *model.Context, streamContent metadataStreamContent) error {
