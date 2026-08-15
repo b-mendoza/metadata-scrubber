@@ -1,7 +1,5 @@
 package noemptyinterfacealiases
 
-//policy:allow-any: this exported alias names values from an untyped source.
-type Dynamic = any
+type Dynamic = any // want "declare the specific type this code handles; the empty interface accepts every value and defers type errors to run time"
 
-//policy:allow-any: this exported defined type names values from an untyped source.
-type Dynamic2 interface{}
+type Dynamic2 interface{} // want "declare the specific type this code handles; the empty interface accepts every value and defers type errors to run time"
