@@ -14,6 +14,8 @@ type errorResponse struct {
 }
 
 // WriteJSON writes body as a JSON response with the given status code.
+//
+//policy:allow-any: a JSON response body accepts any encodable shape.
 func WriteJSON(w http.ResponseWriter, status int, body any) {
 	w.Header().Set(header.ContentType, mediatype.JSON)
 	w.WriteHeader(status)
