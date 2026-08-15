@@ -190,8 +190,10 @@ func TestPDFPathsRejectAggregateDecodedMetadataBudgetBeforeWriting(t *testing.T)
 	fields, inspectErr := InspectPDF(pdfBytes, PublicInput)
 	outputBytes, scrubErr := work.clean(pdfBytes)
 
-	requireInspectionLimit(t, fields, inspectErr)
-	requireInspectionLimit(t, outputBytes, scrubErr)
+	require.ErrorIs(t, inspectErr, ErrInspectionLimit)
+	require.Nil(t, fields)
+	require.ErrorIs(t, scrubErr, ErrInspectionLimit)
+	require.Nil(t, outputBytes)
 	requireNoPDFWork(t, work)
 }
 
@@ -212,9 +214,12 @@ func TestPDFPathsRejectOversizedCompressedCatalogMetadataBeforeValidation(t *tes
 
 	require.ErrorIs(t, readErr, ErrInspectionLimit)
 	require.Nil(t, context)
-	requireInspectionLimit(t, fields, inspectErr)
-	requireInspectionLimit(t, outputBytes, scrubErr)
-	requireInspectionLimit(t, observedOutputBytes, observedScrubErr)
+	require.ErrorIs(t, inspectErr, ErrInspectionLimit)
+	require.Nil(t, fields)
+	require.ErrorIs(t, scrubErr, ErrInspectionLimit)
+	require.Nil(t, outputBytes)
+	require.ErrorIs(t, observedScrubErr, ErrInspectionLimit)
+	require.Nil(t, observedOutputBytes)
 	require.Zero(t, validationCalls)
 	requireNoPDFWork(t, work)
 }
@@ -325,10 +330,12 @@ func TestInspectPDFEnforcesFieldCountAtomically(t *testing.T) {
 
 	rejectedPDF := buildPDFWithInfo(t, customInfoEntries(maxInspectionFields+1, "x"))
 	fields, err := InspectPDF(rejectedPDF, PublicInput)
-	requireInspectionLimit(t, fields, err)
+	require.ErrorIs(t, err, ErrInspectionLimit)
+	require.Nil(t, fields)
 
 	outputBytes, err := work.clean(rejectedPDF)
-	requireInspectionLimit(t, outputBytes, err)
+	require.ErrorIs(t, err, ErrInspectionLimit)
+	require.Nil(t, outputBytes)
 	requireNoPDFWork(t, work)
 }
 
@@ -337,10 +344,12 @@ func TestInspectPDFEnforcesAggregateSummaryBudgetAtomically(t *testing.T) {
 	pdfBytes := buildPDFWithInfo(t, customInfoEntries(maxInspectionFields, strings.Repeat("v", maxFieldPreviewBytes+1)))
 
 	fields, err := InspectPDF(pdfBytes, PublicInput)
-	requireInspectionLimit(t, fields, err)
+	require.ErrorIs(t, err, ErrInspectionLimit)
+	require.Nil(t, fields)
 
 	outputBytes, err := work.clean(pdfBytes)
-	requireInspectionLimit(t, outputBytes, err)
+	require.ErrorIs(t, err, ErrInspectionLimit)
+	require.Nil(t, outputBytes)
 	requireNoPDFWork(t, work)
 }
 
@@ -1256,14 +1265,6 @@ func requireValidUTF8Preview(t *testing.T, field Field) {
 
 	require.True(t, utf8.ValidString(field.Preview), "invalid UTF-8 preview %q", field.Preview)
 	require.LessOrEqual(t, len(field.Preview), maxFieldPreviewBytes)
-}
-
-//policy:allow-any: inspection-limit assertions apply to result slices of any element type.
-func requireInspectionLimit[T any](t *testing.T, result []T, err error) {
-	t.Helper()
-
-	require.ErrorIs(t, err, ErrInspectionLimit)
-	require.Nil(t, result)
 }
 
 func requireNoPDFWork(t *testing.T, work *observedPDFWork) {
