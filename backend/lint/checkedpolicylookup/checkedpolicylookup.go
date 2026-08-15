@@ -21,7 +21,6 @@ var Analyzer = &analysis.Analyzer{
 	Run:  run,
 }
 
-//policy:allow-any: the x/tools analysis API fixes this return type.
 func run(pass *analysis.Pass) (any, error) {
 	policyMaps := collectPolicyMaps(pass)
 	checkedLookups := make(map[*ast.IndexExpr]bool)
