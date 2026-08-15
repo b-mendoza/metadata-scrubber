@@ -223,8 +223,8 @@ importers:
         specifier: 4.9.1
         version: 4.9.1(eslint@9.39.5(jiti@2.7.0)(supports-color@7.2.0))(oxlint@1.78.0(oxlint-tsgolint@7.0.2001))(supports-color@7.2.0)(typescript@6.0.3)(zod@4.4.3)
       globals:
-        specifier: 17.10.0
-        version: 17.10.0
+        specifier: 17.11.0
+        version: 17.11.0
       happy-dom:
         specifier: 20.11.2
         version: 20.11.2
@@ -3166,8 +3166,8 @@ packages:
     resolution: {integrity: sha512-7ACyT3wmyp3I61S4fG682L0VA2RGD9otkqGJIwNUMF1SWUombIIk+af1unuDYgMm082aHYwD+mzJvv9Iu8dsgg==}
     engines: {node: '>=18'}
 
-  globals@17.10.0:
-    resolution: {integrity: sha512-V0kztuWST2k8A/VbxAY8+L+7+Rgo3fyA24IHRLrZp7HOzJjV0gHSaZUjK9lpP/IrBSNite2tZ1prhRkinRu1CA==}
+  globals@17.11.0:
+    resolution: {integrity: sha512-Z2I8hM+PbJDXQDq3Icgpzv+mPdwr68iZUU9d5WW4FuXfDUQfkZaZuvjMv42/5crNyw154+9+VWXbYrUgDXbxNw==}
     engines: {node: '>=18'}
 
   globalthis@1.0.4:
@@ -7447,7 +7447,7 @@ snapshots:
       bytes: 3.1.2
       eslint: 9.39.5(jiti@2.7.0)(supports-color@7.2.0)
       functional-red-black-tree: 1.0.1
-      globals: 17.10.0
+      globals: 17.11.0
       jsx-ast-utils-x: 0.1.0
       lodash.merge: 4.6.2
       minimatch: 10.2.6
@@ -7663,7 +7663,7 @@ snapshots:
 
   globals@15.15.0: {}
 
-  globals@17.10.0: {}
+  globals@17.11.0: {}
 
   globalthis@1.0.4:
     dependencies:
