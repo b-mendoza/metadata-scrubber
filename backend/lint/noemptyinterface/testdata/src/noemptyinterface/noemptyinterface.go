@@ -1,5 +1,7 @@
 package noemptyinterface
 
+import "noemptyinterfacealiases"
+
 var value any // want "declare the specific type this code handles; the empty interface accepts every value and defers type errors to run time"
 
 type emptyFieldHolder struct {
@@ -20,6 +22,10 @@ type namedEmpty interface{} // want "declare the specific type this code handles
 
 type aliasEmpty = interface{} // want "declare the specific type this code handles; the empty interface accepts every value and defers type errors to run time"
 
+var selectedDynamicValue noemptyinterfacealiases.Dynamic // want "declare the specific type this code handles; the empty interface accepts every value and defers type errors to run time"
+
+var selectedDynamicValue2 noemptyinterfacealiases.Dynamic2 // want "declare the specific type this code handles; the empty interface accepts every value and defers type errors to run time"
+
 func namedConstraint[T namedEmpty](value T) { // want "declare an explicit type constraint; an unconstrained type parameter hides the declaration's real contract"
 }
 
@@ -33,6 +39,10 @@ func unionConstraintAnyFirst[T any | ~int](value T) { // want "declare an explic
 }
 
 func embeddedConstraint[T interface{ any }](value T) { // want "declare an explicit type constraint; an unconstrained type parameter hides the declaration's real contract"
+}
+
+type embeddedAny interface {
+	any // want "declare the specific type this code handles; the empty interface accepts every value and defers type errors to run time"
 }
 
 func nestedMapConstraint[T ~map[string]any](value T) { // want "declare the specific type this code handles; the empty interface accepts every value and defers type errors to run time"
