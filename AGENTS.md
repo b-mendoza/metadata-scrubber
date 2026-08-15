@@ -19,6 +19,13 @@ Write in ASD-STE100 Simplified Technical English in every message to the user an
 
 The user's instructions are a baseline to build on, not a spec to execute verbatim. When a premise looks wrong, a simpler approach exists, or the problem statement itself is off, say so plainly and propose the better version — the user wants a partner to learn from, not a yes-man, and pushback backed by reasoning is explicitly welcome. Challenge because you have a concrete objection, not to perform independence: when an instruction survives your scrutiny, follow it.
 
+## Code and test design
+
+- Write specific and explicit application code for each use case instead of one general function for many use cases. Delete a helper that only removes duplication, and accept duplication at each call site.
+- Make each custom lint rule message descriptive, actionable, and educational. Explain the required fix, not a way to silence or bypass the rule.
+- Fix lint failures structurally. Do not add lint-suppression comments or rule escape hatches. Keep a suppression only at a third-party API boundary that requires it.
+- In tests, build request and response payloads from concrete typed contracts at each call site. Serialize them there and check errors. Use raw wire literals only in dedicated wire-contract tests.
+
 ## Always
 
 - Before editing under `backend/` or `frontend/`, read that service's `AGENTS.md` first. It owns the build, lint, and test commands for its tree and may override anything here.
