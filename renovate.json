@@ -20,6 +20,14 @@
       "matchPackageNames": ["drizzle-kit", "drizzle-orm"]
     },
     {
+      "description": "backend/go.mod and backend/Dockerfile declare one Go toolchain version; CI and the container build fail when the two update separately",
+      "groupName": "Go Docker image and go.mod",
+      "matchManagers": ["dockerfile", "gomod"],
+      "matchPackageNames": ["golang", "go"],
+      "matchUpdateTypes": ["major", "minor", "patch"],
+      "minimumGroupSize": 2
+    },
+    {
       "description": "Renovate treats the go.mod go directive as a minimum version and does not bump it by default. Enable bumps so pull requests update it to the latest Go release.",
       "matchDepNames": ["go"],
       "matchDepTypes": ["golang"],
