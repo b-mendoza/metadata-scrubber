@@ -1,22 +1,49 @@
 package handler
 
 import (
+	"encoding/json"
 	"errors"
 	"fmt"
+	"io"
+	"mime"
 	"net/http"
 	"time"
 
 	"metadata-scrubber/internal/httpx"
+	"metadata-scrubber/internal/httpx/header"
+	"metadata-scrubber/internal/httpx/mediatype"
 	"metadata-scrubber/internal/scrub"
 	"metadata-scrubber/internal/sniff"
 	"metadata-scrubber/internal/storage"
 )
 
+func decodeDryRunRequest(w http.ResponseWriter, request *http.Request) (dryRunRequest, bool) {
+	var input dryRunRequest
+	contentType, _, err := mime.ParseMediaType(request.Header.Get(header.ContentType))
+	if err != nil || contentType != mediatype.JSON {
+		httpx.WriteError(w, http.StatusUnsupportedMediaType, "Content-Type must be application/json")
+		return dryRunRequest{}, false
+	}
+
+	request.Body = http.MaxBytesReader(w, request.Body, maxJSONBodyBytes)
+	decoder := json.NewDecoder(request.Body)
+	decoder.DisallowUnknownFields()
+	if err := decoder.Decode(&input); err != nil {
+		httpx.WriteError(w, http.StatusBadRequest, "invalid JSON request")
+		return dryRunRequest{}, false
+	}
+	if err := decoder.Decode(&struct{}{}); !errors.Is(err, io.EOF) {
+		httpx.WriteError(w, http.StatusBadRequest, "invalid JSON request")
+		return dryRunRequest{}, false
+	}
+	return input, true
+}
+
 // DryRun inspects the current source revision while holding shared admission.
 func (handler *Handler) DryRun(w http.ResponseWriter, request *http.Request) {
 	startedAt := time.Now()
-	var input dryRunRequest
-	if !decodeJSONRequest(w, request, &input) {
+	input, ok := decodeDryRunRequest(w, request)
+	if !ok {
 		return
 	}
 	fileID, ok := parseStorageKey(input.StorageKey)
@@ -135,9 +162,24 @@ func (handler *Handler) Scrub(w http.ResponseWriter, request *http.Request) {
 
 func decodeScrubRequest(w http.ResponseWriter, request *http.Request) (scrubRequest, string, bool) {
 	var input scrubRequest
-	if !decodeJSONRequest(w, request, &input) {
+	contentType, _, err := mime.ParseMediaType(request.Header.Get(header.ContentType))
+	if err != nil || contentType != mediatype.JSON {
+		httpx.WriteError(w, http.StatusUnsupportedMediaType, "Content-Type must be application/json")
 		return scrubRequest{}, "", false
 	}
+
+	request.Body = http.MaxBytesReader(w, request.Body, maxJSONBodyBytes)
+	decoder := json.NewDecoder(request.Body)
+	decoder.DisallowUnknownFields()
+	if err := decoder.Decode(&input); err != nil {
+		httpx.WriteError(w, http.StatusBadRequest, "invalid JSON request")
+		return scrubRequest{}, "", false
+	}
+	if err := decoder.Decode(&struct{}{}); !errors.Is(err, io.EOF) {
+		httpx.WriteError(w, http.StatusBadRequest, "invalid JSON request")
+		return scrubRequest{}, "", false
+	}
+
 	fileID, ok := parseStorageKey(input.StorageKey)
 	if !ok {
 		httpx.WriteError(w, http.StatusBadRequest, "invalid storage key")

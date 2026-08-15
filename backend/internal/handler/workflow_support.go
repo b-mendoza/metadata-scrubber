@@ -2,12 +2,9 @@ package handler
 
 import (
 	"context"
-	"encoding/json"
 	"errors"
 	"fmt"
-	"io"
 	"log/slog"
-	"mime"
 	"net/http"
 	"strings"
 	"time"
@@ -17,7 +14,6 @@ import (
 	"metadata-scrubber/internal/bindings"
 	"metadata-scrubber/internal/httpx"
 	"metadata-scrubber/internal/httpx/header"
-	"metadata-scrubber/internal/httpx/mediatype"
 	"metadata-scrubber/internal/scrub"
 	"metadata-scrubber/internal/storage"
 )
@@ -34,28 +30,6 @@ func (handler *Handler) newFileID() (string, bool) {
 
 	return fmt.Sprintf("%x-%x-%x-%x-%x",
 		uuidBytes[0:4], uuidBytes[4:6], uuidBytes[6:8], uuidBytes[8:10], uuidBytes[10:16]), true
-}
-
-//policy:allow-any: Go has no other unconstrained generic bound.
-func decodeJSONRequest[T any](w http.ResponseWriter, request *http.Request, destination *T) bool {
-	contentType, _, err := mime.ParseMediaType(request.Header.Get(header.ContentType))
-	if err != nil || contentType != mediatype.JSON {
-		httpx.WriteError(w, http.StatusUnsupportedMediaType, "Content-Type must be application/json")
-		return false
-	}
-
-	request.Body = http.MaxBytesReader(w, request.Body, maxJSONBodyBytes)
-	decoder := json.NewDecoder(request.Body)
-	decoder.DisallowUnknownFields()
-	if err := decoder.Decode(destination); err != nil {
-		httpx.WriteError(w, http.StatusBadRequest, "invalid JSON request")
-		return false
-	}
-	if err := decoder.Decode(&struct{}{}); !errors.Is(err, io.EOF) {
-		httpx.WriteError(w, http.StatusBadRequest, "invalid JSON request")
-		return false
-	}
-	return true
 }
 
 func validFileName(fileName string) bool {

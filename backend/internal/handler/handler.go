@@ -3,13 +3,18 @@ package handler
 
 import (
 	"crypto/rand"
+	"encoding/json"
 	"errors"
+	"io"
 	"log/slog"
+	"mime"
 	"net/http"
 	"regexp"
 	"time"
 
 	"metadata-scrubber/internal/httpx"
+	"metadata-scrubber/internal/httpx/header"
+	"metadata-scrubber/internal/httpx/mediatype"
 	"metadata-scrubber/internal/scrub"
 	"metadata-scrubber/internal/storage"
 )
@@ -80,7 +85,9 @@ var (
 
 // Handler owns the process-lifetime dependencies shared by the JSON workflow.
 type Handler struct {
-	logger           *slog.Logger
+	logger *slog.Logger
+	// An empty channel means every permit was returned.
+	// A length of ProcessingPermitCount means the admission gate is saturated.
 	permits          chan struct{}
 	inspect          inspectPDFOperation
 	clean            cleanPDFOperation
@@ -184,11 +191,33 @@ func Reachability(w http.ResponseWriter, _ *http.Request) {
 	httpx.WriteJSON(w, http.StatusOK, reachabilityResponse{Status: "reachable"})
 }
 
+func decodeUploadRequest(w http.ResponseWriter, request *http.Request) (uploadRequest, bool) {
+	var input uploadRequest
+	contentType, _, err := mime.ParseMediaType(request.Header.Get(header.ContentType))
+	if err != nil || contentType != mediatype.JSON {
+		httpx.WriteError(w, http.StatusUnsupportedMediaType, "Content-Type must be application/json")
+		return uploadRequest{}, false
+	}
+
+	request.Body = http.MaxBytesReader(w, request.Body, maxJSONBodyBytes)
+	decoder := json.NewDecoder(request.Body)
+	decoder.DisallowUnknownFields()
+	if err := decoder.Decode(&input); err != nil {
+		httpx.WriteError(w, http.StatusBadRequest, "invalid JSON request")
+		return uploadRequest{}, false
+	}
+	if err := decoder.Decode(&struct{}{}); !errors.Is(err, io.EOF) {
+		httpx.WriteError(w, http.StatusBadRequest, "invalid JSON request")
+		return uploadRequest{}, false
+	}
+	return input, true
+}
+
 // Upload creates a private direct-upload grant for one generated logical file ID.
 func (handler *Handler) Upload(w http.ResponseWriter, request *http.Request) {
 	startedAt := time.Now()
-	var input uploadRequest
-	if !decodeJSONRequest(w, request, &input) {
+	input, ok := decodeUploadRequest(w, request)
+	if !ok {
 		return
 	}
 	if !validFileName(input.FileName) || input.FileSizeBytes <= 0 || input.FileSizeBytes > storage.MaxSourceObjectBytes {
