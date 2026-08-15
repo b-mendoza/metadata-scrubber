@@ -18,21 +18,15 @@ var Analyzer = &analysis.Analyzer{
 
 func run(pass *analysis.Pass) (any, error) {
 	for _, file := range pass.Files {
-		ast.Inspect(file, func(node ast.Node) bool {
-			switchStatement, isSwitchStatement := node.(*ast.SwitchStmt)
-			if isSwitchStatement {
+		for node := range ast.Preorder(file) {
+			if switchStatement, isSwitchStatement := node.(*ast.SwitchStmt); isSwitchStatement {
 				pass.Reportf(switchStatement.Switch, diagnosticMessage)
-
-				return true
 			}
 
-			typeSwitchStatement, isTypeSwitchStatement := node.(*ast.TypeSwitchStmt)
-			if isTypeSwitchStatement {
+			if typeSwitchStatement, isTypeSwitchStatement := node.(*ast.TypeSwitchStmt); isTypeSwitchStatement {
 				pass.Reportf(typeSwitchStatement.Switch, diagnosticMessage)
 			}
-
-			return true
-		})
+		}
 	}
 
 	return nil, nil //nolint:nilnil // An analyzer without ResultType must return a nil result.

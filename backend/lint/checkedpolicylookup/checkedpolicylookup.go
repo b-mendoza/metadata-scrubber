@@ -23,7 +23,7 @@ var Analyzer = &analysis.Analyzer{
 
 func run(pass *analysis.Pass) (any, error) {
 	policyMaps := collectPolicyMaps(pass)
-	checkedLookups := collectCheckedLookups(pass.Files)
+	checkedLookups := make(map[*ast.IndexExpr]bool)
 
 	for _, file := range pass.Files {
 		reportUncheckedLookups(pass, file, policyMaps, checkedLookups)
@@ -32,27 +32,37 @@ func run(pass *analysis.Pass) (any, error) {
 	return nil, nil //nolint:nilnil // An analyzer without ResultType must return a nil result.
 }
 
+//nolint:gocognit // Keep the preorder checks together so checked nodes are marked before their index child.
 func reportUncheckedLookups(
 	pass *analysis.Pass,
 	file *ast.File,
 	policyMaps map[types.Object]bool,
 	checkedLookups map[*ast.IndexExpr]bool,
 ) {
-	ast.Inspect(file, func(node ast.Node) bool {
+	for node := range ast.Preorder(file) {
+		assignment, isAssignment := node.(*ast.AssignStmt)
+		if isAssignment {
+			markCheckedLookup(checkedLookups, len(assignment.Lhs), assignment.Rhs)
+		}
+
+		valueSpecification, isValueSpecification := node.(*ast.ValueSpec)
+		if isValueSpecification {
+			markCheckedLookup(checkedLookups, len(valueSpecification.Names), valueSpecification.Values)
+		}
+
 		indexExpression, isIndexExpression := node.(*ast.IndexExpr)
 		if !isIndexExpression || checkedLookups[indexExpression] {
-			return true
+			continue
 		}
 
 		identifier, isIdentifier := indexExpression.X.(*ast.Ident)
 		if isIdentifier && policyMaps[pass.TypesInfo.Uses[identifier]] {
 			pass.Reportf(indexExpression.Lbrack, diagnosticMessage)
 		}
-
-		return true
-	})
+	}
 }
 
+//nolint:cyclop,gocognit // Keep the marked declaration scan inline so ast.Inspect can prune its subtree.
 func collectPolicyMaps(pass *analysis.Pass) map[types.Object]bool {
 	policyMaps := make(map[types.Object]bool)
 
@@ -63,41 +73,30 @@ func collectPolicyMaps(pass *analysis.Pass) map[types.Object]bool {
 				return true
 			}
 
-			collectDeclarationPolicyMaps(pass, declaration, policyMaps)
+			for _, specification := range declaration.Specs {
+				valueSpecification, isValueSpecification := specification.(*ast.ValueSpec)
+				if !isValueSpecification {
+					continue
+				}
+
+				for _, name := range valueSpecification.Names {
+					object := pass.TypesInfo.Defs[name]
+					if object == nil {
+						continue
+					}
+
+					_, isMapType := object.Type().Underlying().(*types.Map)
+					if isMapType {
+						policyMaps[object] = true
+					}
+				}
+			}
 
 			return false
 		})
 	}
 
 	return policyMaps
-}
-
-func collectDeclarationPolicyMaps(
-	pass *analysis.Pass,
-	declaration *ast.GenDecl,
-	policyMaps map[types.Object]bool,
-) {
-	for _, specification := range declaration.Specs {
-		valueSpecification, isValueSpecification := specification.(*ast.ValueSpec)
-		if !isValueSpecification {
-			continue
-		}
-
-		collectValueSpecificationPolicyMaps(pass, valueSpecification, policyMaps)
-	}
-}
-
-func collectValueSpecificationPolicyMaps(
-	pass *analysis.Pass,
-	valueSpecification *ast.ValueSpec,
-	policyMaps map[types.Object]bool,
-) {
-	for _, name := range valueSpecification.Names {
-		object := pass.TypesInfo.Defs[name]
-		if object != nil && isMap(object.Type()) {
-			policyMaps[object] = true
-		}
-	}
 }
 
 func hasMarker(commentGroup *ast.CommentGroup) bool {
@@ -114,42 +113,12 @@ func hasMarker(commentGroup *ast.CommentGroup) bool {
 	return false
 }
 
-func isMap(valueType types.Type) bool {
-	_, isMapType := valueType.Underlying().(*types.Map)
-
-	return isMapType
-}
-
-func collectCheckedLookups(files []*ast.File) map[*ast.IndexExpr]bool {
-	checkedLookups := make(map[*ast.IndexExpr]bool)
-
-	for _, file := range files {
-		ast.Inspect(file, func(node ast.Node) bool {
-			assignment, isAssignment := node.(*ast.AssignStmt)
-			if isAssignment {
-				markCheckedLookup(checkedLookups, assignment.Lhs, assignment.Rhs)
-
-				return true
-			}
-
-			valueSpecification, isValueSpecification := node.(*ast.ValueSpec)
-			if isValueSpecification {
-				markCheckedLookup(
-					checkedLookups,
-					identifiersAsExpressions(valueSpecification.Names),
-					valueSpecification.Values,
-				)
-			}
-
-			return true
-		})
-	}
-
-	return checkedLookups
-}
-
-func markCheckedLookup(checkedLookups map[*ast.IndexExpr]bool, leftExpressions, rightExpressions []ast.Expr) {
-	if len(leftExpressions) != 2 || len(rightExpressions) != 1 {
+func markCheckedLookup(
+	checkedLookups map[*ast.IndexExpr]bool,
+	leftItemCount int,
+	rightExpressions []ast.Expr,
+) {
+	if leftItemCount != 2 || len(rightExpressions) != 1 {
 		return
 	}
 
@@ -157,13 +126,4 @@ func markCheckedLookup(checkedLookups map[*ast.IndexExpr]bool, leftExpressions, 
 	if isIndexExpression {
 		checkedLookups[indexExpression] = true
 	}
-}
-
-func identifiersAsExpressions(identifiers []*ast.Ident) []ast.Expr {
-	expressions := make([]ast.Expr, len(identifiers))
-	for index, identifier := range identifiers {
-		expressions[index] = identifier
-	}
-
-	return expressions
 }
