@@ -52,23 +52,33 @@ func parseStorageKey(storageKey string) (string, bool) {
 	return matches[1], true
 }
 
-var publicFieldActions = map[scrub.FieldAction]publicFieldAction{
-	scrub.ActionRemove:  publicFieldActionRemove,
-	scrub.ActionReplace: publicFieldActionReplace,
+func convertPublicFieldAction(action scrub.FieldAction) (publicFieldAction, error) {
+	switch action {
+	case scrub.ActionRemove:
+		return publicFieldActionRemove, nil
+	case scrub.ActionReplace:
+		return publicFieldActionReplace, nil
+	default:
+		return "", fmt.Errorf("unsupported field action %q", action)
+	}
 }
 
-func convertPublicFields(inspectedFields []scrub.Field) []publicField {
+func convertPublicFields(inspectedFields []scrub.Field) ([]publicField, error) {
 	fields := make([]publicField, 0, len(inspectedFields))
 	for _, field := range inspectedFields {
+		action, err := convertPublicFieldAction(field.Action)
+		if err != nil {
+			return nil, err
+		}
 		fields = append(fields, publicField{
 			Name:             field.Name,
 			Label:            field.Label,
 			Preview:          field.Preview,
 			OriginalByteSize: field.OriginalByteSize,
-			Action:           publicFieldActions[field.Action],
+			Action:           action,
 		})
 	}
-	return fields
+	return fields, nil
 }
 
 func storageFromRequest(w http.ResponseWriter, request *http.Request) storage.Storage {

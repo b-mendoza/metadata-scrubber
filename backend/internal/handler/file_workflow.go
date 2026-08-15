@@ -60,6 +60,10 @@ func (handler *Handler) DryRun(w http.ResponseWriter, request *http.Request) {
 		request: request, objectStorage: objectStorage, fileID: fileID,
 		storageKey: input.StorageKey, startedAt: startedAt,
 	})
+	var fields []publicField
+	if err == nil {
+		fields, err = convertPublicFields(inspectedFields)
+	}
 	if errors.Is(err, errAdmissionFailure) {
 		writeAdmissionFailure(w, err)
 		return
@@ -71,7 +75,6 @@ func (handler *Handler) DryRun(w http.ResponseWriter, request *http.Request) {
 		return
 	}
 
-	fields := convertPublicFields(inspectedFields)
 	handler.logStage(pipelineLogEvent{ctx: request.Context(), stage: pipelineStageDryRun, storageKey: input.StorageKey, outcome: pipelineOutcomeSuccess, startedAt: startedAt})
 	writeJSON(w, http.StatusOK, dryRunResponse{ETag: etag, Fields: fields})
 }
