@@ -4,6 +4,7 @@ version: "3.51.1"
 
 vars:
   BINARY: metadata-scrubber
+  CUSTOM_GOLANGCI_LINT: ./custom-gcl
   GOLANGCI_LINT_CONFIG: .golangci.yml
 
 tasks:
@@ -43,19 +44,26 @@ tasks:
     cmds:
       - task: test
 
+  lint:build:
+    desc: Build the custom golangci-lint binary when its inputs change
+    sources:
+      - .custom-gcl.yml
+      - go.mod
+      - go.sum
+      - "lint/**/*.go"
+    generates:
+      - custom-gcl
+    cmds:
+      - go tool golangci-lint custom
+
   # Read-only source gate. golangci-lint's `run` checks the enabled formatters
-  # too, so one command covers lint and formatting.
+  # too, so one command covers lint, custom analysis, and formatting.
   lint:
     desc: Lint and verify formatting (read-only)
+    deps:
+      - lint:build
     cmds:
-      - go tool golangci-lint run --config {{.GOLANGCI_LINT_CONFIG}}
-      - task: lint:analysis
-
-  # One analyzer command covers all packages. The allow-any marker carries the x/tools boundary exemptions.
-  lint:analysis:
-    desc: Run the custom backend analyzers (read-only)
-    cmds:
-      - go run ./lint/cmd/backendlint ./...
+      - "{{.CUSTOM_GOLANGCI_LINT}} run --config {{.GOLANGCI_LINT_CONFIG}}"
 
   # Advisory security scan. It queries the changing Go vulnerability database.
   security:
@@ -68,9 +76,11 @@ tasks:
   # result is always cleanly formatted.
   fix:
     desc: Apply lint auto-fixes and format the source code (writes files)
+    deps:
+      - lint:build
     cmds:
-      - go tool golangci-lint run --config {{.GOLANGCI_LINT_CONFIG}} --fix
-      - go tool golangci-lint fmt --config {{.GOLANGCI_LINT_CONFIG}}
+      - "{{.CUSTOM_GOLANGCI_LINT}} run --config {{.GOLANGCI_LINT_CONFIG}} --fix"
+      - "{{.CUSTOM_GOLANGCI_LINT}} fmt --config {{.GOLANGCI_LINT_CONFIG}}"
 
   tidy:
     desc: Add missing and remove unused module dependencies

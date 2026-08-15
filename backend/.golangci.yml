@@ -4,6 +4,7 @@ linters:
   default: none
   enable:
     - bodyclose
+    - checkedpolicylookup
     - cyclop
     # Staged rule: depguard needs a recorded package layer graph.
     # - depguard
@@ -23,7 +24,10 @@ linters:
     - modernize
     - nestif
     - nilnil
+    - noemptyinterface
+    - nohiddentestsignal
     - nolintlint
+    - noswitch
     - revive
     - staticcheck
     # Staged rule: thelper reports 22 existing helper findings.
@@ -32,6 +36,19 @@ linters:
     - unparam
     - unused
   settings:
+    custom:
+      checkedpolicylookup:
+        type: module
+        description: Require comma-ok lookups for marked policy maps.
+      noemptyinterface:
+        type: module
+        description: Report empty interface types outside marked declarations.
+      nohiddentestsignal:
+        type: module
+        description: Report test skips and sleeps in Go test files.
+      noswitch:
+        type: module
+        description: Report switch statements.
     cyclop:
       max-complexity: 8
       package-average: 0.0

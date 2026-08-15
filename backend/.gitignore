@@ -1,6 +1,7 @@
 # Artifacts
 metadata-scrubber
 coverage.out
+custom-gcl
 
 # Task runner watch/checksum state
 .task/
