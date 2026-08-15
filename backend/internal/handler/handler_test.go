@@ -264,9 +264,7 @@ func TestJSONEndpointsValidateEveryBoundaryBeforeWork(t *testing.T) {
 
 				require.Equal(t, http.StatusOK, recorder.Code, recorder.Body.String())
 				require.Equal(t, mediatype.JSON, recorder.Header().Get(header.ContentType))
-				assertResponse, known := acceptedResponseAssertions[endpoint.method]
-				require.True(t, known, "unknown handler method")
-				assertResponse(t, recorder)
+				assertAcceptedResponse(t, endpoint.method, recorder)
 				require.Equal(t, endpoint.wantAcceptedOperations, callOperations(fake.Calls()))
 				require.Equal(t, endpoint.wantInspectCalls, *inspectCalls)
 				require.Equal(t, endpoint.wantCleanCalls, *cleanCalls)
@@ -1301,30 +1299,25 @@ const (
 	scrubMethod
 )
 
-type acceptedResponseAssertion func(*testing.T, *httptest.ResponseRecorder)
+func assertAcceptedResponse(t *testing.T, method handlerMethod, recorder *httptest.ResponseRecorder) {
+	t.Helper()
 
-var acceptedResponseAssertions = map[handlerMethod]acceptedResponseAssertion{
-	uploadMethod: func(t *testing.T, recorder *httptest.ResponseRecorder) {
+	switch method {
+	case uploadMethod:
 		var response uploadResponse
 		require.NoError(t, json.Unmarshal(recorder.Body.Bytes(), &response))
 		require.Equal(t, formatStorageKey(generatedFileID), response.StorageKey)
 		require.NotEmpty(t, response.UploadURL)
-	},
-	dryRunMethod: func(t *testing.T, recorder *httptest.ResponseRecorder) {
+	case dryRunMethod:
 		require.JSONEq(t, `{"etag":"revision-one","fields":[]}`, recorder.Body.String())
-	},
-	scrubMethod: func(t *testing.T, recorder *httptest.ResponseRecorder) {
+	case scrubMethod:
 		var response scrubResponse
 		require.NoError(t, json.Unmarshal(recorder.Body.Bytes(), &response))
 		require.Equal(t, "done", response.Status)
 		require.NotEmpty(t, response.Result.DownloadURL)
-	},
-}
-
-var handlerMethods = map[handlerMethod]func(*Handler) http.HandlerFunc{
-	uploadMethod: func(handler *Handler) http.HandlerFunc { return handler.Upload },
-	dryRunMethod: func(handler *Handler) http.HandlerFunc { return handler.DryRun },
-	scrubMethod:  func(handler *Handler) http.HandlerFunc { return handler.Scrub },
+	default:
+		t.Fatalf("unknown handler method %d", method)
+	}
 }
 
 func newTestHandler(
@@ -1384,9 +1377,18 @@ func serveRequest(t *testing.T, input handlerRequest) *httptest.ResponseRecorder
 	}
 	recorder := httptest.NewRecorder()
 
-	endpointForMethod, known := handlerMethods[input.method]
-	require.True(t, known, "unknown handler method")
-	endpoint := endpointForMethod(input.handler)
+	var endpoint http.HandlerFunc
+	switch input.method {
+	case uploadMethod:
+		endpoint = input.handler.Upload
+	case dryRunMethod:
+		endpoint = input.handler.DryRun
+	case scrubMethod:
+		endpoint = input.handler.Scrub
+	default:
+		t.Fatalf("unknown handler method %d", input.method)
+		return recorder
+	}
 	bindings.Inject(bindings.Bindings{Storage: input.objectStorage})(endpoint).ServeHTTP(recorder, request)
 	return recorder
 }
