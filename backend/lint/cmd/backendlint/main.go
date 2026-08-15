@@ -4,6 +4,7 @@ import (
 	"golang.org/x/tools/go/analysis/multichecker"
 
 	"metadata-scrubber/lint/checkedpolicylookup"
+	"metadata-scrubber/lint/noemptyinterface"
 	"metadata-scrubber/lint/nohiddentestsignal"
 	"metadata-scrubber/lint/noswitch"
 )
@@ -13,5 +14,6 @@ func main() {
 		noswitch.Analyzer,
 		nohiddentestsignal.Analyzer,
 		checkedpolicylookup.Analyzer,
+		noemptyinterface.Analyzer,
 	)
 }
