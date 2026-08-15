@@ -19,6 +19,11 @@
       ]
     },
     {
+      "path": "backend/AGENTS.md",
+      "description": "Backend service guidance.",
+      "scope": ["backend/**"]
+    },
+    {
       "path": "frontend/AGENTS.md",
       "description": "Frontend service guidance.",
       "scope": ["frontend/src/**"]
