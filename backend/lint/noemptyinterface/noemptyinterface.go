@@ -11,13 +11,19 @@ import (
 )
 
 const (
-	marker            = "policy:allow-any"
-	diagnosticMessage = "declare a concrete type, or mark the declaration with //policy:allow-any and a reason"
+	marker                         = "policy:allow-any"
+	typeParameterDiagnosticMessage = "declare an explicit type constraint; an unconstrained type parameter hides the declaration's real contract"
+	valueDiagnosticMessage         = "declare the specific type this code handles; the empty interface accepts every value and defers type errors to run time"
 )
 
 type sourceRange struct {
 	start token.Pos
 	end   token.Pos
+}
+
+type diagnosticRanges struct {
+	exemptions              []sourceRange
+	constraintTermPositions map[token.Pos]struct{}
 }
 
 // Analyzer reports empty interface types without a policy marker.
@@ -32,8 +38,11 @@ func run(pass *analysis.Pass) (any, error) {
 	universeAny := types.Universe.Lookup("any")
 
 	for _, file := range pass.Files {
-		exemptions := collectExemptions(file)
-		reportEmptyInterfaces(pass, file, universeAny, exemptions)
+		ranges := diagnosticRanges{
+			exemptions:              collectExemptions(file),
+			constraintTermPositions: collectConstraintTermPositions(file),
+		}
+		reportEmptyInterfaces(pass, file, universeAny, ranges)
 	}
 
 	return nil, nil //nolint:nilnil // An analyzer without ResultType must return a nil result.
@@ -51,6 +60,87 @@ func collectExemptions(file *ast.File) []sourceRange {
 		}
 	}
 	return exemptions
+}
+
+func collectConstraintTermPositions(file *ast.File) map[token.Pos]struct{} {
+	positions := make(map[token.Pos]struct{})
+	for node := range ast.Preorder(file) {
+		if functionType, isFunctionType := node.(*ast.FuncType); isFunctionType {
+			appendConstraintTermPositions(positions, functionType.TypeParams)
+		}
+		if typeSpecification, isTypeSpecification := node.(*ast.TypeSpec); isTypeSpecification {
+			appendConstraintTermPositions(positions, typeSpecification.TypeParams)
+		}
+	}
+	return positions
+}
+
+func appendConstraintTermPositions(positions map[token.Pos]struct{}, typeParameters *ast.FieldList) {
+	if typeParameters == nil {
+		return
+	}
+	for _, field := range typeParameters.List {
+		appendConstraintExpressionPositions(positions, field.Type)
+	}
+}
+
+func appendConstraintExpressionPositions(positions map[token.Pos]struct{}, expression ast.Expr) {
+	positions[typeParameterConstraintPosition(expression)] = struct{}{}
+	expression = unparenthesized(expression)
+
+	if union, isUnion := expression.(*ast.BinaryExpr); isUnion && union.Op == token.OR {
+		appendConstraintExpressionPositions(positions, union.X)
+		appendConstraintExpressionPositions(positions, union.Y)
+		return
+	}
+
+	if interfaceType, isInterfaceType := expression.(*ast.InterfaceType); isInterfaceType {
+		appendEmbeddedConstraintPositions(positions, interfaceType)
+	}
+}
+
+func unparenthesized(expression ast.Expr) ast.Expr {
+	for {
+		parenthesized, isParenthesized := expression.(*ast.ParenExpr)
+		if !isParenthesized {
+			return expression
+		}
+		expression = parenthesized.X
+	}
+}
+
+func appendEmbeddedConstraintPositions(positions map[token.Pos]struct{}, interfaceType *ast.InterfaceType) {
+	for _, field := range interfaceType.Methods.List {
+		if len(field.Names) == 0 {
+			appendConstraintExpressionPositions(positions, field.Type)
+		}
+	}
+}
+
+func typeParameterConstraintPosition(expression ast.Expr) token.Pos {
+	for {
+		parenthesized, isParenthesized := expression.(*ast.ParenExpr)
+		if isParenthesized {
+			expression = parenthesized.X
+			continue
+		}
+		indexed, isIndexed := expression.(*ast.IndexExpr)
+		if isIndexed {
+			expression = indexed.X
+			continue
+		}
+		indexList, isIndexList := expression.(*ast.IndexListExpr)
+		if isIndexList {
+			expression = indexList.X
+			continue
+		}
+		break
+	}
+	selector, isSelector := expression.(*ast.SelectorExpr)
+	if isSelector {
+		return selector.Sel.Pos()
+	}
+	return expression.Pos()
 }
 
 func nodeHasMarker(node ast.Node) bool {
@@ -101,16 +191,16 @@ func reportEmptyInterfaces(
 	pass *analysis.Pass,
 	root ast.Node,
 	universeAny types.Object,
-	exemptions []sourceRange,
+	ranges diagnosticRanges,
 ) {
 	for node := range ast.Preorder(root) {
 		if identifier, isIdentifier := node.(*ast.Ident); isIdentifier {
-			reportIdentifier(pass, identifier, universeAny, exemptions)
+			reportIdentifier(pass, identifier, universeAny, ranges)
 			continue
 		}
 
 		if interfaceType, isInterfaceType := node.(*ast.InterfaceType); isInterfaceType {
-			reportInterfaceType(pass, interfaceType, exemptions)
+			reportInterfaceType(pass, interfaceType, ranges)
 		}
 	}
 }
@@ -119,20 +209,20 @@ func reportIdentifier(
 	pass *analysis.Pass,
 	identifier *ast.Ident,
 	universeAny types.Object,
-	exemptions []sourceRange,
+	ranges diagnosticRanges,
 ) {
 	if identifier.Name == "any" && pass.TypesInfo.Uses[identifier] == universeAny {
-		reportUnlessExempt(pass, identifier.Pos(), exemptions)
+		reportUnlessExempt(pass, identifier.Pos(), ranges)
 		return
 	}
 	if denotesEmptyInterface(identifier, pass.TypesInfo) {
-		reportUnlessExempt(pass, identifier.Pos(), exemptions)
+		reportUnlessExempt(pass, identifier.Pos(), ranges)
 	}
 }
 
-func reportInterfaceType(pass *analysis.Pass, interfaceType *ast.InterfaceType, exemptions []sourceRange) {
+func reportInterfaceType(pass *analysis.Pass, interfaceType *ast.InterfaceType, ranges diagnosticRanges) {
 	if len(interfaceType.Methods.List) == 0 {
-		reportUnlessExempt(pass, interfaceType.Interface, exemptions)
+		reportUnlessExempt(pass, interfaceType.Interface, ranges)
 	}
 }
 
@@ -152,18 +242,15 @@ func denotesEmptyInterface(identifier *ast.Ident, typeInfo *types.Info) bool {
 	return isInterface && interfaceType.Empty()
 }
 
-func reportUnlessExempt(pass *analysis.Pass, position token.Pos, exemptions []sourceRange) {
-	if isExempt(position, exemptions) {
-		return
-	}
-	pass.Reportf(position, diagnosticMessage)
-}
-
-func isExempt(position token.Pos, exemptions []sourceRange) bool {
-	for _, exemption := range exemptions {
+func reportUnlessExempt(pass *analysis.Pass, position token.Pos, ranges diagnosticRanges) {
+	for _, exemption := range ranges.exemptions {
 		if exemption.start <= position && position <= exemption.end {
-			return true
+			return
 		}
 	}
-	return false
+	if _, isConstraintTerm := ranges.constraintTermPositions[position]; isConstraintTerm {
+		pass.Reportf(position, typeParameterDiagnosticMessage)
+		return
+	}
+	pass.Reportf(position, valueDiagnosticMessage)
 }
