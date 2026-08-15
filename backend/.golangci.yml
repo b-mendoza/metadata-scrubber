@@ -42,7 +42,7 @@ linters:
         description: Require comma-ok lookups for marked policy maps.
       noemptyinterface:
         type: module
-        description: Report empty interface types outside marked declarations.
+        description: Report empty interface types.
       nohiddentestsignal:
         type: module
         description: Report test skips and sleeps in Go test files.
