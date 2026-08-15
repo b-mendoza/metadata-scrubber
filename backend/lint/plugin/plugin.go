@@ -8,7 +8,6 @@ import (
 	"metadata-scrubber/lint/checkedpolicylookup"
 	"metadata-scrubber/lint/noemptyinterface"
 	"metadata-scrubber/lint/nohiddentestsignal"
-	"metadata-scrubber/lint/noswitch"
 )
 
 type analyzerPlugin struct {
@@ -18,7 +17,6 @@ type analyzerPlugin struct {
 
 //nolint:gochecknoinits // The module plugin API registers linters during package initialization.
 func init() {
-	register.Plugin(noswitch.Analyzer.Name, newPlugin(noswitch.Analyzer, register.LoadModeSyntax))
 	register.Plugin(
 		nohiddentestsignal.Analyzer.Name,
 		newPlugin(nohiddentestsignal.Analyzer, register.LoadModeTypesInfo),

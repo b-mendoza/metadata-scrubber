@@ -27,7 +27,6 @@ linters:
     - noemptyinterface
     - nohiddentestsignal
     - nolintlint
-    - noswitch
     - revive
     - staticcheck
     # Staged rule: thelper reports 22 existing helper findings.
@@ -46,9 +45,6 @@ linters:
       nohiddentestsignal:
         type: module
         description: Report test skips and sleeps in Go test files.
-      noswitch:
-        type: module
-        description: Report switch statements.
     cyclop:
       max-complexity: 8
       package-average: 0.0

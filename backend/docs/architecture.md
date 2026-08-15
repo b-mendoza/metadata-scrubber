@@ -18,11 +18,10 @@
 
 | Package | Responsibility |
 | --- | --- |
-| `lint/noswitch` | Provides a golangci-lint module linter that reports expression switches and type switches. |
 | `lint/nohiddentestsignal` | Provides a golangci-lint module linter that reports test skips and `time.Sleep` calls in Go test files. |
 | `lint/checkedpolicylookup` | Provides a golangci-lint module linter that requires comma-ok lookups for maps marked with `// policy:map`. |
 | `lint/noemptyinterface` | Provides a golangci-lint module linter that reports `any`, `interface{}`, and names for empty interfaces. |
-| `lint/plugin` | Registers all four analyzers with the golangci-lint Module Plugin System. |
+| `lint/plugin` | Registers three analyzers with the golangci-lint Module Plugin System. |
 
 ## Runtime
 
