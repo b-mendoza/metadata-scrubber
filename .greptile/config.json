@@ -54,6 +54,36 @@
       "severity": "high",
       "scope": ["backend/**", "frontend/src/**", "**/*.md"],
       "rule": "Do not review complexity limits, switch statements, class syntax, lookup-map structure, formatting, or any other rule that deterministic checks own. Never waive, override, or discount a failing deterministic check."
+    },
+    {
+      "id": "specific-explicit-application-code",
+      "severity": "high",
+      "scope": ["backend/**", "frontend/src/**"],
+      "rule": "Write specific and explicit application code for each use case. Do not use one general function for many use cases. Delete a helper that only avoids repeated code, and write the code at each call site. Accept duplication in application code."
+    },
+    {
+      "id": "meaningful-generic-constraints",
+      "severity": "high",
+      "scope": ["frontend/src/**"],
+      "rule": "Declare an explicit, meaningful constraint for every generic type parameter."
+    },
+    {
+      "id": "educational-custom-lint-messages",
+      "severity": "high",
+      "scope": ["backend/lint/**", "frontend/oxlint-plugin-metadata-scrubber/**"],
+      "rule": "Write each custom lint rule message so that it is descriptive, actionable, and educational. Explain the required fix. Do not state how to silence or bypass the rule."
+    },
+    {
+      "id": "structural-lint-fixes",
+      "severity": "high",
+      "scope": ["backend/**", "frontend/src/**"],
+      "rule": "Fix the cause of each lint failure structurally. Do not add lint-suppression comments or rule escape hatches. Keep a suppression only at a third-party API boundary that forces it."
+    },
+    {
+      "id": "typed-test-wire-payloads",
+      "severity": "medium",
+      "scope": ["backend/**/*_test.go", "frontend/src/**/*.test.*", "frontend/src/**/*.spec.*"],
+      "rule": "Build test request and response payloads from the concrete typed contracts at the call site. Serialize them there and check each error. Use raw wire literals only in dedicated wire-contract tests."
     }
   ]
 }
