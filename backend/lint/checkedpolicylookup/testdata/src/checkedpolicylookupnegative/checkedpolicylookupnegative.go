@@ -11,6 +11,12 @@ func checkedLookup(key string) (int, bool) {
 	return value, ok
 }
 
+func checkedDiscardedValueLookup(key string) bool {
+	_, ok := actions[key]
+
+	return ok
+}
+
 func unmarkedLookup(key string) int {
 	return otherActions[key]
 }
