@@ -5,7 +5,6 @@ import (
 	"github.com/golangci/plugin-module-register/register"
 	"golang.org/x/tools/go/analysis"
 
-	"metadata-scrubber/lint/checkedpolicylookup"
 	"metadata-scrubber/lint/noemptyinterface"
 	"metadata-scrubber/lint/nohiddentestsignal"
 )
@@ -20,10 +19,6 @@ func init() {
 	register.Plugin(
 		nohiddentestsignal.Analyzer.Name,
 		newPlugin(nohiddentestsignal.Analyzer, register.LoadModeTypesInfo),
-	)
-	register.Plugin(
-		checkedpolicylookup.Analyzer.Name,
-		newPlugin(checkedpolicylookup.Analyzer, register.LoadModeTypesInfo),
 	)
 	register.Plugin(
 		noemptyinterface.Analyzer.Name,

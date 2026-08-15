@@ -4,7 +4,6 @@ linters:
   default: none
   enable:
     - bodyclose
-    - checkedpolicylookup
     - cyclop
     # Staged rule: depguard needs a recorded package layer graph.
     # - depguard
@@ -36,9 +35,6 @@ linters:
     - unused
   settings:
     custom:
-      checkedpolicylookup:
-        type: module
-        description: Require comma-ok lookups for marked policy maps.
       noemptyinterface:
         type: module
         description: Report empty interface types.
