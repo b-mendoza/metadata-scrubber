@@ -18,6 +18,8 @@ The service runs as a stateless container on Vercel Fluid compute, and not on a 
 - Lint check (run after a substantive change): `task lint`.
 - Test suite (run before committing): `task test`.
 
+The custom analyzers ban the empty interface (`any` and `interface{}`) in application code. Give every generic an explicit, meaningful constraint.
+
 ## Current-state references (short-lived; verify against the code)
 
 - [Architecture](docs/architecture.md) — package layout and runtime wiring.
