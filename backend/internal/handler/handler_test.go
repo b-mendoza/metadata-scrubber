@@ -44,6 +44,54 @@ func TestReachabilityReportsReachableStatus(t *testing.T) {
 	require.JSONEq(t, `{"status":"reachable"}`, recorder.Body.String())
 }
 
+func TestWriteJSONPreservesConcreteResponseContracts(t *testing.T) {
+	tests := []struct {
+		name     string
+		write    func(http.ResponseWriter)
+		wantBody string
+	}{
+		{
+			name: "reachability",
+			write: func(w http.ResponseWriter) {
+				writeJSON(w, http.StatusAccepted, reachabilityResponse{Status: "reachable"})
+			},
+			wantBody: "{\"status\":\"reachable\"}\n",
+		},
+		{
+			name: "upload",
+			write: func(w http.ResponseWriter) {
+				writeJSON(w, http.StatusAccepted, uploadResponse{StorageKey: "uploads/id", UploadURL: "https://upload.example"})
+			},
+			wantBody: "{\"storageKey\":\"uploads/id\",\"uploadUrl\":\"https://upload.example\"}\n",
+		},
+		{
+			name: "dry run",
+			write: func(w http.ResponseWriter) {
+				writeJSON(w, http.StatusAccepted, dryRunResponse{ETag: "revision", Fields: []publicField{}})
+			},
+			wantBody: "{\"etag\":\"revision\",\"fields\":[]}\n",
+		},
+		{
+			name: "scrub",
+			write: func(w http.ResponseWriter) {
+				writeJSON(w, http.StatusAccepted, scrubResponse{Status: "done", Result: scrubResponseResult{DownloadURL: "https://download.example"}})
+			},
+			wantBody: "{\"status\":\"done\",\"result\":{\"downloadUrl\":\"https://download.example\"}}\n",
+		},
+	}
+
+	for _, testCase := range tests {
+		t.Run(testCase.name, func(t *testing.T) {
+			recorder := httptest.NewRecorder()
+			testCase.write(recorder)
+
+			require.Equal(t, http.StatusAccepted, recorder.Code)
+			require.Equal(t, mediatype.JSON, recorder.Header().Get(header.ContentType))
+			require.Equal(t, testCase.wantBody, recorder.Body.String())
+		})
+	}
+}
+
 func TestNewHandlerRejectsNilOperations(t *testing.T) {
 	validInspect := inspectPDFOperation(func([]byte, scrub.InspectionOrigin) ([]scrub.Field, error) { return nil, nil })
 	validClean := cleanPDFOperation(func(input []byte) ([]byte, error) { return bytes.Clone(input), nil })

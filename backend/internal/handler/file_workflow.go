@@ -73,7 +73,7 @@ func (handler *Handler) DryRun(w http.ResponseWriter, request *http.Request) {
 
 	fields := convertPublicFields(inspectedFields)
 	handler.logStage(pipelineLogEvent{ctx: request.Context(), stage: pipelineStageDryRun, storageKey: input.StorageKey, outcome: pipelineOutcomeSuccess, startedAt: startedAt})
-	httpx.WriteJSON(w, http.StatusOK, dryRunResponse{ETag: etag, Fields: fields})
+	writeJSON(w, http.StatusOK, dryRunResponse{ETag: etag, Fields: fields})
 }
 
 type sourceWorkflowRequest struct {
@@ -234,7 +234,7 @@ func (handler *Handler) presignScrubbed(w http.ResponseWriter, downloadRequest s
 	}
 
 	handler.logStage(pipelineLogEvent{ctx: downloadRequest.request.Context(), stage: pipelineStagePresigned, storageKey: downloadRequest.input.StorageKey, outcome: downloadRequest.outcome, startedAt: downloadRequest.startedAt})
-	httpx.WriteJSON(w, http.StatusOK, scrubResponse{
+	writeJSON(w, http.StatusOK, scrubResponse{
 		Status: "done",
 		Result: scrubResponseResult{DownloadURL: grant.URL},
 	})
