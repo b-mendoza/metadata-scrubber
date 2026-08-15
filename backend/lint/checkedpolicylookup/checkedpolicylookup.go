@@ -20,8 +20,7 @@ var Analyzer = &analysis.Analyzer{
 	Run:  run,
 }
 
-// policy:allow-any -- the x/tools analysis API fixes this return type.
-func run(pass *analysis.Pass) (any, error) {
+func run(pass *analysis.Pass) (any, error) { //nolint:noemptyinterface // the x/tools analysis API fixes this return type.
 	policyMaps := collectPolicyMaps(pass)
 	checkedLookups := make(map[*ast.IndexExpr]bool)
 
