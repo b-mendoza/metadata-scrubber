@@ -11,7 +11,7 @@ import (
 
 const (
 	marker            = "policy:map"
-	diagnosticMessage = "require the comma-ok form for lookups in a //policy:map"
+	diagnosticMessage = "use the comma-ok form (value, ok := m[key]) and handle the missing key; this map is marked //policy:map"
 )
 
 // Analyzer reports unchecked index expressions for maps marked with //policy:map.
@@ -43,12 +43,12 @@ func reportUncheckedLookups(
 	for node := range ast.Preorder(file) {
 		assignment, isAssignment := node.(*ast.AssignStmt)
 		if isAssignment {
-			markCheckedLookup(checkedLookups, len(assignment.Lhs), assignment.Rhs)
+			markCheckedAssignmentLookup(checkedLookups, assignment)
 		}
 
 		valueSpecification, isValueSpecification := node.(*ast.ValueSpec)
 		if isValueSpecification {
-			markCheckedLookup(checkedLookups, len(valueSpecification.Names), valueSpecification.Values)
+			markCheckedValueSpecificationLookup(checkedLookups, valueSpecification)
 		}
 
 		indexExpression, isIndexExpression := node.(*ast.IndexExpr)
@@ -114,12 +114,35 @@ func hasMarker(commentGroup *ast.CommentGroup) bool {
 	return false
 }
 
+func markCheckedAssignmentLookup(
+	checkedLookups map[*ast.IndexExpr]bool,
+	assignment *ast.AssignStmt,
+) {
+	if len(assignment.Lhs) != 2 {
+		return
+	}
+
+	markCheckedLookup(checkedLookups, assignment.Lhs[1], assignment.Rhs)
+}
+
+func markCheckedValueSpecificationLookup(
+	checkedLookups map[*ast.IndexExpr]bool,
+	valueSpecification *ast.ValueSpec,
+) {
+	if len(valueSpecification.Names) != 2 {
+		return
+	}
+
+	markCheckedLookup(checkedLookups, valueSpecification.Names[1], valueSpecification.Values)
+}
+
 func markCheckedLookup(
 	checkedLookups map[*ast.IndexExpr]bool,
-	leftItemCount int,
+	secondLeftItem ast.Expr,
 	rightExpressions []ast.Expr,
 ) {
-	if leftItemCount != 2 || len(rightExpressions) != 1 {
+	identifier, isIdentifier := secondLeftItem.(*ast.Ident)
+	if (isIdentifier && identifier.Name == "_") || len(rightExpressions) != 1 {
 		return
 	}
 
