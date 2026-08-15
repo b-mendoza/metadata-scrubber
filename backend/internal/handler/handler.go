@@ -143,6 +143,16 @@ type scrubResponseResult struct {
 	DownloadURL string `json:"downloadUrl"`
 }
 
+func writeJSON[T reachabilityResponse | uploadResponse | dryRunResponse | scrubResponse](
+	w http.ResponseWriter,
+	status int,
+	body T,
+) {
+	w.Header().Set(header.ContentType, mediatype.JSON)
+	w.WriteHeader(status)
+	_ = json.NewEncoder(w).Encode(body)
+}
+
 type handlerOperations struct {
 	inspect inspectPDFOperation
 	clean   cleanPDFOperation
@@ -188,7 +198,7 @@ func newHandler(logger *slog.Logger, permits chan struct{}, operations handlerOp
 
 // Reachability gives callers a cheap way to verify the backend HTTP API is reachable.
 func Reachability(w http.ResponseWriter, _ *http.Request) {
-	httpx.WriteJSON(w, http.StatusOK, reachabilityResponse{Status: "reachable"})
+	writeJSON(w, http.StatusOK, reachabilityResponse{Status: "reachable"})
 }
 
 func decodeUploadRequest(w http.ResponseWriter, request *http.Request) (uploadRequest, bool) {
@@ -248,5 +258,5 @@ func (handler *Handler) Upload(w http.ResponseWriter, request *http.Request) {
 	}
 
 	handler.logStage(pipelineLogEvent{ctx: request.Context(), stage: pipelineStageUploadCreated, storageKey: storageKey, outcome: pipelineOutcomeSuccess, startedAt: startedAt})
-	httpx.WriteJSON(w, http.StatusOK, uploadResponse{StorageKey: storageKey, UploadURL: grant.URL})
+	writeJSON(w, http.StatusOK, uploadResponse{StorageKey: storageKey, UploadURL: grant.URL})
 }
