@@ -62,18 +62,6 @@ type structuralWalker struct {
 	inspectMetadata metadataEntryInspector
 }
 
-type structuralObjectWalker func(structuralWalker, types.Object, []int) error
-
-func newStructuralObjectWalkers() map[string]structuralObjectWalker {
-	return map[string]structuralObjectWalker{
-		"types.Dict":             walkDictionaryObject,
-		"types.StreamDict":       walkStreamDictionaryObject,
-		"types.ObjectStreamDict": walkObjectStreamDictionaryObject,
-		"types.XRefStreamDict":   walkXRefStreamDictionaryObject,
-		"types.Array":            walkArrayObject,
-	}
-}
-
 func sortedLiveObjectNumbers(context *model.Context) []int {
 	objectNumbers := make([]int, 0, len(context.Table))
 	for objectNumber, entry := range context.Table {
@@ -87,51 +75,20 @@ func sortedLiveObjectNumbers(context *model.Context) []int {
 }
 
 func (walker structuralWalker) walkObject(object types.Object, path []int) error {
-	walk, known := newStructuralObjectWalkers()[fmt.Sprintf("%T", object)]
-	if !known {
+	switch value := object.(type) {
+	case types.Dict:
+		return walker.walkDictionary(value, path)
+	case types.StreamDict:
+		return walker.walkDictionary(value.Dict, path)
+	case types.ObjectStreamDict:
+		return walker.walkDictionary(value.Dict, path)
+	case types.XRefStreamDict:
+		return walker.walkDictionary(value.Dict, path)
+	case types.Array:
+		return walker.walkArray(value, path)
+	default:
 		return nil
 	}
-	return walk(walker, object, path)
-}
-
-func walkDictionaryObject(walker structuralWalker, object types.Object, path []int) error {
-	value, ok := object.(types.Dict)
-	if !ok {
-		return fmt.Errorf("unsupported dictionary object type %T", object)
-	}
-	return walker.walkDictionary(value, path)
-}
-
-func walkStreamDictionaryObject(walker structuralWalker, object types.Object, path []int) error {
-	value, ok := object.(types.StreamDict)
-	if !ok {
-		return fmt.Errorf("unsupported stream dictionary object type %T", object)
-	}
-	return walker.walkDictionary(value.Dict, path)
-}
-
-func walkObjectStreamDictionaryObject(walker structuralWalker, object types.Object, path []int) error {
-	value, ok := object.(types.ObjectStreamDict)
-	if !ok {
-		return fmt.Errorf("unsupported object stream dictionary type %T", object)
-	}
-	return walker.walkDictionary(value.Dict, path)
-}
-
-func walkXRefStreamDictionaryObject(walker structuralWalker, object types.Object, path []int) error {
-	value, ok := object.(types.XRefStreamDict)
-	if !ok {
-		return fmt.Errorf("unsupported xref stream dictionary type %T", object)
-	}
-	return walker.walkDictionary(value.Dict, path)
-}
-
-func walkArrayObject(walker structuralWalker, object types.Object, path []int) error {
-	value, ok := object.(types.Array)
-	if !ok {
-		return fmt.Errorf("unsupported array object type %T", object)
-	}
-	return walker.walkArray(value, path)
 }
 
 func (walker structuralWalker) walkDictionary(dictionary types.Dict, path []int) error {
