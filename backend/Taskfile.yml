@@ -51,13 +51,11 @@ tasks:
       - go tool golangci-lint run --config {{.GOLANGCI_LINT_CONFIG}}
       - task: lint:analysis
 
-  # All analyzers cover every application package by default.
-  # The lint tree is the x/tools contract surface, so only noemptyinterface skips it.
+  # One analyzer command covers all packages. The allow-any marker carries the x/tools boundary exemptions.
   lint:analysis:
     desc: Run the custom backend analyzers (read-only)
     cmds:
-      - go run ./lint/cmd/backendlint $(go list ./... | grep -Ev '^metadata-scrubber/lint(/|$)')
-      - go run ./lint/cmd/backendlint -noemptyinterface=false ./lint/...
+      - go run ./lint/cmd/backendlint ./...
 
   # Advisory security scan. It queries the changing Go vulnerability database.
   security:
