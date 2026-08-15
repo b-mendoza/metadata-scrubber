@@ -12,7 +12,7 @@ import (
 )
 
 const (
-	allowAnyMarkerPrefix           = "policy:allow-any: "
+	allowAnyMarkerPrefix           = "// policy:allow-any -- "
 	typeParameterDiagnosticMessage = "declare an explicit type constraint; an unconstrained type parameter hides the declaration's real contract"
 	valueDiagnosticMessage         = "declare the specific type this code handles; the empty interface accepts every value and defers type errors to run time"
 )
@@ -30,11 +30,11 @@ type diagnosticPolicy struct {
 // Analyzer reports empty interface types.
 var Analyzer = &analysis.Analyzer{
 	Name: "noemptyinterface",
-	Doc:  "report empty interface types unless an attached //policy:allow-any: <reason> marker exempts the containing declaration",
+	Doc:  "report empty interface types unless an attached // policy:allow-any -- <reason> marker exempts the containing declaration",
 	Run:  run,
 }
 
-//policy:allow-any: the x/tools analysis API fixes this return type.
+// policy:allow-any -- the x/tools analysis API fixes this return type.
 func run(pass *analysis.Pass) (any, error) {
 	universeAny := types.Universe.Lookup("any")
 
@@ -113,12 +113,7 @@ func hasAllowAnyMarker(commentGroups ...*ast.CommentGroup) bool {
 }
 
 func isAllowAnyMarker(comment *ast.Comment) bool {
-	if !strings.HasPrefix(comment.Text, "//") {
-		return false
-	}
-
-	text := strings.TrimSpace(strings.TrimPrefix(comment.Text, "//"))
-	reason, hasPrefix := strings.CutPrefix(text, allowAnyMarkerPrefix)
+	reason, hasPrefix := strings.CutPrefix(comment.Text, allowAnyMarkerPrefix)
 
 	return hasPrefix && reason != "" && strings.TrimSpace(reason) == reason
 }
