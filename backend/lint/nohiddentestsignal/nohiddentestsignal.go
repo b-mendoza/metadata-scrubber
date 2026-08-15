@@ -28,8 +28,7 @@ var Analyzer = &analysis.Analyzer{
 	Run:  run,
 }
 
-// policy:allow-any -- the x/tools analysis API fixes this return type.
-func run(pass *analysis.Pass) (any, error) {
+func run(pass *analysis.Pass) (any, error) { //nolint:noemptyinterface // the x/tools analysis API fixes this return type.
 	for _, file := range pass.Files {
 		filename := pass.Fset.PositionFor(file.Pos(), false).Filename
 		if !isTestFilename(filename) {
