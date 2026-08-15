@@ -5,6 +5,7 @@ import (
 	"go/ast"
 	"go/types"
 	"path/filepath"
+	"strings"
 
 	"golang.org/x/tools/go/analysis"
 )
@@ -43,30 +44,28 @@ func run(pass *analysis.Pass) (any, error) {
 func isTestFilename(filename string) bool {
 	baseName := filepath.Base(filename)
 
-	return len(baseName) > len("_test.go") && baseName[len(baseName)-len("_test.go"):] == "_test.go"
+	return baseName != "_test.go" && strings.HasSuffix(baseName, "_test.go")
 }
 
 func inspectTestFile(pass *analysis.Pass, file *ast.File) {
-	ast.Inspect(file, func(node ast.Node) bool {
+	for node := range ast.Preorder(file) {
 		call, isCall := node.(*ast.CallExpr)
 		if !isCall {
-			return true
+			continue
 		}
 
 		selector, isSelector := call.Fun.(*ast.SelectorExpr)
 		if !isSelector {
-			return true
+			continue
 		}
 
 		function := selectedFunction(pass, selector)
 		if function == nil || function.Pkg() == nil {
-			return true
+			continue
 		}
 
 		reportForbiddenCall(pass, selector, function)
-
-		return true
-	})
+	}
 }
 
 func selectedFunction(pass *analysis.Pass, selector *ast.SelectorExpr) *types.Func {
