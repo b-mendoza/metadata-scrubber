@@ -5,30 +5,132 @@ import (
 	"go/ast"
 	"go/token"
 	"go/types"
+	"slices"
+	"strings"
 
 	"golang.org/x/tools/go/analysis"
 )
 
 const (
+	allowAnyMarkerPrefix           = "policy:allow-any: "
 	typeParameterDiagnosticMessage = "declare an explicit type constraint; an unconstrained type parameter hides the declaration's real contract"
 	valueDiagnosticMessage         = "declare the specific type this code handles; the empty interface accepts every value and defers type errors to run time"
 )
 
+type sourceRange struct {
+	start token.Pos
+	end   token.Pos
+}
+
+type diagnosticPolicy struct {
+	constraintTermPositions map[token.Pos]struct{}
+	exemptionRanges         []sourceRange
+}
+
 // Analyzer reports empty interface types.
 var Analyzer = &analysis.Analyzer{
 	Name: "noemptyinterface",
-	Doc:  "report empty interface types",
+	Doc:  "report empty interface types unless an attached //policy:allow-any: <reason> marker exempts the containing declaration",
 	Run:  run,
 }
 
+//policy:allow-any: the x/tools analysis API fixes this return type.
 func run(pass *analysis.Pass) (any, error) {
 	universeAny := types.Universe.Lookup("any")
 
 	for _, file := range pass.Files {
-		reportEmptyInterfaces(pass, file, universeAny, collectConstraintTermPositions(file))
+		policy := diagnosticPolicy{
+			constraintTermPositions: collectConstraintTermPositions(file),
+			exemptionRanges:         collectExemptionRanges(file),
+		}
+		reportEmptyInterfaces(pass, file, universeAny, policy)
 	}
 
 	return nil, nil //nolint:nilnil // An analyzer without ResultType must return a nil result.
+}
+
+func collectExemptionRanges(file *ast.File) []sourceRange {
+	ranges := make([]sourceRange, 0)
+	for node := range ast.Preorder(file) {
+		exemption, isMarked := exemptionRangeForNode(node)
+		if isMarked {
+			ranges = append(ranges, exemption)
+		}
+	}
+
+	return ranges
+}
+
+func exemptionRangeForNode(node ast.Node) (sourceRange, bool) {
+	if declaration, isFunctionDeclaration := node.(*ast.FuncDecl); isFunctionDeclaration {
+		return functionExemptionRange(declaration)
+	}
+	if declaration, isGeneralDeclaration := node.(*ast.GenDecl); isGeneralDeclaration {
+		return markedNodeRange(declaration, declaration.Doc)
+	}
+	if specification, isTypeSpecification := node.(*ast.TypeSpec); isTypeSpecification {
+		return markedNodeRange(specification, specification.Doc, specification.Comment)
+	}
+	if specification, isValueSpecification := node.(*ast.ValueSpec); isValueSpecification {
+		return markedNodeRange(specification, specification.Doc, specification.Comment)
+	}
+	if field, isField := node.(*ast.Field); isField {
+		return markedNodeRange(field, field.Doc, field.Comment)
+	}
+
+	return sourceRange{}, false
+}
+
+func functionExemptionRange(declaration *ast.FuncDecl) (sourceRange, bool) {
+	if !hasAllowAnyMarker(declaration.Doc) {
+		return sourceRange{}, false
+	}
+
+	end := declaration.End()
+	if declaration.Body != nil {
+		end = declaration.Body.Lbrace
+	}
+
+	return sourceRange{start: declaration.Pos(), end: end}, true
+}
+
+func markedNodeRange(node ast.Node, commentGroups ...*ast.CommentGroup) (sourceRange, bool) {
+	if !hasAllowAnyMarker(commentGroups...) {
+		return sourceRange{}, false
+	}
+
+	return sourceRange{start: node.Pos(), end: node.End()}, true
+}
+
+func hasAllowAnyMarker(commentGroups ...*ast.CommentGroup) bool {
+	for _, commentGroup := range commentGroups {
+		if commentGroup != nil && slices.ContainsFunc(commentGroup.List, isAllowAnyMarker) {
+			return true
+		}
+	}
+
+	return false
+}
+
+func isAllowAnyMarker(comment *ast.Comment) bool {
+	if !strings.HasPrefix(comment.Text, "//") {
+		return false
+	}
+
+	text := strings.TrimSpace(strings.TrimPrefix(comment.Text, "//"))
+	reason, hasPrefix := strings.CutPrefix(text, allowAnyMarkerPrefix)
+
+	return hasPrefix && reason != "" && strings.TrimSpace(reason) == reason
+}
+
+func isExempt(position token.Pos, ranges []sourceRange) bool {
+	for _, exemption := range ranges {
+		if exemption.start <= position && position <= exemption.end {
+			return true
+		}
+	}
+
+	return false
 }
 
 func collectConstraintTermPositions(file *ast.File) map[token.Pos]struct{} {
@@ -116,16 +218,16 @@ func reportEmptyInterfaces(
 	pass *analysis.Pass,
 	root ast.Node,
 	universeAny types.Object,
-	constraintTermPositions map[token.Pos]struct{},
+	policy diagnosticPolicy,
 ) {
 	for node := range ast.Preorder(root) {
 		if identifier, isIdentifier := node.(*ast.Ident); isIdentifier {
-			reportIdentifier(pass, identifier, universeAny, constraintTermPositions)
+			reportIdentifier(pass, identifier, universeAny, policy)
 			continue
 		}
 
 		if interfaceType, isInterfaceType := node.(*ast.InterfaceType); isInterfaceType {
-			reportInterfaceType(pass, interfaceType, constraintTermPositions)
+			reportInterfaceType(pass, interfaceType, policy)
 		}
 	}
 }
@@ -134,24 +236,24 @@ func reportIdentifier(
 	pass *analysis.Pass,
 	identifier *ast.Ident,
 	universeAny types.Object,
-	constraintTermPositions map[token.Pos]struct{},
+	policy diagnosticPolicy,
 ) {
 	if identifier.Name == "any" && pass.TypesInfo.Uses[identifier] == universeAny {
-		reportDiagnostic(pass, identifier.Pos(), constraintTermPositions)
+		reportDiagnostic(pass, identifier.Pos(), policy)
 		return
 	}
 	if denotesEmptyInterface(identifier, pass.TypesInfo) {
-		reportDiagnostic(pass, identifier.Pos(), constraintTermPositions)
+		reportDiagnostic(pass, identifier.Pos(), policy)
 	}
 }
 
 func reportInterfaceType(
 	pass *analysis.Pass,
 	interfaceType *ast.InterfaceType,
-	constraintTermPositions map[token.Pos]struct{},
+	policy diagnosticPolicy,
 ) {
 	if len(interfaceType.Methods.List) == 0 {
-		reportDiagnostic(pass, interfaceType.Interface, constraintTermPositions)
+		reportDiagnostic(pass, interfaceType.Interface, policy)
 	}
 }
 
@@ -174,9 +276,12 @@ func denotesEmptyInterface(identifier *ast.Ident, typeInfo *types.Info) bool {
 func reportDiagnostic(
 	pass *analysis.Pass,
 	position token.Pos,
-	constraintTermPositions map[token.Pos]struct{},
+	policy diagnosticPolicy,
 ) {
-	if _, isConstraintTerm := constraintTermPositions[position]; isConstraintTerm {
+	if isExempt(position, policy.exemptionRanges) {
+		return
+	}
+	if _, isConstraintTerm := policy.constraintTermPositions[position]; isConstraintTerm {
 		pass.Reportf(position, typeParameterDiagnosticMessage)
 		return
 	}
