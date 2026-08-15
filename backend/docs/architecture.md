@@ -21,8 +21,8 @@
 | `lint/noswitch` | Reports expression switches and type switches. |
 | `lint/nohiddentestsignal` | Reports test skips and `time.Sleep` calls in Go test files. |
 | `lint/checkedpolicylookup` | Requires comma-ok lookups for maps marked with `//policy:map`. |
-| `lint/noemptyinterface` | Reports `any`, `interface{}`, and names for empty interfaces in application code. The lint task excludes the lint tooling tree because the x/tools `Run` signature requires `any`. |
-| `lint/cmd/backendlint` | Registers all four custom backend analyzers. The lint task runs them with package-specific scopes. |
+| `lint/noemptyinterface` | Reports `any`, `interface{}`, and names for empty interfaces. A valid `//policy:allow-any: <reason>` marker exempts its attached declaration range. |
+| `lint/cmd/backendlint` | Registers all four custom backend analyzers. The lint task runs them once over all packages. |
 
 ## Runtime
 
