@@ -1266,14 +1266,22 @@ func newTestHandlerWithLogger(t *testing.T, options testHandlerOptions) *Handler
 
 // A workflow takes a permit by sending into the gate, so an empty gate means every
 // permit came back and a full gate means the gate is saturated.
-func requireAllPermitsReleased(t *testing.T, handler *Handler, messageAndArguments ...any) {
+func requireAllPermitsReleased(t *testing.T, handler *Handler, messages ...string) {
 	t.Helper()
-	require.Empty(t, handler.permits, messageAndArguments...)
+	if len(messages) == 0 {
+		require.Empty(t, handler.permits)
+		return
+	}
+	require.Empty(t, handler.permits, strings.Join(messages, " "))
 }
 
-func requireAllPermitsHeld(t *testing.T, handler *Handler, messageAndArguments ...any) {
+func requireAllPermitsHeld(t *testing.T, handler *Handler, messages ...string) {
 	t.Helper()
-	require.Len(t, handler.permits, ProcessingPermitCount, messageAndArguments...)
+	if len(messages) == 0 {
+		require.Len(t, handler.permits, ProcessingPermitCount)
+		return
+	}
+	require.Len(t, handler.permits, ProcessingPermitCount, strings.Join(messages, " "))
 }
 
 type handlerRequest struct {
@@ -1300,6 +1308,7 @@ func serveRequest(t *testing.T, input handlerRequest) *httptest.ResponseRecorder
 	return recorder
 }
 
+//policy:allow-any: handler tests send bodies with different JSON-encodable types.
 type jsonHandlerRequest struct {
 	handler       *Handler
 	objectStorage storage.Storage
@@ -1326,6 +1335,7 @@ func deterministicEntropy(destination []byte) (int, error) {
 	return len(destination), nil
 }
 
+//policy:allow-any: this test helper marshals different JSON payload types.
 func mustJSON(t *testing.T, value any) string {
 	t.Helper()
 	body, err := json.Marshal(value)
@@ -1377,7 +1387,7 @@ type blockingStorage struct {
 	blockedDownloads   map[string]bool
 	observedDownloads  map[string]bool
 	downloadErrors     map[string]error
-	downloadPanics     map[string]any
+	downloadPanics     map[string]string
 	downloadStarted    chan string
 	downloadRelease    chan struct{}
 	downloadReleaseOne sync.Once
@@ -1400,7 +1410,7 @@ func newBlockingStorage(delegate storage.Storage, blockedFileIDs ...string) *blo
 		blockedDownloads:  blocked,
 		observedDownloads: make(map[string]bool),
 		downloadErrors:    make(map[string]error),
-		downloadPanics:    make(map[string]any),
+		downloadPanics:    make(map[string]string),
 		downloadStarted:   make(chan string, 16),
 		downloadRelease:   make(chan struct{}),
 		blockedUploads:    make(map[string]bool),
@@ -1470,7 +1480,7 @@ func (observer *blockingStorage) failDownload(fileID string, err error) {
 	observer.downloadErrors[fileID] = err
 }
 
-func (observer *blockingStorage) panicDownload(fileID string, value any) {
+func (observer *blockingStorage) panicDownload(fileID, value string) {
 	observer.mu.Lock()
 	defer observer.mu.Unlock()
 	observer.downloadPanics[fileID] = value

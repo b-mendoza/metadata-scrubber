@@ -1258,6 +1258,7 @@ func requireValidUTF8Preview(t *testing.T, field Field) {
 	require.LessOrEqual(t, len(field.Preview), maxFieldPreviewBytes)
 }
 
+//policy:allow-any: inspection-limit assertions apply to result slices of any element type.
 func requireInspectionLimit[T any](t *testing.T, result []T, err error) {
 	t.Helper()
 
