@@ -16,7 +16,6 @@ var Analyzer = &analysis.Analyzer{
 	Run:  run,
 }
 
-//policy:allow-any: the x/tools analysis API fixes this return type.
 func run(pass *analysis.Pass) (any, error) {
 	for _, file := range pass.Files {
 		for node := range ast.Preorder(file) {
