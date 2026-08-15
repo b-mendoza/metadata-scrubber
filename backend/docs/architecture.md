@@ -18,11 +18,11 @@
 
 | Package | Responsibility |
 | --- | --- |
-| `lint/noswitch` | Reports expression switches and type switches. |
-| `lint/nohiddentestsignal` | Reports test skips and `time.Sleep` calls in Go test files. |
-| `lint/checkedpolicylookup` | Requires comma-ok lookups for maps marked with `//policy:map`. |
-| `lint/noemptyinterface` | Reports `any`, `interface{}`, and names for empty interfaces. A valid `//policy:allow-any: <reason>` marker exempts its attached declaration range. |
-| `lint/cmd/backendlint` | Registers all four custom backend analyzers. The lint task runs them once over all packages. |
+| `lint/noswitch` | Provides a golangci-lint module linter that reports expression switches and type switches. |
+| `lint/nohiddentestsignal` | Provides a golangci-lint module linter that reports test skips and `time.Sleep` calls in Go test files. |
+| `lint/checkedpolicylookup` | Provides a golangci-lint module linter that requires comma-ok lookups for maps marked with `// policy:map`. |
+| `lint/noemptyinterface` | Provides a golangci-lint module linter that reports `any`, `interface{}`, and names for empty interfaces. A valid `// policy:allow-any -- <reason>` marker exempts its attached declaration range. |
+| `lint/plugin` | Registers all four analyzers with the golangci-lint Module Plugin System. |
 
 ## Runtime
 
@@ -33,4 +33,4 @@
 - A request that cannot acquire a permit within the two-second admission wait receives `503 Service Unavailable` with a `Retry-After: 2` header; a request whose client cancels while it waits receives `408 Request Timeout`. This saturation response is part of the client-observable API contract.
 - Dry-run returns the source's canonical ETag. Scrub first looks up the sanitized object under the exact revision key; on a miss, it conditionally reads the reviewed source revision, cleans and stores the sanitized object under that key, and presigns it.
 - The server applies a read-header timeout and shuts down gracefully on SIGINT/SIGTERM.
-- The linter configuration lives in `.golangci.yml`; the required Go version is pinned by the `go` directive in `go.mod`.
+- The lint configuration lives in `.golangci.yml` and `.custom-gcl.yml`; the `go` directive in `go.mod` pins the required Go version.
