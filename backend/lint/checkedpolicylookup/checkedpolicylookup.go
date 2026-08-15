@@ -4,20 +4,19 @@ package checkedpolicylookup
 import (
 	"go/ast"
 	"go/types"
-	"strings"
 
 	"golang.org/x/tools/go/analysis"
 )
 
 const (
-	marker            = "policy:map"
-	diagnosticMessage = "use the comma-ok form (value, ok := m[key]) and handle the missing key; this map is marked //policy:map"
+	marker            = "// policy:map"
+	diagnosticMessage = "use the comma-ok form (value, ok := m[key]) and handle the missing key; this map is marked // policy:map"
 )
 
-// Analyzer reports unchecked index expressions for maps marked with //policy:map.
+// Analyzer reports unchecked index expressions for maps marked with // policy:map.
 var Analyzer = &analysis.Analyzer{
 	Name: "checkedpolicylookup",
-	Doc:  "report unchecked lookups in maps marked with //policy:map",
+	Doc:  "report unchecked lookups in maps marked with // policy:map",
 	Run:  run,
 }
 
@@ -106,7 +105,7 @@ func hasMarker(commentGroup *ast.CommentGroup) bool {
 	}
 
 	for _, comment := range commentGroup.List {
-		if strings.TrimSpace(strings.TrimPrefix(comment.Text, "//")) == marker {
+		if comment.Text == marker {
 			return true
 		}
 	}
