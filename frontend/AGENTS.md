@@ -16,6 +16,8 @@ The service deploys to Vercel as a TanStack Start application, and not on a serv
 - Lint check (run after a substantive change): `pnpm run lint`.
 - Test suite (run before committing): `pnpm run test`.
 
+Write specific and explicit application code for each use case, and accept duplication instead of a general helper. Give every generic type parameter an explicit, meaningful constraint.
+
 ## Open when relevant (long-lived)
 
 - [TypeScript design conventions](docs/agent/code-conventions.md) — TypeScript design guidance.
