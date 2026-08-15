@@ -35,12 +35,10 @@ func init() {
 
 func newPlugin(analyzer *analysis.Analyzer, loadMode string) register.NewPlugin {
 	plugin := analyzerPlugin{analyzer: analyzer, loadMode: loadMode}
-	return plugin.construct
-}
 
-// policy:allow-any -- the plugin-module-register API fixes this parameter type.
-func (plugin analyzerPlugin) construct(_ any) (register.LinterPlugin, error) {
-	return plugin, nil
+	return func(_ any) (register.LinterPlugin, error) { //nolint:noemptyinterface // the plugin-module-register API fixes this parameter type.
+		return plugin, nil
+	}
 }
 
 func (plugin analyzerPlugin) BuildAnalyzers() ([]*analysis.Analyzer, error) {
