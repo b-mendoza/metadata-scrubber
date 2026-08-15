@@ -9,6 +9,7 @@ require (
 	github.com/aws/smithy-go v1.27.8
 	github.com/caarlos0/env/v11 v11.4.1
 	github.com/go-playground/validator/v10 v10.30.3
+	github.com/golangci/plugin-module-register v0.1.2
 	github.com/pdfcpu/pdfcpu v0.15.0
 	github.com/stretchr/testify v1.12.1
 	golang.org/x/tools v0.49.0
@@ -111,7 +112,6 @@ require (
 	github.com/golangci/golangci-lint/v2 v2.13.1 // indirect
 	github.com/golangci/golines v0.15.0 // indirect
 	github.com/golangci/misspell v0.8.0 // indirect
-	github.com/golangci/plugin-module-register v0.1.2 // indirect
 	github.com/golangci/revgrep v0.8.0 // indirect
 	github.com/golangci/rowserrcheck v0.0.0-20260419091836-c5f79b8a11ba // indirect
 	github.com/golangci/swaggoswag v0.0.0-20250504205917-77f2aca3143e // indirect
