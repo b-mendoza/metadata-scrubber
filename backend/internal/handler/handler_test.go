@@ -429,6 +429,21 @@ func TestDryRunReturnsReviewedRevisionAndBackendOwnedFields(t *testing.T) {
 	require.Empty(t, handler.permits)
 }
 
+func TestDryRunReportsServerFailureForUnknownInspectedFieldAction(t *testing.T) {
+	fake := storage.NewFake()
+	require.NoError(t, fake.SetSource(fileIDOne, storage.SourceObject{PDFBytes: []byte("%PDF-synthetic"), ETag: "revision-one"}))
+	handler := newTestHandler(t, func([]byte, scrub.InspectionOrigin) ([]scrub.Field, error) {
+		return []scrub.Field{{Name: "field", Label: "Field", Action: scrub.FieldAction("unknown")}}, nil
+	}, nil, nil)
+	body, err := json.Marshal(dryRunRequest{StorageKey: formatStorageKey(fileIDOne)})
+	require.NoError(t, err)
+
+	recorder := serveJSONRequest(t, jsonHandlerRequest{handler: handler, objectStorage: fake, method: dryRunMethod, body: string(body)})
+
+	require.Equal(t, http.StatusInternalServerError, recorder.Code, recorder.Body.String())
+	require.Equal(t, "could not inspect PDF", errorMessage(t, recorder))
+}
+
 func TestDryRunReturnsNonNullEmptyFieldsForCleanPDF(t *testing.T) {
 	fake := storage.NewFake()
 	require.NoError(t, fake.SetSource(fileIDOne, storage.SourceObject{PDFBytes: []byte("%PDF-clean"), ETag: "revision-one"}))
