@@ -345,17 +345,12 @@
     "import/no-named-default": ["error"],
     "import/no-webpack-loader-syntax": ["error"],
     "jsx-a11y/alt-text": "error",
-
-    // `eslint-plugin-jsx-a11y` supports configuring this rule (for example
-    // with `components`), but Oxc's `jsx_a11y/anchor-has-content` does not.
-    // Keep it disabled here to avoid an invalid-rule-configuration error.
-    // "jsx-a11y/anchor-has-content": [
-    //   "error",
-    //   {
-    //     "components": ["Link", "NavLink"]
-    //   }
-    // ],
-
+    "jsx-a11y/anchor-has-content": [
+      "error",
+      {
+        "components": ["Link", "NavLink"]
+      }
+    ],
     "jsx-a11y/anchor-is-valid": "error",
     "jsx-a11y/aria-activedescendant-has-tabindex": "error",
     "jsx-a11y/aria-props": "error",
