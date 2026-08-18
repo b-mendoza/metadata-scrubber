@@ -41,7 +41,7 @@ Subagents keep the main thread's context focused while allowing independent work
 
 Long-lived guides:
 
-- [Code design](docs/agent/code-design.md) — contracts at the boundaries, failing loudly, construction over validation, comments, and dependency injection.
+- [Code design](docs/agent/code-design.md) — construction over validation, comments, and request-scoped dependency injection.
 - [Testing principles](docs/agent/testing.md) — what and how to test, across services.
 - [Workflow and task scoping](docs/agent/workflow.md) — simplicity, scope discipline, issues, and decomposition.
 - [Verifying your work](docs/agent/verification.md) — what "done" requires beyond green tests.
