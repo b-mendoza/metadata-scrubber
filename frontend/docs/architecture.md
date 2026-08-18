@@ -26,7 +26,7 @@
 
 ## Validation
 
-- The [validation-libraries convention](./agent/code-conventions.md) gives the client-bundle rationale.
+- Server-side boundaries validate with Effect Schema. Client-side code validates with Zod. The rationale for this split lives in the [validation-libraries convention](./agent/code-conventions.md).
 
 ## Database
 
