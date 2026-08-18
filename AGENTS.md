@@ -21,10 +21,10 @@ The user's instructions are a baseline to build on, not a spec to execute verbat
 
 ## Code and test design
 
-- Write specific and explicit application code for each use case instead of one general function for many use cases. Delete a helper that only removes duplication, and accept duplication at each call site.
+- Write specific and explicit application code for each use case instead of one general function for many use cases. Delete a helper that only removes duplication. Accept duplication at each call site.
 - Make each custom lint rule message descriptive, actionable, and educational. Explain the required fix, not a way to silence or bypass the rule.
 - Fix lint failures structurally. Do not add lint-suppression comments or rule escape hatches. Keep a suppression only at a third-party API boundary that requires it.
-- In tests, build request and response payloads from concrete typed contracts at each call site. Serialize them there and check errors. Use raw wire literals only in dedicated wire-contract tests.
+- In tests, build request and response payloads from concrete typed contracts at each call site. Serialize them there. Check errors. Use raw wire literals only in dedicated wire-contract tests.
 
 ## Always
 
