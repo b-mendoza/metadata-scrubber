@@ -10,3 +10,7 @@ Principles that apply across services and languages. Framework-specific mechanis
 ## Comments
 
 - Comment to explain **why** — a constraint, a trade-off, a non-obvious invariant the code cannot express — never to narrate **what** the code does or that it changed. Comments describing the change itself ("removed X", "now uses Y instead") belong in the commit message, not the source.
+
+## Dependency injection
+
+- Read dependencies through request-scoped application bindings. Do not keep dependencies in mutable module-level state.
