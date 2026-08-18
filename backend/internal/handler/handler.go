@@ -153,6 +153,32 @@ func writeJSON[T reachabilityResponse | uploadResponse | dryRunResponse | scrubR
 	_ = json.NewEncoder(w).Encode(body)
 }
 
+func decodeJSONRequest[T uploadRequest | dryRunRequest | scrubRequest](
+	w http.ResponseWriter,
+	request *http.Request,
+) (T, bool) {
+	var zero T
+	contentType, _, err := mime.ParseMediaType(request.Header.Get(header.ContentType))
+	if err != nil || contentType != mediatype.JSON {
+		httpx.WriteError(w, http.StatusUnsupportedMediaType, "Content-Type must be application/json")
+		return zero, false
+	}
+
+	var input T
+	request.Body = http.MaxBytesReader(w, request.Body, maxJSONBodyBytes)
+	decoder := json.NewDecoder(request.Body)
+	decoder.DisallowUnknownFields()
+	if err := decoder.Decode(&input); err != nil {
+		httpx.WriteError(w, http.StatusBadRequest, "invalid JSON request")
+		return zero, false
+	}
+	if err := decoder.Decode(&struct{}{}); !errors.Is(err, io.EOF) {
+		httpx.WriteError(w, http.StatusBadRequest, "invalid JSON request")
+		return zero, false
+	}
+	return input, true
+}
+
 type handlerOperations struct {
 	inspect inspectPDFOperation
 	clean   cleanPDFOperation
@@ -201,32 +227,10 @@ func Reachability(w http.ResponseWriter, _ *http.Request) {
 	writeJSON(w, http.StatusOK, reachabilityResponse{Status: "reachable"})
 }
 
-func decodeUploadRequest(w http.ResponseWriter, request *http.Request) (uploadRequest, bool) {
-	var input uploadRequest
-	contentType, _, err := mime.ParseMediaType(request.Header.Get(header.ContentType))
-	if err != nil || contentType != mediatype.JSON {
-		httpx.WriteError(w, http.StatusUnsupportedMediaType, "Content-Type must be application/json")
-		return uploadRequest{}, false
-	}
-
-	request.Body = http.MaxBytesReader(w, request.Body, maxJSONBodyBytes)
-	decoder := json.NewDecoder(request.Body)
-	decoder.DisallowUnknownFields()
-	if err := decoder.Decode(&input); err != nil {
-		httpx.WriteError(w, http.StatusBadRequest, "invalid JSON request")
-		return uploadRequest{}, false
-	}
-	if err := decoder.Decode(&struct{}{}); !errors.Is(err, io.EOF) {
-		httpx.WriteError(w, http.StatusBadRequest, "invalid JSON request")
-		return uploadRequest{}, false
-	}
-	return input, true
-}
-
 // Upload creates a private direct-upload grant for one generated logical file ID.
 func (handler *Handler) Upload(w http.ResponseWriter, request *http.Request) {
 	startedAt := time.Now()
-	input, ok := decodeUploadRequest(w, request)
+	input, ok := decodeJSONRequest[uploadRequest](w, request)
 	if !ok {
 		return
 	}
