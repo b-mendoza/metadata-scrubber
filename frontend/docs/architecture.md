@@ -26,7 +26,6 @@
 
 ## Validation
 
-- Server-side boundaries validate with Effect Schema (environment parsing in the application-bindings middleware, the upload route's form-data checks). Client-side code validates with Zod (the wizard `FileUploader` parses Uppy upload responses with Zod schemas).
 - The [validation-libraries convention](./agent/code-conventions.md) gives the client-bundle rationale.
 
 ## Database
