@@ -29,4 +29,4 @@ Write specific and explicit application code for each use case, and accept dupli
 - [Commands](docs/commands.md) — full command reference.
 - [Known issues](docs/known-issues/README.md) — dependency and tooling issues affecting builds, with workarounds.
 
-Cross-cutting long-lived guidance (naming, code design, testing, workflow, verification) lives in the [root Agent Guide](../AGENTS.md) and applies to this service.
+Cross-cutting long-lived guidance (code design, testing, workflow, and verification) lives in the [root Agent Guide](../AGENTS.md) and applies to this service.
