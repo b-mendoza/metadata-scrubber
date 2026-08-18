@@ -17,32 +17,10 @@ import (
 	"metadata-scrubber/internal/storage"
 )
 
-func decodeDryRunRequest(w http.ResponseWriter, request *http.Request) (dryRunRequest, bool) {
-	var input dryRunRequest
-	contentType, _, err := mime.ParseMediaType(request.Header.Get(header.ContentType))
-	if err != nil || contentType != mediatype.JSON {
-		httpx.WriteError(w, http.StatusUnsupportedMediaType, "Content-Type must be application/json")
-		return dryRunRequest{}, false
-	}
-
-	request.Body = http.MaxBytesReader(w, request.Body, maxJSONBodyBytes)
-	decoder := json.NewDecoder(request.Body)
-	decoder.DisallowUnknownFields()
-	if err := decoder.Decode(&input); err != nil {
-		httpx.WriteError(w, http.StatusBadRequest, "invalid JSON request")
-		return dryRunRequest{}, false
-	}
-	if err := decoder.Decode(&struct{}{}); !errors.Is(err, io.EOF) {
-		httpx.WriteError(w, http.StatusBadRequest, "invalid JSON request")
-		return dryRunRequest{}, false
-	}
-	return input, true
-}
-
 // DryRun inspects the current source revision while holding shared admission.
 func (handler *Handler) DryRun(w http.ResponseWriter, request *http.Request) {
 	startedAt := time.Now()
-	input, ok := decodeDryRunRequest(w, request)
+	input, ok := decodeJSONRequest[dryRunRequest](w, request)
 	if !ok {
 		return
 	}
