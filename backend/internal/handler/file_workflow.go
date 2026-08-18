@@ -1,17 +1,12 @@
 package handler
 
 import (
-	"encoding/json"
 	"errors"
 	"fmt"
-	"io"
-	"mime"
 	"net/http"
 	"time"
 
 	"metadata-scrubber/internal/httpx"
-	"metadata-scrubber/internal/httpx/header"
-	"metadata-scrubber/internal/httpx/mediatype"
 	"metadata-scrubber/internal/scrub"
 	"metadata-scrubber/internal/sniff"
 	"metadata-scrubber/internal/storage"
@@ -93,8 +88,17 @@ func (handler *Handler) inspectSource(input sourceWorkflowRequest) (string, []sc
 // Scrub cleans the exact reviewed source revision and returns its private download grant.
 func (handler *Handler) Scrub(w http.ResponseWriter, request *http.Request) {
 	startedAt := time.Now()
-	input, fileID, ok := decodeScrubRequest(w, request)
+	input, ok := decodeJSONRequest[scrubRequest](w, request)
 	if !ok {
+		return
+	}
+	fileID, ok := parseStorageKey(input.StorageKey)
+	if !ok {
+		httpx.WriteError(w, http.StatusBadRequest, "invalid storage key")
+		return
+	}
+	if _, err := storage.SanitizedObjectKey(fileID, input.ETag); err != nil {
+		httpx.WriteError(w, http.StatusBadRequest, "invalid ETag")
 		return
 	}
 	objectStorage := storageFromRequest(w, request)
@@ -139,38 +143,6 @@ func (handler *Handler) Scrub(w http.ResponseWriter, request *http.Request) {
 		request: request, objectStorage: objectStorage, fileID: fileID,
 		input: input, outcome: pipelineOutcomeSuccess, startedAt: startedAt,
 	})
-}
-
-func decodeScrubRequest(w http.ResponseWriter, request *http.Request) (scrubRequest, string, bool) {
-	var input scrubRequest
-	contentType, _, err := mime.ParseMediaType(request.Header.Get(header.ContentType))
-	if err != nil || contentType != mediatype.JSON {
-		httpx.WriteError(w, http.StatusUnsupportedMediaType, "Content-Type must be application/json")
-		return scrubRequest{}, "", false
-	}
-
-	request.Body = http.MaxBytesReader(w, request.Body, maxJSONBodyBytes)
-	decoder := json.NewDecoder(request.Body)
-	decoder.DisallowUnknownFields()
-	if err := decoder.Decode(&input); err != nil {
-		httpx.WriteError(w, http.StatusBadRequest, "invalid JSON request")
-		return scrubRequest{}, "", false
-	}
-	if err := decoder.Decode(&struct{}{}); !errors.Is(err, io.EOF) {
-		httpx.WriteError(w, http.StatusBadRequest, "invalid JSON request")
-		return scrubRequest{}, "", false
-	}
-
-	fileID, ok := parseStorageKey(input.StorageKey)
-	if !ok {
-		httpx.WriteError(w, http.StatusBadRequest, "invalid storage key")
-		return scrubRequest{}, "", false
-	}
-	if _, err := storage.SanitizedObjectKey(fileID, input.ETag); err != nil {
-		httpx.WriteError(w, http.StatusBadRequest, "invalid ETag")
-		return scrubRequest{}, "", false
-	}
-	return input, fileID, true
 }
 
 func (handler *Handler) cleanSource(input sourceWorkflowRequest) ([]byte, error) {
