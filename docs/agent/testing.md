@@ -16,7 +16,7 @@ These apply to every service, in any language. Test tooling and gotchas specific
 
 ## When tests fail
 
-- **Earn green by fixing the cause.** Fix the code or the synchronization. When the test is wrong, change it as a separate and explained step.
+- **Make a failing test pass by fixing the cause.** Fix the code or the synchronization. When the test is wrong, change it as a separate and explained step.
 - **A bug-fix test must fail without the fix.** Confirm the regression test fails against the unfixed code; a test that passes both with and without the change proves nothing about the bug.
 
 ## How to organize
