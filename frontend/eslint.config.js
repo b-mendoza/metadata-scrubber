@@ -142,7 +142,8 @@ export default defineConfig(
           patterns: [
             {
               regex: "^zod\\/.+$",
-              message: 'Please use "zod" instead.',
+              message:
+                'Import Zod from the `zod` package root. Use `import * as z from "zod"` for runtime code or `import type * as z from "zod"` for type-only code. Replace every `zod/*` source with `zod`. The package root is the only supported project entry point.',
             },
           ],
         },
