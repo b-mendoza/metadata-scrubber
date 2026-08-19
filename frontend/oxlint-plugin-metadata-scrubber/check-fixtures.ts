@@ -144,7 +144,7 @@ const frontendDir = join(pluginDir, "..");
 const oxlintPath = join(frontendDir, "node_modules", ".bin", "oxlint");
 const ruleName = (ruleId: string): string => `metadata-scrubber/${ruleId}`;
 
-// eslint-disable-next-line zod/prefer-string-schema-with-trim -- We want to test the raw string, not the trimmed string
+// eslint-disable-next-line zod/prefer-string-schema-with-trim -- Fixture checks compare oxlint diagnostic messages byte-for-byte. The `.trim()` transform would silently alter values and hide whitespace mismatches, so this boundary must return each string unchanged.
 const oxlintJsonStringSchema = z.string();
 
 const oxlintJsonMessageSchema = z.object({
