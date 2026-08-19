@@ -27,21 +27,32 @@ const isSharedPath = (path: string): boolean =>
 
 type ImportBoundary = "browser" | "server" | "shared";
 
-const SHARED_BOUNDARY_MESSAGE =
-  "Keep shared modules free of runtime imports from Effect Schema and Zod.";
+const messages = {
+  browserEffectRuntimeImport:
+    'This browser module imports the `{{ source }}` package at runtime. Remove this runtime import because it increases the client bundle. Rewrite schema validation with `import * as z from "zod"` and the Zod API. Rewrite other Effect code with browser-native functions. Keep only a type-only import from `effect` when required.',
+  serverZodRuntimeImport:
+    'This server module imports the `{{ source }}` package at runtime. Replace this runtime import with `import { Schema } from "effect"`. Rewrite each runtime schema with the Effect Schema API and create its compiler at module scope. Effect Schema decoders compose with server Effect pipelines. Keep only a type-only import from `zod` here.',
+  sharedRuntimeImport:
+    "This shared module imports the `{{ source }}` package at runtime. Shared modules cross browser and server boundaries, so they must not load the `effect` package or the `zod` package at runtime. Export plain data and types here. Move runtime code to the browser module or server module that owns it. Use the Zod API for browser schemas and the Effect Schema API for server schemas. Use a type-only import when a shared declaration needs a library type.",
+} as const;
 
-const IMPORT_BOUNDARY_MESSAGES = {
+type MessageId = keyof typeof messages;
+
+const IMPORT_BOUNDARY_MESSAGE_IDS = {
   browser: {
-    effect: "Use Zod in browser modules.",
+    effect: "browserEffectRuntimeImport",
   },
   server: {
-    zod: "Use Effect Schema in server modules.",
+    zod: "serverZodRuntimeImport",
   },
   shared: {
-    effect: SHARED_BOUNDARY_MESSAGE,
-    zod: SHARED_BOUNDARY_MESSAGE,
+    effect: "sharedRuntimeImport",
+    zod: "sharedRuntimeImport",
   },
-} as const satisfies Record<ImportBoundary, Readonly<Record<string, string>>>;
+} as const satisfies Record<
+  ImportBoundary,
+  Readonly<Record<string, MessageId>>
+>;
 
 const getImportBoundary = (path: string): ImportBoundary | undefined => {
   if (path.endsWith(".server.ts") || isServerPath(path)) return "server";
@@ -50,13 +61,13 @@ const getImportBoundary = (path: string): ImportBoundary | undefined => {
   return undefined;
 };
 
-const getImportBoundaryMessage = (
+const getImportBoundaryMessageId = (
   boundary: ImportBoundary,
   node: ESTree.ImportDeclaration,
-): string | undefined => {
-  const messages: Readonly<Record<string, string>> =
-    IMPORT_BOUNDARY_MESSAGES[boundary];
-  return messages[node.source.value];
+): MessageId | undefined => {
+  const messageIds: Readonly<Record<string, MessageId>> =
+    IMPORT_BOUNDARY_MESSAGE_IDS[boundary];
+  return messageIds[node.source.value];
 };
 
 export default defineRule({
@@ -66,6 +77,7 @@ export default defineRule({
       description:
         "Enforce the Effect Schema, Zod, and shared runtime import boundaries.",
     },
+    messages,
   },
   create(context) {
     const path = toProjectPath(context.filename, context.cwd);
@@ -75,9 +87,13 @@ export default defineRule({
     return {
       ImportDeclaration(node) {
         if (!isRuntimeImport(node)) return;
-        const message = getImportBoundaryMessage(boundary, node);
-        if (message === undefined) return;
-        context.report({ node, message });
+        const messageId = getImportBoundaryMessageId(boundary, node);
+        if (messageId === undefined) return;
+        context.report({
+          node,
+          messageId,
+          data: { source: node.source.value },
+        });
       },
     };
   },
