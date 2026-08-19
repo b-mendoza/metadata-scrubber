@@ -31,7 +31,7 @@ const cases = [
   [
     "no-hardcoded-backend-host",
     "no-hardcoded-backend-host.ts",
-    SINGLE_DIAGNOSTIC,
+    THREE_DIAGNOSTICS,
   ],
   [
     "no-mutable-module-state-in-server-code",
