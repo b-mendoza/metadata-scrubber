@@ -48,13 +48,16 @@ export const isFunction = (
 export const isTestFile = (filename: string): boolean =>
   /\.test\.[cm]?[jt]sx?$/u.test(normalizePath(filename));
 
+export const isServerProjectPath = (path: string): boolean =>
+  /(?:^|\/)src\/.*\.mod\.server\.tsx?$/u.test(path) ||
+  /(?:^|\/)src\/shared\/db\/.*\.server\.tsx?$/u.test(path) ||
+  /(?:^|\/)src\/routes\/api\/.*\.tsx?$/u.test(path) ||
+  /(?:^|\/)src\/shared\/middlewares\/.*\.tsx?$/u.test(path);
+
 export const isServerModule = (filename: string, cwd: string): boolean => {
   const path = toProjectPath(filename, cwd);
   return (
-    /(?:^|\/)src\/.*\.mod\.server\.tsx?$/u.test(path) ||
-    /(?:^|\/)src\/shared\/db\/.*\.server\.tsx?$/u.test(path) ||
-    /(?:^|\/)src\/routes\/api\/.*\.tsx?$/u.test(path) ||
-    /(?:^|\/)src\/shared\/middlewares\/.*\.tsx?$/u.test(path) ||
+    isServerProjectPath(path) ||
     /(?:^|\/)fixtures\/.*server.*\.tsx?$/u.test(path)
   );
 };
