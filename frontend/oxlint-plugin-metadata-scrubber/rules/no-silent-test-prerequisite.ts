@@ -145,6 +145,16 @@ const getGuardIfStatement = (
     : undefined;
 };
 
+const getGuardAssertion = (
+  test: ESTree.Expression,
+  sourceCode: SourceCode,
+): string =>
+  test.type === "UnaryExpression" &&
+  test.operator === "!" &&
+  test.argument.type === "Identifier"
+    ? `expect(${test.argument.name}).toBeTruthy()`
+    : `expect((${sourceCode.getText(test)})).toBeFalsy()`;
+
 export default defineRule({
   meta: {
     type: "problem",
@@ -153,9 +163,9 @@ export default defineRule({
     },
     messages: {
       disabledTest:
-        "`{{ testApi }}` disables a suite or test. Remove `.skip` so the suite or test runs. Assert each test prerequisite with `expect(prerequisite).toBe(true)` inside the test callback. Do not replace `.skip` with `.todo` or another disabled-test API. Disabled tests hide missing setup and let CI pass without required coverage.",
+        "`{{ testApi }}` disables a suite or test. Remove `.skip` so the suite or test runs. Assert each test prerequisite with a Vitest `expect` assertion inside the test callback. Do not replace `.skip` with `.todo` or another disabled-test API. Disabled tests hide missing setup and let CI pass without required coverage. Import `expect` from `vitest` when the test file does not import it.",
       silentPrerequisiteGuard:
-        "The `{{ guard }}` test prerequisite guard uses a bare `return` in `{{ testApi }}`. This return makes the test pass without its behavior assertions. Replace the guard exit with `expect(prerequisite).toBe(true)`. Then continue the test.",
+        "The `{{ guard }}` test prerequisite guard uses a bare `return` in `{{ testApi }}`. This return makes the test pass without its behavior assertions. Replace the guard exit with `{{ assertion }}`. Then continue the test. Import `expect` from `vitest` when the test file does not import it.",
     },
   },
   create(context) {
@@ -196,6 +206,7 @@ export default defineRule({
           node,
           messageId: "silentPrerequisiteGuard",
           data: {
+            assertion: getGuardAssertion(ifStatement.test, context.sourceCode),
             guard: context.sourceCode.getText(ifStatement.test),
             testApi,
           },
