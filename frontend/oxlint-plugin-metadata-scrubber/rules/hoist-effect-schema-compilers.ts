@@ -1,4 +1,10 @@
-import type { ESTree } from "@oxlint/plugins";
+import type {
+  Definition,
+  ESTree,
+  Scope,
+  SourceCode,
+  Variable,
+} from "@oxlint/plugins";
 import { defineRule } from "@oxlint/plugins";
 
 import {
@@ -7,19 +13,82 @@ import {
   isServerModule,
 } from "../utils.ts";
 
-const COMPILER_NAME = /^(?:is|asserts|decode.*|encode.*)$/u;
+const SCHEMA_COMPILER_NAMES = new Set<string>([
+  "is",
+  "decodeUnknownEffect",
+  "decodeEffect",
+  "decodeUnknownExit",
+  "decodeExit",
+  "decodeUnknownOption",
+  "decodeOption",
+  "decodeUnknownResult",
+  "decodeResult",
+  "decodeUnknownPromise",
+  "decodePromise",
+  "decodeUnknownSync",
+  "decodeSync",
+  "encodeUnknownEffect",
+  "encodeEffect",
+  "encodeUnknownExit",
+  "encodeExit",
+  "encodeUnknownOption",
+  "encodeOption",
+  "encodeUnknownResult",
+  "encodeResult",
+  "encodeUnknownPromise",
+  "encodePromise",
+  "encodeUnknownSync",
+  "encodeSync",
+]);
 const FUNCTION_DEPTH_STEP = 1;
 const MODULE_SCOPE_FUNCTION_DEPTH = 0;
 
+const getImportedName = (
+  specifier: ESTree.ImportSpecifier,
+): string | undefined => {
+  const { imported } = specifier;
+  if (imported.type === "Identifier") return imported.name;
+  return typeof imported.value === "string" ? imported.value : undefined;
+};
+
+const isEffectSchemaImportDefinition = (definition: Definition): boolean => {
+  if (definition.type !== "ImportBinding") return false;
+  if (definition.node.type !== "ImportSpecifier") return false;
+  if (definition.parent?.type !== "ImportDeclaration") return false;
+  return (
+    definition.parent.source.value === "effect" &&
+    getImportedName(definition.node) === "Schema"
+  );
+};
+
+const isEffectSchemaImport = (variable: Variable): boolean =>
+  variable.defs.some(isEffectSchemaImportDefinition);
+
+const isEffectSchemaReference = (
+  node: ESTree.IdentifierReference,
+  sourceCode: SourceCode,
+): boolean => {
+  let scope: Scope | null = sourceCode.getScope(node);
+  while (scope !== null) {
+    const variable = scope.set.get(node.name);
+    if (variable !== undefined) return isEffectSchemaImport(variable);
+    scope = scope.upper;
+  }
+  return false;
+};
+
 const getSchemaCompiler = (
   node: ESTree.CallExpression,
+  sourceCode: SourceCode,
 ): ESTree.MemberExpression | undefined => {
-  if (node.callee.type !== "CallExpression") return undefined;
-  const compilerCallee = node.callee.callee;
+  const compilerCallee = node.callee;
   if (compilerCallee.type !== "MemberExpression") return undefined;
   if (!isIdentifier(compilerCallee.object, "Schema")) return undefined;
+  if (!isEffectSchemaReference(compilerCallee.object, sourceCode)) {
+    return undefined;
+  }
   const propertyName = getStaticPropertyName(compilerCallee);
-  return propertyName !== undefined && COMPILER_NAME.test(propertyName)
+  return propertyName !== undefined && SCHEMA_COMPILER_NAMES.has(propertyName)
     ? compilerCallee
     : undefined;
 };
@@ -51,12 +120,12 @@ export default defineRule({
       "FunctionExpression:exit": exitFunction,
       CallExpression(node) {
         if (functionDepth === MODULE_SCOPE_FUNCTION_DEPTH) return;
-        const compiler = getSchemaCompiler(node);
+        const compiler = getSchemaCompiler(node, context.sourceCode);
         if (compiler === undefined) return;
         context.report({
           node: compiler,
           message:
-            "Compile the Effect Schema decoder, encoder, assertion, or guard at module scope, then call the compiled function here.",
+            "Compile the Effect Schema decoder, encoder, or guard at module scope, then call the compiled function here.",
         });
       },
     };
