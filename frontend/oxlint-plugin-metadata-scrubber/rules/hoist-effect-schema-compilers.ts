@@ -7,11 +7,7 @@ import type {
 } from "@oxlint/plugins";
 import { defineRule } from "@oxlint/plugins";
 
-import {
-  getStaticPropertyName,
-  isIdentifier,
-  isServerModule,
-} from "../utils.ts";
+import { getStaticPropertyName, isServerModule } from "../utils.ts";
 
 const SCHEMA_COMPILER_NAMES = new Set<string>([
   "is",
@@ -83,7 +79,7 @@ const getSchemaCompiler = (
 ): ESTree.MemberExpression | undefined => {
   const compilerCallee = node.callee;
   if (compilerCallee.type !== "MemberExpression") return undefined;
-  if (!isIdentifier(compilerCallee.object, "Schema")) return undefined;
+  if (compilerCallee.object.type !== "Identifier") return undefined;
   if (!isEffectSchemaReference(compilerCallee.object, sourceCode)) {
     return undefined;
   }
@@ -101,7 +97,7 @@ export default defineRule({
     },
     messages: {
       compilerInsideFunction:
-        "`Schema.{{ compiler }}(...)` creates a reusable Effect Schema compiler. Move this call to module scope, for example `const runSchema = Schema.{{ compiler }}(valueSchema)`. Call `runSchema(input)` inside the function. Creating the compiler inside a function repeats its setup on every call.",
+        "`{{ schemaReference }}.{{ compiler }}(...)` creates a reusable Effect Schema compiler. Move this call to module scope, for example `const runSchema = Schema.{{ compiler }}(valueSchema)`. Call `runSchema(input)` inside the function. Creating the compiler inside a function repeats its setup on every call.",
     },
   },
   create(context) {
@@ -127,11 +123,19 @@ export default defineRule({
         const compiler = getSchemaCompiler(node, context.sourceCode);
         if (compiler === undefined) return;
         const compilerName = getStaticPropertyName(compiler);
-        if (compilerName === undefined) return;
+        if (
+          compilerName === undefined ||
+          compiler.object.type !== "Identifier"
+        ) {
+          return;
+        }
         context.report({
           node: compiler,
           messageId: "compilerInsideFunction",
-          data: { compiler: compilerName },
+          data: {
+            compiler: compilerName,
+            schemaReference: compiler.object.name,
+          },
         });
       },
     };
