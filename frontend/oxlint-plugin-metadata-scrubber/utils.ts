@@ -1,10 +1,5 @@
 import type { ESTree } from "@oxlint/plugins";
 
-const FUNCTION_TYPES = new Set<ESTree.Node["type"]>([
-  "ArrowFunctionExpression",
-  "FunctionDeclaration",
-  "FunctionExpression",
-]);
 const EMPTY_SPECIFIER_COUNT = 0;
 const PATH_START_INDEX = 0;
 const REMOVE_LAST_CHARACTER_END = -1;
@@ -46,7 +41,9 @@ export const isIdentifier = (
 export const isFunction = (
   node: ESTree.Node | null | undefined,
 ): node is ESTree.ArrowFunctionExpression | ESTree.Function =>
-  node !== null && node !== undefined && FUNCTION_TYPES.has(node.type);
+  node?.type === "ArrowFunctionExpression" ||
+  node?.type === "FunctionDeclaration" ||
+  node?.type === "FunctionExpression";
 
 export const isTestFile = (filename: string): boolean =>
   /\.test\.[cm]?[jt]sx?$/u.test(normalizePath(filename));
