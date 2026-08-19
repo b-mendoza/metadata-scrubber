@@ -47,6 +47,11 @@ const cases = [
   ["schema-import-boundaries", "schema-boundary.browser.ts", SINGLE_DIAGNOSTIC],
   ["schema-import-boundaries", "schema-boundary.shared.ts", SINGLE_DIAGNOSTIC],
   [
+    "schema-import-boundaries",
+    "schema-boundary.shared-module.server.ts",
+    SINGLE_DIAGNOSTIC,
+  ],
+  [
     "use-shared-render-helper",
     "use-shared-render-helper.test.tsx",
     SINGLE_DIAGNOSTIC,
