@@ -119,7 +119,7 @@ func (handler *Handler) Scrub(w http.ResponseWriter, request *http.Request) {
 		return
 	}
 
-	cleanedBytes, err := handler.cleanSource(sourceWorkflowRequest{
+	cleanedBytes, err := handler.cleanSource(cleanWorkflowRequest{
 		request: request, objectStorage: objectStorage, fileID: fileID,
 		storageKey: input.StorageKey, startedAt: startedAt, expectedETag: input.ETag,
 	})
@@ -145,7 +145,16 @@ func (handler *Handler) Scrub(w http.ResponseWriter, request *http.Request) {
 	})
 }
 
-func (handler *Handler) cleanSource(input sourceWorkflowRequest) ([]byte, error) {
+type cleanWorkflowRequest struct {
+	request       *http.Request
+	objectStorage storage.Storage
+	fileID        string
+	storageKey    string
+	expectedETag  string
+	startedAt     time.Time
+}
+
+func (handler *Handler) cleanSource(input cleanWorkflowRequest) ([]byte, error) {
 	release, err := handler.acquirePermit(input.request.Context())
 	if err != nil {
 		return nil, fmt.Errorf("%w: %w", errAdmissionFailure, err)
