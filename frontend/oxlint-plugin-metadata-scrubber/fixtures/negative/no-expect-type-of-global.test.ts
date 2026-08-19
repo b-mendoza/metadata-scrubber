@@ -1,0 +1,1 @@
+expectTypeOf("value").toEqualTypeOf<string>();
