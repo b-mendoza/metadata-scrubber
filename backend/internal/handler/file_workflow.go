@@ -29,7 +29,7 @@ func (handler *Handler) DryRun(w http.ResponseWriter, request *http.Request) {
 		return
 	}
 
-	etag, inspectedFields, err := handler.inspectSource(sourceWorkflowRequest{
+	etag, inspectedFields, err := handler.inspectSource(inspectWorkflowRequest{
 		request: request, objectStorage: objectStorage, fileID: fileID,
 		storageKey: input.StorageKey, startedAt: startedAt,
 	})
@@ -52,16 +52,15 @@ func (handler *Handler) DryRun(w http.ResponseWriter, request *http.Request) {
 	writeJSON(w, http.StatusOK, dryRunResponse{ETag: etag, Fields: fields})
 }
 
-type sourceWorkflowRequest struct {
+type inspectWorkflowRequest struct {
 	request       *http.Request
 	objectStorage storage.Storage
 	fileID        string
 	storageKey    string
-	expectedETag  string
 	startedAt     time.Time
 }
 
-func (handler *Handler) inspectSource(input sourceWorkflowRequest) (string, []scrub.Field, error) {
+func (handler *Handler) inspectSource(input inspectWorkflowRequest) (string, []scrub.Field, error) {
 	release, err := handler.acquirePermit(input.request.Context())
 	if err != nil {
 		return "", nil, fmt.Errorf("%w: %w", errAdmissionFailure, err)
