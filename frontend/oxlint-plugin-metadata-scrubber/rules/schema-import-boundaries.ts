@@ -61,6 +61,7 @@ const IMPORT_BOUNDARY_MESSAGE_IDS = {
 const getImportBoundary = (path: string): ImportBoundary | undefined => {
   if (
     path.endsWith(".server.ts") ||
+    path.endsWith(".server.tsx") ||
     isServerProjectPath(path) ||
     isSchemaBoundaryServerFixturePath(path)
   ) {
