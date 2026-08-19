@@ -26,6 +26,10 @@ const isSharedPath = (path: string): boolean =>
   /(?:^|\/)fixtures\/.*shared.*\.tsx?$/u.test(path);
 
 type ImportBoundary = "browser" | "server" | "shared";
+type SchemaPackage = "effect" | "zod";
+
+const isSchemaPackage = (source: string): source is SchemaPackage =>
+  source === "effect" || source === "zod";
 
 const messages = {
   browserEffectRuntimeImport:
@@ -51,7 +55,7 @@ const IMPORT_BOUNDARY_MESSAGE_IDS = {
   },
 } as const satisfies Record<
   ImportBoundary,
-  Readonly<Record<string, MessageId>>
+  Readonly<Partial<Record<SchemaPackage, MessageId>>>
 >;
 
 const getImportBoundary = (path: string): ImportBoundary | undefined => {
@@ -71,9 +75,11 @@ const getImportBoundaryMessageId = (
   boundary: ImportBoundary,
   node: ESTree.ImportDeclaration,
 ): MessageId | undefined => {
-  const messageIds: Readonly<Record<string, MessageId>> =
+  const source = node.source.value;
+  if (!isSchemaPackage(source)) return undefined;
+  const messageIds: Readonly<Partial<Record<SchemaPackage, MessageId>>> =
     IMPORT_BOUNDARY_MESSAGE_IDS[boundary];
-  return messageIds[node.source.value];
+  return messageIds[source];
 };
 
 export default defineRule({
