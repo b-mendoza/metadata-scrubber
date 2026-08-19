@@ -14,3 +14,4 @@ export const directProtocolBackendUrl = `${"http"}://backend.example.com`;
 export const assertedProtocolBackendUrl = `${assertedProtocol}://backend.example.com`;
 export const colonProtocolBackendUrl = `${protocolWithColon}//backend.example.com/api`;
 export const asExpressionProtocolBackendUrl = `${protocol as string}://as-expression.example.com`;
+export const satisfiesExpressionProtocolBackendUrl = `${protocol satisfies string}://satisfies-expression.example.com`;
