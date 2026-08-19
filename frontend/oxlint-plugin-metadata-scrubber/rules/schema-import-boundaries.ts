@@ -8,7 +8,9 @@ const isServerPath = (path: string): boolean =>
   /(?:^|\/)src\/shared\/db\/.*\.server\.tsx?$/u.test(path) ||
   /(?:^|\/)src\/routes\/api\/.*\.tsx?$/u.test(path) ||
   /(?:^|\/)src\/shared\/middlewares\/.*\.tsx?$/u.test(path) ||
-  /(?:^|\/)fixtures\/.*server.*\.tsx?$/u.test(path);
+  /(?:^|\/)fixtures\/(?:positive|negative)\/schema-boundary\.server\.tsx?$/u.test(
+    path,
+  );
 
 const isBrowserPath = (path: string): boolean =>
   /(?:^|\/)src\/domains\/[^/]+\/components\/.*\.tsx?$/u.test(path) ||
@@ -42,9 +44,9 @@ const IMPORT_BOUNDARY_MESSAGES = {
 } as const satisfies Record<ImportBoundary, Readonly<Record<string, string>>>;
 
 const getImportBoundary = (path: string): ImportBoundary | undefined => {
-  if (isServerPath(path)) return "server";
+  if (path.endsWith(".server.ts") || isServerPath(path)) return "server";
   if (isBrowserPath(path)) return "browser";
-  if (isSharedPath(path) && !path.endsWith(".server.ts")) return "shared";
+  if (isSharedPath(path)) return "shared";
   return undefined;
 };
 
