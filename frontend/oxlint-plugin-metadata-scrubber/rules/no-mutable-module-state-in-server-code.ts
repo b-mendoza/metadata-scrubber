@@ -8,6 +8,10 @@ export default defineRule({
     docs: {
       description: "Disallow top-level mutable variables in server modules.",
     },
+    messages: {
+      mutableModuleState:
+        "Concurrent server requests share the module-scope `{{ declarationKind }}` state in `{{ bindings }}`. Move request-local mutation into request scope. Put request dependencies in `applicationBindingsMiddleware` and read them with `getApplicationBindings()`. Use `const` only when no request changes the value or its contents. Do not move the mutation into a module-scope object or array.",
+    },
   },
   create(context) {
     if (!isServerModule(context.filename, context.cwd)) return {};
@@ -19,10 +23,16 @@ export default defineRule({
           (node.parent.type === "ExportNamedDeclaration" &&
             node.parent.parent.type === "Program");
         if ((node.kind !== "let" && node.kind !== "var") || !isTopLevel) return;
+        const bindings = node.declarations
+          .map((declaration) => context.sourceCode.getText(declaration.id))
+          .join(", ");
         context.report({
           node,
-          message:
-            "Keep mutable request state inside the request scope. Use const for immutable module values.",
+          messageId: "mutableModuleState",
+          data: {
+            bindings,
+            declarationKind: node.kind,
+          },
         });
       },
     };
