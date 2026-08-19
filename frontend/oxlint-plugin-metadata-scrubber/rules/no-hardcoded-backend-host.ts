@@ -88,13 +88,14 @@ const getStaticHttpProtocol = (
   expression: ESTree.Expression,
   sourceCode: SourceCode,
 ): string | undefined => {
-  const literalProtocol = getHttpProtocolLiteral(expression);
+  const unwrappedExpression = unwrapTransparentExpressions(expression);
+  const literalProtocol = getHttpProtocolLiteral(unwrappedExpression);
   if (literalProtocol !== undefined) return literalProtocol;
-  if (expression.type !== "Identifier") return undefined;
+  if (unwrappedExpression.type !== "Identifier") return undefined;
 
-  let scope: Scope | null = sourceCode.getScope(expression);
+  let scope: Scope | null = sourceCode.getScope(unwrappedExpression);
   while (scope !== null) {
-    const variable = scope.set.get(expression.name);
+    const variable = scope.set.get(unwrappedExpression.name);
     if (variable !== undefined) return getConstHttpProtocol(variable);
     scope = scope.upper;
   }
