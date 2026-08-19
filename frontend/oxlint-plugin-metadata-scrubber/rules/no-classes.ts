@@ -109,6 +109,15 @@ const isAllowedEffectClass = (
   );
 };
 
+const getClassName = (node: ESTree.Class): string => {
+  if (node.id !== null) return node.id.name;
+  const { parent } = node;
+  if (parent.type === "VariableDeclarator" && parent.id.type === "Identifier") {
+    return parent.id.name;
+  }
+  return "anonymous class";
+};
+
 export default defineRule({
   meta: {
     type: "problem",
@@ -116,14 +125,18 @@ export default defineRule({
       description:
         "Use factory functions by default and allow Effect tagged types as the class exception.",
     },
+    messages: {
+      applicationClass:
+        "`{{ className }}` is an application class. Replace it with a factory function that returns a plain object, for example `const createService = () => ({ run: () => true })`. Factory functions keep dependencies and mutable state explicit. Use a class only when it extends `Class`, `TaggedClass`, `TaggedError`, `TaggedRequest`, or `TaggedStruct` on `Data` or `Schema` imported from the `effect` package.",
+    },
   },
   create(context) {
     const checkClass = (node: ESTree.Class): void => {
       if (isAllowedEffectClass(node, context.sourceCode)) return;
       context.report({
         node,
-        message:
-          "Use factory functions by default. Effect tagged types and similar Effect base classes are the exception.",
+        messageId: "applicationClass",
+        data: { className: getClassName(node) },
       });
     };
 
