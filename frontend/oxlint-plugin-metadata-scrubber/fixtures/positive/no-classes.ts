@@ -1,8 +1,8 @@
-import { Data, Schema } from "effect";
+import { Data as D, Schema } from "effect";
 
 export const createService = () => ({ run: () => true });
 
-export class TaggedFailure extends Data.TaggedError("TaggedFailure")<{
+export class TaggedFailure extends D.TaggedError("TaggedFailure")<{
   readonly reason: string;
 }> {}
 

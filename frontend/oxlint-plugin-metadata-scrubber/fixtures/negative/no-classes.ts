@@ -9,3 +9,9 @@ export const ServiceExpression = class {
     return true;
   }
 };
+
+const Data = {
+  TaggedError: () => Object,
+};
+
+export class LocalTaggedFailure extends Data.TaggedError() {}
