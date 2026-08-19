@@ -8,3 +8,8 @@ test("returns for a missing prerequisite", () => {
     return;
   }
 });
+
+test("returns without braces for a missing prerequisite", () => {
+  const prerequisite = false;
+  if (!prerequisite) return;
+});

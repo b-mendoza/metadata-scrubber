@@ -41,7 +41,7 @@ const cases = [
   [
     "no-silent-test-prerequisite",
     "no-silent-test-prerequisite.test.ts",
-    TWO_DIAGNOSTICS,
+    THREE_DIAGNOSTICS,
   ],
   ["schema-import-boundaries", "schema-boundary.server.ts", SINGLE_DIAGNOSTIC],
   ["schema-import-boundaries", "schema-boundary.browser.ts", SINGLE_DIAGNOSTIC],
