@@ -151,6 +151,8 @@ interface OxlintJsonResult {
   readonly number_of_files?: number;
 }
 
+type OxlintJsonOutput = OxlintJsonResult | OxlintJsonResult[];
+
 const messageMatchesRule = (
   message: OxlintJsonMessage,
   ruleId: string,
@@ -163,24 +165,122 @@ const messageMatchesRule = (
   );
 };
 
-const parseMessages = (parsed: unknown): readonly OxlintJsonMessage[] => {
-  if (Array.isArray(parsed)) {
-    return parsed.flatMap((entry: unknown) => {
-      if (typeof entry !== "object" || entry === null) return [];
-      const record = entry as OxlintJsonResult;
-      return record.messages ?? record.diagnostics ?? [];
-    });
+const isUnknownRecord = (
+  value: unknown,
+): value is Readonly<Record<string, unknown>> =>
+  typeof value === "object" && value !== null && !Array.isArray(value);
+
+const parseDiagnosticMessage = (value: unknown, location: string): string => {
+  if (typeof value !== "string") {
+    throw new Error(`${location}.message must be a string.`);
   }
-  if (typeof parsed === "object" && parsed !== null) {
-    const record = parsed as OxlintJsonResult;
-    return record.messages ?? record.diagnostics ?? [];
-  }
-  return [];
+  return value;
 };
 
+const parseOptionalDiagnosticCode = (
+  value: unknown,
+  location: string,
+): string | undefined => {
+  if (value !== undefined && typeof value !== "string") {
+    throw new Error(`${location}.code must be a string when present.`);
+  }
+  return value;
+};
+
+const parseOptionalDiagnosticRuleId = (
+  value: unknown,
+  location: string,
+): string | undefined => {
+  if (value !== undefined && typeof value !== "string") {
+    throw new Error(`${location}.ruleId must be a string when present.`);
+  }
+  return value;
+};
+
+const parseOxlintJsonMessage = (
+  value: unknown,
+  location: string,
+): OxlintJsonMessage => {
+  if (!isUnknownRecord(value)) {
+    throw new Error(`${location} must be an object.`);
+  }
+  const code = parseOptionalDiagnosticCode(value["code"], location);
+  const message = parseDiagnosticMessage(value["message"], location);
+  const ruleId = parseOptionalDiagnosticRuleId(value["ruleId"], location);
+  return {
+    ...(code === undefined ? {} : { code }),
+    message,
+    ...(ruleId === undefined ? {} : { ruleId }),
+  };
+};
+
+const parseOptionalDiagnosticArray = (
+  value: unknown,
+  location: string,
+): readonly OxlintJsonMessage[] | undefined => {
+  if (value === undefined) return undefined;
+  if (!Array.isArray(value)) {
+    throw new Error(`${location} must be an array when present.`);
+  }
+  return value.map((diagnostic, index) =>
+    parseOxlintJsonMessage(diagnostic, `${location}[${String(index)}]`),
+  );
+};
+
+const parseOptionalNumberOfFiles = (
+  value: unknown,
+  location: string,
+): number | undefined => {
+  if (value !== undefined && typeof value !== "number") {
+    throw new Error(`${location} must be a number when present.`);
+  }
+  return value;
+};
+
+const parseOxlintJsonResult = (
+  value: unknown,
+  location: string,
+): OxlintJsonResult => {
+  if (!isUnknownRecord(value)) {
+    throw new Error(`${location} must be an object.`);
+  }
+  const diagnostics = parseOptionalDiagnosticArray(
+    value["diagnostics"],
+    `${location}.diagnostics`,
+  );
+  const messages = parseOptionalDiagnosticArray(
+    value["messages"],
+    `${location}.messages`,
+  );
+  const numberOfFiles = parseOptionalNumberOfFiles(
+    value["number_of_files"],
+    `${location}.number_of_files`,
+  );
+  return {
+    ...(diagnostics === undefined ? {} : { diagnostics }),
+    ...(messages === undefined ? {} : { messages }),
+    ...(numberOfFiles === undefined ? {} : { number_of_files: numberOfFiles }),
+  };
+};
+
+const parseOxlintJsonOutput = (value: unknown): OxlintJsonOutput =>
+  Array.isArray(value)
+    ? value.map((result, index) =>
+        parseOxlintJsonResult(result, `Oxlint JSON result[${String(index)}]`),
+      )
+    : parseOxlintJsonResult(value, "Oxlint JSON result");
+
+const parseMessages = (
+  parsed: OxlintJsonOutput,
+): readonly OxlintJsonMessage[] =>
+  Array.isArray(parsed)
+    ? parsed.flatMap((result) => result.messages ?? result.diagnostics ?? [])
+    : (parsed.messages ?? parsed.diagnostics ?? []);
+
 interface FixtureLintResult {
-  readonly output: string;
-  readonly status: number | null;
+  readonly stderr: string;
+  readonly stdout: string;
+  readonly status: typeof FAILURE_EXIT_CODE | typeof SUCCESS_EXIT_CODE;
 }
 
 const runFixtureLint = (fixturePath: string): FixtureLintResult => {
@@ -199,44 +299,91 @@ const runFixtureLint = (fixturePath: string): FixtureLintResult => {
       encoding: "utf8",
     },
   );
-  const output = `${result.stdout}${result.stderr}`;
   if (result.error !== undefined) {
     throw new Error(
       `Oxlint could not start for ${fixturePath}: ${result.error.message}`,
     );
   }
-  if (
-    result.status !== SUCCESS_EXIT_CODE &&
-    result.status !== FAILURE_EXIT_CODE
-  ) {
+  const { status, stderr, stdout } = result;
+  if (status !== SUCCESS_EXIT_CODE && status !== FAILURE_EXIT_CODE) {
     throw new Error(
-      `Oxlint failed for ${fixturePath} with exit code ${String(result.status)}: ${output.trim()}`,
+      `Oxlint failed for ${fixturePath} with exit code ${String(status)}. Stdout: ${stdout.trim()} Stderr: ${stderr.trim()}`,
     );
   }
-  return { output, status: result.status };
+  return { status, stderr, stdout };
 };
 
-const hasNoLintedFiles = (parsed: unknown): boolean =>
-  typeof parsed === "object" &&
-  parsed !== null &&
-  !Array.isArray(parsed) &&
-  (parsed as OxlintJsonResult).number_of_files === NO_FILES;
+const hasNoLintedFiles = (parsed: OxlintJsonOutput): boolean =>
+  !Array.isArray(parsed) && parsed.number_of_files === NO_FILES;
+
+const getJsonStart = (stdout: string): number => {
+  const arrayStart = stdout.indexOf("[");
+  const objectStart = stdout.indexOf("{");
+  if (arrayStart === MISSING_JSON_START) return objectStart;
+  if (objectStart === MISSING_JSON_START) return arrayStart;
+  return Math.min(arrayStart, objectStart);
+};
+
+const getStderrSuffix = (stderr: string): string => {
+  const details = stderr.trim();
+  return details === "" ? "" : ` Stderr: ${details}`;
+};
+
+const getErrorDetails = (error: unknown): string =>
+  error instanceof Error ? error.message : String(error);
+
+const parseFixtureJson = (
+  fixturePath: string,
+  result: FixtureLintResult,
+  jsonStart: number,
+  stderrSuffix: string,
+): unknown => {
+  try {
+    const parsedValue: unknown = JSON.parse(result.stdout.slice(jsonStart));
+    return parsedValue;
+  } catch (error: unknown) {
+    throw new Error(
+      `Oxlint JSON boundary failed for ${fixturePath}: malformed JSON in stdout. ${getErrorDetails(error)}.${stderrSuffix}`,
+      { cause: error },
+    );
+  }
+};
+
+const validateFixtureJson = (
+  fixturePath: string,
+  parsedValue: unknown,
+  stderrSuffix: string,
+): OxlintJsonOutput => {
+  try {
+    return parseOxlintJsonOutput(parsedValue);
+  } catch (error: unknown) {
+    throw new Error(
+      `Oxlint JSON boundary failed for ${fixturePath}: ${getErrorDetails(error)}${stderrSuffix}`,
+      { cause: error },
+    );
+  }
+};
 
 const parseFixtureLintOutput = (
   fixturePath: string,
   result: FixtureLintResult,
-): unknown => {
-  const jsonStart = result.output.includes("{")
-    ? result.output.indexOf("{")
-    : result.output.indexOf("[");
+): OxlintJsonOutput => {
+  const jsonStart = getJsonStart(result.stdout);
+  const stderrSuffix = getStderrSuffix(result.stderr);
   if (jsonStart === MISSING_JSON_START) {
     throw new Error(
-      `Oxlint produced no JSON for ${fixturePath} with exit code ${String(result.status)}: ${result.output.trim()}`,
+      `Oxlint JSON boundary failed for ${fixturePath}: stdout has no JSON object or array. Exit code: ${String(result.status)}. Stdout: ${result.stdout.trim()}.${stderrSuffix}`,
     );
   }
-  const parsed: unknown = JSON.parse(result.output.slice(jsonStart));
+  const parsed = validateFixtureJson(
+    fixturePath,
+    parseFixtureJson(fixturePath, result, jsonStart, stderrSuffix),
+    stderrSuffix,
+  );
   if (hasNoLintedFiles(parsed)) {
-    throw new Error(`Oxlint did not lint a file for ${fixturePath}.`);
+    throw new Error(
+      `Oxlint JSON boundary failed for ${fixturePath}: number_of_files is 0.${stderrSuffix}`,
+    );
   }
   return parsed;
 };
