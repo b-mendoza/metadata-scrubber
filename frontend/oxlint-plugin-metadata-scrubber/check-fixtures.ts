@@ -141,7 +141,7 @@ const ruleName = (ruleId: string): string => `metadata-scrubber/${ruleId}`;
 
 interface OxlintJsonMessage {
   readonly code?: string;
-  readonly message?: string;
+  readonly message: string;
   readonly ruleId?: string;
 }
 
@@ -251,7 +251,7 @@ const getDiagnosticMessages = (
   );
   return parseMessages(parsed)
     .filter((message) => messageMatchesRule(message, ruleId))
-    .map((message) => message.message ?? "");
+    .map((message) => message.message);
 };
 
 let hasFailure = false;
