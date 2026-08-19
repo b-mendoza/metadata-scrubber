@@ -13,6 +13,7 @@ const MISSING_JSON_START = -1;
 const NO_DIAGNOSTICS = 0;
 const SINGLE_DIAGNOSTIC = 1;
 const TWO_DIAGNOSTICS = 2;
+const THREE_DIAGNOSTICS = 3;
 
 const cases = [
   [
@@ -25,7 +26,7 @@ const cases = [
     "unrelated-schema.server.ts",
     SINGLE_DIAGNOSTIC,
   ],
-  ["no-classes", "no-classes.ts", TWO_DIAGNOSTICS],
+  ["no-classes", "no-classes.ts", THREE_DIAGNOSTICS],
   ["no-expect-type-of", "no-expect-type-of.test.ts", SINGLE_DIAGNOSTIC],
   [
     "no-hardcoded-backend-host",
