@@ -99,6 +99,10 @@ export default defineRule({
     docs: {
       description: "Require Effect Schema compiler creation at module scope.",
     },
+    messages: {
+      compilerInsideFunction:
+        "`Schema.{{ compiler }}(...)` creates a reusable Effect Schema compiler. Move this call to module scope, for example `const runSchema = Schema.{{ compiler }}(valueSchema)`. Call `runSchema(input)` inside the function. Creating the compiler inside a function repeats its setup on every call.",
+    },
   },
   create(context) {
     if (!isServerModule(context.filename, context.cwd)) return {};
@@ -122,10 +126,12 @@ export default defineRule({
         if (functionDepth === MODULE_SCOPE_FUNCTION_DEPTH) return;
         const compiler = getSchemaCompiler(node, context.sourceCode);
         if (compiler === undefined) return;
+        const compilerName = getStaticPropertyName(compiler);
+        if (compilerName === undefined) return;
         context.report({
           node: compiler,
-          message:
-            "Compile the Effect Schema decoder, encoder, or guard at module scope, then call the compiled function here.",
+          messageId: "compilerInsideFunction",
+          data: { compiler: compilerName },
         });
       },
     };
