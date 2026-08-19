@@ -12,14 +12,20 @@ test.each([false])("returns from a parameterized test", () => {
   if (!ready) return;
 });
 
-test("returns for a missing prerequisite", () => {
-  const prerequisite = false;
-  if (!prerequisite) {
+test("returns for a missing value", () => {
+  const value: string | undefined = undefined;
+  if (value === undefined) {
     return;
   }
 });
 
-test("returns without braces for a missing prerequisite", () => {
-  const prerequisite = false;
-  if (!prerequisite) return;
+test("returns when blocked", () => {
+  const blocked = true;
+  if (blocked) return;
+});
+
+test("returns after preparing when blocked", () => {
+  const blocked = true;
+  const prepare = (): boolean => blocked;
+  if ((prepare(), blocked)) return;
 });
