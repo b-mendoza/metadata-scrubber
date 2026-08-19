@@ -10,6 +10,14 @@ import { defineRule } from "@oxlint/plugins";
 import { getStaticPropertyName, isTestFile } from "../utils.ts";
 
 const TESTING_LIBRARY_SOURCE = "@testing-library/react";
+const TESTING_LIBRARY_PURE_SOURCE = "@testing-library/react/pure";
+const TESTING_LIBRARY_SOURCES = new Set([
+  TESTING_LIBRARY_SOURCE,
+  TESTING_LIBRARY_PURE_SOURCE,
+]);
+
+const isTestingLibrarySource = (source: string): boolean =>
+  TESTING_LIBRARY_SOURCES.has(source);
 
 const getImportedName = (
   specifier: ESTree.ImportSpecifier,
@@ -28,31 +36,45 @@ const isRuntimeRenderImportSpecifier = (
   specifier.importKind !== "type" &&
   getImportedName(specifier) === "render";
 
-const isTestingLibraryNamespaceImportDefinition = (
+const getTestingLibraryNamespaceImportSourceFromDefinition = (
   definition: Definition,
-): boolean =>
-  definition.type === "ImportBinding" &&
-  definition.node.type === "ImportNamespaceSpecifier" &&
-  definition.parent?.type === "ImportDeclaration" &&
-  definition.parent.importKind !== "type" &&
-  definition.parent.source.value === TESTING_LIBRARY_SOURCE;
+): string | undefined => {
+  if (
+    definition.type !== "ImportBinding" ||
+    definition.node.type !== "ImportNamespaceSpecifier" ||
+    definition.parent?.type !== "ImportDeclaration" ||
+    definition.parent.importKind === "type"
+  ) {
+    return undefined;
+  }
+  const source = definition.parent.source.value;
+  return isTestingLibrarySource(source) ? source : undefined;
+};
 
-const isTestingLibraryNamespaceImport = (variable: Variable): boolean =>
-  variable.defs.some(isTestingLibraryNamespaceImportDefinition);
+const getTestingLibraryNamespaceImportSource = (
+  variable: Variable,
+): string | undefined => {
+  for (const definition of variable.defs) {
+    const source =
+      getTestingLibraryNamespaceImportSourceFromDefinition(definition);
+    if (source !== undefined) return source;
+  }
+  return undefined;
+};
 
-const isTestingLibraryNamespaceReference = (
+const getTestingLibraryNamespaceReferenceSource = (
   node: ESTree.IdentifierReference,
   sourceCode: SourceCode,
-): boolean => {
+): string | undefined => {
   let scope: Scope | null = sourceCode.getScope(node);
   while (scope !== null) {
     const variable = scope.set.get(node.name);
     if (variable !== undefined) {
-      return isTestingLibraryNamespaceImport(variable);
+      return getTestingLibraryNamespaceImportSource(variable);
     }
     scope = scope.upper;
   }
-  return false;
+  return undefined;
 };
 
 export default defineRule({
@@ -71,38 +93,38 @@ export default defineRule({
 
     return {
       ImportDeclaration(node) {
-        if (node.source.value !== TESTING_LIBRARY_SOURCE) return;
-        const renderSpecifier = node.specifiers.find((specifier) =>
-          isRuntimeRenderImportSpecifier(specifier, node),
-        );
-        if (renderSpecifier === undefined) return;
-        context.report({
-          node: renderSpecifier,
-          messageId: "directTestingLibraryRender",
-          data: {
-            renderReference: renderSpecifier.local.name,
-            source: node.source.value,
-          },
-        });
+        if (!isTestingLibrarySource(node.source.value)) return;
+        for (const specifier of node.specifiers) {
+          if (!isRuntimeRenderImportSpecifier(specifier, node)) continue;
+          context.report({
+            node: specifier,
+            messageId: "directTestingLibraryRender",
+            data: {
+              renderReference: specifier.local.name,
+              source: node.source.value,
+            },
+          });
+        }
       },
       CallExpression(node) {
         if (
           node.callee.type !== "MemberExpression" ||
           node.callee.object.type !== "Identifier" ||
-          getStaticPropertyName(node.callee) !== "render" ||
-          !isTestingLibraryNamespaceReference(
-            node.callee.object,
-            context.sourceCode,
-          )
+          getStaticPropertyName(node.callee) !== "render"
         ) {
           return;
         }
+        const source = getTestingLibraryNamespaceReferenceSource(
+          node.callee.object,
+          context.sourceCode,
+        );
+        if (source === undefined) return;
         context.report({
           node: node.callee,
           messageId: "directTestingLibraryRender",
           data: {
             renderReference: context.sourceCode.getText(node.callee),
-            source: TESTING_LIBRARY_SOURCE,
+            source,
           },
         });
       },
