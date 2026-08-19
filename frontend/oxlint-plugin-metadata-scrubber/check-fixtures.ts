@@ -299,7 +299,7 @@ const runFixtureLint = (fixturePath: string): FixtureLintResult => {
       encoding: "utf8",
     },
   );
-  if (result.error !== undefined) {
+  if (result.error != null) {
     throw new Error(
       `Oxlint could not start for ${fixturePath}: ${result.error.message}`,
     );
