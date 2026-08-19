@@ -18,7 +18,7 @@ const cases = [
   [
     "hoist-effect-schema-compilers",
     "schema-compiler.server.ts",
-    SINGLE_DIAGNOSTIC,
+    TWO_DIAGNOSTICS,
   ],
   ["no-classes", "no-classes.ts", TWO_DIAGNOSTICS],
   ["no-expect-type-of", "no-expect-type-of.test.ts", SINGLE_DIAGNOSTIC],
