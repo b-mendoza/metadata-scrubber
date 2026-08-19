@@ -1,13 +1,13 @@
 import type { ESTree } from "@oxlint/plugins";
 import { defineRule } from "@oxlint/plugins";
 
-import { isRuntimeImport, toProjectPath } from "../utils.ts";
+import {
+  isRuntimeImport,
+  isServerProjectPath,
+  toProjectPath,
+} from "../utils.ts";
 
-const isServerPath = (path: string): boolean =>
-  /(?:^|\/)src\/.*\.mod\.server\.tsx?$/u.test(path) ||
-  /(?:^|\/)src\/shared\/db\/.*\.server\.tsx?$/u.test(path) ||
-  /(?:^|\/)src\/routes\/api\/.*\.tsx?$/u.test(path) ||
-  /(?:^|\/)src\/shared\/middlewares\/.*\.tsx?$/u.test(path) ||
+const isSchemaBoundaryServerFixturePath = (path: string): boolean =>
   /(?:^|\/)fixtures\/(?:positive|negative)\/schema-boundary\.server\.tsx?$/u.test(
     path,
   );
@@ -55,7 +55,13 @@ const IMPORT_BOUNDARY_MESSAGE_IDS = {
 >;
 
 const getImportBoundary = (path: string): ImportBoundary | undefined => {
-  if (path.endsWith(".server.ts") || isServerPath(path)) return "server";
+  if (
+    path.endsWith(".server.ts") ||
+    isServerProjectPath(path) ||
+    isSchemaBoundaryServerFixturePath(path)
+  ) {
+    return "server";
+  }
   if (isBrowserPath(path)) return "browser";
   if (isSharedPath(path)) return "shared";
   return undefined;
