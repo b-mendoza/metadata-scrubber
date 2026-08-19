@@ -21,6 +21,7 @@ const cases = [
     [
       "`Schema.decodeUnknownSync(...)` creates a reusable Effect Schema compiler. Move this call to module scope, for example `const runSchema = Schema.decodeUnknownSync(valueSchema)`. Call `runSchema(input)` inside the function. Creating the compiler inside a function repeats its setup on every call.",
       "`Schema.decodeUnknownSync(...)` creates a reusable Effect Schema compiler. Move this call to module scope, for example `const runSchema = Schema.decodeUnknownSync(valueSchema)`. Call `runSchema(input)` inside the function. Creating the compiler inside a function repeats its setup on every call.",
+      "`S.decodeUnknownSync(...)` creates a reusable Effect Schema compiler. Move this call to module scope, for example `const runSchema = Schema.decodeUnknownSync(valueSchema)`. Call `runSchema(input)` inside the function. Creating the compiler inside a function repeats its setup on every call.",
     ],
   ],
   [
