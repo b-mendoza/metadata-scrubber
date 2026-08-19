@@ -60,6 +60,20 @@ const isInsideTestCallback = (
   return false;
 };
 
+const getGuardIfStatement = (
+  node: ESTree.ReturnStatement,
+): ESTree.IfStatement | undefined => {
+  const { parent } = node;
+  if (parent.type === "IfStatement") {
+    return parent.consequent === node ? parent : undefined;
+  }
+  if (parent.type !== "BlockStatement") return undefined;
+  const ifStatement = parent.parent;
+  return ifStatement.type === "IfStatement" && ifStatement.consequent === parent
+    ? ifStatement
+    : undefined;
+};
+
 export default defineRule({
   meta: {
     type: "problem",
@@ -86,14 +100,10 @@ export default defineRule({
         if (callback !== undefined) testCallbacks.add(callback);
       },
       ReturnStatement(node) {
-        if (node.argument !== null || node.parent.type !== "BlockStatement") {
-          return;
-        }
-        const ifStatement = node.parent.parent;
+        if (node.argument !== null) return;
+        const ifStatement = getGuardIfStatement(node);
         if (
-          ifStatement.type !== "IfStatement" ||
-          ifStatement.consequent !== node.parent ||
-          ifStatement.alternate !== null ||
+          ifStatement?.alternate !== null ||
           !isInsideTestCallback(node, testCallbacks)
         ) {
           return;
