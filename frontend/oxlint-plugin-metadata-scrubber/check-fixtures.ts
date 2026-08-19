@@ -5,56 +5,124 @@ import { fileURLToPath } from "node:url";
 type FixtureCase = readonly [
   ruleId: string,
   fixtureFile: string,
-  expectedNegativeCount: number,
+  expectedNegativeMessages: readonly string[],
 ];
 
 const FAILURE_EXIT_CODE = 1;
 const MISSING_JSON_START = -1;
 const NO_DIAGNOSTICS = 0;
-const SINGLE_DIAGNOSTIC = 1;
-const TWO_DIAGNOSTICS = 2;
-const THREE_DIAGNOSTICS = 3;
+const NO_FILES = 0;
+const SUCCESS_EXIT_CODE = 0;
 
 const cases = [
   [
     "hoist-effect-schema-compilers",
     "schema-compiler.server.ts",
-    TWO_DIAGNOSTICS,
+    [
+      "`Schema.decodeUnknownSync(...)` creates a reusable Effect Schema compiler. Move this call to module scope, for example `const runSchema = Schema.decodeUnknownSync(valueSchema)`. Call `runSchema(input)` inside the function. Creating the compiler inside a function repeats its setup on every call.",
+      "`Schema.decodeUnknownSync(...)` creates a reusable Effect Schema compiler. Move this call to module scope, for example `const runSchema = Schema.decodeUnknownSync(valueSchema)`. Call `runSchema(input)` inside the function. Creating the compiler inside a function repeats its setup on every call.",
+    ],
   ],
   [
     "hoist-effect-schema-compilers",
     "unrelated-schema.server.ts",
-    SINGLE_DIAGNOSTIC,
+    [
+      "`Schema.decodeUnknownSync(...)` creates a reusable Effect Schema compiler. Move this call to module scope, for example `const runSchema = Schema.decodeUnknownSync(valueSchema)`. Call `runSchema(input)` inside the function. Creating the compiler inside a function repeats its setup on every call.",
+    ],
   ],
-  ["no-classes", "no-classes.ts", THREE_DIAGNOSTICS],
-  ["no-expect-type-of", "no-expect-type-of.test.ts", SINGLE_DIAGNOSTIC],
+  [
+    "no-classes",
+    "no-classes.ts",
+    [
+      "`Service` is an application class. Replace it with a factory function that returns a plain object, for example `const createService = () => ({ run: () => true })`. Factory functions keep dependencies and mutable state explicit. Use a class only when it extends `Class`, `TaggedClass`, `TaggedError`, `TaggedRequest`, or `TaggedStruct` on `Data` or `Schema` imported from the `effect` package.",
+      "`ServiceExpression` is an application class. Replace it with a factory function that returns a plain object, for example `const createService = () => ({ run: () => true })`. Factory functions keep dependencies and mutable state explicit. Use a class only when it extends `Class`, `TaggedClass`, `TaggedError`, `TaggedRequest`, or `TaggedStruct` on `Data` or `Schema` imported from the `effect` package.",
+      "`LocalTaggedFailure` is an application class. Replace it with a factory function that returns a plain object, for example `const createService = () => ({ run: () => true })`. Factory functions keep dependencies and mutable state explicit. Use a class only when it extends `Class`, `TaggedClass`, `TaggedError`, `TaggedRequest`, or `TaggedStruct` on `Data` or `Schema` imported from the `effect` package.",
+    ],
+  ],
+  [
+    "no-expect-type-of",
+    "no-expect-type-of.test.ts",
+    [
+      "`expectTypeOf(...)` tests a static type. Remove this assertion. Put the expected type on the production declaration with `: ExpectedType`, or constrain the value with `satisfies ExpectedType`. TypeScript checks this contract during the type check. Use Vitest `expect(...)` only for runtime behavior.",
+      "`assertType(...)` tests a static type. Remove this assertion. Put the expected type on the production declaration with `: ExpectedType`, or constrain the value with `satisfies ExpectedType`. TypeScript checks this contract during the type check. Use Vitest `expect(...)` only for runtime behavior.",
+    ],
+  ],
+  [
+    "no-expect-type-of",
+    "no-expect-type-of-global.test.ts",
+    [
+      "`expectTypeOf(...)` tests a static type. Remove this assertion. Put the expected type on the production declaration with `: ExpectedType`, or constrain the value with `satisfies ExpectedType`. TypeScript checks this contract during the type check. Use Vitest `expect(...)` only for runtime behavior.",
+    ],
+  ],
   [
     "no-hardcoded-backend-host",
     "no-hardcoded-backend-host.ts",
-    THREE_DIAGNOSTICS,
+    [
+      "`https://backend.example.com` contains a static HTTP service host. Service hosts vary by deployment, so this source text can target the wrong environment. For the backend base URL in server code, read `env.BACKEND_URL` through `getApplicationBindings()` and build `new URL(path, env.BACKEND_URL)`. Browser code must call a frontend server route for backend access. For another service host, add a validated environment field.",
+      "`http://template.example.com` contains a static HTTP service host. Service hosts vary by deployment, so this source text can target the wrong environment. For the backend base URL in server code, read `env.BACKEND_URL` through `getApplicationBindings()` and build `new URL(path, env.BACKEND_URL)`. Browser code must call a frontend server route for backend access. For another service host, add a validated environment field.",
+      "`http://localhost:8787/\\unicode` contains a static HTTP service host. Service hosts vary by deployment, so this source text can target the wrong environment. For the backend base URL in server code, read `env.BACKEND_URL` through `getApplicationBindings()` and build `new URL(path, env.BACKEND_URL)`. Browser code must call a frontend server route for backend access. For another service host, add a validated environment field.",
+      "`https://payments.example.com` contains a static HTTP service host. Service hosts vary by deployment, so this source text can target the wrong environment. For the backend base URL in server code, read `env.BACKEND_URL` through `getApplicationBindings()` and build `new URL(path, env.BACKEND_URL)`. Browser code must call a frontend server route for backend access. For another service host, add a validated environment field.",
+      "`http://localhost:8787/` contains a static HTTP service host. Service hosts vary by deployment, so this source text can target the wrong environment. For the backend base URL in server code, read `env.BACKEND_URL` through `getApplicationBindings()` and build `new URL(path, env.BACKEND_URL)`. Browser code must call a frontend server route for backend access. For another service host, add a validated environment field.",
+      "`HTTP://service.example/path` contains a static HTTP service host. Service hosts vary by deployment, so this source text can target the wrong environment. For the backend base URL in server code, read `env.BACKEND_URL` through `getApplicationBindings()` and build `new URL(path, env.BACKEND_URL)`. Browser code must call a frontend server route for backend access. For another service host, add a validated environment field.",
+    ],
   ],
   [
     "no-mutable-module-state-in-server-code",
     "mutable-module-state.server.ts",
-    SINGLE_DIAGNOSTIC,
+    [
+      "Concurrent server requests share the module-scope `let` state in `requestCount`. Move request-local mutation into request scope. Put request dependencies in `applicationBindingsMiddleware` and read them with `getApplicationBindings()`. Use `const` only when no request changes the value or its contents. Do not move the mutation into a module-scope object or array.",
+    ],
   ],
   [
     "no-silent-test-prerequisite",
     "no-silent-test-prerequisite.test.ts",
-    THREE_DIAGNOSTICS,
+    [
+      "`test.skip` disables a suite or test. Remove `.skip` so the suite or test runs. Assert each test prerequisite with `expect(prerequisite).toBe(true)` inside the test callback. Do not replace `.skip` with `.todo` or another disabled-test API. Disabled tests hide missing setup and let CI pass without required coverage.",
+      "`test.skip` disables a suite or test. Remove `.skip` so the suite or test runs. Assert each test prerequisite with `expect(prerequisite).toBe(true)` inside the test callback. Do not replace `.skip` with `.todo` or another disabled-test API. Disabled tests hide missing setup and let CI pass without required coverage.",
+      "`check.skip` disables a suite or test. Remove `.skip` so the suite or test runs. Assert each test prerequisite with `expect(prerequisite).toBe(true)` inside the test callback. Do not replace `.skip` with `.todo` or another disabled-test API. Disabled tests hide missing setup and let CI pass without required coverage.",
+      "`describe.skip` disables a suite or test. Remove `.skip` so the suite or test runs. Assert each test prerequisite with `expect(prerequisite).toBe(true)` inside the test callback. Do not replace `.skip` with `.todo` or another disabled-test API. Disabled tests hide missing setup and let CI pass without required coverage.",
+      "`it.skip` disables a suite or test. Remove `.skip` so the suite or test runs. Assert each test prerequisite with `expect(prerequisite).toBe(true)` inside the test callback. Do not replace `.skip` with `.todo` or another disabled-test API. Disabled tests hide missing setup and let CI pass without required coverage.",
+      "`test.skip.each([false])` disables a suite or test. Remove `.skip` so the suite or test runs. Assert each test prerequisite with `expect(prerequisite).toBe(true)` inside the test callback. Do not replace `.skip` with `.todo` or another disabled-test API. Disabled tests hide missing setup and let CI pass without required coverage.",
+      "The `!ready` test prerequisite guard uses a bare `return` in `test.each([false])`. This return makes the test pass without its behavior assertions. Replace the guard exit with `expect(prerequisite).toBe(true)`. Then continue the test.",
+      "The `!prerequisite` test prerequisite guard uses a bare `return` in `test`. This return makes the test pass without its behavior assertions. Replace the guard exit with `expect(prerequisite).toBe(true)`. Then continue the test.",
+      "The `!prerequisite` test prerequisite guard uses a bare `return` in `test`. This return makes the test pass without its behavior assertions. Replace the guard exit with `expect(prerequisite).toBe(true)`. Then continue the test.",
+    ],
   ],
-  ["schema-import-boundaries", "schema-boundary.server.ts", SINGLE_DIAGNOSTIC],
-  ["schema-import-boundaries", "schema-boundary.browser.ts", SINGLE_DIAGNOSTIC],
-  ["schema-import-boundaries", "schema-boundary.shared.ts", SINGLE_DIAGNOSTIC],
+  [
+    "schema-import-boundaries",
+    "schema-boundary.server.ts",
+    [
+      'This server module imports the `zod` package at runtime. Replace this runtime import with `import { Schema } from "effect"`. Rewrite each runtime schema with the Effect Schema API and create its compiler at module scope. Effect Schema decoders compose with server Effect pipelines. Keep only a type-only import from `zod` here.',
+    ],
+  ],
+  [
+    "schema-import-boundaries",
+    "schema-boundary.browser.ts",
+    [
+      'This browser module imports the `effect` package at runtime. Remove this runtime import because it increases the client bundle. Rewrite schema validation with `import * as z from "zod"` and the Zod API. Rewrite other Effect code with browser-native functions. Keep only a type-only import from `effect` when required.',
+    ],
+  ],
+  [
+    "schema-import-boundaries",
+    "schema-boundary.shared.ts",
+    [
+      "This shared module imports the `zod` package at runtime. Shared modules cross browser and server boundaries, so they must not load the `effect` package or the `zod` package at runtime. Export plain data and types here. Move runtime code to the browser module or server module that owns it. Use the Zod API for browser schemas and the Effect Schema API for server schemas. Use a type-only import when a shared declaration needs a library type.",
+    ],
+  ],
   [
     "schema-import-boundaries",
     "schema-boundary.shared-module.server.ts",
-    SINGLE_DIAGNOSTIC,
+    [
+      'This server module imports the `zod` package at runtime. Replace this runtime import with `import { Schema } from "effect"`. Rewrite each runtime schema with the Effect Schema API and create its compiler at module scope. Effect Schema decoders compose with server Effect pipelines. Keep only a type-only import from `zod` here.',
+    ],
   ],
   [
     "use-shared-render-helper",
     "use-shared-render-helper.test.tsx",
-    SINGLE_DIAGNOSTIC,
+    [
+      "Do not use `render` from the `@testing-library/react` package directly. Import `renderComponent` from `#/tests/utils/renderers/renderers.mod` and call `renderComponent(jsx)`. The helper runs `userEvent.setup()` and returns the Testing Library result with `user`. Use the returned `user` for interactions. Do not bypass the helper with another import form.",
+      "Do not use `testingLibrary.render` from the `@testing-library/react` package directly. Import `renderComponent` from `#/tests/utils/renderers/renderers.mod` and call `renderComponent(jsx)`. The helper runs `userEvent.setup()` and returns the Testing Library result with `user`. Use the returned `user` for interactions. Do not bypass the helper with another import form.",
+    ],
   ],
 ] as const satisfies readonly FixtureCase[];
 
@@ -65,12 +133,14 @@ const ruleName = (ruleId: string): string => `metadata-scrubber/${ruleId}`;
 
 interface OxlintJsonMessage {
   readonly code?: string;
+  readonly message?: string;
   readonly ruleId?: string;
 }
 
 interface OxlintJsonResult {
   readonly diagnostics?: readonly OxlintJsonMessage[];
   readonly messages?: readonly OxlintJsonMessage[];
+  readonly number_of_files?: number;
 }
 
 const messageMatchesRule = (
@@ -85,10 +155,7 @@ const messageMatchesRule = (
   );
 };
 
-const parseMessages = (stdout: string): readonly OxlintJsonMessage[] => {
-  const trimmed = stdout.trim();
-  if (trimmed === "") return [];
-  const parsed: unknown = JSON.parse(trimmed);
+const parseMessages = (parsed: unknown): readonly OxlintJsonMessage[] => {
   if (Array.isArray(parsed)) {
     return parsed.flatMap((entry: unknown) => {
       if (typeof entry !== "object" || entry === null) return [];
@@ -103,7 +170,12 @@ const parseMessages = (stdout: string): readonly OxlintJsonMessage[] => {
   return [];
 };
 
-const countDiagnostics = (fixturePath: string, ruleId: string): number => {
+interface FixtureLintResult {
+  readonly output: string;
+  readonly status: number | null;
+}
+
+const runFixtureLint = (fixturePath: string): FixtureLintResult => {
   const result = spawnSync(
     oxlintPath,
     [
@@ -120,18 +192,62 @@ const countDiagnostics = (fixturePath: string, ruleId: string): number => {
     },
   );
   const output = `${result.stdout}${result.stderr}`;
-  const jsonStart = output.includes("{")
-    ? output.indexOf("{")
-    : output.indexOf("[");
-  const jsonText =
-    jsonStart === MISSING_JSON_START ? "[]" : output.slice(jsonStart);
-  return parseMessages(jsonText).filter((message) =>
-    messageMatchesRule(message, ruleId),
-  ).length;
+  if (result.error !== undefined) {
+    throw new Error(
+      `Oxlint could not start for ${fixturePath}: ${result.error.message}`,
+    );
+  }
+  if (
+    result.status !== SUCCESS_EXIT_CODE &&
+    result.status !== FAILURE_EXIT_CODE
+  ) {
+    throw new Error(
+      `Oxlint failed for ${fixturePath} with exit code ${String(result.status)}: ${output.trim()}`,
+    );
+  }
+  return { output, status: result.status };
+};
+
+const hasNoLintedFiles = (parsed: unknown): boolean =>
+  typeof parsed === "object" &&
+  parsed !== null &&
+  !Array.isArray(parsed) &&
+  (parsed as OxlintJsonResult).number_of_files === NO_FILES;
+
+const parseFixtureLintOutput = (
+  fixturePath: string,
+  result: FixtureLintResult,
+): unknown => {
+  const jsonStart = result.output.includes("{")
+    ? result.output.indexOf("{")
+    : result.output.indexOf("[");
+  if (jsonStart === MISSING_JSON_START) {
+    throw new Error(
+      `Oxlint produced no JSON for ${fixturePath} with exit code ${String(result.status)}: ${result.output.trim()}`,
+    );
+  }
+  const parsed: unknown = JSON.parse(result.output.slice(jsonStart));
+  if (hasNoLintedFiles(parsed)) {
+    throw new Error(`Oxlint did not lint a file for ${fixturePath}.`);
+  }
+  return parsed;
+};
+
+const getDiagnosticMessages = (
+  fixturePath: string,
+  ruleId: string,
+): readonly string[] => {
+  const parsed = parseFixtureLintOutput(
+    fixturePath,
+    runFixtureLint(fixturePath),
+  );
+  return parseMessages(parsed)
+    .filter((message) => messageMatchesRule(message, ruleId))
+    .map((message) => message.message ?? "");
 };
 
 let hasFailure = false;
-for (const [ruleId, fixtureFile, expectedNegativeCount] of cases) {
+for (const [ruleId, fixtureFile, expectedNegativeMessages] of cases) {
   const positivePath = join(
     "oxlint-plugin-metadata-scrubber",
     "fixtures",
@@ -144,17 +260,26 @@ for (const [ruleId, fixtureFile, expectedNegativeCount] of cases) {
     "negative",
     fixtureFile,
   );
-  const positiveCount = countDiagnostics(positivePath, ruleId);
-  const negativeCount = countDiagnostics(negativePath, ruleId);
-  if (positiveCount !== NO_DIAGNOSTICS) {
+  const positiveMessages = getDiagnosticMessages(positivePath, ruleId);
+  const negativeMessages = getDiagnosticMessages(negativePath, ruleId);
+  if (positiveMessages.length !== NO_DIAGNOSTICS) {
     console.error(
-      `${ruleId} positive ${fixtureFile}: expected 0, got ${String(positiveCount)}`,
+      `${ruleId} positive ${fixtureFile}: expected 0, got ${String(positiveMessages.length)}`,
     );
     hasFailure = true;
   }
-  if (negativeCount !== expectedNegativeCount) {
+  if (negativeMessages.length !== expectedNegativeMessages.length) {
     console.error(
-      `${ruleId} negative ${fixtureFile}: expected ${String(expectedNegativeCount)}, got ${String(negativeCount)}`,
+      `${ruleId} negative ${fixtureFile}: expected ${String(expectedNegativeMessages.length)}, got ${String(negativeMessages.length)}`,
+    );
+    hasFailure = true;
+    continue;
+  }
+  for (const [index, expectedMessage] of expectedNegativeMessages.entries()) {
+    const actualMessage = negativeMessages[index];
+    if (actualMessage === expectedMessage) continue;
+    console.error(
+      `${ruleId} negative ${fixtureFile} message ${String(index)}: expected ${JSON.stringify(expectedMessage)}, got ${JSON.stringify(actualMessage)}`,
     );
     hasFailure = true;
   }
