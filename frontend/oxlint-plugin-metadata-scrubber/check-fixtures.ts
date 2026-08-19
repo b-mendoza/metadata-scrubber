@@ -141,7 +141,6 @@ const frontendDir = join(pluginDir, "..");
 const oxlintPath = join(frontendDir, "node_modules", ".bin", "oxlint");
 const ruleName = (ruleId: string): string => `metadata-scrubber/${ruleId}`;
 
-// oxlint-disable-next-line zod/prefer-string-schema-with-trim -- We want to test the raw string, not the trimmed string
 // eslint-disable-next-line zod/prefer-string-schema-with-trim -- We want to test the raw string, not the trimmed string
 const oxlintJsonStringSchema = z.string();
 
