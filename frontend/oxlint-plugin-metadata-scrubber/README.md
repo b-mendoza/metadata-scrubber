@@ -1,14 +1,14 @@
 # Metadata Scrubber Oxlint Plugin
 
-> **Short-lived reference.** This file describes the current state of the code and must be updated whenever that state changes. If this file and the code disagree, the code wins — fix this file.
+> **Short-lived reference.** This file describes the current state of the code. Update this file whenever that state changes. Use the code as the source of truth when this file and the code disagree. Fix this file.
 
 ## Purpose
 
-This plugin encodes the project's coding standards as enforceable Oxlint rules. Agents read the lint output and use it to correct their code. The messages must therefore carry all repair instructions.
+This plugin encodes the project's coding standards as enforceable Oxlint rules. Agents read the lint output. They use it to correct their code. The messages must therefore carry all repair instructions.
 
 ## Registration and commands
 
-`.oxlintrc.json` loads `./oxlint-plugin-metadata-scrubber/index.ts` and enables all eight `metadata-scrubber/...` rules. `eslint.config.js` registers the same plugin as `metadata-scrubber`. Run `pnpm run lint` from `frontend/` to run the project lint pipeline. Run `node oxlint-plugin-metadata-scrubber/check-fixtures.ts` from `frontend/` to run the fixture harness. The fixture harness is a manual check. It is not part of the `pnpm run lint` pipeline.
+`.oxlintrc.json` loads `./oxlint-plugin-metadata-scrubber/index.ts`. It enables all eight `metadata-scrubber/...` rules. `eslint.config.js` registers the same plugin as `metadata-scrubber`. Run `pnpm run lint` from `frontend/` to run the project lint pipeline. Run `node oxlint-plugin-metadata-scrubber/check-fixtures.ts` from `frontend/` to run the fixture harness. The fixture harness is a manual check. It is not part of the `pnpm run lint` pipeline.
 
 ## Rules
 
@@ -34,7 +34,7 @@ This plugin encodes the project's coding standards as enforceable Oxlint rules. 
 9. Do not match an identifier by its name only.
 10. Add a positive fixture that produces zero diagnostics.
 11. Add a negative fixture that produces the required diagnostics.
-12. Pin the exact diagnostic count and each exact rendered message in `check-fixtures.ts`.
+12. Pin the exact diagnostic count in `check-fixtures.ts`. Pin each exact rendered message in the same file.
 13. Run the fixture before the rule change and record the expected failure.
 14. Implement the smallest rule change that makes the fixture pass.
 15. Do not add lint-suppression comments.
@@ -49,11 +49,13 @@ Use this three-part structure:
 2. Give the exact idiomatic replacement with the real import path or API.
 3. State the invariant so an agent can apply the rule to new code.
 
-Name the known bypass and forbid it when the bypass can preserve the violation. Use these terms consistently: the `effect` package, the `zod` package, the Effect Schema API, the Zod API, runtime import, type-only import, module scope, request scope, browser module, server module, shared module, test prerequisite, and factory function. Do not use `Please`. Do not use vague words such as `similar` or `appropriate`.
+Name each known bypass. Forbid the bypass when it can preserve the violation. Use these terms consistently: the `effect` package, the `zod` package, the Effect Schema API, the Zod API, runtime import, type-only import, module scope, request scope, browser module, server module, shared module, test prerequisite, and factory function. Do not use `Please`. Do not use vague words such as `similar` or `appropriate`.
 
 ## Known limitations
 
 - Namespace Vitest calls such as `vitest.expectTypeOf(...)` and `vitest.test.skip(...)` are not resolved.
 - Disabled Vitest calls through `test.todo(...)` and `test.skipIf(true)(...)` are not reported.
+- Suggested guard assertions do not preserve TypeScript control-flow narrowing. Adapt the surrounding code when it depends on that narrowing.
 - A destructured Testing Library `render` reference is not reported after a namespace import.
 - An unresolved non-Vitest global can be reported when it uses the Vitest name `expectTypeOf`, `describe`, `it`, or `test`.
+- Protocol-relative string literals such as `"//backend.example.com/api"` are not reported.
