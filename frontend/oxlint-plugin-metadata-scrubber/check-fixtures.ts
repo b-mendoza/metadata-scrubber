@@ -108,6 +108,13 @@ const cases = [
   ],
   [
     "schema-import-boundaries",
+    "generic-schema-boundary.server.tsx",
+    [
+      'This server module imports the `zod` package at runtime. Replace this runtime import with `import { Schema } from "effect"`. Rewrite each runtime schema with the Effect Schema API and create its compiler at module scope. Effect Schema decoders compose with server Effect pipelines. Keep only a type-only import from `zod` here.',
+    ],
+  ],
+  [
+    "schema-import-boundaries",
     "schema-boundary.browser.ts",
     [
       'This browser module imports the `effect` package at runtime. Remove this runtime import because it increases the client bundle. Rewrite schema validation with `import * as z from "zod"` and the Zod API. Rewrite other Effect code with browser-native functions. Keep only a type-only import from `effect` when required.',
