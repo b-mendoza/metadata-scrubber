@@ -20,6 +20,11 @@ const cases = [
     "schema-compiler.server.ts",
     TWO_DIAGNOSTICS,
   ],
+  [
+    "hoist-effect-schema-compilers",
+    "unrelated-schema.server.ts",
+    SINGLE_DIAGNOSTIC,
+  ],
   ["no-classes", "no-classes.ts", TWO_DIAGNOSTICS],
   ["no-expect-type-of", "no-expect-type-of.test.ts", SINGLE_DIAGNOSTIC],
   [
