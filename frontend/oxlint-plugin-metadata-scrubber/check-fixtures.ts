@@ -2,6 +2,8 @@ import { spawnSync } from "node:child_process";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 
+import * as z from "zod";
+
 type FixtureCase = readonly [
   ruleId: string,
   fixtureFile: string,
@@ -139,19 +141,29 @@ const frontendDir = join(pluginDir, "..");
 const oxlintPath = join(frontendDir, "node_modules", ".bin", "oxlint");
 const ruleName = (ruleId: string): string => `metadata-scrubber/${ruleId}`;
 
-interface OxlintJsonMessage {
-  readonly code?: string;
-  readonly message: string;
-  readonly ruleId?: string;
-}
+// oxlint-disable-next-line zod/prefer-string-schema-with-trim -- We want to test the raw string, not the trimmed string
+// eslint-disable-next-line zod/prefer-string-schema-with-trim -- We want to test the raw string, not the trimmed string
+const oxlintJsonStringSchema = z.string();
 
-interface OxlintJsonResult {
-  readonly diagnostics?: readonly OxlintJsonMessage[];
-  readonly messages?: readonly OxlintJsonMessage[];
-  readonly number_of_files?: number;
-}
+const oxlintJsonMessageSchema = z.object({
+  code: oxlintJsonStringSchema.nullish(),
+  message: oxlintJsonStringSchema,
+  ruleId: oxlintJsonStringSchema.nullish(),
+});
 
-type OxlintJsonOutput = OxlintJsonResult | OxlintJsonResult[];
+const oxlintJsonResultSchema = z.object({
+  diagnostics: z.array(oxlintJsonMessageSchema).nullish(),
+  messages: z.array(oxlintJsonMessageSchema).nullish(),
+  number_of_files: z.number().nullish(),
+});
+
+const oxlintJsonOutputSchema = z.union([
+  oxlintJsonResultSchema,
+  z.array(oxlintJsonResultSchema),
+]);
+
+type OxlintJsonMessage = z.infer<typeof oxlintJsonMessageSchema>;
+type OxlintJsonOutput = z.infer<typeof oxlintJsonOutputSchema>;
 
 const messageMatchesRule = (
   message: OxlintJsonMessage,
@@ -164,111 +176,6 @@ const messageMatchesRule = (
     message.code === `metadata-scrubber(${ruleId})`
   );
 };
-
-const isUnknownRecord = (
-  value: unknown,
-): value is Readonly<Record<string, unknown>> =>
-  typeof value === "object" && value !== null && !Array.isArray(value);
-
-const parseDiagnosticMessage = (value: unknown, location: string): string => {
-  if (typeof value !== "string") {
-    throw new Error(`${location}.message must be a string.`);
-  }
-  return value;
-};
-
-const parseOptionalDiagnosticCode = (
-  value: unknown,
-  location: string,
-): string | undefined => {
-  if (value !== undefined && typeof value !== "string") {
-    throw new Error(`${location}.code must be a string when present.`);
-  }
-  return value;
-};
-
-const parseOptionalDiagnosticRuleId = (
-  value: unknown,
-  location: string,
-): string | undefined => {
-  if (value !== undefined && typeof value !== "string") {
-    throw new Error(`${location}.ruleId must be a string when present.`);
-  }
-  return value;
-};
-
-const parseOxlintJsonMessage = (
-  value: unknown,
-  location: string,
-): OxlintJsonMessage => {
-  if (!isUnknownRecord(value)) {
-    throw new Error(`${location} must be an object.`);
-  }
-  const code = parseOptionalDiagnosticCode(value["code"], location);
-  const message = parseDiagnosticMessage(value["message"], location);
-  const ruleId = parseOptionalDiagnosticRuleId(value["ruleId"], location);
-  return {
-    ...(code === undefined ? {} : { code }),
-    message,
-    ...(ruleId === undefined ? {} : { ruleId }),
-  };
-};
-
-const parseOptionalDiagnosticArray = (
-  value: unknown,
-  location: string,
-): readonly OxlintJsonMessage[] | undefined => {
-  if (value === undefined) return undefined;
-  if (!Array.isArray(value)) {
-    throw new Error(`${location} must be an array when present.`);
-  }
-  return value.map((diagnostic, index) =>
-    parseOxlintJsonMessage(diagnostic, `${location}[${String(index)}]`),
-  );
-};
-
-const parseOptionalNumberOfFiles = (
-  value: unknown,
-  location: string,
-): number | undefined => {
-  if (value !== undefined && typeof value !== "number") {
-    throw new Error(`${location} must be a number when present.`);
-  }
-  return value;
-};
-
-const parseOxlintJsonResult = (
-  value: unknown,
-  location: string,
-): OxlintJsonResult => {
-  if (!isUnknownRecord(value)) {
-    throw new Error(`${location} must be an object.`);
-  }
-  const diagnostics = parseOptionalDiagnosticArray(
-    value["diagnostics"],
-    `${location}.diagnostics`,
-  );
-  const messages = parseOptionalDiagnosticArray(
-    value["messages"],
-    `${location}.messages`,
-  );
-  const numberOfFiles = parseOptionalNumberOfFiles(
-    value["number_of_files"],
-    `${location}.number_of_files`,
-  );
-  return {
-    ...(diagnostics === undefined ? {} : { diagnostics }),
-    ...(messages === undefined ? {} : { messages }),
-    ...(numberOfFiles === undefined ? {} : { number_of_files: numberOfFiles }),
-  };
-};
-
-const parseOxlintJsonOutput = (value: unknown): OxlintJsonOutput =>
-  Array.isArray(value)
-    ? value.map((result, index) =>
-        parseOxlintJsonResult(result, `Oxlint JSON result[${String(index)}]`),
-      )
-    : parseOxlintJsonResult(value, "Oxlint JSON result");
 
 const parseMessages = (
   parsed: OxlintJsonOutput,
@@ -355,7 +262,7 @@ const validateFixtureJson = (
   stderrSuffix: string,
 ): OxlintJsonOutput => {
   try {
-    return parseOxlintJsonOutput(parsedValue);
+    return oxlintJsonOutputSchema.parse(parsedValue);
   } catch (error: unknown) {
     throw new Error(
       `Oxlint JSON boundary failed for ${fixturePath}: ${getErrorDetails(error)}${stderrSuffix}`,
