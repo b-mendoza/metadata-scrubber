@@ -21,8 +21,8 @@ importers:
         specifier: 2.1.1
         version: 2.1.1
       '@hookform/resolvers':
-        specifier: 5.9.0
-        version: 5.9.0(@standard-schema/spec@1.1.0)(effect@4.0.0-rc.110)(react-hook-form@7.85.0(react@19.2.8))(zod@4.4.3)
+        specifier: 5.9.1
+        version: 5.9.1(@standard-schema/spec@1.1.0)(effect@4.0.0-rc.110)(react-hook-form@7.85.0(react@19.2.8))(zod@4.4.3)
       '@openrouter/ai-sdk-provider':
         specifier: 3.0.0
         version: 3.0.0(ai@7.0.66(zod@4.4.3))(zod@4.4.3)
@@ -718,8 +718,8 @@ packages:
     resolution: {integrity: sha512-3RQHgEtvL1Frl/d1cSreo7qhJ3Gk1OdNUai/CtZ8G+wYeRQnJih3s9xJ9/kgYekPQRdwgh0HXRPqMlzWGwivIQ==}
     engines: {node: ^20.19.0 || ^22.13.0 || ^23.5.0 || >=24.0.0, npm: '>=10'}
 
-  '@hookform/resolvers@5.9.0':
-    resolution: {integrity: sha512-8sNo1IklGaONrsKzXjwZJNsPbccAXLXGX//G+VFEcQOviMtbvR8/fM6HWyA0qrjgpOYauwoodda53CQIWOZ7Ag==}
+  '@hookform/resolvers@5.9.1':
+    resolution: {integrity: sha512-7b7vsbraJxKgjVSA1Nur9tLwj539WGJUBLA7QNvXnFoT2pM5Z7G+6rlukk4B2/QrTZy6huRtH6wKeESPKuIr6w==}
     peerDependencies:
       '@sinclair/typebox': '>=0.25.24'
       '@standard-schema/spec': ^1.0.0
@@ -5315,7 +5315,7 @@ snapshots:
 
   '@faker-js/faker@10.6.0': {}
 
-  '@hookform/resolvers@5.9.0(@standard-schema/spec@1.1.0)(effect@4.0.0-rc.110)(react-hook-form@7.85.0(react@19.2.8))(zod@4.4.3)':
+  '@hookform/resolvers@5.9.1(@standard-schema/spec@1.1.0)(effect@4.0.0-rc.110)(react-hook-form@7.85.0(react@19.2.8))(zod@4.4.3)':
     dependencies:
       '@standard-schema/utils': 0.3.0
       react-hook-form: 7.85.0(react@19.2.8)
