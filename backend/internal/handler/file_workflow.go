@@ -118,30 +118,50 @@ func (handler *Handler) Scrub(w http.ResponseWriter, request *http.Request) {
 		return
 	}
 
-	cleanedBytes, err := handler.cleanSource(cleanWorkflowRequest{
+	if !handler.materializeScrubbed(w, scrubMaterializeRequest{
 		request: request, objectStorage: objectStorage, fileID: fileID,
-		storageKey: input.StorageKey, startedAt: startedAt, expectedETag: input.ETag,
-	})
-	if errors.Is(err, errAdmissionFailure) {
-		writeAdmissionFailure(w, err)
-		return
-	}
-	if err != nil {
-		failure := classifyPipelineFailure(err, "could not scrub PDF")
-		handler.logStage(pipelineLogEvent{ctx: request.Context(), stage: pipelineStageScrubbed, storageKey: input.StorageKey, outcome: failure.outcome, startedAt: startedAt})
-		httpx.WriteError(w, failure.status, failure.message)
-		return
-	}
-	handler.logStage(pipelineLogEvent{ctx: request.Context(), stage: pipelineStageScrubbed, storageKey: input.StorageKey, outcome: pipelineOutcomeSuccess, startedAt: startedAt})
-
-	if err := objectStorage.UploadSanitized(request.Context(), fileID, input.ETag, cleanedBytes); err != nil {
-		writeUnexpectedFailure(w, err, "could not store scrubbed file")
+		input: input, startedAt: startedAt,
+	}) {
 		return
 	}
 	handler.presignScrubbed(w, scrubDownloadRequest{
 		request: request, objectStorage: objectStorage, fileID: fileID,
 		input: input, outcome: pipelineOutcomeSuccess, startedAt: startedAt,
 	})
+}
+
+type scrubMaterializeRequest struct {
+	request       *http.Request
+	objectStorage storage.Storage
+	fileID        string
+	input         scrubRequest
+	startedAt     time.Time
+}
+
+// materializeScrubbed cleans the reviewed source revision and stores the scrubbed copy.
+// It writes the failure response and reports false when a stage fails.
+func (handler *Handler) materializeScrubbed(w http.ResponseWriter, materializeRequest scrubMaterializeRequest) bool {
+	cleanedBytes, err := handler.cleanSource(cleanWorkflowRequest{
+		request: materializeRequest.request, objectStorage: materializeRequest.objectStorage, fileID: materializeRequest.fileID,
+		storageKey: materializeRequest.input.StorageKey, startedAt: materializeRequest.startedAt, expectedETag: materializeRequest.input.ETag,
+	})
+	if errors.Is(err, errAdmissionFailure) {
+		writeAdmissionFailure(w, err)
+		return false
+	}
+	if err != nil {
+		failure := classifyPipelineFailure(err, "could not scrub PDF")
+		handler.logStage(pipelineLogEvent{ctx: materializeRequest.request.Context(), stage: pipelineStageScrubbed, storageKey: materializeRequest.input.StorageKey, outcome: failure.outcome, startedAt: materializeRequest.startedAt})
+		httpx.WriteError(w, failure.status, failure.message)
+		return false
+	}
+	handler.logStage(pipelineLogEvent{ctx: materializeRequest.request.Context(), stage: pipelineStageScrubbed, storageKey: materializeRequest.input.StorageKey, outcome: pipelineOutcomeSuccess, startedAt: materializeRequest.startedAt})
+
+	if err := materializeRequest.objectStorage.UploadSanitized(materializeRequest.request.Context(), materializeRequest.fileID, materializeRequest.input.ETag, cleanedBytes); err != nil {
+		writeUnexpectedFailure(w, err, "could not store scrubbed file")
+		return false
+	}
+	return true
 }
 
 type cleanWorkflowRequest struct {
