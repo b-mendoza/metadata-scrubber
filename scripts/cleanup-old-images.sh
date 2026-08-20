@@ -6,7 +6,7 @@ VERCEL_SCOPE="bryan-mendozas-projects"
 VERCEL_PROJECT="metadata-scrubber"
 VCR_REPOSITORY="backend"
 IMAGE_RETENTION_LIMIT=5
-VERCEL_COMMAND=(pnpm dlx --allow-build=esbuild vercel@59.0.0 vcr)
+VERCEL_COMMAND=(pnpm dlx --allow-build=esbuild vercel@59.1.4 vcr)
 VERCEL_TARGET_ARGS=(--scope "$VERCEL_SCOPE" --project "$VERCEL_PROJECT")
 
 images_newest_first=$("${VERCEL_COMMAND[@]}" image ls "$VCR_REPOSITORY" \
