@@ -138,8 +138,6 @@ type scrubMaterializeRequest struct {
 	startedAt     time.Time
 }
 
-// materializeScrubbed cleans the reviewed source revision and stores the scrubbed copy.
-// It writes the failure response and reports false when a stage fails.
 func (handler *Handler) materializeScrubbed(w http.ResponseWriter, materializeRequest scrubMaterializeRequest) bool {
 	cleanedBytes, err := handler.cleanSource(cleanWorkflowRequest{
 		request: materializeRequest.request, objectStorage: materializeRequest.objectStorage, fileID: materializeRequest.fileID,
