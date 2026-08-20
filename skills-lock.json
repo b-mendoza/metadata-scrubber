@@ -13,6 +13,12 @@
       "skillPath": "plugins/backend-development/skills/architecture-patterns/SKILL.md",
       "computedHash": "a66aaa5aa49b75bec12b6270dcde8794b1f0cc75fbb9ecb999e43f8b723b461f"
     },
+    "clarifying-assumptions": {
+      "source": "b-mendoza/agent-skills",
+      "sourceType": "github",
+      "skillPath": "skills/clarifying-assumptions/SKILL.md",
+      "computedHash": "302d781ac1d7f78174a7f4ef7d56254a575e7154767a791dd662207a1e13c481"
+    },
     "clean-code": {
       "source": "sickn33/antigravity-awesome-skills",
       "sourceType": "github",
@@ -31,6 +37,12 @@
       "skillPath": "skills/committing-scoped-changes/SKILL.md",
       "computedHash": "c25a18ed2bec7a0af517fd5007f88bd241bccfbadd15ef601bd96d6724dde55d"
     },
+    "creating-work-item-children": {
+      "source": "b-mendoza/agent-skills",
+      "sourceType": "github",
+      "skillPath": "skills/creating-work-item-children/SKILL.md",
+      "computedHash": "99eb2afdb7054ff625421bbd9c7c89fbbc3e8e34971f2793fc31daa9c3bd78ef"
+    },
     "diagnosing-root-causes": {
       "source": "b-mendoza/agent-skills",
       "sourceType": "github",
@@ -42,6 +54,18 @@
       "sourceType": "github",
       "skillPath": "skills/executing-plans/SKILL.md",
       "computedHash": "78a07800ee99a5861ae10be59d79fad085fdca10444e8aaeb2691597e357cff8"
+    },
+    "executing-work-item-task": {
+      "source": "b-mendoza/agent-skills",
+      "sourceType": "github",
+      "skillPath": "skills/executing-work-item-task/SKILL.md",
+      "computedHash": "7fe6c15a1f3f006717ffefa7ebd90ebb0b541cf39396b35f83f6e86ad50fedfa"
+    },
+    "fetching-work-item": {
+      "source": "b-mendoza/agent-skills",
+      "sourceType": "github",
+      "skillPath": "skills/fetching-work-item/SKILL.md",
+      "computedHash": "d239cf14b47138fa93cc661212197ad8ab626a1a9d69c28a6774cd1a85882fc5"
     },
     "idea-refine": {
       "source": "addyosmani/agent-skills",
@@ -61,11 +85,29 @@
       "skillPath": "skills/interview-me/SKILL.md",
       "computedHash": "efded91ac7f7626239b338ce8622afeb557151b86532b632f3c9eb5b2ff9048f"
     },
+    "orchestrating-workflow": {
+      "source": "b-mendoza/agent-skills",
+      "sourceType": "github",
+      "skillPath": "skills/orchestrating-workflow/SKILL.md",
+      "computedHash": "3eedfafca9c9796a86f52d3e1343057b537803f229734234724eacb1f84c93f3"
+    },
     "planning-codebase-restructuring": {
       "source": "b-mendoza/agent-skills",
       "sourceType": "github",
       "skillPath": "skills/planning-codebase-restructuring/SKILL.md",
       "computedHash": "569491162043372bc12f0f37a7559a6f1dfa50088c208a877c8881009cf74596"
+    },
+    "planning-task-execution": {
+      "source": "b-mendoza/agent-skills",
+      "sourceType": "github",
+      "skillPath": "skills/planning-task-execution/SKILL.md",
+      "computedHash": "daeeb659ee8338410df65c8ffe512fe4e987e02fbb0a61b4753dbaf0e78ad787"
+    },
+    "planning-work-item-tasks": {
+      "source": "b-mendoza/agent-skills",
+      "sourceType": "github",
+      "skillPath": "skills/planning-work-item-tasks/SKILL.md",
+      "computedHash": "a74b90a693e01f221844bb60588dd944980eb23aaf5d6eca84951f74a4e51dba"
     },
     "pr-creator": {
       "source": "b-mendoza/agent-skills",
@@ -139,59 +181,17 @@
       "skillPath": "skills/validate-implementation-plan/SKILL.md",
       "computedHash": "a9358f80310fb6f3ed115342795b3bccda7ee6355d00f2987c66e2ad553a04fd"
     },
-    "writing-plans": {
-      "source": "obra/superpowers",
-      "sourceType": "github",
-      "skillPath": "skills/writing-plans/SKILL.md",
-      "computedHash": "27c75044e444a4fc68798c3f799dc23eaff3a6bfabff32e6ad75bb20f881c094"
-    },
-    "clarifying-assumptions": {
-      "source": "b-mendoza/agent-skills",
-      "sourceType": "github",
-      "skillPath": "skills/clarifying-assumptions/SKILL.md",
-      "computedHash": "302d781ac1d7f78174a7f4ef7d56254a575e7154767a791dd662207a1e13c481"
-    },
-    "creating-work-item-children": {
-      "source": "b-mendoza/agent-skills",
-      "sourceType": "github",
-      "skillPath": "skills/creating-work-item-children/SKILL.md",
-      "computedHash": "99eb2afdb7054ff625421bbd9c7c89fbbc3e8e34971f2793fc31daa9c3bd78ef"
-    },
-    "executing-work-item-task": {
-      "source": "b-mendoza/agent-skills",
-      "sourceType": "github",
-      "skillPath": "skills/executing-work-item-task/SKILL.md",
-      "computedHash": "7fe6c15a1f3f006717ffefa7ebd90ebb0b541cf39396b35f83f6e86ad50fedfa"
-    },
-    "fetching-work-item": {
-      "source": "b-mendoza/agent-skills",
-      "sourceType": "github",
-      "skillPath": "skills/fetching-work-item/SKILL.md",
-      "computedHash": "d239cf14b47138fa93cc661212197ad8ab626a1a9d69c28a6774cd1a85882fc5"
-    },
-    "orchestrating-workflow": {
-      "source": "b-mendoza/agent-skills",
-      "sourceType": "github",
-      "skillPath": "skills/orchestrating-workflow/SKILL.md",
-      "computedHash": "3eedfafca9c9796a86f52d3e1343057b537803f229734234724eacb1f84c93f3"
-    },
-    "planning-task-execution": {
-      "source": "b-mendoza/agent-skills",
-      "sourceType": "github",
-      "skillPath": "skills/planning-task-execution/SKILL.md",
-      "computedHash": "daeeb659ee8338410df65c8ffe512fe4e987e02fbb0a61b4753dbaf0e78ad787"
-    },
-    "planning-work-item-tasks": {
-      "source": "b-mendoza/agent-skills",
-      "sourceType": "github",
-      "skillPath": "skills/planning-work-item-tasks/SKILL.md",
-      "computedHash": "a74b90a693e01f221844bb60588dd944980eb23aaf5d6eca84951f74a4e51dba"
-    },
     "vitest": {
       "source": "antfu/skills",
       "sourceType": "github",
       "skillPath": "skills/vitest/SKILL.md",
       "computedHash": "943d436114c677802426741980146c07560bf375297666b03062444f4b98a785"
+    },
+    "writing-plans": {
+      "source": "obra/superpowers",
+      "sourceType": "github",
+      "skillPath": "skills/writing-plans/SKILL.md",
+      "computedHash": "27c75044e444a4fc68798c3f799dc23eaff3a6bfabff32e6ad75bb20f881c094"
     }
   }
 }
