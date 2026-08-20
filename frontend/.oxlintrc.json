@@ -2,12 +2,12 @@
   "$schema": "./node_modules/oxlint/configuration_schema.json",
   "plugins": [
     "typescript",
+    "react",
+    "jsx-a11y",
     "node",
     "promise",
     "import",
-    "react",
-    "unicorn",
-    "jsx-a11y"
+    "unicorn"
   ],
   "jsPlugins": [
     "@eslint-community/eslint-plugin-eslint-comments",
