@@ -1,39 +1,39 @@
-# `@tanstack/devtools-vite@0.7.0` Production Build Syntax Error
+# `@tanstack/devtools-vite@0.7.0` production build syntax error
 
-> **Short-lived reference.** This file describes the current state of the code and must be updated whenever that state changes. If this file and the code disagree, the code wins — fix this file.
+> **Short-lived reference.** This file describes the current state of the code. Update it when the code changes. If this file does not match the code, follow the code.
 
 ## Summary
 
-**Resolved.** `@tanstack/devtools-vite` is now on `0.8.3`, where `pnpm run build` completes cleanly (verified 2026-07-30: devtools code is stripped from `src/routes/__root.tsx` without the invalid-JSX regression). Version `0.7.0` broke the build by producing invalid JSX while removing devtools code from production bundles; the project pinned `0.6.1` until the fix landed.
+**Resolved.** We use `@tanstack/devtools-vite@0.8.3`. On 2026-07-30, `pnpm run build` completed without errors. The plugin stripped devtools code from `src/routes/__root.tsx` without the invalid-JSX regression.
 
-The failure was reproduced in this repository after upgrading to `@tanstack/devtools-vite@0.7.0`.
+History: `@tanstack/devtools-vite@0.7.0` removed devtools code from production bundles. During that removal, it created invalid JSX. The production build failed with a syntax error. We reproduced the failure in this repository after the upgrade to `0.7.0`. We pinned `0.6.1` until the TanStack Devtools maintainers released the fix.
 
-## Affected Workflow
+## Affected workflow
 
 ```bash
 pnpm run build
 ```
 
-## Observed Error
+## Observed error
 
-The build fails during TanStack Router code splitting:
+With `@tanstack/devtools-vite@0.7.0`, the build failed during TanStack Router code splitting:
 
 ```bash
 [plugin tanstack-router:code-splitter:compile-reference-file] src/routes/__root.tsx:84:18
 SyntaxError: Unexpected token (84:18)
 ```
 
-The build output also logs:
+With `@tanstack/devtools-vite@0.7.0`, the build output logged a second message:
 
 ```bash
 [@tanstack/devtools-vite] Removed devtools code from: /src/routes/__root.tsx
 ```
 
-## Root Cause
+## Root cause
 
-The direct parse error is raised by `tanstack-router:code-splitter:compile-reference-file`, but the invalid syntax is created earlier by `@tanstack/devtools-vite@0.7.0`.
+The `tanstack-router:code-splitter:compile-reference-file` plugin raises the direct parse error. `@tanstack/devtools-vite@0.7.0` creates the invalid syntax before that step.
 
-In [`src/routes/__root.tsx`](../../src/routes/__root.tsx), the root shell renders TanStack Devtools only in development:
+In [`src/routes/__root.tsx`](../../src/routes/__root.tsx), the root shell renders TanStack Devtools in development. The root shell does not render TanStack Devtools in other environments:
 
 ```text
 {import.meta.env.DEV ? (
@@ -41,25 +41,23 @@ In [`src/routes/__root.tsx`](../../src/routes/__root.tsx), the root shell render
 ) : null}
 ```
 
-During a production build, `@tanstack/devtools-vite@0.7.0` removes the `<TanStackDevtools />` JSX node but leaves the surrounding conditional branch in an invalid state:
+During a production build, `@tanstack/devtools-vite@0.7.0` removes the `<TanStackDevtools />` JSX node. It leaves the surrounding conditional branch in this invalid state:
 
 ```text
 {import.meta.env.DEV ? (
           ) : null}
 ```
 
-TanStack Router then receives this already-invalid transformed route file and reports an `Unexpected token` while compiling the reference route.
+TanStack Router receives the invalid transformed route file. It reports an `Unexpected token` while it compiles the reference route.
 
-## Upstream Tracking
+## Upstream tracking
 
-- TanStack Devtools issue: [TanStack/devtools#444](https://github.com/TanStack/devtools/issues/444)
+- The TanStack Devtools maintainers track the regression in [TanStack/devtools#444](https://github.com/TanStack/devtools/issues/444).
 
-That issue reports the same regression class: `@tanstack/devtools-vite@0.7.0` strips devtools JSX during production builds but can leave invalid syntax behind.
+## Local workaround
 
-## Local Mitigation
+We pinned `0.6.1` until the TanStack Devtools maintainers fixed the regression. After the fix, we adopted `0.8.3` and we removed the pin.
 
-Historical: the project pinned `0.6.1` until upstream fixed the regression; the pin was lifted at `0.8.3`.
+## Revisit criteria
 
-## Revisit Criteria
-
-Met — a fixed version was published and adopted (`0.8.3`); the pin is lifted.
+Revisit this entry when a new `@tanstack/devtools-vite` version changes the devtools stripping behavior. The maintainers published the fixed version, and we adopted `0.8.3`.
