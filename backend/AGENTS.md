@@ -1,28 +1,30 @@
-# Agent Guide — backend
+# Backend agent guide
 
-Go HTTP service that grants direct uploads to private storage, inspects stored PDF files, and returns download grants for metadata-free copies.
+The backend is a Go HTTP service. It grants direct uploads to private storage. It inspects stored PDF files. It returns download grants for metadata-free copies.
 
-**Task runner:** [Task](https://taskfile.dev) — `task <target>` is the command interface for this service.
+Use [Task](https://taskfile.dev) as the command interface for this service. Run each target as `task <target>`.
 
 ## Deployment target
 
-The service runs as a stateless container on Vercel Fluid compute, and not on a server that you control. Design and review with these properties:
+Vercel Fluid compute runs the service in a stateless container. You do not control the server. Design and review the service for these conditions:
 
-- One instance serves many requests at the same time, and the platform fills a warm instance before it starts a new one. Requests are not isolated from each other.
-- An instance has a small fixed memory allowance and few CPUs. Bound work that holds a large buffer for each request, because an out-of-memory kill stops the process and fails every request in it.
-- The platform time limit for one request is minutes. Do not use client disconnection as a fast way to release a resource.
-- The platform adds instances when the instances are busy. Refuse work that you cannot start, so that the platform can scale out.
+- One instance serves many requests at the same time. The platform fills a warm instance before it starts a new instance. The platform does not isolate requests from each other.
+- Each instance has a small fixed memory limit. Each instance has few CPUs. Limit work that holds a large buffer for each request. An out-of-memory kill stops the process and fails every request in that process.
+- The platform sets each request time limit in minutes. Do not depend on client disconnection to release a resource before that time limit expires.
+- The platform adds instances when current instances are busy. Refuse work that you cannot start so the platform can add instances.
 
 ## Always
 
-- Lint check (run after a substantive change): `task lint`.
-- Test suite (run before committing): `task test`.
+- Run `task lint` after a substantive change.
+- Run `task test` before you commit.
 
-The custom analyzers ban the empty interface (`any` and `interface{}`) in application code. Give every generic an explicit, meaningful constraint.
+The custom analyzers ban the `any` and `interface{}` forms of the empty interface in application code. Give every generic an explicit, meaningful constraint. The constraint must name the accepted types or the operations that the generic code requires.
 
-## Current-state references (short-lived; verify against the code)
+## Short-lived references
 
-- [Architecture](docs/architecture.md) — package layout and runtime wiring.
-- [Commands](docs/commands.md) — full task-runner reference and how tooling owns generated files.
+These short-lived references describe the current code. Verify them against the code.
 
-Cross-cutting long-lived guidance (naming, code design, testing, workflow, verification) lives in the [root Agent Guide](../AGENTS.md) and applies to this service.
+- [Architecture](docs/architecture.md) describes the package layout and runtime wiring.
+- [Commands](docs/commands.md) lists all Task targets and explains how tooling manages generated files.
+
+The [root agent guide](../AGENTS.md) contains the long-lived guidance for naming, code design, testing, workflow, and verification. Follow that guidance in this service.
