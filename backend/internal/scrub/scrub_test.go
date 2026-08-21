@@ -417,7 +417,10 @@ func TestInspectPDFKeepsEveryNeutralTrioNearMissVisible(t *testing.T) {
 		{name: "mismatched dates", entries: mergeInfoEntries(neutralEntries, map[string]string{"ModDate": pdfString("D:20260102030406+00'00'")}), expectedNames: neutralTrioFieldNames()},
 		{name: "invalid dates", entries: mergeInfoEntries(neutralEntries, map[string]string{"CreationDate": pdfString("invalid"), "ModDate": pdfString("invalid")}), expectedNames: neutralTrioFieldNames()},
 		{name: "different producer", entries: mergeInfoEntries(neutralEntries, map[string]string{"Producer": pdfString("another producer")}), expectedNames: neutralTrioFieldNames()},
-		{name: "extra custom Info", entries: mergeInfoEntries(neutralEntries, map[string]string{"Custom": pdfString("still-user-metadata")}), expectedNames: []string{"info.creation_date", "info.custom.001", "info.mod_date", "info.producer"}},
+		{name: "extra custom Info", entries: mergeInfoEntries(neutralEntries, map[string]string{
+			"CustomOne": pdfString("still-user-metadata"),
+			"CustomTwo": pdfString("still-more-user-metadata"),
+		}), expectedNames: []string{"info.creation_date", "info.custom.001", "info.custom.002", "info.mod_date", "info.producer"}},
 		{name: "catalog metadata", entries: neutralEntries, metadata: catalogMetadata, expectedNames: append(neutralTrioFieldNames(), "metadata.catalog")},
 		{name: "page metadata", entries: neutralEntries, metadata: pageMetadata, expectedNames: append(neutralTrioFieldNames(), "metadata.page.0001")},
 		{name: "nested metadata", entries: neutralEntries, metadata: nestedMetadata, expectedNames: append(neutralTrioFieldNames(), "metadata.object.000001.001")},
@@ -1231,7 +1234,8 @@ func requireExpectedActions(t *testing.T, fields []Field) {
 
 	for _, field := range fields {
 		expectedAction := ActionRemove
-		if strings.HasPrefix(field.Name, "info.") && field.Name != "info.custom.001" {
+		switch field.Name {
+		case "info.creation_date", "info.mod_date", "info.producer":
 			expectedAction = ActionReplace
 		}
 		require.Equal(t, expectedAction, field.Action, field.Name)
