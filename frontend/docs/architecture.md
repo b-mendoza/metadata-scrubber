@@ -1,45 +1,52 @@
-# Frontend Architecture (current state)
+# Current frontend architecture
 
-> **Short-lived reference.** This file describes the current state of the code and must be updated whenever that state changes. If this file and the code disagree, the code wins — fix this file.
+> **Short-lived reference.** This file describes the current state of the code. Update it when the code changes. If this file does not match the code, follow the code.
 
 ## Framework
 
-- Built on [TanStack Start](https://tanstack.com/start) (`@tanstack/react-start`) with file-based routes under `src/routes/` and tRPC mounted at `src/routes/api/trpc.$.ts`.
+Developers build the frontend with [TanStack Start](https://tanstack.com/start) through `@tanstack/react-start`. They keep file-based routes under `src/routes/`. They mount tRPC at `src/routes/api/trpc.$.ts`.
 
 ## Source layout
 
-- `src/domains/<domain>/` — feature code grouped by domain (`wizard`, `products`), each owning its components, constants, and routers.
-- `src/shared/` — cross-domain code: `config`, `constants`, `db`, `libs` (tRPC), `middlewares`, `utils`.
-- `src/routes/` — TanStack Router file-based routes; API routes under `src/routes/api/`.
-- `src/tests/` — test setup and shared render helpers (`src/tests/utils/renderers/`).
+- Developers group feature code by domain under `src/domains/<domain>/`. The current domains include `wizard` and `products`. Each domain contains its components, constants, and routers.
+- Developers keep cross-domain code under `src/shared/`. It contains `config`, `constants`, `db`, `libs` for tRPC, `middlewares`, and `utils`.
+- TanStack Router reads file-based routes from `src/routes/`. Developers keep API routes under `src/routes/api/`.
+- Developers keep test setup and shared render helpers under `src/tests/`. The render helpers are in `src/tests/utils/renderers/`.
 
 ## Server boundaries
 
-- Route server handlers / server functions handle small, direct, single-purpose operations (see `src/routes/api/upload.ts`). Wrap server-only code with `createServerOnlyFn` from `@tanstack/react-start`.
-- tRPC procedures handle database queries, business logic, and multi-step operations. Routers live in `src/shared/libs/trpc/` and per-domain files such as `src/domains/products/products-router.mod.server.ts`.
+- Use route server handlers and server functions for small operations. Keep each operation direct and single-purpose. See `src/routes/api/upload.ts`. Wrap server-only code with `createServerOnlyFn` from `@tanstack/react-start`.
+- Use tRPC procedures for database queries and business logic. Use tRPC procedures for multi-step operations. Developers place routers in `src/shared/libs/trpc/` and in domain files such as `src/domains/products/products-router.mod.server.ts`.
 
 ## Application bindings
 
-- Request-scoped dependency injection is implemented with `AsyncLocalStorage` in `src/shared/middlewares/application-bindings/application-bindings.mod.ts`.
-- Server-side code calls `getApplicationBindings()`. It currently returns `{ env }` — the parsed, Effect Schema-validated environment. A `db` binding is scaffolded but commented out until the database client is wired in.
-- The middleware decodes `process.env` against `envSchema` (an Effect Schema; the decode Effect runs via `Effect.runPromise` at the middleware boundary) on every request, so environment access downstream is always validated.
+- Developers implement request-scoped dependency injection with `AsyncLocalStorage` in `src/shared/middlewares/application-bindings/application-bindings.mod.ts`.
+- Server code calls `getApplicationBindings()`. The function returns `{ env }` in the current code. The middleware parses the environment and validates it with Effect Schema. The `env` binding contains the parsed and validated environment.
+- Developers added the `db` binding code but commented it out. Developers keep the `db` binding code commented out until they connect the database client.
+- On each request, the middleware decodes `process.env` against `envSchema`. `envSchema` is an Effect Schema. The middleware boundary runs the decode Effect with `Effect.runPromise`. The middleware provides the validated `env` binding to downstream code through `getApplicationBindings()`.
 
 ## Validation
 
-- Server-side boundaries validate with Effect Schema. Client-side code validates with Zod. The rationale for this split lives in the [validation-libraries convention](./agent/code-conventions.md).
+Use Effect Schema at server boundaries. Use Zod in client code. Read the [validation-libraries convention](./agent/code-conventions.md) for the reason for this split.
 
 ## Database
 
-- PostgreSQL via Drizzle ORM; config in `drizzle.config.ts`, migration commands in [commands](./commands.md).
-- Schema is defined in `src/shared/db/db.schema.server.ts`. It currently defines a single `users` table.
-- The database client is **not wired into the application bindings yet** (see above).
+- Developers use PostgreSQL through Drizzle ORM. They keep Drizzle config in `drizzle.config.ts`. See the migration commands in the [commands reference](./commands.md).
+- Developers define the schema in `src/shared/db/db.schema.server.ts`. The current schema defines one `users` table.
+- Application bindings do not contain the database client.
 
 ## File uploads
 
-- `src/routes/api/upload.ts` accepts a `POST` with form data, validates the file with an Effect Schema (`Schema.File` plus size/MIME filters) against `MAX_FILE_SIZE_BYTES` and `UPLOADABLE_MIME_TYPES` from `src/domains/wizard/constants/wizard.mod.ts`, and returns file metadata plus a generated `storageKey`. The handler body is an Effect program executed with `Effect.runPromise` at the route boundary.
-- **No storage backend is implemented in this service yet.** The route does not persist the file. S3 SDK dependencies and `@uppy/react` are installed in anticipation, but there is no storage module under `src/`. The Go backend already owns storage and scrubbing (upload grants, Cloudflare R2, presigned downloads); read the service-integration section of the root [architecture reference](../../docs/architecture.md) before you add storage code here.
+- The `POST` handler in `src/routes/api/upload.ts` accepts form data. It validates the file with an Effect Schema that uses `Schema.File` and size and MIME filters. The filters use `MAX_FILE_SIZE_BYTES` and `UPLOADABLE_MIME_TYPES` from `src/domains/wizard/constants/wizard.mod.ts`.
+- The handler returns file metadata and a generated `storageKey`. The handler body is an Effect program. `Effect.runPromise` runs the program at the route boundary.
+- This service has no storage backend. The route does not persist the file.
+- The project includes S3 SDK dependencies and `@uppy/react` for planned storage work. No storage module exists under `src/`.
+- The Go backend handles upload grants. The Go backend handles file storage and metadata scrubbing. It uses Cloudflare R2 for storage. It handles presigned downloads. Read the service-integration section of the root [architecture reference](../../docs/architecture.md) before you add storage code to the frontend.
 
 ## Testing status
 
-- The suite currently has **zero test files**. `passWithNoTests: true` is set in `vitest.config.ts` so `pnpm run test` remains a valid commit gate; remove it once tests land.
-- Highest-value first targets, per the root risk-based coverage rule: upload validation branches in `src/routes/api/upload.ts`, environment parsing and the bindings invariant in the application-bindings middleware, and wizard constants wiring (import the production constants in assertions).
+- The suite has zero test files. `vitest.config.ts` sets `passWithNoTests: true`, so `pnpm run test` remains a required check before commits. Remove this setting after developers add the first test files.
+- Follow the root risk-based coverage rule. Add these tests in this priority order:
+  1. Test the upload validation branches in `src/routes/api/upload.ts`.
+  2. Test environment parsing and the bindings invariant in the application-bindings middleware.
+  3. Test that the upload validation in `src/routes/api/upload.ts` uses `MAX_FILE_SIZE_BYTES` and `UPLOADABLE_MIME_TYPES` from `src/domains/wizard/constants/wizard.mod.ts`. Import those production constants in assertions.
