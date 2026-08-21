@@ -1,51 +1,51 @@
-# Agent Guide — metadata-scrubber
+# Agent guide for `metadata-scrubber`
 
-`metadata-scrubber` is a web app that strips metadata from uploaded files: a monorepo with a Go HTTP backend (`backend/`) and a TypeScript/React frontend on TanStack Start + Vite (`frontend/`, package manager `pnpm`).
+`metadata-scrubber` is a web app that removes metadata from uploaded files. The monorepo has a Go HTTP backend service in `backend/`. It has a TypeScript/React frontend service in `frontend/`. The frontend service uses TanStack Start and Vite. `pnpm` is the frontend package manager.
 
 ## Documentation model
 
-This repo keeps two tiers of agent documentation. Maintain the split when you add or edit docs:
+Use two types of agent documentation. Keep this split when you add or edit documentation.
 
-- **Long-lived guidance** — `AGENTS.md` files and `docs/agent/` directories. Principles and guidelines with general examples only; no source-code paths or code snippets, so they stay true as the code changes.
-- **Short-lived references** — Markdown files under a `docs/` directory (root or service), outside `docs/agent/`; related references may be grouped in a subdirectory. Current-state descriptions: architecture, file structure and conventions, command references. Each carries a banner saying it must be updated when the code changes.
+- Keep long-lived guidance in `AGENTS.md` files and `docs/agent/` directories. Include principles and general examples. Exclude source-code paths and code snippets so the guidance stays valid when the code changes.
+- Keep short-lived references in Markdown files under a root or service `docs/` directory, outside `docs/agent/`. You can group related references in a subdirectory. Use these references for current architecture, file structure, conventions, and commands. Add a banner that requires an update when the code changes.
 
-Guidance earns its place through observed failures: add a rule when a mistake happens, and remove rules that no longer affect behavior. These files load into every agent's context, so every line must pay rent. State what to do rather than enumerating what to avoid; keep a standalone prohibition only when it marks a specific failure that keeps happening.
+Add a guidance rule after an observed failure shows the need for it. Remove a rule when it no longer changes agent behavior. Every agent loads these files into its context. Keep each line tied to an agent action. State the required action instead of listing prohibited actions. Use a standalone prohibition when it addresses a repeated failure.
 
 ## Language
 
-Write in ASD-STE100 Simplified Technical English in every message to the user and in every Markdown document that you add or edit. Keep each sentence short and in the active voice, give one idea to each sentence, choose the simplest word that carries the meaning, and use the same word for the same thing every time. Keep technical names, identifiers, commands, and code in their exact form.
+Use ASD-STE100 Simplified Technical English in every message to the user. Use it in every Markdown document that you add or edit. Write short sentences in active voice. Give one idea to each sentence. Choose the simplest word that keeps the meaning. Use the same word for the same thing. Keep technical names, identifiers, commands, and code in their exact form.
 
 ## Working with the user
 
-The user's instructions are a baseline to build on, not a spec to execute verbatim. When a premise looks wrong, a simpler approach exists, or the problem statement itself is off, say so plainly and propose the better version — the user wants a partner to learn from, not a yes-man, and pushback backed by reasoning is explicitly welcome. Challenge because you have a concrete objection, not to perform independence: when an instruction survives your scrutiny, follow it.
+Review the user's instructions before you act. Treat them as a starting point for the work. State when a premise is wrong. Propose a simpler approach when one exists. Explain errors in the problem statement and propose a better version. Give a concrete reason for each objection. The user expects reasoned review and welcomes reasoned objections. Help the user learn from the work. Follow an instruction when your review finds no objection.
 
 ## Code and test design
 
-- Write specific and explicit application code for each use case instead of one general function for many use cases. Delete a helper that only removes duplication. Accept duplication at each call site.
-- Make each custom lint rule message descriptive, actionable, and educational. Explain the required fix, not a way to silence or bypass the rule.
-- Fix lint failures structurally. Do not add lint-suppression comments or rule escape hatches. Keep a suppression only at a third-party API boundary that requires it.
-- In tests, build request and response payloads from concrete typed contracts at each call site. Serialize them there. Check errors. Use raw wire literals only in dedicated wire-contract tests.
+- Write separate and explicit application code for each use case. Do not replace use-case code with one general function for many use cases. Delete a helper that does nothing except remove duplication. Keep duplication at each call site.
+- Make each custom lint rule message descriptive, actionable, and educational. Identify the problem and explain the required fix. Do not explain how to silence or bypass the rule.
+- Fix the structure that causes each lint failure. Do not add lint-suppression comments or rule escape hatches. Keep a suppression only at a third-party API boundary that requires it.
+- In tests, build request and response payloads from concrete typed contracts at each call site. Serialize each payload at that call site. Check each error. Use raw wire literals in dedicated wire-contract tests and nowhere else.
 
-## Always
+## Required workflow
 
-- Before editing under `backend/` or `frontend/`, read that service's `AGENTS.md` first. It owns the build, lint, and test commands for its tree and may override anything here.
-- After a substantive change, run the affected service's lint check; before committing, run its test suite. Each service's `AGENTS.md` names the exact commands. Passing checks are a floor, not proof — when unsure whether a change is correct, escalate rather than declare success.
-- The linter configuration is the enforced source of truth for style in every service. AI-review rules live in `.coderabbit.yaml` and the `.greptile/` directory; read those files when a standard question comes up.
-- Editing is not permission to publish. Do not commit, push, open a pull request, or create an issue unless explicitly asked; when committing, stage only the paths the task touched.
+- Read each service's `AGENTS.md` before you edit files in that service. That file defines the build, lint, and test commands for the service. It can override this file.
+- Run the affected service's lint check after a substantive change. Run its test suite before you commit. Use the commands in the service's `AGENTS.md`. Passing checks do not prove that a change is correct. Escalate if you are unsure about correctness. Do not declare success while that doubt remains.
+- Treat the linter configuration as the enforced style standard in each service. AI-review rules are in `.coderabbit.yaml` and the `.greptile/` directory. Read those files when a question about a standard occurs.
+- Editing does not give permission to publish. Do not commit, push, open a pull request, or create an issue unless the user asks. If you commit, stage the paths that the task touched and no other paths.
 
 ## Subagents
 
-Subagents keep the main thread's context focused while allowing independent work to run in parallel. Delegate when a skill or task directs it, and for work that fits one — broad searches or audits across many files, self-contained investigations, subtasks that can run concurrently — keeping the conclusion, not the intermediate file dumps. Give each subagent a bounded objective, a definition of done, the constraints that scope its work, and the shape of the result it must return; when unsure whether (or to which subagent) to delegate, ask before dispatching.
+Use subagents to keep intermediate file dumps out of the main thread. Keep each conclusion in the main thread. Delegate when a skill or task requires delegation. Delegate broad searches, audits across many files, self-contained investigations, and subtasks that can run at the same time. Give each subagent a bounded objective, a definition of done, scope constraints, and the required result format. Ask before you dispatch if you are unsure whether to delegate or which subagent to use.
 
 ## Open when relevant
 
-Long-lived guides:
+Long-lived guidance:
 
-- [Code design](docs/agent/code-design.md) — construction over validation, comments, and request-scoped dependency injection.
-- [Testing principles](docs/agent/testing.md) — what and how to test, across services.
-- [Workflow and task scoping](docs/agent/workflow.md) — simplicity, scope discipline, issues, and decomposition.
-- [Verifying your work](docs/agent/verification.md) — what "done" requires beyond green tests.
+- [Code design](docs/agent/code-design.md) covers construction over validation, comments, and request-scoped dependency injection.
+- [Testing principles](docs/agent/testing.md) covers what to test and how to test it across services.
+- [Workflow and task scoping](docs/agent/workflow.md) covers simplicity, scope control, issues, and task decomposition.
+- [Verifying your work](docs/agent/verification.md) defines the evidence required in addition to passing tests.
 
-Current-state references (short-lived; verify against the code):
+Short-lived references describe the current state. Check them against the code.
 
-- [Repository architecture](docs/architecture.md) — layout of the monorepo and links to each service's references.
+- [Repository architecture](docs/architecture.md) describes the monorepo layout and links to each service's references.
