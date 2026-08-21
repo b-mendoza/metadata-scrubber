@@ -1,22 +1,19 @@
 # Workflow and task scoping
 
-## Simplicity first
+## Simplicity
 
-- Avoid complex solutions for simple problems. Before implementing, ask:
-  - Can this be solved with fewer abstractions?
-  - Is this over-engineering for hypothetical future requirements?
-  - Would a junior developer understand this in five minutes?
+- Use a solution with the least complexity that solves the problem. Before implementation, check whether fewer abstractions can solve it. Reject design made for possible future requirements that no current consumer has. Choose a design that a junior developer can understand in five minutes.
 
-## Scope discipline
+## Scope control
 
-- **The diff contains only what the task requires.** A reviewer must be able to map every hunk to the stated goal: no unrelated refactors or reformatting, and no new files (documentation, helper scripts, abstractions, test files) when the task doesn't require them and extending the canonical file will do. Record unrelated bugs and cleanup opportunities as a note to the maintainer instead of silently folding them in.
-- **Build for real consumers only.** Compatibility shims, deprecation paths, and "just in case" fallbacks exist solely for actual contracts — a published API, persisted data, deployed clients. Otherwise, make the change cleanly and delete the old path.
+- Keep each diff limited to the task requirements. A reviewer must be able to map each hunk to the stated goal. Exclude unrelated refactors and reformatting. Do not add documentation, a helper script, an abstraction, or a test file when the task does not require it. Extend the canonical file when the task does not require a new file and the canonical file can hold the change. Report unrelated bugs and cleanup options to the maintainer instead of adding them to the diff.
+- Build compatibility code for real consumers. Add a compatibility shim, deprecation path, or fallback when an actual contract requires it. Actual contracts include a published API, persisted data, and deployed clients. If no contract requires the old path, make the change and delete that path.
 
 ## Task management
 
-- Propose a GitHub issue for any multi-step or non-trivial task; per the root guide's Always rules, creating one still requires an explicit ask.
+- Propose a GitHub issue for each multi-step or non-trivial task. The required workflow in the root agent guide still applies. Do not create the issue unless the user asks.
 
 ## Task decomposition
 
-- Break large tasks into smaller, independently mergeable, testable units.
-- A well-scoped subtask has a clear definition of done, is reviewable in isolation, and avoids blocking dependencies.
+- Split a large task into smaller units. Developers must be able to merge and test each unit without another unit.
+- Give each subtask a clear definition of done. Make it possible to review the subtask by itself. Scope the subtask to avoid dependencies that block its work.
