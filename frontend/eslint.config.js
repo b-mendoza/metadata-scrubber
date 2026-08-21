@@ -110,6 +110,7 @@ export default defineConfig(
       },
     },
     rules: {
+      "@eslint-community/eslint-comments/disable-enable-pair": ERROR,
       "@typescript-eslint/consistent-type-imports": [
         ERROR,
         {
