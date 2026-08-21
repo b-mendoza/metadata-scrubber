@@ -181,44 +181,16 @@ func infoObjectValue(context *model.Context, object types.Object) (string, error
 		return "", err
 	}
 
-	switch dereferencedObject.(type) {
+	switch value := dereferencedObject.(type) {
 	case types.StringLiteral:
-		return decodeStringLiteralInfoObject(dereferencedObject)
+		return types.StringLiteralToString(value)
 	case types.HexLiteral:
-		return decodeHexLiteralInfoObject(dereferencedObject)
+		return types.HexLiteralToString(value)
 	case types.Name:
-		return decodeNameInfoObject(dereferencedObject)
+		return types.DecodeName(value.Value())
 	case types.Boolean, types.Integer, types.Float:
-		return decodeScalarInfoObject(dereferencedObject)
+		return value.PDFString(), nil
 	default:
 		return "", fmt.Errorf("unsupported Info value type %T", dereferencedObject)
 	}
-}
-
-func decodeStringLiteralInfoObject(object types.Object) (string, error) {
-	value, ok := object.(types.StringLiteral)
-	if !ok {
-		return "", fmt.Errorf("unsupported string literal Info value type %T", object)
-	}
-	return types.StringLiteralToString(value)
-}
-
-func decodeHexLiteralInfoObject(object types.Object) (string, error) {
-	value, ok := object.(types.HexLiteral)
-	if !ok {
-		return "", fmt.Errorf("unsupported hex literal Info value type %T", object)
-	}
-	return types.HexLiteralToString(value)
-}
-
-func decodeNameInfoObject(object types.Object) (string, error) {
-	value, ok := object.(types.Name)
-	if !ok {
-		return "", fmt.Errorf("unsupported name Info value type %T", object)
-	}
-	return types.DecodeName(value.Value())
-}
-
-func decodeScalarInfoObject(object types.Object) (string, error) {
-	return object.PDFString(), nil
 }
