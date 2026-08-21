@@ -1,32 +1,34 @@
-# Agent Guide — frontend
+# Frontend agent guide
 
-**Package manager:** `pnpm`
+Use `pnpm` as the package manager.
 
 ## Deployment target
 
-The service deploys to Vercel as a TanStack Start application, and not on a server that you control. Design and review with these properties:
+Vercel runs this service as a TanStack Start application. You do not control the Vercel server. Use these deployment properties when you design or review frontend code.
 
-- One instance can serve many requests at the same time.
-- The platform injects the backend's URL as a service binding.
-- The platform bounds request time and instance memory. Bound work that holds a large buffer for each request.
+- One instance can serve many requests at the same time. Design request handling for concurrent requests.
+- Vercel injects the backend's URL as a service binding.
+- Vercel limits each request's run time and each instance's memory. Limit work that keeps a large buffer in memory for each request.
 
 ## Always
 
-- If Node.js (see `.nvmrc`) or pnpm is missing or on the wrong version, run `scripts/setup-node.sh` before doing anything else.
-- Lint check (run after a substantive change): `pnpm run lint`.
-- Test suite (run before committing): `pnpm run test`.
+- If Node.js (see `.nvmrc`) or pnpm is missing or has the wrong version, run `scripts/setup-node.sh` before any other work.
+- After a substantive change, run `pnpm run lint`. See the [lint check](docs/commands.md#core-commands).
+- Before you commit, run `pnpm run test`. See the [test suite](docs/commands.md#core-commands).
+- Write specific and explicit application code for each use case. Accept duplication instead of creating a general helper.
+- Give every generic an explicit, meaningful constraint. The constraint must name the accepted types or the operations that the generic code requires.
 
-Write specific and explicit application code for each use case, and accept duplication instead of a general helper. Give every generic type parameter an explicit, meaningful constraint.
+## Open when relevant
 
-## Open when relevant (long-lived)
+- Read [TypeScript design conventions](docs/agent/code-conventions.md) for long-lived TypeScript design guidance.
 
-- [TypeScript design conventions](docs/agent/code-conventions.md) — TypeScript design guidance.
+## Short-lived references
 
-## Current-state references (short-lived; verify against the code)
+Verify these short-lived references against the code.
 
-- [Architecture](docs/architecture.md) — framework, source layout, server boundaries, bindings, database, uploads, testing status.
-- [File structure and conventions](docs/conventions.md) — path alias and file naming.
-- [Commands](docs/commands.md) — full command reference.
-- [Known issues](docs/known-issues/README.md) — dependency and tooling issues affecting builds, with workarounds.
+- [Architecture](docs/architecture.md) describes the framework, source layout, server boundaries, bindings, database, uploads, and testing status.
+- [File structure and conventions](docs/conventions.md) describes the path alias and file names.
+- [Commands](docs/commands.md) is the full service command reference.
+- [Known issues](docs/known-issues/README.md) describes dependency and tooling issues that affect builds and their workarounds.
 
-Cross-cutting long-lived guidance (code design, testing, workflow, and verification) lives in the [root Agent Guide](../AGENTS.md) and applies to this service.
+Read the [root agent guide](../AGENTS.md) for long-lived guidance about code design and testing. Use it for workflow and verification guidance. Apply that guidance to this service.
