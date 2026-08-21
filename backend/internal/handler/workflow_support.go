@@ -136,53 +136,50 @@ type pipelineFailure struct {
 	outcome pipelineOutcome
 }
 
-type pipelineFailureClassification struct {
-	matches func(error) bool
-	failure pipelineFailure
-}
-
-var pipelineFailureClassifications = []pipelineFailureClassification{
-	{
-		matches: func(err error) bool {
-			return errors.Is(err, context.Canceled) || errors.Is(err, context.DeadlineExceeded)
-		},
-		failure: pipelineFailure{status: http.StatusRequestTimeout, message: cancellationMessage, outcome: pipelineOutcomeCanceled},
-	},
-	{
-		matches: func(err error) bool { return errors.Is(err, storage.ErrSourceNotFound) },
-		failure: pipelineFailure{status: http.StatusNotFound, message: "source file not found", outcome: pipelineOutcomeNotFound},
-	},
-	{
-		matches: func(err error) bool {
-			return errors.Is(err, storage.ErrSourceObjectTooLarge) || errors.Is(err, scrub.ErrInputTooLarge)
-		},
-		failure: pipelineFailure{status: http.StatusRequestEntityTooLarge, message: "source file exceeds 10 MB limit", outcome: pipelineOutcomeTooLarge},
-	},
-	{
-		matches: func(err error) bool { return errors.Is(err, storage.ErrSourceRevisionConflict) },
-		failure: pipelineFailure{status: http.StatusConflict, message: "source file changed since review", outcome: pipelineOutcomeConflict},
-	},
-	{
-		matches: func(err error) bool { return errors.Is(err, errNotPDF) },
-		failure: pipelineFailure{status: http.StatusUnsupportedMediaType, message: "file is not a PDF", outcome: pipelineOutcomeNotPDF},
-	},
-	{
-		matches: func(err error) bool { return errors.Is(err, scrub.ErrMalformedPDF) },
-		failure: pipelineFailure{status: http.StatusBadRequest, message: "invalid PDF", outcome: pipelineOutcomeMalformed},
-	},
-	{
-		matches: func(err error) bool { return errors.Is(err, scrub.ErrSignedPDF) },
-		failure: pipelineFailure{status: http.StatusUnprocessableEntity, message: "signed PDFs are not supported in v1", outcome: pipelineOutcomeSigned},
-	},
-	{
-		matches: func(err error) bool { return errors.Is(err, scrub.ErrInspectionLimit) },
-		failure: pipelineFailure{status: http.StatusBadRequest, message: "PDF metadata exceeds inspection limits", outcome: pipelineOutcomeInspectionLimit},
-	},
-}
-
 func classifyPipelineFailure(err error, internalMessage string) pipelineFailure {
-	for _, classification := range pipelineFailureClassifications {
-		if classification.matches(err) {
+	classifications := [...]struct {
+		matches func() bool
+		failure pipelineFailure
+	}{
+		{
+			matches: func() bool {
+				return errors.Is(err, context.Canceled) || errors.Is(err, context.DeadlineExceeded)
+			},
+			failure: pipelineFailure{status: http.StatusRequestTimeout, message: cancellationMessage, outcome: pipelineOutcomeCanceled},
+		},
+		{
+			matches: func() bool { return errors.Is(err, storage.ErrSourceNotFound) },
+			failure: pipelineFailure{status: http.StatusNotFound, message: "source file not found", outcome: pipelineOutcomeNotFound},
+		},
+		{
+			matches: func() bool {
+				return errors.Is(err, storage.ErrSourceObjectTooLarge) || errors.Is(err, scrub.ErrInputTooLarge)
+			},
+			failure: pipelineFailure{status: http.StatusRequestEntityTooLarge, message: "source file exceeds 10 MB limit", outcome: pipelineOutcomeTooLarge},
+		},
+		{
+			matches: func() bool { return errors.Is(err, storage.ErrSourceRevisionConflict) },
+			failure: pipelineFailure{status: http.StatusConflict, message: "source file changed since review", outcome: pipelineOutcomeConflict},
+		},
+		{
+			matches: func() bool { return errors.Is(err, errNotPDF) },
+			failure: pipelineFailure{status: http.StatusUnsupportedMediaType, message: "file is not a PDF", outcome: pipelineOutcomeNotPDF},
+		},
+		{
+			matches: func() bool { return errors.Is(err, scrub.ErrMalformedPDF) },
+			failure: pipelineFailure{status: http.StatusBadRequest, message: "invalid PDF", outcome: pipelineOutcomeMalformed},
+		},
+		{
+			matches: func() bool { return errors.Is(err, scrub.ErrSignedPDF) },
+			failure: pipelineFailure{status: http.StatusUnprocessableEntity, message: "signed PDFs are not supported in v1", outcome: pipelineOutcomeSigned},
+		},
+		{
+			matches: func() bool { return errors.Is(err, scrub.ErrInspectionLimit) },
+			failure: pipelineFailure{status: http.StatusBadRequest, message: "PDF metadata exceeds inspection limits", outcome: pipelineOutcomeInspectionLimit},
+		},
+	}
+	for _, classification := range classifications {
+		if classification.matches() {
 			return classification.failure
 		}
 	}
