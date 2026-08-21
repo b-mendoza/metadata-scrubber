@@ -207,21 +207,21 @@ type metadataStreamContent struct {
 }
 
 func storeMetadataStreamContent(context *model.Context, streamContent metadataStreamContent) error {
-	switch streamContent.streamObject.(type) {
+	switch stream := streamContent.streamObject.(type) {
 	case types.IndirectRef:
-		return storeIndirectMetadataStreamContent(context, streamContent)
+		return storeIndirectMetadataStreamContent(context, streamContent, stream)
 	case types.StreamDict:
-		return storeDirectMetadataStreamContent(context, streamContent)
+		return storeDirectMetadataStreamContent(streamContent, stream)
 	default:
 		return fmt.Errorf("unsupported metadata stream type %T", streamContent.streamObject)
 	}
 }
 
-func storeIndirectMetadataStreamContent(context *model.Context, streamContent metadataStreamContent) error {
-	stream, ok := streamContent.streamObject.(types.IndirectRef)
-	if !ok {
-		return fmt.Errorf("unsupported indirect metadata stream type %T", streamContent.streamObject)
-	}
+func storeIndirectMetadataStreamContent(
+	context *model.Context,
+	streamContent metadataStreamContent,
+	stream types.IndirectRef,
+) error {
 	entry, storedStream, found := resolveIndirectMetadataStream(context, stream)
 	if !found {
 		return nil
@@ -231,11 +231,7 @@ func storeIndirectMetadataStreamContent(context *model.Context, streamContent me
 	return nil
 }
 
-func storeDirectMetadataStreamContent(_ *model.Context, streamContent metadataStreamContent) error {
-	stream, ok := streamContent.streamObject.(types.StreamDict)
-	if !ok {
-		return fmt.Errorf("unsupported direct metadata stream type %T", streamContent.streamObject)
-	}
+func storeDirectMetadataStreamContent(streamContent metadataStreamContent, stream types.StreamDict) error {
 	stream.Content = streamContent.content
 	streamContent.dictionary[streamContent.key] = stream
 	return nil
