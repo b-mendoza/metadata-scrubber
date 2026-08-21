@@ -12,7 +12,7 @@ Read the long-lived [TypeScript design conventions](./agent/code-conventions.md)
 
 - Use `*.mod.ts` and `*.mod.tsx` for module files. Use the `.tsx` extension when a module file contains JSX.
 - Use `*.mod.server.ts` for server-only modules such as environment parsing and tRPC routers. The `.server` suffix keeps server code out of client bundles.
-- Use `*.server.ts` for the three database files under `src/shared/db/`. These files omit the `.mod` segment. One file is `db.schema.server.ts`. The other two database files use the `*.server.ts` pattern.
+- Use `*.server.ts` for `db.constants.server.ts`, `db.relations.server.ts`, and `db.schema.server.ts` under `src/shared/db/`. These files omit the `.mod` segment. `db.mod.server.ts` follows the `*.mod.server.ts` pattern.
 - Use `*.test.ts` and `*.test.tsx` for test files.
 - Put each test file next to the module that it tests. `vitest.config.ts` includes `src/**/*.test.{ts,tsx}`. Keep test files out of `src/tests/`. Use that directory for setup and shared helpers.
 
