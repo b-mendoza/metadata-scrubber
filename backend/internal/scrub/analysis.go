@@ -54,7 +54,7 @@ func analyzePDF(context *model.Context, origin InspectionOrigin) (*pdfAnalysis, 
 		return nil, ErrSignedPDF
 	}
 
-	analysis := &pdfAnalysis{summaryBuilder: summaryBuilder{fields: make([]Field, 0)}}
+	analysis := &pdfAnalysis{fields: make([]Field, 0)}
 
 	if err := analyzeInfoDictionary(context, analysis); err != nil {
 		return nil, err

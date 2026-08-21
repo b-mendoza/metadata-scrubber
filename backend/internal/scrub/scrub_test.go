@@ -694,7 +694,7 @@ func TestInspectPDFRejectsEverySignedStructureBeforeMutationOrWriting(t *testing
 func TestSignatureTypeInspectionReturnsMalformedValuesAsErrors(t *testing.T) {
 	decodeError := errors.New("decode Type object")
 	lazyType := types.NewLazyObjectStreamObject(
-		&types.ObjectStreamDict{StreamDict: types.StreamDict{Content: []byte("Type")}},
+		&types.ObjectStreamDict{Content: []byte("Type")},
 		0,
 		-1,
 		func(context.Context, string) (types.Object, error) { return nil, decodeError },
