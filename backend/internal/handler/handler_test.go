@@ -6,6 +6,7 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"io"
 	"log/slog"
 	"maps"
@@ -134,6 +135,131 @@ func TestNewHandlerRejectsNilOperations(t *testing.T) {
 			})
 		})
 	}
+}
+
+type pipelineFailureMatchRecorder struct {
+	queriedTargets []error
+}
+
+func (*pipelineFailureMatchRecorder) Error() string {
+	return "recording pipeline failure"
+}
+
+func (recorder *pipelineFailureMatchRecorder) Is(target error) bool {
+	recorder.queriedTargets = append(recorder.queriedTargets, target)
+	return target == context.Canceled
+}
+
+func TestClassifyPipelineFailurePreservesWrappedErrorsAndPrecedence(t *testing.T) {
+	testCases := []struct {
+		name            string
+		err             error
+		internalMessage string
+		expected        pipelineFailure
+	}{
+		{
+			name: "canceled",
+			err:  fmt.Errorf("wrapped: %w", context.Canceled),
+			expected: pipelineFailure{
+				status: http.StatusRequestTimeout, message: cancellationMessage, outcome: pipelineOutcomeCanceled,
+			},
+		},
+		{
+			name: "deadline exceeded",
+			err:  fmt.Errorf("wrapped: %w", context.DeadlineExceeded),
+			expected: pipelineFailure{
+				status: http.StatusRequestTimeout, message: cancellationMessage, outcome: pipelineOutcomeCanceled,
+			},
+		},
+		{
+			name: "source not found",
+			err:  fmt.Errorf("wrapped: %w", storage.ErrSourceNotFound),
+			expected: pipelineFailure{
+				status: http.StatusNotFound, message: "source file not found", outcome: pipelineOutcomeNotFound,
+			},
+		},
+		{
+			name: "source object too large",
+			err:  fmt.Errorf("wrapped: %w", storage.ErrSourceObjectTooLarge),
+			expected: pipelineFailure{
+				status: http.StatusRequestEntityTooLarge, message: "source file exceeds 10 MB limit", outcome: pipelineOutcomeTooLarge,
+			},
+		},
+		{
+			name: "scrub input too large",
+			err:  fmt.Errorf("wrapped: %w", scrub.ErrInputTooLarge),
+			expected: pipelineFailure{
+				status: http.StatusRequestEntityTooLarge, message: "source file exceeds 10 MB limit", outcome: pipelineOutcomeTooLarge,
+			},
+		},
+		{
+			name: "source revision conflict",
+			err:  fmt.Errorf("wrapped: %w", storage.ErrSourceRevisionConflict),
+			expected: pipelineFailure{
+				status: http.StatusConflict, message: "source file changed since review", outcome: pipelineOutcomeConflict,
+			},
+		},
+		{
+			name: "not PDF",
+			err:  fmt.Errorf("wrapped: %w", errNotPDF),
+			expected: pipelineFailure{
+				status: http.StatusUnsupportedMediaType, message: "file is not a PDF", outcome: pipelineOutcomeNotPDF,
+			},
+		},
+		{
+			name: "malformed PDF",
+			err:  fmt.Errorf("wrapped: %w", scrub.ErrMalformedPDF),
+			expected: pipelineFailure{
+				status: http.StatusBadRequest, message: "invalid PDF", outcome: pipelineOutcomeMalformed,
+			},
+		},
+		{
+			name: "signed PDF",
+			err:  fmt.Errorf("wrapped: %w", scrub.ErrSignedPDF),
+			expected: pipelineFailure{
+				status: http.StatusUnprocessableEntity, message: "signed PDFs are not supported in v1", outcome: pipelineOutcomeSigned,
+			},
+		},
+		{
+			name: "inspection limit",
+			err:  fmt.Errorf("wrapped: %w", scrub.ErrInspectionLimit),
+			expected: pipelineFailure{
+				status: http.StatusBadRequest, message: "PDF metadata exceeds inspection limits", outcome: pipelineOutcomeInspectionLimit,
+			},
+		},
+		{
+			name:            "internal fallback message",
+			err:             errors.New("internal failure"),
+			internalMessage: "stage-specific failure",
+			expected: pipelineFailure{
+				status: http.StatusInternalServerError, message: "stage-specific failure", outcome: pipelineOutcomeFailed,
+			},
+		},
+		{
+			name: "cancellation takes precedence",
+			err:  fmt.Errorf("wrapped: %w; %w", context.Canceled, storage.ErrSourceNotFound),
+			expected: pipelineFailure{
+				status: http.StatusRequestTimeout, message: cancellationMessage, outcome: pipelineOutcomeCanceled,
+			},
+		},
+	}
+
+	for _, testCase := range testCases {
+		t.Run(testCase.name, func(t *testing.T) {
+			require.Equal(t, testCase.expected, classifyPipelineFailure(testCase.err, testCase.internalMessage))
+		})
+	}
+}
+
+func TestClassifyPipelineFailureStopsAfterCancellationMatch(t *testing.T) {
+	err := &pipelineFailureMatchRecorder{}
+
+	failure := classifyPipelineFailure(err, "internal failure")
+
+	require.Equal(t, pipelineFailure{
+		status: http.StatusRequestTimeout, message: cancellationMessage, outcome: pipelineOutcomeCanceled,
+	}, failure)
+	require.Equal(t, []error{context.Canceled}, err.queriedTargets)
 }
 
 func TestJSONEndpointsValidateEveryBoundaryBeforeWork(t *testing.T) {
