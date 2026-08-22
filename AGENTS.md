@@ -1,6 +1,6 @@
 # Agent guide for `metadata-scrubber`
 
-`metadata-scrubber` is a web app that removes metadata from uploaded files. The monorepo has a Go HTTP backend service in `backend/`. It has a TypeScript/React frontend service in `frontend/`. The frontend service uses TanStack Start and Vite. `pnpm` is the frontend package manager.
+`metadata-scrubber` is a web app that removes metadata from uploaded files. The monorepo has a Go HTTP backend service in `backend/`. The monorepo has a TypeScript/React frontend service in `frontend/`. The frontend service uses TanStack Start and Vite. `pnpm` is the frontend package manager.
 
 ## Documentation model
 
