@@ -19,7 +19,7 @@
 
 ## Use tooling to update generated files
 
-Run `task tidy` to update `go.mod` and `go.sum`. Run `task fix` to rewrite source files. Do not edit these tooling-managed files by hand. See the root [Verifying your work](../../docs/agent/verification.md) guide for this rule.
+Run `task tidy` to update `go.mod` and `go.sum`. Run `task fix` to rewrite source files. Do not edit `go.mod` or `go.sum` by hand. See the root [Verifying your work](../../docs/agent/verification.md) guide for this rule.
 
 ## Environment
 
