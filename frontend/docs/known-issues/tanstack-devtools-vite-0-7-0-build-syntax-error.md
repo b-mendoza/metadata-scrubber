@@ -56,7 +56,7 @@ TanStack Router receives the invalid transformed route file. It reports an `Unex
 
 ## Local workaround
 
-We pinned `0.6.1` until the TanStack Devtools maintainers fixed the regression. After the fix, we adopted `0.8.3` and we removed the pin.
+We pinned `0.6.1` until the TanStack Devtools maintainers fixed the regression. We removed the historical `0.6.1` workaround pin. The package now uses the exact version `0.8.3`.
 
 ## Revisit criteria
 
