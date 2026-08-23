@@ -9,7 +9,7 @@ import { defineRule } from "@oxlint/plugins";
 
 import { getStaticPropertyName } from "../utilities.ts";
 
-const EFFECT_NAMESPACES = new Set(["Data", "Schema"]);
+const EFFECT_NAMESPACES = new Set(["Data"]);
 const EFFECT_BASE_NAMES = new Set([
   "Class",
   "TaggedClass",
@@ -123,11 +123,11 @@ export default defineRule({
     type: "problem",
     docs: {
       description:
-        "Use factory functions by default and allow Effect tagged types as the class exception.",
+        "Use plain functions and objects by default and allow Effect Data class constructors as the class exception.",
     },
     messages: {
       applicationClass:
-        "`{{ className }}` is an application class. Replace it with a factory function that returns a plain object, for example `const createService = () => ({ run: () => true })`. Factory functions keep dependencies and mutable state explicit. Use a class only when it extends `Class`, `TaggedClass`, `TaggedError`, `TaggedRequest`, or `TaggedStruct` on `Data` or `Schema` imported from the `effect` package.",
+        "`{{ className }}` is an application class. Replace it with plain functions and objects, for example a factory function such as `const createService = () => ({ run: () => true })`. Plain functions and objects keep dependencies and mutable state explicit. The only allowed class exception is a class that extends `Class`, `TaggedClass`, `TaggedError`, `TaggedRequest`, or `TaggedStruct` on the `Data` namespace imported from the `effect` package.",
     },
   },
   create(context) {
