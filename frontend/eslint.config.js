@@ -26,6 +26,17 @@ const BASE_RESTRICTED_IMPORT_PATTERNS = [
     message:
       'Import Zod from the `zod` package root. Use `import * as z from "zod"` for runtime code or `import type * as z from "zod"` for type-only code. Replace every `zod/*` source with `zod`. The package root is the only supported project entry point.',
   },
+  {
+    regex: "^effect$",
+    importNames: ["Schema"],
+    message:
+      'Do not import `Schema` from the `effect` package. This project uses Zod for all validation logic. Zod has wider community support and faster runtime validation than Effect Schema. Use `import * as z from "zod"` for runtime code or `import type * as z from "zod"` for type-only code. Rewrite the validation with the Zod API. Call `.parse(input)` or `.safeParse(input)` on the schema. Other named imports from `effect`, such as `Effect` and `Data`, stay legal.',
+  },
+  {
+    regex: "^effect\\/Schema(?:\\/.+)?$",
+    message:
+      'Do not import from the `effect/Schema` module or its subpaths. This project uses Zod for all validation logic. Zod has wider community support and faster runtime validation than Effect Schema. Use `import * as z from "zod"` for runtime code or `import type * as z from "zod"` for type-only code. Rewrite the validation with the Zod API. Call `.parse(input)` or `.safeParse(input)` on the schema.',
+  },
 ];
 
 const BASE_RESTRICTED_SYNTAX = [
