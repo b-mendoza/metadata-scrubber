@@ -102,16 +102,6 @@ export default defineConfig(
       "sonarjs/prefer-regexp-exec": OFF,
       // =======================================================================
 
-      "unicorn/prevent-abbreviations": [
-        ERROR,
-        {
-          allowList: {
-            mod: true,
-            props: true,
-            Props: true,
-          },
-        },
-      ],
       "@eslint-community/eslint-comments/disable-enable-pair": ERROR,
       "@typescript-eslint/consistent-type-imports": [
         ERROR,
@@ -186,6 +176,16 @@ export default defineConfig(
       "sonarjs/no-commented-code": ERROR,
       "sonarjs/todo-tag": ERROR,
       "unicorn/no-null": OFF,
+      "unicorn/prevent-abbreviations": [
+        ERROR,
+        {
+          allowList: {
+            mod: true,
+            props: true,
+            Props: true,
+          },
+        },
+      ],
       complexity: [
         ERROR,
         {
