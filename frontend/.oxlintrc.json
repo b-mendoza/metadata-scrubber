@@ -11,6 +11,7 @@
   ],
   "jsPlugins": [
     "@eslint-community/eslint-plugin-eslint-comments",
+    "@e18e/eslint-plugin",
     "eslint-plugin-sonarjs",
     "./oxlint-plugin-metadata-scrubber/index.ts",
     "eslint-plugin-simple-import-sort"
@@ -542,6 +543,13 @@
     "unicorn/switch-case-break-position": "error",
     "unicorn/text-encoding-identifier-case": "error",
     "unicorn/throw-new-error": "error",
+    "e18e/prefer-array-to-spliced": "error",
+    "e18e/prefer-url-canparse": "error",
+    "e18e/ban-dependencies": "error",
+    "e18e/prefer-array-from-map": "error",
+    "e18e/prefer-timer-args": "error",
+    "e18e/prefer-regex-test": "error",
+    "e18e/prefer-static-regex": "error",
     "sonarjs/class-name": "error",
     "sonarjs/no-fallthrough": "error",
     "sonarjs/no-equals-in-for-termination": "error",

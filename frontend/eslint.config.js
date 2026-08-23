@@ -1,3 +1,4 @@
+import e18e from "@e18e/eslint-plugin";
 import eslint from "@eslint/js";
 import eslintReact from "@eslint-react/eslint-plugin";
 import vitest from "@vitest/eslint-plugin";
@@ -60,6 +61,7 @@ export default defineConfig(
   // See: https://github.com/typescript-eslint/typescript-eslint/issues/11543
   love,
   unicorn.configs.recommended,
+  e18e.configs.recommended,
   sonarjs.configs?.["recommended"],
   {
     plugins: {
@@ -94,7 +96,28 @@ export default defineConfig(
       },
     },
     rules: {
+      /**
+       * These rules are disabled because they duplicate enabled unicorn or
+       * typescript-eslint rules. `e18e/prefer-string-fromcharcode` and
+       * `e18e/prefer-array-fill` conflict with `unicorn/prefer-code-point` and
+       * `unicorn/no-array-from-fill`. `sonarjs/prefer-regexp-exec` conflicts with
+       * the enabled `.test()` rules.
+       */
+      // =======================================================================
+      "e18e/prefer-array-at": OFF,
+      "e18e/prefer-array-fill": OFF,
+      "e18e/prefer-array-some": OFF,
+      "e18e/prefer-array-to-reversed": OFF,
+      "e18e/prefer-array-to-sorted": OFF,
+      "e18e/prefer-date-now": OFF,
+      "e18e/prefer-includes": OFF,
+      "e18e/prefer-nullish-coalescing": OFF,
+      "e18e/prefer-object-has-own": OFF,
+      "e18e/prefer-spread-syntax": OFF,
+      "e18e/prefer-string-fromcharcode": OFF,
       "sonarjs/prefer-regexp-exec": OFF,
+      // =======================================================================
+
       "unicorn/prevent-abbreviations": [
         ERROR,
         {
