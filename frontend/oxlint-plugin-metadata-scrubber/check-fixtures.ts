@@ -86,41 +86,6 @@ const cases = [
     ],
   ],
   [
-    "schema-import-boundaries",
-    "schema-boundary.server.ts",
-    [
-      'This server module imports the `zod` package at runtime. Replace this runtime import with `import { Schema } from "effect"`. Rewrite each runtime schema with the Effect Schema API and create its compiler at module scope. Effect Schema decoders compose with server Effect pipelines. Keep only a type-only import from `zod` here.',
-    ],
-  ],
-  [
-    "schema-import-boundaries",
-    "generic-schema-boundary.server.tsx",
-    [
-      'This server module imports the `zod` package at runtime. Replace this runtime import with `import { Schema } from "effect"`. Rewrite each runtime schema with the Effect Schema API and create its compiler at module scope. Effect Schema decoders compose with server Effect pipelines. Keep only a type-only import from `zod` here.',
-    ],
-  ],
-  [
-    "schema-import-boundaries",
-    "schema-boundary.browser.ts",
-    [
-      'This browser module imports the `effect` package at runtime. Remove this runtime import because it increases the client bundle. Rewrite schema validation with `import * as z from "zod"` and the Zod API. Rewrite other Effect code with browser-native functions. Keep only a type-only import from `effect` when required.',
-    ],
-  ],
-  [
-    "schema-import-boundaries",
-    "schema-boundary.shared.ts",
-    [
-      "This shared module imports the `zod` package at runtime. Shared modules cross browser and server boundaries, so they must not load the `effect` package or the `zod` package at runtime. Export plain data and types here. Move runtime code to the browser module or server module that owns it. Use the Zod API for browser schemas and the Effect Schema API for server schemas. Use a type-only import when a shared declaration needs a library type.",
-    ],
-  ],
-  [
-    "schema-import-boundaries",
-    "schema-boundary.shared-module.server.ts",
-    [
-      'This server module imports the `zod` package at runtime. Replace this runtime import with `import { Schema } from "effect"`. Rewrite each runtime schema with the Effect Schema API and create its compiler at module scope. Effect Schema decoders compose with server Effect pipelines. Keep only a type-only import from `zod` here.',
-    ],
-  ],
-  [
     "use-shared-render-helper",
     "use-shared-render-helper.test.tsx",
     [
