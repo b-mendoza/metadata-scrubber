@@ -1,7 +1,8 @@
 import { randomUUID } from "node:crypto";
 
 import { createFileRoute } from "@tanstack/react-router";
-import { Data, Effect, Schema } from "effect";
+import { Data, Effect } from "effect";
+import * as z from "zod";
 
 import {
   MAX_FILE_SIZE_BYTES,
@@ -10,19 +11,17 @@ import {
 
 const uploadableMimeTypes = Object.values(UPLOADABLE_MIME_TYPES);
 
-const uploadedFileSchema = Schema.File.check(
-  Schema.makeFilter((file) => file.size <= MAX_FILE_SIZE_BYTES, {
-    message: `File must be at most ${MAX_FILE_SIZE_BYTES} bytes`,
-  }),
-  Schema.makeFilter(
-    (file) =>
-      uploadableMimeTypes.some(
-        (uploadableMimeType) => uploadableMimeType === file.type,
-      ),
-    { message: "File MIME type is not uploadable" },
-  ),
-);
-const decodeUploadedFile = Schema.decodeUnknownEffect(uploadedFileSchema);
+const uploadedFileSchema = z
+  .file({
+    error:
+      'The form data "file" value must be a File. Send one uploaded file in the form data field named "file".',
+  })
+  .max(MAX_FILE_SIZE_BYTES, {
+    error: `The form data "file" value exceeds the maximum size of ${MAX_FILE_SIZE_BYTES} bytes. Select a file that is ${MAX_FILE_SIZE_BYTES} bytes or smaller.`,
+  })
+  .mime(uploadableMimeTypes, {
+    error: `The form data "file" value has an unsupported MIME type. Select a file with one of these MIME types: ${uploadableMimeTypes.join(", ")}.`,
+  });
 
 class RequestFormDataError extends Data.TaggedError("RequestFormDataError")<{
   readonly cause: unknown;
@@ -39,7 +38,7 @@ export const Route = createFileRoute("/api/upload")({
           });
 
           const unsafeFile = formData.get("file");
-          const validatedFile = yield* decodeUploadedFile(unsafeFile);
+          const validatedFile = uploadedFileSchema.parse(unsafeFile);
 
           const storageKey = `uploads/${randomUUID()}`;
 

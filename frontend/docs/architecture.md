@@ -37,7 +37,7 @@ Use Effect Schema at server boundaries. Use Zod in client code. Read the [valida
 
 ## File uploads
 
-- The `POST` handler in `src/routes/api/upload.ts` accepts form data. It validates the file with an Effect Schema that uses `Schema.File` and size and MIME filters. The filters use `MAX_FILE_SIZE_BYTES` and `UPLOADABLE_MIME_TYPES` from `src/domains/wizard/constants/wizard.mod.ts`.
+- The `POST` handler in `src/routes/api/upload.ts` accepts form data. It validates the form value with a Zod file schema. The schema uses `z.file()`, `.max()`, and `.mime()`. The size limit comes from `MAX_FILE_SIZE_BYTES`. The MIME type list comes from `UPLOADABLE_MIME_TYPES`. Both constants are in `src/domains/wizard/constants/wizard.mod.ts`.
 - The handler returns file metadata and a generated `storageKey`. The handler body is an Effect program. `Effect.runPromise` runs the program at the route boundary.
 - This service has no storage backend. The route does not persist the file.
 - The project includes S3 SDK dependencies and `@uppy/react` for planned storage work. No storage module exists under `src/`.
