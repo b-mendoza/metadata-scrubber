@@ -22,7 +22,8 @@
     "typeAware": true
   },
   "env": {
-    "builtin": true
+    "builtin": true,
+    "es2026": true
   },
   "settings": {
     "react": {
