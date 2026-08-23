@@ -27,7 +27,7 @@ Developers build the frontend with [TanStack Start](https://tanstack.com/start) 
 
 ## Validation
 
-Use Effect Schema at server boundaries. Use Zod in client code. Read the [validation-libraries convention](./agent/code-conventions.md) for the reason for this split.
+Use Zod for all validation logic in every environment.
 
 ## Database
 
