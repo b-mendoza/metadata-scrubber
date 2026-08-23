@@ -1,6 +1,7 @@
 import { randomUUID } from "node:crypto";
 
-import { Data, Effect, Schema } from "effect";
+import { Data, Effect } from "effect";
+import * as z from "zod";
 
 import {
   createTRPCRouter,
@@ -11,25 +12,32 @@ import { getApplicationBindings } from "#/shared/middlewares/application-binding
 const SEED_PRODUCT_NAMES = ["Metadata Scrubber", "Privacy Audit Tool"];
 const SLEEP_TIME_MS = 5000;
 
-const productSchema = Schema.Struct({
-  id: Schema.String.check(Schema.isUUID()),
-  name: Schema.Trim,
+const productSchema = z.object({
+  id: z.uuid({
+    error:
+      "The product id value must be a UUID string in 8-4-4-4-12 hexadecimal form. Provide a valid UUID string for the product id.",
+  }),
+  name: z
+    .string({
+      error:
+        "The product name value must be a string. Provide the product name as a string; surrounding whitespace is removed.",
+    })
+    .trim(),
 });
-const decodeProduct = Schema.decodeUnknownSync(productSchema);
 
 const PRODUCTS = SEED_PRODUCT_NAMES.map((name) => {
-  return decodeProduct({
+  return productSchema.parse({
     id: randomUUID(),
     name,
   });
 });
 
-const getMessageResponseSchema = Schema.Struct({
-  status: Schema.Literal("reachable"),
+const getMessageResponseSchema = z.object({
+  status: z.literal("reachable", {
+    error:
+      'The backend health response status value must be "reachable". Return a JSON object whose status field is exactly "reachable".',
+  }),
 });
-const decodeGetMessageResponse = Schema.decodeUnknownEffect(
-  getMessageResponseSchema,
-);
 
 class BackendHealthCheckError extends Data.TaggedError(
   "BackendHealthCheckError",
@@ -58,7 +66,7 @@ export const productsRouter = createTRPCRouter({
         catch: (cause) => new BackendHealthCheckError({ cause }),
       });
 
-      return yield* decodeGetMessageResponse(responseBody);
+      return getMessageResponseSchema.parse(responseBody);
     });
 
     return Effect.runPromise(backendHealthCheck);
