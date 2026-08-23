@@ -41,7 +41,7 @@ export const Route = createRootRouteWithContext<RouterContext>()({
     return {
       links: import.meta.env.DEV
         ? BASE_LINKS
-        : PRELOAD_LINKS.concat(BASE_LINKS),
+        : [...PRELOAD_LINKS, ...BASE_LINKS],
 
       meta: [
         {
