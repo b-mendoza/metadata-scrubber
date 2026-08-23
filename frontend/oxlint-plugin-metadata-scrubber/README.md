@@ -12,7 +12,6 @@ This plugin encodes the project's coding standards as enforceable Oxlint rules. 
 
 ## Rules
 
-- `hoist-effect-schema-compilers` — Requires supported Effect Schema compilers at module scope in server modules.
 - `no-classes` — Requires plain functions and objects instead of application classes, except for the allowed Effect `Data` class constructors.
 - `no-expect-type-of` — Requires TypeScript contracts instead of Vitest `expectTypeOf(...)` calls.
 - `no-hardcoded-backend-host` — Requires environment fields instead of static HTTP service hosts outside tests and the validated environment module.

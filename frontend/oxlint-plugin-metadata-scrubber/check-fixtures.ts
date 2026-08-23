@@ -19,22 +19,6 @@ const SUCCESS_EXIT_CODE = 0;
 
 const cases = [
   [
-    "hoist-effect-schema-compilers",
-    "schema-compiler.server.ts",
-    [
-      "`Schema.decodeUnknownSync(...)` creates a reusable Effect Schema compiler. Move this call to module scope, for example `const runSchema = Schema.decodeUnknownSync(valueSchema)`. Call `runSchema(input)` inside the function. Creating the compiler inside a function repeats its setup on every call.",
-      "`Schema.decodeUnknownSync(...)` creates a reusable Effect Schema compiler. Move this call to module scope, for example `const runSchema = Schema.decodeUnknownSync(valueSchema)`. Call `runSchema(input)` inside the function. Creating the compiler inside a function repeats its setup on every call.",
-      "`S.decodeUnknownSync(...)` creates a reusable Effect Schema compiler. Move this call to module scope, for example `const runSchema = Schema.decodeUnknownSync(valueSchema)`. Call `runSchema(input)` inside the function. Creating the compiler inside a function repeats its setup on every call.",
-    ],
-  ],
-  [
-    "hoist-effect-schema-compilers",
-    "unrelated-schema.server.ts",
-    [
-      "`Schema.decodeUnknownSync(...)` creates a reusable Effect Schema compiler. Move this call to module scope, for example `const runSchema = Schema.decodeUnknownSync(valueSchema)`. Call `runSchema(input)` inside the function. Creating the compiler inside a function repeats its setup on every call.",
-    ],
-  ],
-  [
     "no-classes",
     "no-classes.ts",
     [
