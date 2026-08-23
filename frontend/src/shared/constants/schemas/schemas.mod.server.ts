@@ -7,6 +7,8 @@ interface CreateURLSchemaParameters {
 
 const httpProtocol = /^https?$/;
 const explicitHttpURL = /^https?:\/\//i;
+const protocolSuffix = /:$/;
+const secureHttpProtocol = /^https$/;
 
 const isURLWithProtocol = (value: string, protocolPattern: RegExp) => {
   if (
@@ -20,13 +22,13 @@ const isURLWithProtocol = (value: string, protocolPattern: RegExp) => {
     return false;
   }
 
-  const urlProtocol = new URL(value).protocol.replace(/:$/, "");
+  const urlProtocol = new URL(value).protocol.replace(protocolSuffix, "");
 
   return protocolPattern.test(urlProtocol);
 };
 
 export const createURLSchema = ({
-  protocol = /^https$/,
+  protocol = secureHttpProtocol,
 }: CreateURLSchemaParameters = {}) => {
   const protocolPattern = new RegExp(protocol.source, protocol.flags);
 
