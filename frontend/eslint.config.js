@@ -66,6 +66,8 @@ const BASE_RESTRICTED_IMPORT_PATTERNS = [
   },
 ];
 
+// The project replaces each switch statement with a lookup map.
+// The lookup map raises an error for each unknown key.
 const BASE_RESTRICTED_SYNTAX = [
   {
     selector: "SwitchStatement",
