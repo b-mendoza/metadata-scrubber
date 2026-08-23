@@ -25,6 +25,7 @@ import tseslint from "typescript-eslint";
 const ERROR = 2;
 const OFF = 0;
 
+// MAX_COMPLEXITY caps cyclomatic complexity per function.
 const MAX_COMPLEXITY = 8;
 
 const BASE_RESTRICTED_IMPORT_PATTERNS = [
