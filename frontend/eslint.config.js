@@ -203,6 +203,7 @@ export default defineConfig(
       "sonarjs/cognitive-complexity": [ERROR, MAX_COMPLEXITY],
       "sonarjs/no-commented-code": ERROR,
       "sonarjs/todo-tag": ERROR,
+      "unicorn/no-null": OFF,
       complexity: [
         ERROR,
         {
