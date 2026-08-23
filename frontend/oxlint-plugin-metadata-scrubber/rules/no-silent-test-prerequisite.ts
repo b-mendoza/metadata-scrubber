@@ -25,12 +25,10 @@ const NO_DEFINITIONS = 0;
 const TEST_FUNCTION_NAMES = new Set<TestApi>(["it", "test"]);
 const SKIPPABLE_NAMES = new Set<TestApi>(["describe", "it", "test"]);
 
-const getImportedName = (
-  specifier: ESTree.ImportSpecifier,
-): string | undefined => {
+const getImportedName = (specifier: ESTree.ImportSpecifier): string | null => {
   const { imported } = specifier;
   if (imported.type === "Identifier") return imported.name;
-  return typeof imported.value === "string" ? imported.value : undefined;
+  return typeof imported.value === "string" ? imported.value : null;
 };
 
 const isTestApiName = (name: string): name is TestApi =>
@@ -48,29 +46,29 @@ const isRuntimeVitestImportDefinition = (
 
 const getVitestTestApiImportDefinition = (
   definition: Definition,
-): TestApi | undefined => {
-  if (!isRuntimeVitestImportDefinition(definition)) return undefined;
+): TestApi | null => {
+  if (!isRuntimeVitestImportDefinition(definition)) return null;
   const importedName = getImportedName(definition.node);
-  return importedName !== undefined && isTestApiName(importedName)
+  return importedName != null && isTestApiName(importedName)
     ? importedName
-    : undefined;
+    : null;
 };
 
-const getVitestTestApiImport = (variable: Variable): TestApi | undefined => {
+const getVitestTestApiImport = (variable: Variable): TestApi | null => {
   for (const definition of variable.defs) {
     const testApi = getVitestTestApiImportDefinition(definition);
-    if (testApi !== undefined) return testApi;
+    if (testApi != null) return testApi;
   }
-  return undefined;
+  return null;
 };
 
-const getTestApiName = (name: string): TestApi | undefined =>
-  isTestApiName(name) ? name : undefined;
+const getTestApiName = (name: string): TestApi | null =>
+  isTestApiName(name) ? name : null;
 
 const getVitestTestApiVariable = (
   variable: Variable,
   referencedName: string,
-): TestApi | undefined =>
+): TestApi | null =>
   variable.defs.length === NO_DEFINITIONS
     ? getTestApiName(referencedName)
     : getVitestTestApiImport(variable);
@@ -78,11 +76,11 @@ const getVitestTestApiVariable = (
 const getVitestTestApiReference = (
   node: ESTree.IdentifierReference,
   sourceCode: SourceCode,
-): TestApi | undefined => {
+): TestApi | null => {
   let scope: Scope | null = sourceCode.getScope(node);
-  while (scope !== null) {
+  while (scope != null) {
     const variable = scope.set.get(node.name);
-    if (variable !== undefined) {
+    if (variable != null) {
       return getVitestTestApiVariable(variable, node.name);
     }
     scope = scope.upper;
@@ -93,56 +91,54 @@ const getVitestTestApiReference = (
 const getTestApiCallChain = (
   node: ESTree.Expression | ESTree.Super,
   sourceCode: SourceCode,
-): TestApiCallChain | undefined => {
+): TestApiCallChain | null => {
   if (node.type === "Identifier") {
     const rootApi = getVitestTestApiReference(node, sourceCode);
-    return rootApi === undefined ? undefined : { hasSkip: false, rootApi };
+    return rootApi == null ? null : { hasSkip: false, rootApi };
   }
   if (node.type === "CallExpression") {
     return getTestApiCallChain(node.callee, sourceCode);
   }
-  if (node.type !== "MemberExpression") return undefined;
+  if (node.type !== "MemberExpression") return null;
   const chain = getTestApiCallChain(node.object, sourceCode);
-  if (chain === undefined) return undefined;
+  if (chain == null) return null;
   return {
     hasSkip: chain.hasSkip || getStaticPropertyName(node) === "skip",
     rootApi: chain.rootApi,
   };
 };
 
-const getTestCallback = (
-  node: ESTree.CallExpression,
-): TestCallback | undefined =>
+const getTestCallback = (node: ESTree.CallExpression): TestCallback | null =>
   node.arguments.find(
     (argument): argument is TestCallback =>
       argument.type === "ArrowFunctionExpression" ||
       argument.type === "FunctionExpression",
-  );
+  ) ?? null;
 
 const getEnclosingTestApi = (
   node: ESTree.ReturnStatement,
   callbacks: WeakMap<TestCallback, string>,
-): string | undefined => {
+): string | null => {
   let current: ESTree.Node | null = node.parent;
-  while (current !== null) {
-    if (isFunction(current)) return callbacks.get(current);
+  while (current != null) {
+    if (isFunction(current)) return callbacks.get(current) ?? null;
     current = current.parent;
   }
-  return undefined;
+  return null;
 };
 
 const getGuardIfStatement = (
   node: ESTree.ReturnStatement,
-): ESTree.IfStatement | undefined => {
+): ESTree.IfStatement | null => {
   const { parent } = node;
   if (parent.type === "IfStatement") {
-    return parent.consequent === node ? parent : undefined;
+    return parent.consequent === node ? parent : null;
   }
-  if (parent.type !== "BlockStatement") return undefined;
+  if (parent.type !== "BlockStatement") return null;
   const ifStatement = parent.parent;
   return ifStatement.type === "IfStatement" && ifStatement.consequent === parent
     ? ifStatement
-    : undefined;
+    : null;
 };
 
 const getGuardAssertion = (
@@ -175,7 +171,7 @@ export default defineRule({
     return {
       CallExpression(node) {
         const chain = getTestApiCallChain(node.callee, context.sourceCode);
-        if (chain === undefined) return;
+        if (chain == null) return;
         if (
           node.parent.type === "CallExpression" &&
           node.parent.callee === node
@@ -193,15 +189,15 @@ export default defineRule({
         }
         if (!TEST_FUNCTION_NAMES.has(chain.rootApi)) return;
         const callback = getTestCallback(node);
-        if (callback === undefined) return;
+        if (callback == null) return;
         testCallbacks.set(callback, testApi);
       },
       ReturnStatement(node) {
-        if (node.argument !== null) return;
+        if (node.argument != null) return;
         const ifStatement = getGuardIfStatement(node);
-        if (ifStatement?.alternate !== null) return;
+        if (ifStatement == null || ifStatement.alternate != null) return;
         const testApi = getEnclosingTestApi(node, testCallbacks);
-        if (testApi === undefined) return;
+        if (testApi == null) return;
         context.report({
           node,
           messageId: "silentPrerequisiteGuard",

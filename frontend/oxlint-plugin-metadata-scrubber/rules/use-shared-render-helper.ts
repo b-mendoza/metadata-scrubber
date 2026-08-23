@@ -19,12 +19,10 @@ const TESTING_LIBRARY_SOURCES = new Set([
 const isTestingLibrarySource = (source: string): boolean =>
   TESTING_LIBRARY_SOURCES.has(source);
 
-const getImportedName = (
-  specifier: ESTree.ImportSpecifier,
-): string | undefined => {
+const getImportedName = (specifier: ESTree.ImportSpecifier): string | null => {
   const { imported } = specifier;
   if (imported.type === "Identifier") return imported.name;
-  return typeof imported.value === "string" ? imported.value : undefined;
+  return typeof imported.value === "string" ? imported.value : null;
 };
 
 const isRuntimeRenderImportSpecifier = (
@@ -38,43 +36,43 @@ const isRuntimeRenderImportSpecifier = (
 
 const getTestingLibraryNamespaceImportSourceFromDefinition = (
   definition: Definition,
-): string | undefined => {
+): string | null => {
   if (
     definition.type !== "ImportBinding" ||
     definition.node.type !== "ImportNamespaceSpecifier" ||
     definition.parent?.type !== "ImportDeclaration" ||
     definition.parent.importKind === "type"
   ) {
-    return undefined;
+    return null;
   }
   const source = definition.parent.source.value;
-  return isTestingLibrarySource(source) ? source : undefined;
+  return isTestingLibrarySource(source) ? source : null;
 };
 
 const getTestingLibraryNamespaceImportSource = (
   variable: Variable,
-): string | undefined => {
+): string | null => {
   for (const definition of variable.defs) {
     const source =
       getTestingLibraryNamespaceImportSourceFromDefinition(definition);
-    if (source !== undefined) return source;
+    if (source != null) return source;
   }
-  return undefined;
+  return null;
 };
 
 const getTestingLibraryNamespaceReferenceSource = (
   node: ESTree.IdentifierReference,
   sourceCode: SourceCode,
-): string | undefined => {
+): string | null => {
   let scope: Scope | null = sourceCode.getScope(node);
-  while (scope !== null) {
+  while (scope != null) {
     const variable = scope.set.get(node.name);
-    if (variable !== undefined) {
+    if (variable != null) {
       return getTestingLibraryNamespaceImportSource(variable);
     }
     scope = scope.upper;
   }
-  return undefined;
+  return null;
 };
 
 export default defineRule({
@@ -118,7 +116,7 @@ export default defineRule({
           node.callee.object,
           context.sourceCode,
         );
-        if (source === undefined) return;
+        if (source == null) return;
         context.report({
           node: node.callee,
           messageId: "directTestingLibraryRender",

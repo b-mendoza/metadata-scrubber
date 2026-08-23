@@ -18,12 +18,10 @@ const EFFECT_BASE_NAMES = new Set([
   "TaggedStruct",
 ]);
 
-const getImportedName = (
-  specifier: ESTree.ImportSpecifier,
-): string | undefined => {
+const getImportedName = (specifier: ESTree.ImportSpecifier): string | null => {
   const { imported } = specifier;
   if (imported.type === "Identifier") return imported.name;
-  return typeof imported.value === "string" ? imported.value : undefined;
+  return typeof imported.value === "string" ? imported.value : null;
 };
 
 const isEffectNamespaceImportDefinition = (definition: Definition): boolean => {
@@ -33,7 +31,7 @@ const isEffectNamespaceImportDefinition = (definition: Definition): boolean => {
   const importedName = getImportedName(definition.node);
   return (
     definition.parent.source.value === "effect" &&
-    importedName !== undefined &&
+    importedName != null &&
     EFFECT_NAMESPACES.has(importedName)
   );
 };
@@ -46,9 +44,9 @@ const isEffectNamespaceReference = (
   sourceCode: SourceCode,
 ): boolean => {
   let scope: Scope | null = sourceCode.getScope(node);
-  while (scope !== null) {
+  while (scope != null) {
     const variable = scope.set.get(node.name);
-    if (variable !== undefined) return isEffectNamespaceImport(variable);
+    if (variable != null) return isEffectNamespaceImport(variable);
     scope = scope.upper;
   }
   return false;
@@ -62,7 +60,7 @@ const isEffectBaseClassCall = (
   if (node.callee.type === "MemberExpression") {
     const propertyName = getStaticPropertyName(node.callee);
     return (
-      propertyName !== undefined &&
+      propertyName != null &&
       EFFECT_BASE_NAMES.has(propertyName) &&
       node.callee.object.type === "Identifier" &&
       isEffectNamespaceReference(node.callee.object, sourceCode)
@@ -91,7 +89,7 @@ const unwrapTransparentExpressions = (
   node: ESTree.Expression | null,
 ): ESTree.Expression | null => {
   let expression = node;
-  while (expression !== null && isTransparentExpression(expression)) {
+  while (expression != null && isTransparentExpression(expression)) {
     const { expression: innerExpression } = expression;
     expression = innerExpression;
   }
@@ -110,7 +108,7 @@ const isAllowedEffectClass = (
 };
 
 const getClassName = (node: ESTree.Class): string => {
-  if (node.id !== null) return node.id.name;
+  if (node.id != null) return node.id.name;
   const { parent } = node;
   if (parent.type === "VariableDeclarator" && parent.id.type === "Identifier") {
     return parent.id.name;

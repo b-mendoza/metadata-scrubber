@@ -18,7 +18,7 @@ const getFirstTemplateText = (
   node: ESTree.TemplateLiteral,
 ): string | undefined => {
   const [quasi] = node.quasis;
-  if (quasi === undefined) return undefined;
+  if (quasi == null) return;
   return quasi.value.cooked ?? quasi.value.raw;
 };
 
@@ -58,48 +58,48 @@ const unwrapTransparentExpressions = (
 
 const getHttpProtocolLiteral = (
   expression: ESTree.Expression,
-): string | undefined => {
+): string | null => {
   const literal = unwrapTransparentExpressions(expression);
   if (literal.type !== "Literal" || typeof literal.value !== "string") {
-    return undefined;
+    return null;
   }
   return STATIC_HTTP_PROTOCOLS.has(literal.value.toLowerCase())
     ? literal.value
-    : undefined;
+    : null;
 };
 
-const getConstHttpProtocol = (variable: Variable): string | undefined => {
+const getConstHttpProtocol = (variable: Variable): string | null => {
   for (const definition of variable.defs) {
     if (
       definition.type !== "Variable" ||
       definition.node.type !== "VariableDeclarator" ||
       definition.parent?.type !== "VariableDeclaration" ||
       definition.parent.kind !== "const" ||
-      definition.node.init === null
+      definition.node.init == null
     ) {
       continue;
     }
     return getHttpProtocolLiteral(definition.node.init);
   }
-  return undefined;
+  return null;
 };
 
 const getStaticHttpProtocol = (
   expression: ESTree.Expression,
   sourceCode: SourceCode,
-): string | undefined => {
+): string | null => {
   const unwrappedExpression = unwrapTransparentExpressions(expression);
   const literalProtocol = getHttpProtocolLiteral(unwrappedExpression);
-  if (literalProtocol !== undefined) return literalProtocol;
-  if (unwrappedExpression.type !== "Identifier") return undefined;
+  if (literalProtocol != null) return literalProtocol;
+  if (unwrappedExpression.type !== "Identifier") return null;
 
   let scope: Scope | null = sourceCode.getScope(unwrappedExpression);
-  while (scope !== null) {
+  while (scope != null) {
     const variable = scope.set.get(unwrappedExpression.name);
-    if (variable !== undefined) return getConstHttpProtocol(variable);
+    if (variable != null) return getConstHttpProtocol(variable);
     scope = scope.upper;
   }
-  return undefined;
+  return null;
 };
 
 interface InterpolatedProtocolTemplate {
@@ -112,16 +112,14 @@ const getInterpolatedProtocolTemplate = (
   node: ESTree.TemplateLiteral,
 ): InterpolatedProtocolTemplate | undefined => {
   const [firstQuasi, nextQuasi] = node.quasis;
-  if (firstQuasi === undefined) return undefined;
-  if ((firstQuasi.value.cooked ?? firstQuasi.value.raw) !== "") {
-    return undefined;
-  }
+  if (firstQuasi == null) return;
+  if ((firstQuasi.value.cooked ?? firstQuasi.value.raw) !== "") return;
   const [firstExpression, laterExpression] = node.expressions;
-  if (firstExpression === undefined) return undefined;
-  if (nextQuasi === undefined) return undefined;
+  if (firstExpression == null) return;
+  if (nextQuasi == null) return;
   return {
     firstExpression,
-    hasLaterExpression: laterExpression !== undefined,
+    hasLaterExpression: laterExpression != null,
     nextTemplateText: nextQuasi.value.cooked ?? nextQuasi.value.raw,
   };
 };
@@ -145,16 +143,15 @@ const getInterpolatedProtocolUrl = (
   sourceCode: SourceCode,
 ): string | undefined => {
   const template = getInterpolatedProtocolTemplate(node);
-  if (template === undefined) return undefined;
+  if (template == null) return;
   const protocol = getStaticHttpProtocol(template.firstExpression, sourceCode);
-  if (protocol === undefined) return undefined;
+  if (protocol == null) return;
   const authorityPattern = getStaticHttpAuthorityPattern(
     protocol,
     template.hasLaterExpression,
   );
-  return authorityPattern.test(template.nextTemplateText)
-    ? `${protocol}${template.nextTemplateText}`
-    : undefined;
+  if (!authorityPattern.test(template.nextTemplateText)) return;
+  return `${protocol}${template.nextTemplateText}`;
 };
 
 export default defineRule({
@@ -192,11 +189,11 @@ export default defineRule({
       TemplateLiteral(node) {
         const firstTemplateText = getFirstTemplateText(node);
         const url =
-          firstTemplateText !== undefined &&
+          firstTemplateText != null &&
           templateStartsWithStaticHost(node, firstTemplateText)
             ? firstTemplateText
             : getInterpolatedProtocolUrl(node, context.sourceCode);
-        if (url === undefined) return;
+        if (url == null) return;
         context.report({
           node,
           messageId: "staticServiceHost",

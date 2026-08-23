@@ -58,7 +58,7 @@ const IMPORT_BOUNDARY_MESSAGE_IDS = {
   Readonly<Partial<Record<SchemaPackage, MessageId>>>
 >;
 
-const getImportBoundary = (path: string): ImportBoundary | undefined => {
+const getImportBoundary = (path: string): ImportBoundary | null => {
   if (
     path.endsWith(".server.ts") ||
     path.endsWith(".server.tsx") ||
@@ -69,7 +69,7 @@ const getImportBoundary = (path: string): ImportBoundary | undefined => {
   }
   if (isBrowserPath(path)) return "browser";
   if (isSharedPath(path)) return "shared";
-  return undefined;
+  return null;
 };
 
 const getImportBoundaryMessageId = (
@@ -77,7 +77,7 @@ const getImportBoundaryMessageId = (
   node: ESTree.ImportDeclaration,
 ): MessageId | undefined => {
   const source = node.source.value;
-  if (!isSchemaPackage(source)) return undefined;
+  if (!isSchemaPackage(source)) return;
   const messageIds: Readonly<Partial<Record<SchemaPackage, MessageId>>> =
     IMPORT_BOUNDARY_MESSAGE_IDS[boundary];
   return messageIds[source];
@@ -95,13 +95,13 @@ export default defineRule({
   create(context) {
     const path = toProjectPath(context.filename, context.cwd);
     const boundary = getImportBoundary(path);
-    if (boundary === undefined) return {};
+    if (boundary == null) return {};
 
     return {
       ImportDeclaration(node) {
         if (!isRuntimeImport(node)) return;
         const messageId = getImportBoundaryMessageId(boundary, node);
-        if (messageId === undefined) return;
+        if (messageId == null) return;
         context.report({
           node,
           messageId,

@@ -17,8 +17,8 @@ const stripTrailingSlashes = (path: string): string => {
 
 export const getStaticPropertyName = (
   node: ESTree.Node | null | undefined,
-): string | undefined => {
-  if (node?.type !== "MemberExpression") return undefined;
+): string | null => {
+  if (node?.type !== "MemberExpression") return null;
   if (!node.computed && node.property.type === "Identifier") {
     return node.property.name;
   }
@@ -29,7 +29,7 @@ export const getStaticPropertyName = (
   ) {
     return node.property.value;
   }
-  return undefined;
+  return null;
 };
 
 export const isIdentifier = (

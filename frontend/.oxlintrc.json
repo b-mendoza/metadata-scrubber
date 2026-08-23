@@ -244,7 +244,7 @@
       "error",
       "always",
       {
-        "null": "ignore"
+        "null": "never"
       }
     ],
     "grouped-accessor-pairs": ["error", "getBeforeSet"],
