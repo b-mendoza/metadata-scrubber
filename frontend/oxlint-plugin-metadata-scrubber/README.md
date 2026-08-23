@@ -45,11 +45,11 @@ The CLI shows exactly one line for each diagnostic. The line contains the path a
 
 Use this three-part structure:
 
-1. Name the exact violation with the interpolated identifier or source reference.
-2. Give the exact idiomatic replacement with the real import path or API.
-3. State the invariant so an agent can apply the rule to new code.
+1. Identify the exact problem with the interpolated identifier or source reference.
+2. Give the reason that the code causes a problem.
+3. State the required fix with the exact import path or API when one applies.
 
-Name each known bypass. Forbid the bypass when it can preserve the violation. Use these terms consistently: the `effect` package, the `zod` package, the Effect Schema API, the Zod API, runtime import, type-only import, module scope, request scope, browser module, server module, shared module, test prerequisite, and factory function. Do not use `Please`. Do not use vague words such as `similar` or `appropriate`.
+Each message must identify the problem, give the reason, and state the required fix. Name each known bypass. Forbid the bypass when it can preserve the violation. Use technical terms consistently. Do not use `Please`. Do not use vague words such as `similar` or `appropriate`.
 
 ## Known limitations
 
