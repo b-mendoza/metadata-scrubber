@@ -32,7 +32,7 @@ const getImportedName = (specifier: ESTree.ImportSpecifier): string | null => {
 };
 
 const isTestApiName = (name: string): name is TestApi =>
-  name === "describe" || name === "it" || name === "test";
+  ["describe", "it", "test"].includes(name);
 
 const isRuntimeVitestImportDefinition = (
   definition: Definition,
