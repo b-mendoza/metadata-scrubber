@@ -36,7 +36,7 @@ const createQueryClient = () => {
   });
 };
 
-let browserQueryClient: QueryClient | undefined = undefined;
+let browserQueryClient: QueryClient | null = null;
 
 const initializeQueryClient = createIsomorphicFn()
   .server(
