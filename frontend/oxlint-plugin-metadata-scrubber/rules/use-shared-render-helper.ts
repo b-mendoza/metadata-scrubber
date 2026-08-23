@@ -7,7 +7,7 @@ import type {
 } from "@oxlint/plugins";
 import { defineRule } from "@oxlint/plugins";
 
-import { getStaticPropertyName, isTestFile } from "../utils.ts";
+import { getStaticPropertyName, isTestFile } from "../utilities.ts";
 
 const TESTING_LIBRARY_SOURCE = "@testing-library/react";
 const TESTING_LIBRARY_PURE_SOURCE = "@testing-library/react/pure";

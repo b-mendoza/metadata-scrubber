@@ -7,7 +7,7 @@ import type {
 } from "@oxlint/plugins";
 import { defineRule } from "@oxlint/plugins";
 
-import { isTestFile } from "../utils.ts";
+import { isTestFile } from "../utilities.ts";
 
 const NO_DEFINITIONS = 0;
 
