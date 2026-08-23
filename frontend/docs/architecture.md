@@ -23,7 +23,7 @@ Developers build the frontend with [TanStack Start](https://tanstack.com/start) 
 - Developers implement request-scoped dependency injection with `AsyncLocalStorage` in `src/shared/middlewares/application-bindings/application-bindings.mod.ts`.
 - Server code calls `getApplicationBindings()`. The function returns `{ env }` in the current code. The middleware parses the environment and validates it with Effect Schema. The `env` binding contains the parsed and validated environment.
 - Developers added the `db` binding code but commented it out. Developers keep the `db` binding code commented out until they connect the database client.
-- On each request, the middleware decodes `process.env` against `envSchema`. `envSchema` is an Effect Schema. The middleware boundary runs the decode Effect with `Effect.runPromise`. The middleware provides the validated `env` binding to downstream code through `getApplicationBindings()`.
+- On each request, the middleware decodes `process.env` against `environmentSchema`. `environmentSchema` is an Effect Schema. The middleware boundary runs the decode Effect with `Effect.runPromise`. The middleware provides the validated `env` binding to downstream code through `getApplicationBindings()`.
 
 ## Validation
 

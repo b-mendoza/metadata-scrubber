@@ -3,18 +3,19 @@ import { AsyncLocalStorage } from "node:async_hooks";
 import { createMiddleware, createServerOnlyFn } from "@tanstack/react-start";
 import { Effect, Schema } from "effect";
 
-import type { Env } from "#/shared/config/env/env.mod.server";
-import { envSchema } from "#/shared/config/env/env.mod.server";
+import type { Environment } from "#/shared/config/env/environment.mod.server";
+import { environmentSchema } from "#/shared/config/env/environment.mod.server";
 import { invariant } from "#/shared/utils/invariant/invariant.mod";
 
 interface ApplicationBindingsValue {
   // db: DrizzleDatabaseClient;
-  env: Env;
+  env: Environment;
 }
 
 const ApplicationBindingsStorage =
   new AsyncLocalStorage<ApplicationBindingsValue>();
-const decodeEnvironmentVariables = Schema.decodeUnknownEffect(envSchema);
+const decodeEnvironmentVariables =
+  Schema.decodeUnknownEffect(environmentSchema);
 
 export const applicationBindingsMiddleware = createMiddleware({
   type: "request",
