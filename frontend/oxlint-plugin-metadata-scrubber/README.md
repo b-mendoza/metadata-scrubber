@@ -8,7 +8,7 @@ This plugin encodes the project's coding standards as enforceable Oxlint rules. 
 
 ## Registration and commands
 
-`.oxlintrc.json` loads `./oxlint-plugin-metadata-scrubber/index.ts`. It enables all eight `metadata-scrubber/...` rules. `eslint.config.js` registers the same plugin as `metadata-scrubber`. Run `pnpm run lint` from `frontend/` to run the project lint pipeline. Run `node oxlint-plugin-metadata-scrubber/check-fixtures.ts` from `frontend/` to run the fixture harness. The fixture harness is a manual check. It is not part of the `pnpm run lint` pipeline.
+`fixture.config.json` loads `index.ts` and enables all six `metadata-scrubber/...` rules. `check-fixtures.ts` runs this fixture config manually. The main Oxlint and ESLint configs do not load this plugin. Run `pnpm run lint` from `frontend/` to run the project lint pipeline. Run `node oxlint-plugin-metadata-scrubber/check-fixtures.ts` from `frontend/` to run the fixture harness. The fixture harness is not part of the `pnpm run lint` pipeline.
 
 ## Rules
 
