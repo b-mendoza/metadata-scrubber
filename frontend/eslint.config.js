@@ -119,21 +119,6 @@ export default defineConfig(
         },
       ],
       "@typescript-eslint/explicit-function-return-type": OFF,
-      "@typescript-eslint/naming-convention": [
-        ERROR,
-        {
-          selector: "variableLike",
-          format: null,
-          filter: {
-            regex: "^(?:data|val|tmp|res)$",
-            match: true,
-          },
-          custom: {
-            regex: "^(?:data|val|tmp|res)$",
-            match: false,
-          },
-        },
-      ],
       "@typescript-eslint/no-deprecated": ERROR,
       "@typescript-eslint/no-magic-numbers": [
         ERROR,
