@@ -153,6 +153,16 @@ export default defineConfig(
         },
       ],
       "@typescript-eslint/explicit-function-return-type": OFF,
+      /**
+       * A function accepts at most 3 parameters.
+       * The Deno style guide sets this shape: at most 2 required positional
+       * parameters, plus a trailing options object when more values exist.
+       * To fix a violation, keep the main arguments positional and move the
+       * extra values into a trailing options object.
+       * Do not collapse every argument into one object parameter. That hides
+       * the main arguments and makes each call site harder to read.
+       * This rule overrides the eslint-config-love limit of 4.
+       */
       "@typescript-eslint/max-params": [
         ERROR,
         {
