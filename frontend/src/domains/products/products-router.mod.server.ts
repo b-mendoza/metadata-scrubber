@@ -9,7 +9,7 @@ import {
 import { getApplicationBindings } from "#/shared/middlewares/application-bindings/application-bindings.mod";
 
 const SEED_PRODUCT_NAMES = ["Metadata Scrubber", "Privacy Audit Tool"];
-const SLEEP_TIME_MS = 5_000;
+const SLEEP_TIME_MS = 5000;
 
 const productSchema = Schema.Struct({
   id: Schema.String.check(Schema.isUUID()),

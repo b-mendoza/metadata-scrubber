@@ -1,7 +1,7 @@
 import type * as z from "zod";
 
-const BYTES_PER_KB = 1_024; // 1KB = 1024 bytes
-const KB_PER_MB = 1_024; // 1MB = 1024KB
+const BYTES_PER_KB = 1024; // 1KB = 1024 bytes
+const KB_PER_MB = 1024; // 1MB = 1024KB
 
 export const MAX_FILE_SIZE_MB = 10; // 10MB
 
