@@ -110,6 +110,12 @@ export default defineConfig(
         },
       ],
       "@typescript-eslint/explicit-function-return-type": OFF,
+      "@typescript-eslint/max-params": [
+        ERROR,
+        {
+          max: 3,
+        },
+      ],
       "@typescript-eslint/no-deprecated": ERROR,
       "@typescript-eslint/no-magic-numbers": [
         ERROR,
