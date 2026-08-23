@@ -45,7 +45,7 @@ export const Route = createRootRouteWithContext<RouterContext>()({
 
       meta: [
         {
-          charSet: "UTF-8",
+          charSet: "utf8",
         },
         {
           name: "viewport",
