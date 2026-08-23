@@ -7,23 +7,36 @@ import {
   toProjectPath,
 } from "../utilities.ts";
 
+const BROWSER_FIXTURE_PATH_PATTERN = /(?:^|\/)fixtures\/.*browser.*\.tsx?$/u;
+const DOMAIN_COMPONENT_PATH_PATTERN =
+  /(?:^|\/)src\/domains\/[^/]+\/components\/.*\.tsx?$/u;
+const DOMAIN_CONSTANT_PATH_PATTERN =
+  /(?:^|\/)src\/domains\/[^/]+\/constants\/.*\.ts$/u;
+const ROOT_ROUTE_PATH_PATTERN = /(?:^|\/)src\/routes\/(?:__root|index)\.tsx$/u;
+const ROOT_ROUTER_PATH_PATTERN = /(?:^|\/)src\/router\.tsx$/u;
+const SCHEMA_BOUNDARY_SERVER_FIXTURE_PATH_PATTERN =
+  /(?:^|\/)fixtures\/(?:positive|negative)\/schema-boundary\.server\.tsx?$/u;
+const SHARED_CONSTANT_PATH_PATTERN = /(?:^|\/)src\/shared\/constants\/.*\.ts$/u;
+const SHARED_FIXTURE_PATH_PATTERN = /(?:^|\/)fixtures\/.*shared.*\.tsx?$/u;
+const SHARED_UTILITY_PATH_PATTERN = /(?:^|\/)src\/shared\/utils\/.*\.ts$/u;
+const TRPC_CLIENT_PATH_PATTERN =
+  /(?:^|\/)src\/shared\/libs\/trpc\/client\/.*\.tsx?$/u;
+
 const isSchemaBoundaryServerFixturePath = (path: string): boolean =>
-  /(?:^|\/)fixtures\/(?:positive|negative)\/schema-boundary\.server\.tsx?$/u.test(
-    path,
-  );
+  SCHEMA_BOUNDARY_SERVER_FIXTURE_PATH_PATTERN.test(path);
 
 const isBrowserPath = (path: string): boolean =>
-  /(?:^|\/)src\/domains\/[^/]+\/components\/.*\.tsx?$/u.test(path) ||
-  /(?:^|\/)src\/router\.tsx$/u.test(path) ||
-  /(?:^|\/)src\/routes\/(?:__root|index)\.tsx$/u.test(path) ||
-  /(?:^|\/)src\/shared\/libs\/trpc\/client\/.*\.tsx?$/u.test(path) ||
-  /(?:^|\/)fixtures\/.*browser.*\.tsx?$/u.test(path);
+  DOMAIN_COMPONENT_PATH_PATTERN.test(path) ||
+  ROOT_ROUTER_PATH_PATTERN.test(path) ||
+  ROOT_ROUTE_PATH_PATTERN.test(path) ||
+  TRPC_CLIENT_PATH_PATTERN.test(path) ||
+  BROWSER_FIXTURE_PATH_PATTERN.test(path);
 
 const isSharedPath = (path: string): boolean =>
-  /(?:^|\/)src\/domains\/[^/]+\/constants\/.*\.ts$/u.test(path) ||
-  /(?:^|\/)src\/shared\/constants\/.*\.ts$/u.test(path) ||
-  /(?:^|\/)src\/shared\/utils\/.*\.ts$/u.test(path) ||
-  /(?:^|\/)fixtures\/.*shared.*\.tsx?$/u.test(path);
+  DOMAIN_CONSTANT_PATH_PATTERN.test(path) ||
+  SHARED_CONSTANT_PATH_PATTERN.test(path) ||
+  SHARED_UTILITY_PATH_PATTERN.test(path) ||
+  SHARED_FIXTURE_PATH_PATTERN.test(path);
 
 type ImportBoundary = "browser" | "server" | "shared";
 type SchemaPackage = "effect" | "zod";
