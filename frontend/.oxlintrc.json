@@ -779,6 +779,7 @@
         ]
       }
     ],
+    "no-undefined": "error",
     "sonarjs/no-commented-code": "error",
     "class-methods-use-this": [
       "error",
