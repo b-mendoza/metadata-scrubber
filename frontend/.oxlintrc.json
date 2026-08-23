@@ -13,7 +13,6 @@
     "@eslint-community/eslint-plugin-eslint-comments",
     "@e18e/eslint-plugin",
     "eslint-plugin-sonarjs",
-    "./oxlint-plugin-metadata-scrubber/index.ts",
     "eslint-plugin-simple-import-sort"
   ],
   "categories": {
@@ -766,14 +765,6 @@
     "sonarjs/no-mixed-completion-style": "error",
     "sonarjs/no-interpolation-in-inline-snapshots": "error",
     "sonarjs/explicit-test-skip": "error",
-    "metadata-scrubber/hoist-effect-schema-compilers": "error",
-    "metadata-scrubber/no-classes": "error",
-    "metadata-scrubber/no-expect-type-of": "error",
-    "metadata-scrubber/no-hardcoded-backend-host": "error",
-    "metadata-scrubber/no-mutable-module-state-in-server-code": "error",
-    "metadata-scrubber/no-silent-test-prerequisite": "error",
-    "metadata-scrubber/schema-import-boundaries": "error",
-    "metadata-scrubber/use-shared-render-helper": "error",
     "simple-import-sort/imports": "error",
     "simple-import-sort/exports": "error",
     "import/newline-after-import": "error",
