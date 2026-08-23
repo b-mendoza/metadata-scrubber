@@ -197,7 +197,7 @@ export default defineConfig(
         ERROR,
         "always",
         {
-          null: "ignore",
+          null: "never",
         },
       ],
     },

@@ -39,12 +39,10 @@ const SCHEMA_COMPILER_NAMES = new Set<string>([
 const FUNCTION_DEPTH_STEP = 1;
 const MODULE_SCOPE_FUNCTION_DEPTH = 0;
 
-const getImportedName = (
-  specifier: ESTree.ImportSpecifier,
-): string | undefined => {
+const getImportedName = (specifier: ESTree.ImportSpecifier): string | null => {
   const { imported } = specifier;
   if (imported.type === "Identifier") return imported.name;
-  return typeof imported.value === "string" ? imported.value : undefined;
+  return typeof imported.value === "string" ? imported.value : null;
 };
 
 const isEffectSchemaImportDefinition = (definition: Definition): boolean => {
@@ -65,9 +63,9 @@ const isEffectSchemaReference = (
   sourceCode: SourceCode,
 ): boolean => {
   let scope: Scope | null = sourceCode.getScope(node);
-  while (scope !== null) {
+  while (scope != null) {
     const variable = scope.set.get(node.name);
-    if (variable !== undefined) return isEffectSchemaImport(variable);
+    if (variable != null) return isEffectSchemaImport(variable);
     scope = scope.upper;
   }
   return false;
@@ -78,15 +76,12 @@ const getSchemaCompiler = (
   sourceCode: SourceCode,
 ): ESTree.MemberExpression | undefined => {
   const compilerCallee = node.callee;
-  if (compilerCallee.type !== "MemberExpression") return undefined;
-  if (compilerCallee.object.type !== "Identifier") return undefined;
-  if (!isEffectSchemaReference(compilerCallee.object, sourceCode)) {
-    return undefined;
-  }
+  if (compilerCallee.type !== "MemberExpression") return;
+  if (compilerCallee.object.type !== "Identifier") return;
+  if (!isEffectSchemaReference(compilerCallee.object, sourceCode)) return;
   const propertyName = getStaticPropertyName(compilerCallee);
-  return propertyName !== undefined && SCHEMA_COMPILER_NAMES.has(propertyName)
-    ? compilerCallee
-    : undefined;
+  if (propertyName == null || !SCHEMA_COMPILER_NAMES.has(propertyName)) return;
+  return compilerCallee;
 };
 
 export default defineRule({
@@ -121,12 +116,9 @@ export default defineRule({
       CallExpression(node) {
         if (functionDepth === MODULE_SCOPE_FUNCTION_DEPTH) return;
         const compiler = getSchemaCompiler(node, context.sourceCode);
-        if (compiler === undefined) return;
+        if (compiler == null) return;
         const compilerName = getStaticPropertyName(compiler);
-        if (
-          compilerName === undefined ||
-          compiler.object.type !== "Identifier"
-        ) {
+        if (compilerName == null || compiler.object.type !== "Identifier") {
           return;
         }
         context.report({

@@ -11,12 +11,10 @@ import { isTestFile } from "../utilities.ts";
 
 const NO_DEFINITIONS = 0;
 
-const getImportedName = (
-  specifier: ESTree.ImportSpecifier,
-): string | undefined => {
+const getImportedName = (specifier: ESTree.ImportSpecifier): string | null => {
   const { imported } = specifier;
   if (imported.type === "Identifier") return imported.name;
-  return typeof imported.value === "string" ? imported.value : undefined;
+  return typeof imported.value === "string" ? imported.value : null;
 };
 
 const isVitestExpectTypeOfImportDefinition = (
@@ -38,9 +36,9 @@ const isVitestExpectTypeOfReference = (
   sourceCode: SourceCode,
 ): boolean => {
   let scope: Scope | null = sourceCode.getScope(node);
-  while (scope !== null) {
+  while (scope != null) {
     const variable = scope.set.get(node.name);
-    if (variable !== undefined) {
+    if (variable != null) {
       return variable.defs.length === NO_DEFINITIONS
         ? node.name === "expectTypeOf"
         : isVitestExpectTypeOfImport(variable);
