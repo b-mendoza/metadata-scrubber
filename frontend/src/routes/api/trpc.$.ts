@@ -7,11 +7,11 @@ import { createTRPCRequestContext } from "#/shared/libs/trpc/utils/initializer/i
 export const Route = createFileRoute("/api/trpc/$")({
   server: {
     handlers: {
-      async GET(ctx) {
-        return trpcRequestHandler(ctx.request);
+      async GET(context) {
+        return trpcRequestHandler(context.request);
       },
-      async POST(ctx) {
-        return trpcRequestHandler(ctx.request);
+      async POST(context) {
+        return trpcRequestHandler(context.request);
       },
     },
   },
