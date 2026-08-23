@@ -121,6 +121,9 @@ export default defineConfig(
     },
     rules: {
       /**
+       * A plugin-collision audit found these rule overlaps.
+       * Each disabled rule duplicates or conflicts with a rule that another
+       * plugin or oxlint already enforces.
        * These rules are disabled because they duplicate enabled unicorn or
        * typescript-eslint rules. `e18e/prefer-string-fromcharcode` and
        * `e18e/prefer-array-fill` conflict with `unicorn/prefer-code-point` and
