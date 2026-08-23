@@ -1,6 +1,6 @@
 import { pgTable, text } from "drizzle-orm/pg-core";
 
-import { DEFAULT_COLUMNS } from "./db.constants.server";
+import { DEFAULT_COLUMNS } from "./database.constants.server";
 
 // ============================================================================
 // Table definitions
