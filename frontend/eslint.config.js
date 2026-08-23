@@ -221,6 +221,7 @@ export default defineConfig(
         },
       ],
       "no-restricted-syntax": [ERROR, ...BASE_RESTRICTED_SYNTAX],
+      // The project uses null as the one explicit absent value.
       // Prefer null over undefined as the explicit empty value.
       "no-undefined": ERROR,
       "object-shorthand": ERROR,
@@ -234,6 +235,7 @@ export default defineConfig(
       "sonarjs/cognitive-complexity": [ERROR, MAX_COMPLEXITY],
       "sonarjs/no-commented-code": ERROR,
       "sonarjs/todo-tag": ERROR,
+      // Keep null legal because the project uses it as the one explicit absent value.
       "unicorn/no-null": OFF,
       "unicorn/prevent-abbreviations": [
         ERROR,
@@ -252,6 +254,8 @@ export default defineConfig(
           max: MAX_COMPLEXITY,
         },
       ],
+      // The project requires loose equality against null.
+      // One comparison then covers both null and undefined.
       eqeqeq: [
         ERROR,
         "always",
