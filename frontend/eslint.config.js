@@ -16,8 +16,8 @@ import tseslint from "typescript-eslint";
 
 import metadataScrubber from "./oxlint-plugin-metadata-scrubber/index.ts";
 
-const OFF = 0;
 const ERROR = 2;
+const OFF = 0;
 const MAX_COMPLEXITY = 8;
 
 const BASE_RESTRICTED_IMPORT_PATTERNS = [
@@ -59,23 +59,7 @@ export default defineConfig(
   // This is a known issue with plugins using TSESLint.FlatConfig types.
   // See: https://github.com/typescript-eslint/typescript-eslint/issues/11543
   love,
-  {
-    plugins: {
-      unicorn,
-    },
-    rules: {
-      "unicorn/error-message": ERROR,
-      "unicorn/no-array-fill-with-reference-type": ERROR,
-      "unicorn/no-array-sort": ERROR,
-      "unicorn/no-await-in-promise-methods": ERROR,
-      "unicorn/no-instanceof-builtins": ERROR,
-      "unicorn/no-invalid-fetch-options": ERROR,
-      "unicorn/no-invalid-remove-event-listener": ERROR,
-      "unicorn/no-thenable": ERROR,
-      "unicorn/prefer-response-static-json": ERROR,
-      "unicorn/prefer-structured-clone": ERROR,
-    },
-  },
+  unicorn.configs.recommended,
   sonarjs.configs?.["recommended"],
   {
     plugins: {
@@ -110,6 +94,17 @@ export default defineConfig(
       },
     },
     rules: {
+      "sonarjs/prefer-regexp-exec": OFF,
+      "unicorn/prevent-abbreviations": [
+        ERROR,
+        {
+          allowList: {
+            mod: true,
+            props: true,
+            Props: true,
+          },
+        },
+      ],
       "@eslint-community/eslint-comments/disable-enable-pair": ERROR,
       "@typescript-eslint/consistent-type-imports": [
         ERROR,
