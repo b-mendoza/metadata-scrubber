@@ -31,10 +31,10 @@ class RequestFormDataError extends Data.TaggedError("RequestFormDataError")<{
 export const Route = createFileRoute("/api/upload")({
   server: {
     handlers: {
-      async POST(ctx) {
+      async POST(context) {
         const uploadEffect = Effect.gen(function* () {
           const formData = yield* Effect.tryPromise({
-            try: async () => ctx.request.formData(),
+            try: async () => context.request.formData(),
             catch: (cause) => new RequestFormDataError({ cause }),
           });
 

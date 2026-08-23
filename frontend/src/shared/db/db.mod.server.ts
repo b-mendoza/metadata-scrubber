@@ -3,8 +3,8 @@ import postgres from "postgres";
 
 import { relations } from "#/shared/db/db.relations.server";
 
-export const createDrizzleDatabaseClient = (dbUrl: string) => {
-  const queryClient = postgres(dbUrl);
+export const createDrizzleDatabaseClient = (databaseUrl: string) => {
+  const queryClient = postgres(databaseUrl);
 
   return drizzle({
     client: queryClient,

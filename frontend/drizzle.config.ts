@@ -1,15 +1,15 @@
 import { defineConfig } from "drizzle-kit";
 import * as z from "zod";
 
-const envSchema = z.object({
+const environmentSchema = z.object({
   DATABASE_URL: z.string().trim().nonempty(),
 });
 
-const env = z.parse(envSchema, process.env);
+const environment = z.parse(environmentSchema, process.env);
 
 export default defineConfig({
   dbCredentials: {
-    url: env.DATABASE_URL,
+    url: environment.DATABASE_URL,
   },
   dialect: "postgresql",
   out: "./src/shared/db/migrations",

@@ -18,7 +18,7 @@ const decodeEnvironmentVariables = Schema.decodeUnknownEffect(envSchema);
 
 export const applicationBindingsMiddleware = createMiddleware({
   type: "request",
-}).server(async (opts) => {
+}).server(async (options) => {
   const parseEnvironmentVariables = decodeEnvironmentVariables(process.env);
   // TanStack middleware is Promise-based, so execute the Effect at this boundary.
   const safeEnvironmentVariables = await Effect.runPromise(
@@ -33,7 +33,7 @@ export const applicationBindingsMiddleware = createMiddleware({
     {
       env: safeEnvironmentVariables,
     },
-    opts.next,
+    options.next,
   );
 });
 

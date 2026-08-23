@@ -1,6 +1,6 @@
 import { Schema } from "effect";
 
-interface CreateURLSchemaParams {
+interface CreateURLSchemaParameters {
   /** @default /^https$/ */
   protocol?: RegExp;
 }
@@ -27,7 +27,7 @@ const isURLWithProtocol = (value: string, protocolPattern: RegExp) => {
 
 export const createURLSchema = ({
   protocol = /^https$/,
-}: CreateURLSchemaParams = {}) => {
+}: CreateURLSchemaParameters = {}) => {
   const protocolPattern = new RegExp(protocol.source, protocol.flags);
 
   return Schema.Trim.check(
