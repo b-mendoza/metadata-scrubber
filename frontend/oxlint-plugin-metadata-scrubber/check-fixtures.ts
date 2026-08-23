@@ -1,5 +1,5 @@
 import { spawnSync } from "node:child_process";
-import { dirname, join } from "node:path";
+import path from "node:path";
 import { fileURLToPath } from "node:url";
 
 import * as z from "zod";
@@ -146,9 +146,14 @@ const cases = [
   ],
 ] as const satisfies readonly FixtureCase[];
 
-const pluginDir = dirname(fileURLToPath(import.meta.url));
-const frontendDir = join(pluginDir, "..");
-const oxlintPath = join(frontendDir, "node_modules", ".bin", "oxlint");
+const pluginDirectory = path.dirname(fileURLToPath(import.meta.url));
+const frontendDirectory = path.join(pluginDirectory, "..");
+const oxlintPath = path.join(
+  frontendDirectory,
+  "node_modules",
+  ".bin",
+  "oxlint",
+);
 const ruleName = (ruleId: string): string => `metadata-scrubber/${ruleId}`;
 
 // eslint-disable-next-line zod/prefer-string-schema-with-trim -- Fixture checks compare oxlint diagnostic messages byte-for-byte. The `.trim()` transform would silently alter values and hide whitespace mismatches, so this boundary must return each string unchanged.
@@ -204,14 +209,14 @@ const runFixtureLint = (fixturePath: string): FixtureLintResult => {
     oxlintPath,
     [
       "-c",
-      join("oxlint-plugin-metadata-scrubber", "fixture.config.json"),
+      path.join("oxlint-plugin-metadata-scrubber", "fixture.config.json"),
       "--format",
       "json",
       "--disable-nested-config",
       fixturePath,
     ],
     {
-      cwd: frontendDir,
+      cwd: frontendDirectory,
       encoding: "utf8",
     },
   );
@@ -319,13 +324,13 @@ const getDiagnosticMessages = (
 
 let hasFailure = false;
 for (const [ruleId, fixtureFile, expectedNegativeMessages] of cases) {
-  const positivePath = join(
+  const positivePath = path.join(
     "oxlint-plugin-metadata-scrubber",
     "fixtures",
     "positive",
     fixtureFile,
   );
-  const negativePath = join(
+  const negativePath = path.join(
     "oxlint-plugin-metadata-scrubber",
     "fixtures",
     "negative",
