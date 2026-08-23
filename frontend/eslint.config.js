@@ -1,3 +1,10 @@
+/**
+ * eslint.config.js is the single source of truth for lint policy.
+ * Never edit .oxlintrc.json. Never regenerate .oxlintrc.json.
+ * The user owns .oxlintrc.json and updates it after each rule change in
+ * this file.
+ * A new rule stays dormant in oxlint until the user updates that file.
+ */
 import e18e from "@e18e/eslint-plugin";
 import eslint from "@eslint/js";
 import eslintReact from "@eslint-react/eslint-plugin";
