@@ -355,6 +355,11 @@ export default defineConfig(
       "no-console": OFF,
     },
   },
+  /**
+   * This final oxlint entry turns off the ESLint copy of each rule that
+   * oxlint owns.
+   * Each rule then runs in exactly one tool.
+   */
   oxlint.buildFromOxlintConfigFile("./.oxlintrc.json", {
     typeAware: true,
   }),
