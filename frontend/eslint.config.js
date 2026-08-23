@@ -147,12 +147,6 @@ export default defineConfig(
           checksVoidReturn: false,
         },
       ],
-      "@typescript-eslint/no-namespace": [
-        ERROR,
-        {
-          allowDeclarations: true,
-        },
-      ],
       "@typescript-eslint/only-throw-error": [
         ERROR,
         {
