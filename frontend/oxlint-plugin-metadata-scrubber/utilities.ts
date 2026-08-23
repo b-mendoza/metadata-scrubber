@@ -1,8 +1,17 @@
 import type { ESTree } from "@oxlint/plugins";
 
+const API_ROUTE_PATH_PATTERN = /(?:^|\/)src\/routes\/api\/.*\.tsx?$/u;
+const DOMAIN_SERVER_MODULE_PATH_PATTERN =
+  /(?:^|\/)src\/.*\.mod\.server\.tsx?$/u;
 const EMPTY_SPECIFIER_COUNT = 0;
 const PATH_START_INDEX = 0;
 const REMOVE_LAST_CHARACTER_END = -1;
+const SERVER_FIXTURE_PATH_PATTERN = /(?:^|\/)fixtures\/.*server.*\.tsx?$/u;
+const SHARED_DATABASE_SERVER_PATH_PATTERN =
+  /(?:^|\/)src\/shared\/database\/.*\.server\.tsx?$/u;
+const SHARED_MIDDLEWARE_PATH_PATTERN =
+  /(?:^|\/)src\/shared\/middlewares\/.*\.tsx?$/u;
+const TEST_FILE_PATH_PATTERN = /\.test\.[cm]?[jt]sx?$/u;
 
 const stripTrailingSlashes = (path: string): string => {
   let pathWithoutTrailingSlashes = path;
@@ -46,20 +55,17 @@ export const isFunction = (
   node?.type === "FunctionExpression";
 
 export const isTestFile = (filename: string): boolean =>
-  /\.test\.[cm]?[jt]sx?$/u.test(normalizePath(filename));
+  TEST_FILE_PATH_PATTERN.test(normalizePath(filename));
 
 export const isServerProjectPath = (path: string): boolean =>
-  /(?:^|\/)src\/.*\.mod\.server\.tsx?$/u.test(path) ||
-  /(?:^|\/)src\/shared\/database\/.*\.server\.tsx?$/u.test(path) ||
-  /(?:^|\/)src\/routes\/api\/.*\.tsx?$/u.test(path) ||
-  /(?:^|\/)src\/shared\/middlewares\/.*\.tsx?$/u.test(path);
+  DOMAIN_SERVER_MODULE_PATH_PATTERN.test(path) ||
+  SHARED_DATABASE_SERVER_PATH_PATTERN.test(path) ||
+  API_ROUTE_PATH_PATTERN.test(path) ||
+  SHARED_MIDDLEWARE_PATH_PATTERN.test(path);
 
 export const isServerModule = (filename: string, cwd: string): boolean => {
   const path = toProjectPath(filename, cwd);
-  return (
-    isServerProjectPath(path) ||
-    /(?:^|\/)fixtures\/.*server.*\.tsx?$/u.test(path)
-  );
+  return isServerProjectPath(path) || SERVER_FIXTURE_PATH_PATTERN.test(path);
 };
 
 export const normalizePath = (path: string): string =>
