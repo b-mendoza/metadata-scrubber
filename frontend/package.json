@@ -74,7 +74,7 @@
     "@oxlint/plugins": "1.79.0",
     "@rolldown/plugin-babel": "0.2.3",
     "@tailwindcss/vite": "4.3.3",
-    "@tanstack/devtools-vite": "0.8.4",
+    "@tanstack/devtools-vite": "0.8.5",
     "@tanstack/react-devtools": "0.10.11",
     "@tanstack/react-query-devtools": "5.101.4",
     "@tanstack/react-router-devtools": "1.167.1",
