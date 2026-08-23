@@ -2,7 +2,7 @@ import { Schema } from "effect";
 
 import { createURLSchema } from "#/shared/constants/schemas/schemas.mod.server";
 
-export const envSchema = Schema.Struct({
+export const environmentSchema = Schema.Struct({
   // Currently unused (the Drizzle client is commented out and no database
   // service is provisioned). Optional so it doesn't block deploys; make it
   // required again once the database is wired up and DATABASE_URL is set.
@@ -19,4 +19,4 @@ export const envSchema = Schema.Struct({
   ),
 });
 
-export type Env = typeof envSchema.Type;
+export type Environment = typeof environmentSchema.Type;

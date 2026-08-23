@@ -8,7 +8,7 @@
 
 ## Environment
 
-On each request, server code decodes `process.env` against `envSchema` in `src/shared/config/env/env.mod.server.ts`. Set `BACKEND_URL` to an `http` or `https` URL. The schema requires this variable. `DATABASE_URL` remains optional until developers connect the database client. This service has no `.env.example`. The schema file contains the current variable list.
+On each request, server code decodes `process.env` against `environmentSchema` in `src/shared/config/env/environment.mod.server.ts`. Set `BACKEND_URL` to an `http` or `https` URL. The schema requires this variable. `DATABASE_URL` remains optional until developers connect the database client. This service has no `.env.example`. The schema file contains the current variable list.
 
 ## Core commands
 
