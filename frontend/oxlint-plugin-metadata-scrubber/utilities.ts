@@ -50,7 +50,7 @@ export const isTestFile = (filename: string): boolean =>
 
 export const isServerProjectPath = (path: string): boolean =>
   /(?:^|\/)src\/.*\.mod\.server\.tsx?$/u.test(path) ||
-  /(?:^|\/)src\/shared\/db\/.*\.server\.tsx?$/u.test(path) ||
+  /(?:^|\/)src\/shared\/database\/.*\.server\.tsx?$/u.test(path) ||
   /(?:^|\/)src\/routes\/api\/.*\.tsx?$/u.test(path) ||
   /(?:^|\/)src\/shared\/middlewares\/.*\.tsx?$/u.test(path);
 

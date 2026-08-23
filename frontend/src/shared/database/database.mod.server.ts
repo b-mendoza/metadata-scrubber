@@ -1,7 +1,7 @@
 import { drizzle } from "drizzle-orm/postgres-js";
 import postgres from "postgres";
 
-import { relations } from "#/shared/db/db.relations.server";
+import { relations } from "#/shared/database/database.relations.server";
 
 export const createDrizzleDatabaseClient = (databaseUrl: string) => {
   const queryClient = postgres(databaseUrl);

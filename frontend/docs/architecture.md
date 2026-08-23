@@ -9,7 +9,7 @@ Developers build the frontend with [TanStack Start](https://tanstack.com/start) 
 ## Source layout
 
 - Developers group feature code by domain under `src/domains/<domain>/`. The current domains include `wizard` and `products`. Each domain contains its components, constants, and routers.
-- Developers keep cross-domain code under `src/shared/`. It contains `config`, `constants`, `db`, `libs` for tRPC, `middlewares`, and `utils`.
+- Developers keep cross-domain code under `src/shared/`. It contains `config`, `constants`, `database`, `libs` for tRPC, `middlewares`, and `utils`.
 - TanStack Router reads file-based routes from `src/routes/`. Developers keep API routes under `src/routes/api/`.
 - Developers keep test setup and shared render helpers under `src/tests/`. The render helpers are in `src/tests/utils/renderers/`.
 
@@ -32,7 +32,7 @@ Use Effect Schema at server boundaries. Use Zod in client code. Read the [valida
 ## Database
 
 - Developers use PostgreSQL through Drizzle ORM. They keep Drizzle config in `drizzle.config.ts`. See the migration commands in the [commands reference](./commands.md).
-- Developers define the schema in `src/shared/db/db.schema.server.ts`. The current schema defines one `users` table.
+- Developers define the schema in `src/shared/database/database.schema.server.ts`. The current schema defines one `users` table.
 - Application bindings do not contain the database client.
 
 ## File uploads

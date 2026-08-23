@@ -12,8 +12,8 @@ export default defineConfig({
     url: environment.DATABASE_URL,
   },
   dialect: "postgresql",
-  out: "./src/shared/db/migrations",
-  schema: "./src/shared/db/db.schema.server.ts",
+  out: "./src/shared/database/migrations",
+  schema: "./src/shared/database/database.schema.server.ts",
   strict: true,
   verbose: true,
 });
