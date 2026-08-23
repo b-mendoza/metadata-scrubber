@@ -25,19 +25,18 @@ This plugin encodes the project's coding standards as enforceable Oxlint rules. 
 
 1. Add a rule file under `rules/` and create the rule with `defineRule`.
 2. Export the rule from `index.ts`.
-3. Register the rule in `.oxlintrc.json` and `eslint.config.js`.
-4. Register the rule in `fixture.config.json`.
-5. Define message templates in `meta.messages`.
-6. Report with `messageId` and `{{ interpolation }}` data.
-7. Do not put an inline message string in `context.report`.
-8. Resolve identifiers through the scope API.
-9. Do not match an identifier by its name only.
-10. Add a positive fixture that produces zero diagnostics.
-11. Add a negative fixture that produces the required diagnostics.
-12. Pin the exact diagnostic count in `check-fixtures.ts`. Pin each exact rendered message in the same file.
-13. Run the fixture before the rule change and record the expected failure.
-14. Implement the smallest rule change that makes the fixture pass.
-15. Do not add lint-suppression comments.
+3. Register the rule in `fixture.config.json`.
+4. Define message templates in `meta.messages`.
+5. Report with `messageId` and `{{ interpolation }}` data.
+6. Do not put an inline message string in `context.report`.
+7. Resolve identifiers through the scope API.
+8. Do not match an identifier by its name only.
+9. Add a positive fixture that produces zero diagnostics.
+10. Add a negative fixture that produces the required diagnostics.
+11. Pin the exact diagnostic count in `check-fixtures.ts`. Pin each exact rendered message in the same file.
+12. Run the fixture before the rule change and record the expected failure.
+13. Implement the smallest rule change that makes the fixture pass.
+14. Do not add lint-suppression comments.
 
 ## Message standard
 
