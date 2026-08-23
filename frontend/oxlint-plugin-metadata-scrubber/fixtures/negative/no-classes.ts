@@ -1,3 +1,5 @@
+import { Schema } from "effect";
+
 export class Service {
   run() {
     return true;
@@ -15,3 +17,7 @@ const Data = {
 };
 
 export class LocalTaggedFailure extends Data.TaggedError() {}
+
+export class SchemaRecord extends Schema.Class<SchemaRecord>("SchemaRecord")({
+  value: Schema.String,
+}) {}
