@@ -40,11 +40,13 @@ type TransparentExpression =
 const isTransparentExpression = (
   expression: ESTree.Expression,
 ): expression is TransparentExpression =>
-  expression.type === "TSInstantiationExpression" ||
-  expression.type === "TSAsExpression" ||
-  expression.type === "TSSatisfiesExpression" ||
-  expression.type === "TSNonNullExpression" ||
-  expression.type === "ParenthesizedExpression";
+  [
+    "TSInstantiationExpression",
+    "TSAsExpression",
+    "TSSatisfiesExpression",
+    "TSNonNullExpression",
+    "ParenthesizedExpression",
+  ].includes(expression.type);
 
 const unwrapTransparentExpressions = (
   expression: ESTree.Expression,
