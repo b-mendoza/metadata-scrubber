@@ -237,6 +237,11 @@ export default defineConfig(
       "sonarjs/todo-tag": ERROR,
       // Keep null legal because the project uses it as the one explicit absent value.
       "unicorn/no-null": OFF,
+      /**
+       * The project uses these established terms.
+       * mod comes from the *.mod.ts file-name convention.
+       * props and Props come from React.
+       */
       "unicorn/prevent-abbreviations": [
         ERROR,
         {
