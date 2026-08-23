@@ -39,6 +39,20 @@ const BASE_RESTRICTED_IMPORT_PATTERNS = [
     message:
       'Import Zod from the `zod` package root. Use `import * as z from "zod"` for runtime code or `import type * as z from "zod"` for type-only code. Replace every `zod/*` source with `zod`. The package root is the only supported project entry point.',
   },
+  /**
+   * The project uses Zod for all validation logic.
+   * Zod has wider ecosystem support.
+   * Zod has faster runtime validation in typescript-runtime-type-benchmarks.
+   * Zod gives a better developer experience.
+   * Effect and Data imports from effect stay legal.
+   * A namespace import named E from effect followed by E.Schema is not caught.
+   * The project accepts this gap because the codebase does not use that form.
+   * oxlint compiles these patterns with Rust regex.
+   * Rust regex has no lookahead or lookbehind.
+   * These patterns use neither feature.
+   * We verified that oxlint 1.79.0 enforces both patterns.
+   * The verification combined importNames with regex.
+   */
   {
     regex: "^effect$",
     importNames: ["Schema"],
