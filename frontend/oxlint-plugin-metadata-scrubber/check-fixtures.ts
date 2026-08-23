@@ -206,12 +206,12 @@ const getErrorDetails = (error: unknown): string =>
 
 const parseFixtureJson = (
   fixturePath: string,
-  result: FixtureLintResult,
-  jsonStart: number,
-  stderrSuffix: string,
+  stdout: string,
+  options: { jsonStart: number; stderrSuffix: string },
 ): unknown => {
+  const { jsonStart, stderrSuffix } = options;
   try {
-    const parsedValue: unknown = JSON.parse(result.stdout.slice(jsonStart));
+    const parsedValue: unknown = JSON.parse(stdout.slice(jsonStart));
     return parsedValue;
   } catch (error: unknown) {
     throw new Error(
@@ -249,7 +249,7 @@ const parseFixtureLintOutput = (
   }
   const parsed = validateFixtureJson(
     fixturePath,
-    parseFixtureJson(fixturePath, result, jsonStart, stderrSuffix),
+    parseFixtureJson(fixturePath, result.stdout, { jsonStart, stderrSuffix }),
     stderrSuffix,
   );
   if (hasNoLintedFiles(parsed)) {
