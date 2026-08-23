@@ -7,7 +7,7 @@ import type {
 } from "@oxlint/plugins";
 import { defineRule } from "@oxlint/plugins";
 
-import { getStaticPropertyName } from "../utils.ts";
+import { getStaticPropertyName } from "../utilities.ts";
 
 const EFFECT_NAMESPACES = new Set(["Data", "Schema"]);
 const EFFECT_BASE_NAMES = new Set([

@@ -7,7 +7,7 @@ import type {
 } from "@oxlint/plugins";
 import { defineRule } from "@oxlint/plugins";
 
-import { getStaticPropertyName, isFunction, isTestFile } from "../utils.ts";
+import { getStaticPropertyName, isFunction, isTestFile } from "../utilities.ts";
 
 type RuntimeVitestImportDefinition = Definition & {
   readonly node: ESTree.ImportSpecifier;

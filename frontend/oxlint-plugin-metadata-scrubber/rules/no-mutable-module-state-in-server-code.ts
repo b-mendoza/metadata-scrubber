@@ -1,6 +1,6 @@
 import { defineRule } from "@oxlint/plugins";
 
-import { isServerModule } from "../utils.ts";
+import { isServerModule } from "../utilities.ts";
 
 export default defineRule({
   meta: {

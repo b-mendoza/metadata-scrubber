@@ -5,7 +5,7 @@ import {
   isRuntimeImport,
   isServerProjectPath,
   toProjectPath,
-} from "../utils.ts";
+} from "../utilities.ts";
 
 const isSchemaBoundaryServerFixturePath = (path: string): boolean =>
   /(?:^|\/)fixtures\/(?:positive|negative)\/schema-boundary\.server\.tsx?$/u.test(

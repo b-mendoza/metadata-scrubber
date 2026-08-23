@@ -7,7 +7,7 @@ import type {
 } from "@oxlint/plugins";
 import { defineRule } from "@oxlint/plugins";
 
-import { getStaticPropertyName, isServerModule } from "../utils.ts";
+import { getStaticPropertyName, isServerModule } from "../utilities.ts";
 
 const SCHEMA_COMPILER_NAMES = new Set<string>([
   "is",

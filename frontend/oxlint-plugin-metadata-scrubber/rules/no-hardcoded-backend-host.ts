@@ -1,7 +1,7 @@
 import type { ESTree, Scope, SourceCode, Variable } from "@oxlint/plugins";
 import { defineRule } from "@oxlint/plugins";
 
-import { isTestFile, toProjectPath } from "../utils.ts";
+import { isTestFile, toProjectPath } from "../utilities.ts";
 
 const ENVIRONMENT_MODULE = "src/shared/config/env/environment.mod.server.ts";
 const NO_EXPRESSIONS = 0;
