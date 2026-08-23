@@ -1,4 +1,4 @@
-import { Schema } from "effect";
+import * as z from "zod";
 
 interface CreateURLSchemaParameters {
   /** @default /^https$/ */
@@ -32,16 +32,19 @@ export const createURLSchema = ({
 }: CreateURLSchemaParameters = {}) => {
   const protocolPattern = new RegExp(protocol.source, protocol.flags);
 
-  return Schema.Trim.check(
-    Schema.makeFilter(
+  return z
+    .string({
+      error: `The URL value must be a string that contains an absolute URL with a protocol that matches ${protocol}. Provide the URL as a string with the required protocol and a valid host.`,
+    })
+    .trim()
+    .refine(
       (value) => {
         protocolPattern.lastIndex = 0;
 
         return isURLWithProtocol(value, protocolPattern);
       },
       {
-        expected: `a URL with a protocol matching ${protocol}`,
+        error: `The URL value must be an absolute URL with a protocol that matches ${protocol}. Provide an explicit matching protocol and a valid host.`,
       },
-    ),
-  );
+    );
 };
