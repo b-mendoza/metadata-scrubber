@@ -192,6 +192,8 @@ export default defineConfig(
         },
       ],
       "no-restricted-syntax": [ERROR, ...BASE_RESTRICTED_SYNTAX],
+      // Prefer null over undefined as the explicit empty value.
+      "no-undefined": ERROR,
       "object-shorthand": ERROR,
       "react-hooks/exhaustive-deps": ERROR,
       /**
