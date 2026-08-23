@@ -17,6 +17,7 @@ import tseslint from "typescript-eslint";
 
 const ERROR = 2;
 const OFF = 0;
+
 const MAX_COMPLEXITY = 8;
 
 const BASE_RESTRICTED_IMPORT_PATTERNS = [
