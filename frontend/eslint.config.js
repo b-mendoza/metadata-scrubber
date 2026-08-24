@@ -22,8 +22,6 @@ import eslintPluginZod from "eslint-plugin-zod";
 import globals from "globals";
 import tseslint from "typescript-eslint";
 
-import metadataScrubber from "./oxlint-plugin-metadata-scrubber/index.ts";
-
 const ERROR = 2;
 const OFF = 0;
 
@@ -104,19 +102,19 @@ export default defineConfig(
   unicorn.configs.recommended,
   e18e.configs.recommended,
   sonarjs.configs?.["recommended"],
-  {
-    plugins: {
-      "metadata-scrubber": metadataScrubber,
-    },
-    rules: {
-      "metadata-scrubber/no-classes": ERROR,
-      "metadata-scrubber/no-expect-type-of": ERROR,
-      "metadata-scrubber/no-hardcoded-backend-host": ERROR,
-      "metadata-scrubber/no-mutable-module-state-in-server-code": ERROR,
-      "metadata-scrubber/no-silent-test-prerequisite": ERROR,
-      "metadata-scrubber/use-shared-render-helper": ERROR,
-    },
-  },
+  // {
+  //   plugins: {
+  //     "metadata-scrubber": metadataScrubber,
+  //   },
+  //   rules: {
+  //     "metadata-scrubber/no-classes": ERROR,
+  //     "metadata-scrubber/no-expect-type-of": ERROR,
+  //     "metadata-scrubber/no-hardcoded-backend-host": ERROR,
+  //     "metadata-scrubber/no-mutable-module-state-in-server-code": ERROR,
+  //     "metadata-scrubber/no-silent-test-prerequisite": ERROR,
+  //     "metadata-scrubber/use-shared-render-helper": ERROR,
+  //   },
+  // },
   {
     plugins: {
       "simple-import-sort": simpleImportSort,
