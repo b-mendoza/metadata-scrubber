@@ -540,7 +540,12 @@
     "unicorn/require-number-to-fixed-digits-argument": "error",
     "unicorn/switch-case-braces": "error",
     "unicorn/switch-case-break-position": "error",
-    "unicorn/text-encoding-identifier-case": "error",
+    "unicorn/text-encoding-identifier-case": [
+      "error",
+      {
+        "withDash": true
+      }
+    ],
     "unicorn/throw-new-error": "error",
     "e18e/prefer-array-to-spliced": "error",
     "e18e/prefer-url-canparse": "error",
