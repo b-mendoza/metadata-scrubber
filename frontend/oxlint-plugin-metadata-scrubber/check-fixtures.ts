@@ -168,7 +168,7 @@ const runFixtureLint = (fixturePath: string): FixtureLintResult => {
     ],
     {
       cwd: frontendDirectory,
-      encoding: "utf8",
+      encoding: "utf-8",
     },
   );
   if (result.error != null) {

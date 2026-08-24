@@ -1,9 +1,8 @@
 /**
  * eslint.config.js is the single source of truth for lint policy.
- * Never edit .oxlintrc.json. Never regenerate .oxlintrc.json.
- * The user owns .oxlintrc.json and updates it after each rule change in
- * this file.
- * A new rule stays dormant in oxlint until the user updates that file.
+ * Never edit .oxlintrc.json.
+ * The user updates .oxlintrc.json after each rule change in this file.
+ * A new rule stays undefined in oxlint until the user updates that file.
  */
 import e18e from "@e18e/eslint-plugin";
 import eslint from "@eslint/js";
@@ -263,6 +262,12 @@ export default defineConfig(
             props: true,
             Props: true,
           },
+        },
+      ],
+      "unicorn/text-encoding-identifier-case": [
+        ERROR,
+        {
+          withDash: true,
         },
       ],
       complexity: [
