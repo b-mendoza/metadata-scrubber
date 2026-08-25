@@ -44,6 +44,10 @@ linters:
     cyclop:
       max-complexity: 8
       package-average: 0.0
+    errcheck:
+      check-type-assertions: false # forcetypeassert owns type assertions
+      check-blank: true
+      disable-default-exclusions: false
     exhaustive:
       check:
         - map
