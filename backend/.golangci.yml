@@ -19,6 +19,7 @@ linters:
     - forbidigo
     - forcetypeassert
     - funlen
+    - gocheckcompilerdirectives
     - gochecknoinits
     - gocognit
     - gocritic
