@@ -205,16 +205,16 @@ func TestPDFPathsRejectOversizedCompressedCatalogMetadataBeforeValidation(t *tes
 	work := &observedPDFWork{}
 	validationCalls := 0
 
-	context, readErr := readPDFWithValidator(pdfBytes, func(context *model.Context) error {
+	pdfContext, readErr := readPDFWithValidator(pdfBytes, func(validationContext *model.Context) error {
 		validationCalls++
-		return api.ValidateContext(context)
+		return api.ValidateContext(validationContext)
 	})
 	fields, inspectErr := InspectPDF(pdfBytes, PublicInput)
 	outputBytes, scrubErr := CleanPDF(pdfBytes)
 	observedOutputBytes, observedScrubErr := work.clean(pdfBytes)
 
 	require.ErrorIs(t, readErr, ErrInspectionLimit)
-	require.Nil(t, context)
+	require.Nil(t, pdfContext)
 	require.ErrorIs(t, inspectErr, ErrInspectionLimit)
 	require.Nil(t, fields)
 	require.ErrorIs(t, scrubErr, ErrInspectionLimit)
@@ -227,21 +227,21 @@ func TestPDFPathsRejectOversizedCompressedCatalogMetadataBeforeValidation(t *tes
 
 func TestMetadataPreflightCachesCatalogContentWithoutMarkingItValidated(t *testing.T) {
 	metadata := syntheticXMP(t, "bounded-preflight-cache")
-	context, err := api.ReadContext(
+	pdfContext, err := api.ReadContext(
 		bytes.NewReader(buildPDFWithCompressedCatalogMetadata(t, metadata)),
 		boundedPDFConfiguration(),
 	)
 	require.NoError(t, err)
-	metadataEntry, found := context.FindTableEntry(5, 0)
+	metadataEntry, found := pdfContext.FindTableEntry(5, 0)
 	require.True(t, found)
 	require.False(t, metadataEntry.Valid)
 	storedStream, stream := metadataEntry.Object.(types.StreamDict)
 	require.True(t, stream)
 	require.Nil(t, storedStream.Content)
-	metadataEntries, err := snapshotMetadataEntries(context)
+	metadataEntries, err := snapshotMetadataEntries(pdfContext)
 	require.NoError(t, err)
 
-	require.NoError(t, preflightMetadataEntries(context, metadataEntries))
+	require.NoError(t, preflightMetadataEntries(pdfContext, metadataEntries))
 
 	require.False(t, metadataEntry.Valid)
 	storedStream, stream = metadataEntry.Object.(types.StreamDict)
@@ -251,19 +251,19 @@ func TestMetadataPreflightCachesCatalogContentWithoutMarkingItValidated(t *testi
 
 func TestAnalyzePDFReleasesDecodedMetadataStreamCaches(t *testing.T) {
 	const decodedStreamBytes = 1 << 20
-	context, err := readPDF(buildPDFWithCompressedMetadataStreams(t, 2, decodedStreamBytes))
+	pdfContext, err := readPDF(buildPDFWithCompressedMetadataStreams(t, 2, decodedStreamBytes))
 	require.NoError(t, err)
-	require.Equal(t, 2, primeMetadataStreamCaches(t, context, decodedStreamBytes))
+	require.Equal(t, 2, primeMetadataStreamCaches(t, pdfContext, decodedStreamBytes))
 
-	analysis, err := analyzePDF(context, PublicInput)
+	analysis, err := analyzePDF(pdfContext, PublicInput)
 
 	require.NoError(t, err)
 	require.Len(t, analysis.fields, 2)
-	requireMetadataStreamCachesCleared(t, context)
+	requireMetadataStreamCachesCleared(t, pdfContext)
 
-	removeAnalyzedMetadata(context, analysis)
+	removeAnalyzedMetadata(pdfContext, analysis)
 	var output bytes.Buffer
-	require.NoError(t, api.WriteContext(context, &output))
+	require.NoError(t, api.WriteContext(pdfContext, &output))
 	require.NoError(t, verifyScrubbedPDF(output.Bytes()))
 }
 
@@ -644,19 +644,19 @@ func TestPDFPathsRejectUndecodableMetadataAtomically(t *testing.T) {
 }
 
 func TestMetadataTraversalDeduplicatesOneParentEntryTarget(t *testing.T) {
-	context, err := readPDF(buildPDFWithInfoAndRawMetadataAtLocation(t, map[string]string{}, syntheticXMP(t, "duplicate-target"), catalogMetadata))
+	pdfContext, err := readPDF(buildPDFWithInfoAndRawMetadataAtLocation(t, map[string]string{}, syntheticXMP(t, "duplicate-target"), catalogMetadata))
 	require.NoError(t, err)
-	catalog, err := context.Catalog()
+	catalog, err := pdfContext.Catalog()
 	require.NoError(t, err)
 	analysis := &pdfAnalysis{}
 	state := traversalState{
 		analysis:     analysis,
-		context:      context,
-		roles:        map[int]objectRole{context.Root.ObjectNumber.Value(): {catalog: true}},
+		context:      pdfContext,
+		roles:        map[int]objectRole{pdfContext.Root.ObjectNumber.Value(): {catalog: true}},
 		seenTargets:  &metadataTargetTracker{},
-		objectNumber: context.Root.ObjectNumber.Value(),
+		objectNumber: pdfContext.Root.ObjectNumber.Value(),
 	}
-	walker := structuralWalker{context: context, inspectMetadata: state.inspectMetadataEntry}
+	walker := structuralWalker{context: pdfContext, inspectMetadata: state.inspectMetadataEntry}
 
 	require.NoError(t, walker.walkObject(catalog, nil))
 	require.NoError(t, walker.walkObject(catalog, nil))
@@ -736,13 +736,15 @@ func TestCachedSignatureVariantsAreClassifiedAsSigned(t *testing.T) {
 		name    string
 		context *model.Context
 	}{
-		{name: "signature flag", context: signatureContext(func(context *model.Context) { context.SignatureExist = true })},
-		{name: "append only flag", context: signatureContext(func(context *model.Context) { context.AppendOnly = true })},
-		{name: "usage rights dictionary", context: signatureContext(func(context *model.Context) { context.URSignature = types.Dict{"Filter": types.Name("Synthetic")} })},
-		{name: "certified signature object", context: signatureContext(func(context *model.Context) { context.CertifiedSigObjNr = 9 })},
-		{name: "trusted document timestamp", context: signatureContext(func(context *model.Context) { context.DTS = time.Unix(1, 0) })},
-		{name: "signed cached signature", context: signatureContext(func(context *model.Context) {
-			context.Signatures = map[int]map[int]model.Signature{0: {9: {Signed: true}}}
+		{name: "signature flag", context: signatureContext(func(pdfContext *model.Context) { pdfContext.SignatureExist = true })},
+		{name: "append only flag", context: signatureContext(func(pdfContext *model.Context) { pdfContext.AppendOnly = true })},
+		{name: "usage rights dictionary", context: signatureContext(func(pdfContext *model.Context) {
+			pdfContext.URSignature = types.Dict{"Filter": types.Name("Synthetic")}
+		})},
+		{name: "certified signature object", context: signatureContext(func(pdfContext *model.Context) { pdfContext.CertifiedSigObjNr = 9 })},
+		{name: "trusted document timestamp", context: signatureContext(func(pdfContext *model.Context) { pdfContext.DTS = time.Unix(1, 0) })},
+		{name: "signed cached signature", context: signatureContext(func(pdfContext *model.Context) {
+			pdfContext.Signatures = map[int]map[int]model.Signature{0: {9: {Signed: true}}}
 		})},
 	}
 	for _, testCase := range testCases {
@@ -812,9 +814,9 @@ func compressedMetadataStreamObject(t *testing.T, content string) string {
 	return fmt.Sprintf("<< /Type /Metadata /Subtype /XML /Filter /FlateDecode /Length %d >>\nstream\n%s\nendstream", compressed.Len(), compressed.String())
 }
 
-func forEachMetadataStream(context *model.Context, visit func(*model.XRefTableEntry, types.StreamDict)) int {
+func forEachMetadataStream(pdfContext *model.Context, visit func(*model.XRefTableEntry, types.StreamDict)) int {
 	visited := 0
-	for _, entry := range context.Table {
+	for _, entry := range pdfContext.Table {
 		if entry == nil || entry.Object == nil {
 			continue
 		}
@@ -828,19 +830,19 @@ func forEachMetadataStream(context *model.Context, visit func(*model.XRefTableEn
 	return visited
 }
 
-func primeMetadataStreamCaches(t *testing.T, context *model.Context, decodedStreamBytes int) int {
+func primeMetadataStreamCaches(t *testing.T, pdfContext *model.Context, decodedStreamBytes int) int {
 	t.Helper()
 
-	return forEachMetadataStream(context, func(entry *model.XRefTableEntry, stream types.StreamDict) {
+	return forEachMetadataStream(pdfContext, func(entry *model.XRefTableEntry, stream types.StreamDict) {
 		stream.Content = bytes.Repeat([]byte("x"), decodedStreamBytes)
 		entry.Object = stream
 	})
 }
 
-func requireMetadataStreamCachesCleared(t *testing.T, context *model.Context) {
+func requireMetadataStreamCachesCleared(t *testing.T, pdfContext *model.Context) {
 	t.Helper()
 
-	metadataStreamCount := forEachMetadataStream(context, func(_ *model.XRefTableEntry, stream types.StreamDict) {
+	metadataStreamCount := forEachMetadataStream(pdfContext, func(_ *model.XRefTableEntry, stream types.StreamDict) {
 		require.Nil(t, stream.Content)
 		require.NotEmpty(t, stream.Raw)
 	})
@@ -1134,18 +1136,18 @@ func metadataStreamObject(content string) string {
 func assertValidPDF(t *testing.T, pdfBytes []byte) *model.Context {
 	t.Helper()
 
-	context, err := api.ReadValidateAndOptimize(bytes.NewReader(pdfBytes), boundedPDFConfiguration())
+	pdfContext, err := api.ReadValidateAndOptimize(bytes.NewReader(pdfBytes), boundedPDFConfiguration())
 	require.NoError(t, err)
 
-	return context
+	return pdfContext
 }
 
-func extractedPageContent(t *testing.T, context *model.Context) map[int]string {
+func extractedPageContent(t *testing.T, pdfContext *model.Context) map[int]string {
 	t.Helper()
 
-	contentByPage := make(map[int]string, context.PageCount)
-	for pageNumber := 1; pageNumber <= context.PageCount; pageNumber++ {
-		contentReader, err := pdfcpu.ExtractPageContent(context, pageNumber)
+	contentByPage := make(map[int]string, pdfContext.PageCount)
+	for pageNumber := 1; pageNumber <= pdfContext.PageCount; pageNumber++ {
+		contentReader, err := pdfcpu.ExtractPageContent(pdfContext, pageNumber)
 		require.NoError(t, err)
 		contentBytes, err := io.ReadAll(contentReader)
 		require.NoError(t, err)
@@ -1167,13 +1169,13 @@ type observedPDFWork struct {
 
 func (work *observedPDFWork) clean(inputBytes []byte) ([]byte, error) {
 	operations, err := newCleanPDFOperations(
-		func(context *model.Context, analysis *pdfAnalysis) {
+		func(pdfContext *model.Context, analysis *pdfAnalysis) {
 			work.mutations++
-			removeAnalyzedMetadata(context, analysis)
+			removeAnalyzedMetadata(pdfContext, analysis)
 		},
-		func(context *model.Context, writer io.Writer) error {
+		func(pdfContext *model.Context, writer io.Writer) error {
 			work.writes++
-			work.writeLimits = append(work.writeLimits, context.Conf.Limits)
+			work.writeLimits = append(work.writeLimits, pdfContext.Conf.Limits)
 			if work.writeError != nil {
 				return work.writeError
 			}
@@ -1181,7 +1183,7 @@ func (work *observedPDFWork) clean(inputBytes []byte) ([]byte, error) {
 				_, writeErr := writer.Write(work.writeOutput)
 				return writeErr
 			}
-			return api.WriteContext(context, writer)
+			return api.WriteContext(pdfContext, writer)
 		},
 		func(outputBytes []byte) error {
 			work.verifications++
@@ -1244,9 +1246,9 @@ func requireExpectedActions(t *testing.T, fields []Field) {
 }
 
 func signatureContext(apply func(*model.Context)) *model.Context {
-	context := &model.Context{XRefTable: &model.XRefTable{}}
-	apply(context)
-	return context
+	pdfContext := &model.Context{XRefTable: &model.XRefTable{}}
+	apply(pdfContext)
+	return pdfContext
 }
 
 func fieldNames(fields []Field) []string {
