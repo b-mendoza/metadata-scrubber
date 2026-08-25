@@ -238,7 +238,7 @@ func serveServer(server *http.Server, request *http.Request) *httptest.ResponseR
 	return recorder
 }
 
-func serveServerJSON(server *http.Server, path, body string) *httptest.ResponseRecorder {
+func serveServerJSON(server *http.Server, path string, body string) *httptest.ResponseRecorder {
 	request := httptest.NewRequest(http.MethodPost, path, strings.NewReader(body))
 	request.Header.Set(header.ContentType, "application/json")
 	return serveServer(server, request)
