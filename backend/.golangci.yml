@@ -62,6 +62,13 @@ linters:
       ignore-comments: true
     gocognit:
       min-complexity: 9
+    gosec:
+      severity: low
+      confidence: low
+      config:
+        global:
+          # Ignore the suppression effect of "#nosec" comments.
+          nosec: true
     mnd:
       checks:
         - argument
