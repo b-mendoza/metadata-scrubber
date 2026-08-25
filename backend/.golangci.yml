@@ -38,6 +38,7 @@ linters:
     - modernize
     - musttag
     - nestif
+    - nilerr
     - nilnil
     - noemptyinterface
     - nohiddentestsignal
