@@ -95,7 +95,7 @@ linters:
         - map
       default-signifies-exhaustive: false
       explicit-exhaustive-switch: false
-      explicit-exhaustive-map: true
+      explicit-exhaustive-map: false
       package-scope-only: true
     forbidigo:
       analyze-types: true
