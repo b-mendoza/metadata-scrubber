@@ -22,6 +22,7 @@ linters:
     - ineffassign
     - interfacebloat
     - iotamixing
+    - makezero
     - misspell
     - mnd
     - modernize
@@ -113,6 +114,8 @@ linters:
       max: 5
     iotamixing:
       report-individual: true
+    makezero:
+      always: false
     mnd:
       checks:
         - argument
