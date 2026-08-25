@@ -91,7 +91,7 @@ func (fake *Fake) SetSource(fileID string, source SourceObject) error {
 }
 
 // SetSanitized seeds copied sanitized bytes for one exact source revision.
-func (fake *Fake) SetSanitized(fileID, sourceETag string, pdfBytes []byte) error {
+func (fake *Fake) SetSanitized(fileID string, sourceETag string, pdfBytes []byte) error {
 	objectKey, err := SanitizedObjectKey(fileID, sourceETag)
 	if err != nil {
 		return err
@@ -105,7 +105,7 @@ func (fake *Fake) SetSanitized(fileID, sourceETag string, pdfBytes []byte) error
 }
 
 // SanitizedBytes returns a copy of the bytes stored for one exact source revision.
-func (fake *Fake) SanitizedBytes(fileID, sourceETag string) (pdfBytes []byte, exists bool, err error) {
+func (fake *Fake) SanitizedBytes(fileID string, sourceETag string) (pdfBytes []byte, exists bool, err error) {
 	objectKey, err := SanitizedObjectKey(fileID, sourceETag)
 	if err != nil {
 		return nil, false, err
