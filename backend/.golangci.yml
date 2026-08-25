@@ -63,6 +63,8 @@ linters:
     - usetesting
     - wastedassign
   settings:
+    asasalint:
+      use-builtin-exclusions: false
     custom:
       noemptyinterface:
         type: module
