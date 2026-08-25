@@ -97,12 +97,19 @@ linters:
       rules:
         - name: argument-limit
           arguments: [4]
+        # Staged rule: file-length-limit reports three large test files.
+        # - name: file-length-limit
+        #   arguments:
+        #     - max: 450
+        #       skip-comments: true
+        #       skip-blank-lines: true
         - name: filename-format
           arguments:
             - "^[a-z0-9]+(?:_[a-z0-9]+)*\\.go$"
         - name: max-control-nesting
           arguments: [3]
         - name: modifies-parameter
+        - name: var-naming
 
 formatters:
   enable:
