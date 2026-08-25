@@ -50,7 +50,7 @@ linters:
     - reassign
     - recvcheck
     - revive
-    # Staged rule: sloglint reports 20 existing logging-policy findings.
+    # Staged rule: sloglint reports 38 existing logging-policy findings.
     # - sloglint
     - staticcheck
     - testifylint
