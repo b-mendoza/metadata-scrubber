@@ -143,6 +143,8 @@ linters:
         rangeValCopy:
           sizeThreshold: 153
           skipTestFuncs: false
+        truncateCmp:
+          skipArchDependent: false
     gosec:
       severity: low
       confidence: low
