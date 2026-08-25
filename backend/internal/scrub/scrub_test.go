@@ -278,7 +278,7 @@ func TestPDFByteAPIsEnforceAggregateInputLimit(t *testing.T) {
 	require.NoError(t, err)
 	require.Equal(t, exactLimitPDF, outputBytes)
 
-	overLimitPDF := append(exactLimitPDF, ' ')
+	overLimitPDF := slices.Concat(exactLimitPDF, []byte{' '})
 	fields, err = InspectPDF(overLimitPDF, PublicInput)
 	require.ErrorIs(t, err, ErrInputTooLarge)
 	require.Nil(t, fields)
