@@ -46,6 +46,7 @@ linters:
     - nolintlint
     - nosprintfhostport
     - perfsprint
+    - predeclared
     - reassign
     - revive
     # Staged rule: sloglint reports 20 existing logging-policy findings.
