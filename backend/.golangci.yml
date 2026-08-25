@@ -224,6 +224,7 @@ linters:
           arguments: [4]
         - name: bare-return
         - name: blank-imports
+        - name: confusing-results
         # Owner policy: each parameter and result declares its own type.
         - name: enforce-repeated-arg-type-style
           arguments: ["full"]
