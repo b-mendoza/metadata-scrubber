@@ -10,6 +10,7 @@ linters:
     - errcheck
     - errorlint
     - exhaustive
+    - forbidigo
     - forcetypeassert
     - funlen
     - gochecknoinits
@@ -27,6 +28,8 @@ linters:
     - nohiddentestsignal
     - nolintlint
     - revive
+    # Staged rule: sloglint reports 20 existing logging-policy findings.
+    # - sloglint
     - staticcheck
     # Staged rule: thelper reports 22 existing helper findings.
     # - thelper
@@ -56,6 +59,18 @@ linters:
       explicit-exhaustive-switch: false
       explicit-exhaustive-map: true
       package-scope-only: true
+    forbidigo:
+      analyze-types: true
+      exclude-godoc-examples: true
+      forbid:
+        - pattern: '^fmt\.Print.*$'
+          msg: Use the injected log/slog logger for application output.
+        - pattern: '^print(ln)?$'
+          msg: Use the injected log/slog logger for application output.
+        - pattern: '^log\.(Print|Printf|Println|Fatal|Fatalf|Fatalln|Panic|Panicf|Panicln|Output)$'
+          msg: Use the injected log/slog logger instead of the global log package.
+        - pattern: '^slog\.(Debug|Info|Warn|Error|Log|LogAttrs)(Context)?$'
+          msg: Use the injected *slog.Logger instead of the global slog functions.
     funlen:
       lines: -1
       statements: 40
@@ -110,6 +125,16 @@ linters:
           arguments: [3]
         - name: modifies-parameter
         - name: var-naming
+    # Staged rule settings for the logging policy above.
+    # sloglint:
+    #   no-global: default
+    #   context: scope
+    #   static-msg: true
+    #   msg-style: lowercased
+    #   no-mixed-args: true
+    #   attr-only: true
+    #   no-raw-keys: true
+    #   key-naming-case: snake
 
 formatters:
   enable:
