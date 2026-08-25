@@ -773,7 +773,7 @@ func onePagePDFObjects(content string) map[int]string {
 	}
 }
 
-func buildPDFWithCompressedMetadataStreams(t *testing.T, streamCount, decodedStreamBytes int) []byte {
+func buildPDFWithCompressedMetadataStreams(t *testing.T, streamCount int, decodedStreamBytes int) []byte {
 	t.Helper()
 
 	objects := onePagePDFObjects("BT 20 100 Td (Synthetic page) Tj ET")
@@ -1207,7 +1207,7 @@ func structFieldNames(structType reflect.Type) []string {
 	return names
 }
 
-func mergeInfoEntries(baseEntries, replacements map[string]string) map[string]string {
+func mergeInfoEntries(baseEntries map[string]string, replacements map[string]string) map[string]string {
 	mergedEntries := maps.Clone(baseEntries)
 	maps.Copy(mergedEntries, replacements)
 	return mergedEntries
