@@ -119,7 +119,7 @@ linters:
       default-signifies-exhaustive: false
       include-shared-interfaces: true
     gocognit:
-      min-complexity: 9
+      min-complexity: 8
     gocritic:
       disabled-checks:
         - deprecatedComment
