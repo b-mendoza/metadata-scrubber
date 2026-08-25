@@ -249,6 +249,7 @@ linters:
         - name: modifies-parameter
         - name: range
         - name: receiver-naming
+        - name: string-of-int
         - name: var-naming
     # Staged rule settings for the logging policy above.
     # sloglint:
