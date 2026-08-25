@@ -20,6 +20,7 @@ linters:
     - gosec
     - govet
     - ineffassign
+    - interfacebloat
     - misspell
     - mnd
     - modernize
@@ -107,6 +108,8 @@ linters:
       disable:
         - fieldalignment # field order must communicate meaning before padding
         - findcall # a search tool, not a policy analyzer
+    interfacebloat:
+      max: 5
     mnd:
       checks:
         - argument
