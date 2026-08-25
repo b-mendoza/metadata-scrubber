@@ -68,7 +68,7 @@ func analyzePDF(context *model.Context, origin InspectionOrigin) (*pdfAnalysis, 
 		return analysis, nil
 	}
 
-	slices.SortStableFunc(analysis.fields, func(firstField, secondField Field) int {
+	slices.SortStableFunc(analysis.fields, func(firstField Field, secondField Field) int {
 		return cmp.Or(
 			cmp.Compare(firstField.Name, secondField.Name),
 			cmp.Compare(firstField.Label, secondField.Label),
@@ -226,7 +226,7 @@ func decodeMetadataStreamWithinBudget(streamDictionary *types.StreamDict, remain
 	return content, nil
 }
 
-func (state *traversalState) metadataIdentity(path []int) (name, label string) {
+func (state *traversalState) metadataIdentity(path []int) (name string, label string) {
 	role := state.roles[state.objectNumber]
 	if len(path) == 0 && role.catalog {
 		return "metadata.catalog", "Document metadata"
