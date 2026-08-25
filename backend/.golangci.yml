@@ -21,6 +21,7 @@ linters:
     - funlen
     - gocheckcompilerdirectives
     - gochecknoinits
+    - gochecksumtype
     - gocognit
     - gocritic
     - godox
