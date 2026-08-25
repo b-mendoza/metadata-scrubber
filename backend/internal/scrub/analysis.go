@@ -226,7 +226,7 @@ func decodeMetadataStreamWithinBudget(streamDictionary *types.StreamDict, remain
 	return content, nil
 }
 
-func (state *traversalState) metadataIdentity(path []int) (string, string) {
+func (state *traversalState) metadataIdentity(path []int) (name, label string) {
 	role := state.roles[state.objectNumber]
 	if len(path) == 0 && role.catalog {
 		return "metadata.catalog", "Document metadata"
