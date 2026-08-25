@@ -269,6 +269,10 @@ linters:
     #   attr-only: true
     #   no-raw-keys: true
     #   key-naming-case: snake
+    staticcheck:
+      checks: ["all"]
+      dot-import-whitelist: []
+      http-status-code-whitelist: []
     testifylint:
       enable-all: true
       bool-compare:
