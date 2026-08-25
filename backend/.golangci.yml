@@ -12,6 +12,7 @@ linters:
     # - depguard
     - durationcheck
     - errcheck
+    - errname
     - errorlint
     - exhaustive
     - forbidigo
