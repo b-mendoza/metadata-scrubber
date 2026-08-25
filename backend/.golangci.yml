@@ -226,6 +226,7 @@ linters:
         - name: blank-imports
         - name: confusing-results
         - name: context-as-argument
+        - name: deep-exit
         # Owner policy: each parameter and result declares its own type.
         - name: enforce-repeated-arg-type-style
           arguments: ["full"]
