@@ -225,6 +225,7 @@ linters:
         - name: bare-return
         - name: blank-imports
         - name: confusing-results
+        - name: context-as-argument
         # Owner policy: each parameter and result declares its own type.
         - name: enforce-repeated-arg-type-style
           arguments: ["full"]
