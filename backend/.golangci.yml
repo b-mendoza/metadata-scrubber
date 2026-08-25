@@ -61,6 +61,7 @@ linters:
     - unused
     - usestdlibvars
     - usetesting
+    - wastedassign
   settings:
     custom:
       noemptyinterface:
