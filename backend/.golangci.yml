@@ -138,7 +138,8 @@ linters:
         elseif:
           skipBalanced: false
         rangeExprCopy:
-          skipTestFuncs: true
+          sizeThreshold: 0
+          skipTestFuncs: false
         rangeValCopy:
           sizeThreshold: 256
           skipTestFuncs: true
