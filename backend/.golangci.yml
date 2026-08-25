@@ -247,6 +247,7 @@ linters:
         - name: max-control-nesting
           arguments: [3]
         - name: modifies-parameter
+        - name: range
         - name: var-naming
     # Staged rule settings for the logging policy above.
     # sloglint:
