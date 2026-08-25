@@ -149,6 +149,14 @@ linters:
           skipRecvDeref: false
         unnamedResult:
           checkExported: true
+    godox:
+      keywords:
+        - BUG
+        - FIXME
+        - HACK
+        - OPTIMIZE
+        - TODO
+        - XXX
     gosec:
       severity: low
       confidence: low
