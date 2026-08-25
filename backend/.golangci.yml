@@ -209,6 +209,7 @@ linters:
       # perfsprint also reports fmt.Sprintf("%s", v), so keep sprintf1 disabled here.
       err-error: false
       errorf: true
+      loop-other-ops: true
       sprintf1: false
       strconcat: false
     reassign:
