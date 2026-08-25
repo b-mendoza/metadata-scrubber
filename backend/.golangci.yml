@@ -147,6 +147,8 @@ linters:
           skipArchDependent: false
         underef:
           skipRecvDeref: false
+        unnamedResult:
+          checkExported: true
     gosec:
       severity: low
       confidence: low
