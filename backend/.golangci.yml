@@ -289,6 +289,8 @@ linters:
         mode: remove
     unparam:
       check-exported: true
+    unused:
+      field-writes-are-uses: false
     usestdlibvars:
       http-method: true
       http-status-code: true
