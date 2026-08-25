@@ -77,7 +77,7 @@ func newServer(cfg config.Config, objectStorage storage.Storage, logger *slog.Lo
 	mux := http.NewServeMux()
 	workflow := handler.New(logger, make(chan struct{}, handler.ProcessingPermitCount))
 
-	mux.HandleFunc("GET /api/health", handler.Reachability)
+	mux.HandleFunc("GET /api/health", workflow.Reachability)
 	mux.HandleFunc("POST /api/uploads", workflow.Upload)
 	mux.HandleFunc("POST /api/files/dry-run", workflow.DryRun)
 	mux.HandleFunc("POST /api/files/scrub", workflow.Scrub)

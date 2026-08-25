@@ -14,8 +14,8 @@ type errorResponse struct {
 }
 
 // WriteError writes msg as a JSON error response with the given status code.
-func WriteError(w http.ResponseWriter, status int, msg string) {
+func WriteError(w http.ResponseWriter, status int, msg string) error {
 	w.Header().Set(header.ContentType, mediatype.JSON)
 	w.WriteHeader(status)
-	_ = json.NewEncoder(w).Encode(errorResponse{Error: msg})
+	return json.NewEncoder(w).Encode(errorResponse{Error: msg})
 }

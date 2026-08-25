@@ -15,16 +15,15 @@ import (
 // DryRun inspects the current source revision while holding shared admission.
 func (handler *Handler) DryRun(w http.ResponseWriter, request *http.Request) {
 	startedAt := time.Now()
-	input, ok := decodeJSONRequest[dryRunRequest](w, request)
+	input, ok := decodeJSONRequest[dryRunRequest](handler.logger, w, request)
 	if !ok {
 		return
 	}
-	fileID, ok := parseStorageKey(input.StorageKey)
+	fileID, ok := handler.dryRunFileID(w, request, input)
 	if !ok {
-		httpx.WriteError(w, http.StatusBadRequest, "invalid storage key")
 		return
 	}
-	objectStorage := storageFromRequest(w, request)
+	objectStorage := handler.storageFromRequest(w, request)
 	if objectStorage == nil {
 		return
 	}
@@ -38,18 +37,49 @@ func (handler *Handler) DryRun(w http.ResponseWriter, request *http.Request) {
 		fields, err = convertPublicFields(inspectedFields)
 	}
 	if errors.Is(err, errAdmissionFailure) {
-		writeAdmissionFailure(w, err)
+		handler.writeAdmissionFailure(w, request, err)
 		return
 	}
 	if err != nil {
-		failure := classifyPipelineFailure(err, "could not inspect PDF")
-		handler.logStage(pipelineLogEvent{ctx: request.Context(), stage: pipelineStageDryRun, storageKey: input.StorageKey, outcome: failure.outcome, startedAt: startedAt})
-		httpx.WriteError(w, failure.status, failure.message)
+		handler.writeDryRunFailure(w, dryRunFailureResponse{
+			request:   request,
+			input:     input,
+			startedAt: startedAt,
+			err:       err,
+		})
 		return
 	}
 
 	handler.logStage(pipelineLogEvent{ctx: request.Context(), stage: pipelineStageDryRun, storageKey: input.StorageKey, outcome: pipelineOutcomeSuccess, startedAt: startedAt})
-	writeJSON(w, http.StatusOK, dryRunResponse{ETag: etag, Fields: fields})
+	if err := writeJSON(w, http.StatusOK, dryRunResponse{ETag: etag, Fields: fields}); err != nil {
+		handler.logger.ErrorContext(request.Context(), "could not write JSON response", "error", err)
+	}
+}
+
+func (handler *Handler) dryRunFileID(w http.ResponseWriter, request *http.Request, input dryRunRequest) (string, bool) {
+	fileID, ok := parseStorageKey(input.StorageKey)
+	if ok {
+		return fileID, true
+	}
+	if err := httpx.WriteError(w, http.StatusBadRequest, "invalid storage key"); err != nil {
+		handler.logger.ErrorContext(request.Context(), "could not write JSON response", "error", err)
+	}
+	return "", false
+}
+
+type dryRunFailureResponse struct {
+	request   *http.Request
+	input     dryRunRequest
+	startedAt time.Time
+	err       error
+}
+
+func (handler *Handler) writeDryRunFailure(w http.ResponseWriter, response dryRunFailureResponse) {
+	failure := classifyPipelineFailure(response.err, "could not inspect PDF")
+	handler.logStage(pipelineLogEvent{ctx: response.request.Context(), stage: pipelineStageDryRun, storageKey: response.input.StorageKey, outcome: failure.outcome, startedAt: response.startedAt})
+	if writeErr := httpx.WriteError(w, failure.status, failure.message); writeErr != nil {
+		handler.logger.ErrorContext(response.request.Context(), "could not write JSON response", "error", writeErr)
+	}
 }
 
 type inspectWorkflowRequest struct {
@@ -87,27 +117,22 @@ func (handler *Handler) inspectSource(input inspectWorkflowRequest) (string, []s
 // Scrub cleans the exact reviewed source revision and returns its private download grant.
 func (handler *Handler) Scrub(w http.ResponseWriter, request *http.Request) {
 	startedAt := time.Now()
-	input, ok := decodeJSONRequest[scrubRequest](w, request)
+	input, ok := decodeJSONRequest[scrubRequest](handler.logger, w, request)
 	if !ok {
 		return
 	}
-	fileID, ok := parseStorageKey(input.StorageKey)
+	fileID, ok := handler.scrubFileID(w, request, input)
 	if !ok {
-		httpx.WriteError(w, http.StatusBadRequest, "invalid storage key")
 		return
 	}
-	if _, err := storage.SanitizedObjectKey(fileID, input.ETag); err != nil {
-		httpx.WriteError(w, http.StatusBadRequest, "invalid ETag")
-		return
-	}
-	objectStorage := storageFromRequest(w, request)
+	objectStorage := handler.storageFromRequest(w, request)
 	if objectStorage == nil {
 		return
 	}
 
 	exists, err := objectStorage.SanitizedExists(request.Context(), fileID, input.ETag)
 	if err != nil {
-		writeUnexpectedFailure(w, err, "could not check scrubbed file")
+		handler.writeUnexpectedFailure(w, request, err, "could not check scrubbed file")
 		return
 	}
 	if exists {
@@ -130,6 +155,23 @@ func (handler *Handler) Scrub(w http.ResponseWriter, request *http.Request) {
 	})
 }
 
+func (handler *Handler) scrubFileID(w http.ResponseWriter, request *http.Request, input scrubRequest) (string, bool) {
+	fileID, ok := parseStorageKey(input.StorageKey)
+	if !ok {
+		if err := httpx.WriteError(w, http.StatusBadRequest, "invalid storage key"); err != nil {
+			handler.logger.ErrorContext(request.Context(), "could not write JSON response", "error", err)
+		}
+		return "", false
+	}
+	if _, err := storage.SanitizedObjectKey(fileID, input.ETag); err == nil {
+		return fileID, true
+	}
+	if err := httpx.WriteError(w, http.StatusBadRequest, "invalid ETag"); err != nil {
+		handler.logger.ErrorContext(request.Context(), "could not write JSON response", "error", err)
+	}
+	return "", false
+}
+
 type scrubMaterializeRequest struct {
 	request       *http.Request
 	objectStorage storage.Storage
@@ -144,19 +186,21 @@ func (handler *Handler) materializeScrubbed(w http.ResponseWriter, materializeRe
 		storageKey: materializeRequest.input.StorageKey, startedAt: materializeRequest.startedAt, expectedETag: materializeRequest.input.ETag,
 	})
 	if errors.Is(err, errAdmissionFailure) {
-		writeAdmissionFailure(w, err)
+		handler.writeAdmissionFailure(w, materializeRequest.request, err)
 		return false
 	}
 	if err != nil {
 		failure := classifyPipelineFailure(err, "could not scrub PDF")
 		handler.logStage(pipelineLogEvent{ctx: materializeRequest.request.Context(), stage: pipelineStageScrubbed, storageKey: materializeRequest.input.StorageKey, outcome: failure.outcome, startedAt: materializeRequest.startedAt})
-		httpx.WriteError(w, failure.status, failure.message)
+		if writeErr := httpx.WriteError(w, failure.status, failure.message); writeErr != nil {
+			handler.logger.ErrorContext(materializeRequest.request.Context(), "could not write JSON response", "error", writeErr)
+		}
 		return false
 	}
 	handler.logStage(pipelineLogEvent{ctx: materializeRequest.request.Context(), stage: pipelineStageScrubbed, storageKey: materializeRequest.input.StorageKey, outcome: pipelineOutcomeSuccess, startedAt: materializeRequest.startedAt})
 
 	if err := materializeRequest.objectStorage.UploadSanitized(materializeRequest.request.Context(), materializeRequest.fileID, materializeRequest.input.ETag, cleanedBytes); err != nil {
-		writeUnexpectedFailure(w, err, "could not store scrubbed file")
+		handler.writeUnexpectedFailure(w, materializeRequest.request, err, "could not store scrubbed file")
 		return false
 	}
 	return true
@@ -208,13 +252,15 @@ func (handler *Handler) presignScrubbed(w http.ResponseWriter, downloadRequest s
 		downloadGrantExpiry,
 	)
 	if err != nil {
-		writeUnexpectedFailure(w, err, "could not create download")
+		handler.writeUnexpectedFailure(w, downloadRequest.request, err, "could not create download")
 		return
 	}
 
 	handler.logStage(pipelineLogEvent{ctx: downloadRequest.request.Context(), stage: pipelineStagePresigned, storageKey: downloadRequest.input.StorageKey, outcome: downloadRequest.outcome, startedAt: downloadRequest.startedAt})
-	writeJSON(w, http.StatusOK, scrubResponse{
+	if err := writeJSON(w, http.StatusOK, scrubResponse{
 		Status: "done",
 		Result: scrubResponseResult{DownloadURL: grant.URL},
-	})
+	}); err != nil {
+		handler.logger.ErrorContext(downloadRequest.request.Context(), "could not write JSON response", "error", err)
+	}
 }

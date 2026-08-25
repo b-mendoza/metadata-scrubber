@@ -147,36 +147,77 @@ func writeJSON[T reachabilityResponse | uploadResponse | dryRunResponse | scrubR
 	w http.ResponseWriter,
 	status int,
 	body T,
-) {
+) error {
 	w.Header().Set(header.ContentType, mediatype.JSON)
 	w.WriteHeader(status)
-	_ = json.NewEncoder(w).Encode(body)
+	return json.NewEncoder(w).Encode(body)
 }
 
 func decodeJSONRequest[T uploadRequest | dryRunRequest | scrubRequest](
+	logger *slog.Logger,
 	w http.ResponseWriter,
 	request *http.Request,
 ) (T, bool) {
 	var zero T
-	contentType, _, err := mime.ParseMediaType(request.Header.Get(header.ContentType))
-	if err != nil || contentType != mediatype.JSON {
-		httpx.WriteError(w, http.StatusUnsupportedMediaType, "Content-Type must be application/json")
+	if !requestHasJSONMediaType(logger, w, request) {
 		return zero, false
 	}
 
-	var input T
 	request.Body = http.MaxBytesReader(w, request.Body, maxJSONBodyBytes)
 	decoder := json.NewDecoder(request.Body)
 	decoder.DisallowUnknownFields()
-	if err := decoder.Decode(&input); err != nil {
-		httpx.WriteError(w, http.StatusBadRequest, "invalid JSON request")
+	stage := jsonDecodeStage{logger: logger, writer: w, request: request, decoder: decoder}
+	var input T
+	if !decodeJSONBody(stage, &input) {
 		return zero, false
 	}
-	if err := decoder.Decode(&struct{}{}); !errors.Is(err, io.EOF) {
-		httpx.WriteError(w, http.StatusBadRequest, "invalid JSON request")
+	if !requestHasSingleJSONValue(logger, w, request, decoder) {
 		return zero, false
 	}
 	return input, true
+}
+
+func requestHasJSONMediaType(logger *slog.Logger, w http.ResponseWriter, request *http.Request) bool {
+	contentType, _, err := mime.ParseMediaType(request.Header.Get(header.ContentType))
+	if err == nil && contentType == mediatype.JSON {
+		return true
+	}
+	if writeErr := httpx.WriteError(w, http.StatusUnsupportedMediaType, "Content-Type must be application/json"); writeErr != nil {
+		logger.ErrorContext(request.Context(), "could not write JSON response", "error", writeErr)
+	}
+	return false
+}
+
+type jsonDecodeStage struct {
+	logger  *slog.Logger
+	writer  http.ResponseWriter
+	request *http.Request
+	decoder *json.Decoder
+}
+
+func decodeJSONBody[T uploadRequest | dryRunRequest | scrubRequest](stage jsonDecodeStage, destination *T) bool {
+	if err := stage.decoder.Decode(destination); err == nil {
+		return true
+	}
+	if writeErr := httpx.WriteError(stage.writer, http.StatusBadRequest, "invalid JSON request"); writeErr != nil {
+		stage.logger.ErrorContext(stage.request.Context(), "could not write JSON response", "error", writeErr)
+	}
+	return false
+}
+
+func requestHasSingleJSONValue(
+	logger *slog.Logger,
+	w http.ResponseWriter,
+	request *http.Request,
+	decoder *json.Decoder,
+) bool {
+	if err := decoder.Decode(&struct{}{}); errors.Is(err, io.EOF) {
+		return true
+	}
+	if writeErr := httpx.WriteError(w, http.StatusBadRequest, "invalid JSON request"); writeErr != nil {
+		logger.ErrorContext(request.Context(), "could not write JSON response", "error", writeErr)
+	}
+	return false
 }
 
 type handlerOperations struct {
@@ -223,29 +264,29 @@ func newHandler(logger *slog.Logger, permits chan struct{}, operations handlerOp
 }
 
 // Reachability gives callers a cheap way to verify the backend HTTP API is reachable.
-func Reachability(w http.ResponseWriter, _ *http.Request) {
-	writeJSON(w, http.StatusOK, reachabilityResponse{Status: "reachable"})
+func (handler *Handler) Reachability(w http.ResponseWriter, request *http.Request) {
+	if err := writeJSON(w, http.StatusOK, reachabilityResponse{Status: "reachable"}); err != nil {
+		handler.logger.ErrorContext(request.Context(), "could not write JSON response", "error", err)
+	}
 }
 
 // Upload creates a private direct-upload grant for one generated logical file ID.
 func (handler *Handler) Upload(w http.ResponseWriter, request *http.Request) {
 	startedAt := time.Now()
-	input, ok := decodeJSONRequest[uploadRequest](w, request)
+	input, ok := decodeJSONRequest[uploadRequest](handler.logger, w, request)
 	if !ok {
 		return
 	}
-	if !validFileName(input.FileName) || input.FileSizeBytes <= 0 || input.FileSizeBytes > storage.MaxSourceObjectBytes {
-		httpx.WriteError(w, http.StatusBadRequest, "invalid upload request")
+	if !handler.validateUploadRequest(w, request, input) {
 		return
 	}
 
-	fileID, ok := handler.newFileID()
+	fileID, ok := handler.generateUploadFileID(w, request)
 	if !ok {
-		httpx.WriteError(w, http.StatusInternalServerError, "could not create upload")
 		return
 	}
 	storageKey := formatStorageKey(fileID)
-	objectStorage := storageFromRequest(w, request)
+	objectStorage := handler.storageFromRequest(w, request)
 	if objectStorage == nil {
 		return
 	}
@@ -257,10 +298,33 @@ func (handler *Handler) Upload(w http.ResponseWriter, request *http.Request) {
 		uploadGrantExpiry,
 	)
 	if err != nil {
-		writeUnexpectedFailure(w, err, "could not create upload")
+		handler.writeUnexpectedFailure(w, request, err, "could not create upload")
 		return
 	}
 
 	handler.logStage(pipelineLogEvent{ctx: request.Context(), stage: pipelineStageUploadCreated, storageKey: storageKey, outcome: pipelineOutcomeSuccess, startedAt: startedAt})
-	writeJSON(w, http.StatusOK, uploadResponse{StorageKey: storageKey, UploadURL: grant.URL})
+	if err := writeJSON(w, http.StatusOK, uploadResponse{StorageKey: storageKey, UploadURL: grant.URL}); err != nil {
+		handler.logger.ErrorContext(request.Context(), "could not write JSON response", "error", err)
+	}
+}
+
+func (handler *Handler) validateUploadRequest(w http.ResponseWriter, request *http.Request, input uploadRequest) bool {
+	if validFileName(input.FileName) && input.FileSizeBytes > 0 && input.FileSizeBytes <= storage.MaxSourceObjectBytes {
+		return true
+	}
+	if err := httpx.WriteError(w, http.StatusBadRequest, "invalid upload request"); err != nil {
+		handler.logger.ErrorContext(request.Context(), "could not write JSON response", "error", err)
+	}
+	return false
+}
+
+func (handler *Handler) generateUploadFileID(w http.ResponseWriter, request *http.Request) (string, bool) {
+	fileID, ok := handler.newFileID()
+	if ok {
+		return fileID, true
+	}
+	if err := httpx.WriteError(w, http.StatusInternalServerError, "could not create upload"); err != nil {
+		handler.logger.ErrorContext(request.Context(), "could not write JSON response", "error", err)
+	}
+	return "", false
 }

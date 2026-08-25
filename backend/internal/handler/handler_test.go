@@ -37,11 +37,57 @@ const (
 
 func TestReachabilityReportsReachableStatus(t *testing.T) {
 	recorder := httptest.NewRecorder()
-	Reachability(recorder, httptest.NewRequest(http.MethodGet, "/api/health", nil))
+	newTestHandler(t, nil, nil, nil).Reachability(recorder, httptest.NewRequest(http.MethodGet, "/api/health", http.NoBody))
 
 	require.Equal(t, http.StatusOK, recorder.Code)
 	require.Equal(t, mediatype.JSON, recorder.Header().Get(header.ContentType))
 	require.JSONEq(t, `{"status":"reachable"}`, recorder.Body.String())
+}
+
+func TestReachabilityLogsResponseWriteFailure(t *testing.T) {
+	responseWriteErr := errors.New("response write failure sentinel")
+	writer := &failingResponseWriter{header: make(http.Header), err: responseWriteErr}
+	var logs bytes.Buffer
+	handler := newTestHandlerWithLogger(t, testHandlerOptions{
+		permits: make(chan struct{}, ProcessingPermitCount),
+		logger:  slog.New(slog.NewJSONHandler(&logs, nil)),
+	})
+	request := httptest.NewRequest(http.MethodGet, "/api/health", http.NoBody)
+
+	handler.Reachability(writer, request)
+
+	require.Equal(t, http.StatusOK, writer.status)
+	require.Equal(t, mediatype.JSON, writer.header.Get(header.ContentType))
+	require.Equal(t, 1, writer.writeCalls)
+	var record struct {
+		Level   string `json:"level"`
+		Message string `json:"msg"`
+		Error   string `json:"error"`
+	}
+	require.NoError(t, json.Unmarshal(logs.Bytes(), &record))
+	require.Equal(t, "ERROR", record.Level)
+	require.Equal(t, "could not write JSON response", record.Message)
+	require.Equal(t, responseWriteErr.Error(), record.Error)
+}
+
+type failingResponseWriter struct {
+	header     http.Header
+	err        error
+	status     int
+	writeCalls int
+}
+
+func (writer *failingResponseWriter) Header() http.Header {
+	return writer.header
+}
+
+func (writer *failingResponseWriter) WriteHeader(status int) {
+	writer.status = status
+}
+
+func (writer *failingResponseWriter) Write([]byte) (int, error) {
+	writer.writeCalls++
+	return 0, writer.err
 }
 
 func TestWriteJSONPreservesConcreteResponseContracts(t *testing.T) {
@@ -53,28 +99,28 @@ func TestWriteJSONPreservesConcreteResponseContracts(t *testing.T) {
 		{
 			name: "reachability",
 			write: func(w http.ResponseWriter) {
-				writeJSON(w, http.StatusAccepted, reachabilityResponse{Status: "reachable"})
+				require.NoError(t, writeJSON(w, http.StatusAccepted, reachabilityResponse{Status: "reachable"}))
 			},
 			wantBody: "{\"status\":\"reachable\"}\n",
 		},
 		{
 			name: "upload",
 			write: func(w http.ResponseWriter) {
-				writeJSON(w, http.StatusAccepted, uploadResponse{StorageKey: "uploads/id", UploadURL: "https://upload.example"})
+				require.NoError(t, writeJSON(w, http.StatusAccepted, uploadResponse{StorageKey: "uploads/id", UploadURL: "https://upload.example"}))
 			},
 			wantBody: "{\"storageKey\":\"uploads/id\",\"uploadUrl\":\"https://upload.example\"}\n",
 		},
 		{
 			name: "dry run",
 			write: func(w http.ResponseWriter) {
-				writeJSON(w, http.StatusAccepted, dryRunResponse{ETag: "revision", Fields: []publicField{}})
+				require.NoError(t, writeJSON(w, http.StatusAccepted, dryRunResponse{ETag: "revision", Fields: []publicField{}}))
 			},
 			wantBody: "{\"etag\":\"revision\",\"fields\":[]}\n",
 		},
 		{
 			name: "scrub",
 			write: func(w http.ResponseWriter) {
-				writeJSON(w, http.StatusAccepted, scrubResponse{Status: "done", Result: scrubResponseResult{DownloadURL: "https://download.example"}})
+				require.NoError(t, writeJSON(w, http.StatusAccepted, scrubResponse{Status: "done", Result: scrubResponseResult{DownloadURL: "https://download.example"}}))
 			},
 			wantBody: "{\"status\":\"done\",\"result\":{\"downloadUrl\":\"https://download.example\"}}\n",
 		},

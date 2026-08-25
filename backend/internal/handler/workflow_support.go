@@ -81,10 +81,12 @@ func convertPublicFields(inspectedFields []scrub.Field) ([]publicField, error) {
 	return fields, nil
 }
 
-func storageFromRequest(w http.ResponseWriter, request *http.Request) storage.Storage {
+func (handler *Handler) storageFromRequest(w http.ResponseWriter, request *http.Request) storage.Storage {
 	requestBindings, ok := bindings.FromContext(request.Context())
 	if !ok || requestBindings.Storage == nil {
-		httpx.WriteError(w, http.StatusInternalServerError, "service unavailable")
+		if err := httpx.WriteError(w, http.StatusInternalServerError, "service unavailable"); err != nil {
+			handler.logger.ErrorContext(request.Context(), "could not write JSON response", "error", err)
+		}
 		return nil
 	}
 	return requestBindings.Storage
@@ -113,21 +115,27 @@ func (handler *Handler) acquirePermit(ctx context.Context) (func(), error) {
 	}
 }
 
-func writeAdmissionFailure(w http.ResponseWriter, err error) {
+func (handler *Handler) writeAdmissionFailure(w http.ResponseWriter, request *http.Request, err error) {
 	if errors.Is(err, errAdmissionTimeout) {
 		w.Header().Set(header.RetryAfter, admissionRetryAfter)
-		httpx.WriteError(w, http.StatusServiceUnavailable, admissionTimeoutMessage)
+		if writeErr := httpx.WriteError(w, http.StatusServiceUnavailable, admissionTimeoutMessage); writeErr != nil {
+			handler.logger.ErrorContext(request.Context(), "could not write JSON response", "error", writeErr)
+		}
 		return
 	}
-	writeUnexpectedFailure(w, err, "could not start PDF processing")
+	handler.writeUnexpectedFailure(w, request, err, "could not start PDF processing")
 }
 
-func writeUnexpectedFailure(w http.ResponseWriter, err error, internalMessage string) {
+func (handler *Handler) writeUnexpectedFailure(w http.ResponseWriter, request *http.Request, err error, internalMessage string) {
 	if errors.Is(err, context.Canceled) || errors.Is(err, context.DeadlineExceeded) {
-		httpx.WriteError(w, http.StatusRequestTimeout, cancellationMessage)
+		if writeErr := httpx.WriteError(w, http.StatusRequestTimeout, cancellationMessage); writeErr != nil {
+			handler.logger.ErrorContext(request.Context(), "could not write JSON response", "error", writeErr)
+		}
 		return
 	}
-	httpx.WriteError(w, http.StatusInternalServerError, internalMessage)
+	if writeErr := httpx.WriteError(w, http.StatusInternalServerError, internalMessage); writeErr != nil {
+		handler.logger.ErrorContext(request.Context(), "could not write JSON response", "error", writeErr)
+	}
 }
 
 type pipelineFailure struct {
