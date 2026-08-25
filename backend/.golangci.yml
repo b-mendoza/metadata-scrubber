@@ -251,6 +251,7 @@ linters:
         - name: receiver-naming
         - name: string-of-int
         - name: superfluous-else
+        - name: time-equal
         - name: var-naming
     # Staged rule settings for the logging policy above.
     # sloglint:
