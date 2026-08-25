@@ -5,6 +5,7 @@ import (
 	"net/http/httptest"
 	"testing"
 
+	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
 	"metadata-scrubber/internal/httpx"
@@ -43,7 +44,7 @@ func TestCORSAddsHeadersAndDelegatesNonPreflightRequests(t *testing.T) {
 	delegatedCalls := 0
 	handler := httpx.CORS(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		delegatedCalls++
-		require.Equal(t, http.MethodPost, r.Method)
+		assert.Equal(t, http.MethodPost, r.Method)
 		w.WriteHeader(http.StatusAccepted)
 	}))
 

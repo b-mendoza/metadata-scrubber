@@ -21,6 +21,7 @@ import (
 	"github.com/aws/smithy-go"
 	"github.com/aws/smithy-go/middleware"
 	smithyhttp "github.com/aws/smithy-go/transport/http"
+	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
 	"metadata-scrubber/internal/config"
@@ -193,7 +194,8 @@ func TestR2TreatsMalformedProviderETagsAsOrdinaryFailures(t *testing.T) {
 				if providerETag != "" {
 					response.Header().Set("ETag", providerETag)
 				}
-				_, _ = io.WriteString(response, "source-pdf")
+				_, err := io.WriteString(response, "source-pdf")
+				assert.NoError(t, err)
 			}))
 
 			_, err := adapter.DownloadSource(context.Background(), "file-1", "")
@@ -313,7 +315,8 @@ func TestR2SanitizedUploadReturnsASanitizedDependencyError(t *testing.T) {
 	adapter := newTestR2Server(t, http.HandlerFunc(func(response http.ResponseWriter, _ *http.Request) {
 		response.Header().Set("X-Amz-Request-Id", "request-id-sentinel")
 		response.WriteHeader(http.StatusInternalServerError)
-		_, _ = io.WriteString(response, "provider-body-sentinel")
+		_, err := io.WriteString(response, "provider-body-sentinel")
+		assert.NoError(t, err)
 	}))
 
 	err := adapter.UploadSanitized(
@@ -445,7 +448,8 @@ func newTestR2StatusServer(t *testing.T, status int) *R2 {
 
 	return newTestR2Server(t, http.HandlerFunc(func(response http.ResponseWriter, _ *http.Request) {
 		response.WriteHeader(status)
-		_, _ = io.WriteString(response, "provider-body-sentinel")
+		_, err := io.WriteString(response, "provider-body-sentinel")
+		assert.NoError(t, err)
 	}))
 }
 

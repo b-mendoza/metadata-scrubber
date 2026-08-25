@@ -6,6 +6,7 @@ import (
 	"net/http/httptest"
 	"testing"
 
+	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
 	"metadata-scrubber/internal/bindings"
@@ -34,11 +35,11 @@ func TestInjectPreservesRequestContextValues(t *testing.T) {
 	called := false
 	handler := bindings.Inject(wantBindings)(http.HandlerFunc(func(_ http.ResponseWriter, r *http.Request) {
 		called = true
-		require.Equal(t, wantValue, r.Context().Value(key))
+		assert.Equal(t, wantValue, r.Context().Value(key))
 
 		gotBindings, ok := bindings.FromContext(r.Context())
-		require.True(t, ok)
-		require.Equal(t, wantBindings, gotBindings)
+		assert.True(t, ok)
+		assert.Equal(t, wantBindings, gotBindings)
 	}))
 
 	handler.ServeHTTP(httptest.NewRecorder(), request)

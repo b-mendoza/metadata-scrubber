@@ -9,6 +9,7 @@ import (
 	"net/http/httptest"
 	"testing"
 
+	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
 	"metadata-scrubber/internal/httpx"
@@ -23,7 +24,7 @@ func TestRequestLoggerLogsRequestLifecycle(t *testing.T) {
 		w.Header().Set("X-Scrubbed", "true")
 		w.WriteHeader(http.StatusCreated)
 		_, err := w.Write([]byte(responseBody))
-		require.NoError(t, err)
+		assert.NoError(t, err)
 	})
 
 	request := httptest.NewRequest(http.MethodPost, "/api/scrub?token=query-secret", bytes.NewBufferString("request-body-secret"))
@@ -66,7 +67,7 @@ func TestRequestLoggerDefaultsStatusToOKWhenHandlerOnlyWritesBody(t *testing.T) 
 
 	handler, readRecords := newLoggedHandler(t, func(w http.ResponseWriter, _ *http.Request) {
 		_, err := w.Write([]byte("ok"))
-		require.NoError(t, err)
+		assert.NoError(t, err)
 	})
 
 	handler.ServeHTTP(httptest.NewRecorder(), httptest.NewRequest(http.MethodGet, "/api/health", http.NoBody))
