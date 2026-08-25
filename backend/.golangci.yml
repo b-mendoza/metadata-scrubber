@@ -101,7 +101,7 @@ linters:
       check-struct-pointers: true
     forbidigo:
       analyze-types: true
-      exclude-godoc-examples: true
+      exclude-godoc-examples: false
       forbid:
         - pattern: '^fmt\.Print.*$'
           msg: Use the injected log/slog logger for application output.
