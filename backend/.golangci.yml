@@ -232,6 +232,7 @@ linters:
         - name: enforce-repeated-arg-type-style
           arguments: ["full"]
         - name: error-return
+        - name: error-strings
         # Staged rule: file-length-limit reports three large test files.
         # - name: file-length-limit
         #   arguments:
