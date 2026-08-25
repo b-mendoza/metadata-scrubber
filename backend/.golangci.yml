@@ -192,6 +192,10 @@ linters:
         - "0"
         - "1"
         - "2"
+    modernize:
+      disable:
+        # noemptyinterface owns empty-interface policy.
+        - any
     nestif:
       min-complexity: 4
     nolintlint:
