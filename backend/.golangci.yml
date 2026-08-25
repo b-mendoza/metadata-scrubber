@@ -69,6 +69,11 @@ linters:
         global:
           # Ignore the suppression effect of "#nosec" comments.
           nosec: true
+    govet:
+      enable-all: true
+      disable:
+        - fieldalignment # field order must communicate meaning before padding
+        - findcall # a search tool, not a policy analyzer
     mnd:
       checks:
         - argument
