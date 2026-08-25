@@ -198,6 +198,8 @@ linters:
         - any
     nestif:
       min-complexity: 2
+    nilnil:
+      only-two: false
     nolintlint:
       require-explanation: true
       require-specific: true
