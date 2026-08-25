@@ -253,6 +253,7 @@ linters:
         - name: superfluous-else
         - name: time-equal
         - name: time-naming
+        - name: unconditional-recursion
         - name: var-naming
     # Staged rule settings for the logging policy above.
     # sloglint:
