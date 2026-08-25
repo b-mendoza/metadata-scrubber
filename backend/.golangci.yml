@@ -107,6 +107,8 @@ linters:
       disabled-checks:
         - deprecatedComment
         - hugeParam
+        # Owner policy: each parameter declares its own type.
+        - paramTypeCombine
         - regexpMust
         - sloppyTypeAssert
         - wrapperFunc
