@@ -133,6 +133,8 @@ linters:
       settings:
         captLocal:
           paramsOnly: false
+        commentedOutCode:
+          minLength: 15
         rangeExprCopy:
           skipTestFuncs: true
         rangeValCopy:
