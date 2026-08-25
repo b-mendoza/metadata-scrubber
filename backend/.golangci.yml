@@ -10,6 +10,7 @@ linters:
     - cyclop
     # Staged rule: depguard needs a recorded package layer graph.
     # - depguard
+    - durationcheck
     - errcheck
     - errorlint
     - exhaustive
