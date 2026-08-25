@@ -213,7 +213,7 @@ func sortedDictionaryKeys(dictionary types.Dict) ([]dictionaryKey, error) {
 		}
 		keys = append(keys, dictionaryKey{encoded: key, logical: logicalKey})
 	}
-	slices.SortFunc(keys, func(firstKey, secondKey dictionaryKey) int {
+	slices.SortFunc(keys, func(firstKey dictionaryKey, secondKey dictionaryKey) int {
 		return cmp.Or(
 			cmp.Compare(firstKey.logical, secondKey.logical),
 			cmp.Compare(firstKey.encoded, secondKey.encoded),
