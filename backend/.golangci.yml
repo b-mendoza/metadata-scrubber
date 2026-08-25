@@ -31,6 +31,7 @@ linters:
     - noemptyinterface
     - nohiddentestsignal
     - nolintlint
+    - perfsprint
     - revive
     # Staged rule: sloglint reports 20 existing logging-policy findings.
     # - sloglint
@@ -134,6 +135,12 @@ linters:
       require-explanation: true
       require-specific: true
       allow-no-explanation: []
+    perfsprint:
+      # staticcheck S1025/S1028 own the sprintf1 and strconcat rewrites.
+      err-error: false
+      errorf: true
+      sprintf1: false
+      strconcat: false
     revive:
       enable-all-rules: false
       rules:
