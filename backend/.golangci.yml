@@ -97,6 +97,8 @@ linters:
       explicit-exhaustive-switch: false
       explicit-exhaustive-map: false
       package-scope-only: false
+    fatcontext:
+      check-struct-pointers: true
     forbidigo:
       analyze-types: true
       exclude-godoc-examples: true
