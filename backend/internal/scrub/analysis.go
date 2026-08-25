@@ -168,7 +168,7 @@ func analyzeObjectMetadata(context *model.Context, analysis *pdfAnalysis) error 
 	return nil
 }
 
-func (state *traversalState) inspectMetadataEntry(dictionary types.Dict, key string, path []int) error {
+func (state *traversalState) inspectMetadataEntry(dictionary types.Dict, key string, path []int) (resultErr error) {
 	if state.seenTargets.contains(state.objectNumber, path, key) {
 		return nil
 	}
@@ -183,9 +183,12 @@ func (state *traversalState) inspectMetadataEntry(dictionary types.Dict, key str
 	}
 	defer func() {
 		streamDictionary.Content = nil
-		_ = storeMetadataStreamContent(state.context, metadataStreamContent{
+		cleanupErr := storeMetadataStreamContent(state.context, metadataStreamContent{
 			dictionary: dictionary, key: key, streamObject: streamObject,
 		})
+		if cleanupErr != nil {
+			resultErr = errors.Join(resultErr, fmt.Errorf("release PDF metadata stream cache: %w", cleanupErr))
+		}
 	}()
 
 	content, err := decodeMetadataStreamWithinBudget(streamDictionary, state.analysis.remainingDecodedMetadataBytes(), "decode PDF metadata stream")
