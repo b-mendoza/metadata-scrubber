@@ -36,6 +36,7 @@ linters:
     - misspell
     - mnd
     - modernize
+    - musttag
     - nestif
     - nilnil
     - noemptyinterface
