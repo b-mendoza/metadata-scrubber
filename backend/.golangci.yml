@@ -15,6 +15,7 @@ linters:
     - funlen
     - gochecknoinits
     - gocognit
+    - gocritic
     - godox
     - gosec
     - govet
@@ -77,6 +78,23 @@ linters:
       ignore-comments: true
     gocognit:
       min-complexity: 9
+    gocritic:
+      disabled-checks:
+        - deprecatedComment
+        - hugeParam
+        - regexpMust
+        - sloppyTypeAssert
+        - wrapperFunc
+      enabled-tags:
+        - diagnostic
+        - performance
+        - style
+      settings:
+        rangeExprCopy:
+          skipTestFuncs: true
+        rangeValCopy:
+          sizeThreshold: 256
+          skipTestFuncs: true
     gosec:
       severity: low
       confidence: low
