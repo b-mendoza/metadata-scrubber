@@ -37,6 +37,7 @@ linters:
     # Staged rule: sloglint reports 20 existing logging-policy findings.
     # - sloglint
     - staticcheck
+    - testifylint
     # Staged rule: thelper reports 22 existing helper findings.
     # - thelper
     - unconvert
@@ -173,6 +174,20 @@ linters:
     #   attr-only: true
     #   no-raw-keys: true
     #   key-naming-case: snake
+    testifylint:
+      enable-all: true
+      bool-compare:
+        ignore-custom-types: false
+      formatter:
+        check-format-string: true
+        require-f-funcs: false
+        require-string-msg: true
+      go-require:
+        # The exemption hid require calls inside httptest.NewServer handlers.
+        # Those handlers run on server goroutines, where FailNow is invalid.
+        ignore-http-handlers: false
+      suite-extra-assert-call:
+        mode: remove
 
 formatters:
   enable:
