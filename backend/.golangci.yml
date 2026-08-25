@@ -44,6 +44,7 @@ linters:
     - unparam
     - unused
     - usestdlibvars
+    - usetesting
   settings:
     custom:
       noemptyinterface:
@@ -201,6 +202,14 @@ linters:
       sql-isolation-level: true
       tls-signature-scheme: true
       constant-kind: true
+    usetesting:
+      context-background: false
+      context-todo: false
+      os-chdir: true
+      os-create-temp: true
+      os-mkdir-temp: true
+      os-setenv: true
+      os-temp-dir: true
 
 formatters:
   enable:
