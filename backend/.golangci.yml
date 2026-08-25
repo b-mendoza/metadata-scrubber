@@ -169,6 +169,9 @@ linters:
       disable:
         - fieldalignment # field order must communicate meaning before padding
         - findcall # a search tool, not a policy analyzer
+      settings:
+        composites:
+          whitelist: false
     interfacebloat:
       max: 5
     iotamixing:
