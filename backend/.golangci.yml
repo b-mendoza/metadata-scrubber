@@ -227,6 +227,7 @@ linters:
         - name: confusing-results
         - name: context-as-argument
         - name: deep-exit
+        - name: early-return
         # Owner policy: each parameter and result declares its own type.
         - name: enforce-repeated-arg-type-style
           arguments: ["full"]
