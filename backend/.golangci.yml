@@ -261,7 +261,7 @@ linters:
         - name: waitgroup-by-value
     # Staged rule settings for the logging policy above.
     # sloglint:
-    #   no-global: default
+    #   no-global: all
     #   context: scope
     #   static-msg: true
     #   msg-style: lowercased
