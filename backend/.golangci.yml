@@ -178,6 +178,8 @@ linters:
       report-individual: true
     makezero:
       always: false
+    misspell:
+      locale: US
     mnd:
       checks:
         - argument
