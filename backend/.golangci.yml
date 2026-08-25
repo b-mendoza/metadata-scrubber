@@ -231,6 +231,7 @@ linters:
         # Owner policy: each parameter and result declares its own type.
         - name: enforce-repeated-arg-type-style
           arguments: ["full"]
+        - name: error-return
         # Staged rule: file-length-limit reports three large test files.
         # - name: file-length-limit
         #   arguments:
