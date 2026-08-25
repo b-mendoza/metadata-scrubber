@@ -141,8 +141,8 @@ linters:
           sizeThreshold: 0
           skipTestFuncs: false
         rangeValCopy:
-          sizeThreshold: 256
-          skipTestFuncs: true
+          sizeThreshold: 153
+          skipTestFuncs: false
     gosec:
       severity: low
       confidence: low
