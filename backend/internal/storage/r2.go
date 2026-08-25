@@ -179,9 +179,12 @@ func classifySourceDownloadError(ctx context.Context, err error, expectedETag st
 }
 
 func readSourceObject(ctx context.Context, output *s3.GetObjectOutput) (SourceObject, error) {
-	if output.Body == nil || output.ETag == nil {
-		if output.Body != nil {
-			_ = output.Body.Close()
+	if output.Body == nil {
+		return SourceObject{}, operationError(operationDownloadSource, ErrDependency)
+	}
+	if output.ETag == nil {
+		if err := output.Body.Close(); err != nil {
+			return SourceObject{}, r2OperationError(ctx, operationDownloadSource)
 		}
 		return SourceObject{}, operationError(operationDownloadSource, ErrDependency)
 	}
