@@ -135,6 +135,8 @@ linters:
           paramsOnly: false
         commentedOutCode:
           minLength: 15
+        elseif:
+          skipBalanced: false
         rangeExprCopy:
           skipTestFuncs: true
         rangeValCopy:
