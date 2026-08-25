@@ -131,6 +131,8 @@ linters:
         - wrapperFunc
       enable-all: true
       settings:
+        captLocal:
+          paramsOnly: false
         rangeExprCopy:
           skipTestFuncs: true
         rangeValCopy:
