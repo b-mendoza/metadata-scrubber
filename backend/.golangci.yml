@@ -96,7 +96,7 @@ linters:
       default-signifies-exhaustive: false
       explicit-exhaustive-switch: false
       explicit-exhaustive-map: false
-      package-scope-only: true
+      package-scope-only: false
     forbidigo:
       analyze-types: true
       exclude-godoc-examples: true
