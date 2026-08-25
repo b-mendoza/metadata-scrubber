@@ -206,6 +206,7 @@ linters:
       allow-no-explanation: []
     perfsprint:
       # staticcheck S1025/S1028 own the sprintf1 and strconcat rewrites.
+      # perfsprint also reports fmt.Sprintf("%s", v), so keep sprintf1 disabled here.
       err-error: false
       errorf: true
       sprintf1: false
