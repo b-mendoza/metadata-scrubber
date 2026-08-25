@@ -43,6 +43,7 @@ linters:
     - unconvert
     - unparam
     - unused
+    - usestdlibvars
   settings:
     custom:
       noemptyinterface:
@@ -188,6 +189,18 @@ linters:
         ignore-http-handlers: false
       suite-extra-assert-call:
         mode: remove
+    usestdlibvars:
+      http-method: true
+      http-status-code: true
+      time-date-month: true
+      time-weekday: true
+      time-month: true
+      time-layout: true
+      crypto-hash: true
+      default-rpc-path: true
+      sql-isolation-level: true
+      tls-signature-scheme: true
+      constant-kind: true
 
 formatters:
   enable:
