@@ -15,6 +15,7 @@ linters:
     - errname
     - errorlint
     - exhaustive
+    - fatcontext
     - forbidigo
     - forcetypeassert
     - funlen
