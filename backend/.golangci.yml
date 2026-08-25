@@ -115,6 +115,9 @@ linters:
       lines: -1
       statements: 40
       ignore-comments: true
+    gochecksumtype:
+      default-signifies-exhaustive: false
+      include-shared-interfaces: true
     gocognit:
       min-complexity: 9
     gocritic:
