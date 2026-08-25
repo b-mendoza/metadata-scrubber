@@ -145,6 +145,8 @@ linters:
           skipTestFuncs: false
         truncateCmp:
           skipArchDependent: false
+        underef:
+          skipRecvDeref: false
     gosec:
       severity: low
       confidence: low
