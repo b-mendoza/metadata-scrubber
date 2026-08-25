@@ -3,6 +3,7 @@ version: "2"
 linters:
   default: none
   enable:
+    - asasalint
     - bodyclose
     - cyclop
     # Staged rule: depguard needs a recorded package layer graph.
