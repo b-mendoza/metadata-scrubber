@@ -5,6 +5,7 @@ linters:
   enable:
     - asasalint
     - asciicheck
+    - bidichk
     - bodyclose
     - cyclop
     # Staged rule: depguard needs a recorded package layer graph.
