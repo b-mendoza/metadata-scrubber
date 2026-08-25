@@ -48,6 +48,7 @@ linters:
     - perfsprint
     - predeclared
     - reassign
+    - recvcheck
     - revive
     # Staged rule: sloglint reports 20 existing logging-policy findings.
     # - sloglint
