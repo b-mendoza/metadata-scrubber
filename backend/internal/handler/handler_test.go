@@ -1556,7 +1556,7 @@ func newBlockingStorage(delegate storage.Storage, blockedFileIDs ...string) *blo
 	}
 }
 
-func (observer *blockingStorage) DownloadSource(ctx context.Context, fileID, expectedETag string) (storage.SourceObject, error) {
+func (observer *blockingStorage) DownloadSource(ctx context.Context, fileID string, expectedETag string) (storage.SourceObject, error) {
 	observer.mu.Lock()
 	observer.observedDownloads[fileID] = true
 	blocked := observer.blockedDownloads[fileID]
@@ -1596,7 +1596,7 @@ func (observer *blockingStorage) DownloadSource(ctx context.Context, fileID, exp
 	return observer.Storage.DownloadSource(ctx, fileID, expectedETag)
 }
 
-func (observer *blockingStorage) UploadSanitized(ctx context.Context, fileID, sourceETag string, pdfBytes []byte) error {
+func (observer *blockingStorage) UploadSanitized(ctx context.Context, fileID string, sourceETag string, pdfBytes []byte) error {
 	observer.mu.Lock()
 	blocked := observer.blockedUploads[fileID]
 	observer.mu.Unlock()
@@ -1617,7 +1617,7 @@ func (observer *blockingStorage) failDownload(fileID string, err error) {
 	observer.downloadErrors[fileID] = err
 }
 
-func (observer *blockingStorage) panicDownload(fileID, value string) {
+func (observer *blockingStorage) panicDownload(fileID string, value string) {
 	observer.mu.Lock()
 	defer observer.mu.Unlock()
 	observer.downloadPanics[fileID] = value
