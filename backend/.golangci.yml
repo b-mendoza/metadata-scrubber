@@ -97,6 +97,9 @@ linters:
       rules:
         - name: argument-limit
           arguments: [4]
+        - name: filename-format
+          arguments:
+            - "^[a-z0-9]+(?:_[a-z0-9]+)*\\.go$"
         - name: max-control-nesting
           arguments: [3]
 
