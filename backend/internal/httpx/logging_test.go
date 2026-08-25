@@ -118,14 +118,14 @@ type logRecord struct {
 	Panic                *string `json:"panic"`
 }
 
-func newLoggedHandler(t *testing.T, next http.HandlerFunc) (http.Handler, func() []logRecord) {
+func newLoggedHandler(t *testing.T, next http.HandlerFunc) (loggedHandler http.Handler, readRecords func() []logRecord) {
 	t.Helper()
 
 	var logs bytes.Buffer
 	logger := slog.New(slog.NewJSONHandler(&logs, nil))
-	handler := httpx.RequestLogger(logger)(next)
+	loggedHandler = httpx.RequestLogger(logger)(next)
 
-	return handler, func() []logRecord {
+	return loggedHandler, func() []logRecord {
 		t.Helper()
 
 		return readJSONLogRecords(t, logs.Bytes())
