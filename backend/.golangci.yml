@@ -27,6 +27,7 @@ linters:
     - godox
     - gosec
     - govet
+    - inamedparam
     - ineffassign
     - interfacebloat
     - iotamixing
