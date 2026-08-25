@@ -50,7 +50,10 @@ linters:
       disable-default-exclusions: false
     exhaustive:
       check:
+        - switch
         - map
+      default-signifies-exhaustive: false
+      explicit-exhaustive-switch: false
       explicit-exhaustive-map: true
       package-scope-only: true
     funlen:
