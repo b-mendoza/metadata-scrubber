@@ -287,6 +287,8 @@ linters:
         ignore-http-handlers: false
       suite-extra-assert-call:
         mode: remove
+    unparam:
+      check-exported: true
     usestdlibvars:
       http-method: true
       http-status-code: true
