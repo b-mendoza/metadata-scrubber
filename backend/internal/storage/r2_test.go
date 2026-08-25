@@ -429,7 +429,7 @@ func TestR2PropagatesContextAndSanitizesProviderFailures(t *testing.T) {
 	assertSafeStorageError(t, err)
 
 	var operationError *smithy.OperationError
-	require.False(t, errors.As(err, &operationError))
+	require.NotErrorAs(t, err, &operationError)
 }
 
 func newTestR2Server(t *testing.T, handler http.Handler) *R2 {

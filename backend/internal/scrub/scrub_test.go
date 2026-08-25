@@ -1301,5 +1301,5 @@ func requireSignedPDF(t *testing.T, results signedPDFResults) {
 func requireNotSignedPDF(t *testing.T, err error) {
 	t.Helper()
 
-	require.False(t, errors.Is(err, ErrSignedPDF), "unexpected signed-PDF classification: %v", err)
+	require.NotErrorIs(t, err, ErrSignedPDF, "unexpected signed-PDF classification: %v", err)
 }
