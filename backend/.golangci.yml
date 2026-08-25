@@ -129,10 +129,7 @@ linters:
         - regexpMust
         - sloppyTypeAssert
         - wrapperFunc
-      enabled-tags:
-        - diagnostic
-        - performance
-        - style
+      enable-all: true
       settings:
         rangeExprCopy:
           skipTestFuncs: true
