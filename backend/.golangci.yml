@@ -212,6 +212,8 @@ linters:
       loop-other-ops: true
       sprintf1: false
       strconcat: false
+    predeclared:
+      qualified-name: true
     reassign:
       patterns:
         - ".*"
