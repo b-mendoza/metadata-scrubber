@@ -252,6 +252,7 @@ linters:
         - name: string-of-int
         - name: superfluous-else
         - name: time-equal
+        - name: time-naming
         - name: var-naming
     # Staged rule settings for the logging policy above.
     # sloglint:
