@@ -13,7 +13,7 @@ type summaryBuilder struct {
 	decodedMetadataBytes int64
 }
 
-func (builder *summaryBuilder) add(name, label, value string, action FieldAction) error {
+func (builder *summaryBuilder) add(name string, label string, value string, action FieldAction) error {
 	return builder.addField(Field{
 		Name: name, Label: label, Preview: truncateUTF8(value), OriginalByteSize: len(value), Action: action,
 	})
@@ -23,7 +23,7 @@ func (builder *summaryBuilder) remainingDecodedMetadataBytes() int64 {
 	return maxDecodedMetadataBytes - builder.decodedMetadataBytes
 }
 
-func (builder *summaryBuilder) addMetadataBytes(name, label string, value []byte, action FieldAction) error {
+func (builder *summaryBuilder) addMetadataBytes(name string, label string, value []byte, action FieldAction) error {
 	if int64(len(value)) > builder.remainingDecodedMetadataBytes() {
 		return ErrInspectionLimit
 	}
