@@ -128,7 +128,7 @@ func validateSanitizedDownloadInput(
 
 // validateSourceReadInput checks a source read in the order file ID then
 // optional expected ETag, and returns the source object key.
-func validateSourceReadInput(fileID, expectedETag string) (string, error) {
+func validateSourceReadInput(fileID string, expectedETag string) (string, error) {
 	objectKey, err := SourceObjectKey(fileID)
 	if err != nil {
 		return "", err
@@ -152,7 +152,7 @@ func SourceObjectKey(fileID string) (string, error) {
 }
 
 // SanitizedObjectKey derives an immutable key whose final segment reversibly encodes the source ETag.
-func SanitizedObjectKey(fileID, sourceETag string) (string, error) {
+func SanitizedObjectKey(fileID string, sourceETag string) (string, error) {
 	if err := validateFileID(fileID); err != nil {
 		return "", err
 	}
