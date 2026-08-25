@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"compress/zlib"
 	"context"
+	"encoding/xml"
 	"errors"
 	"fmt"
 	"io"
@@ -225,7 +226,7 @@ func TestPDFPathsRejectOversizedCompressedCatalogMetadataBeforeValidation(t *tes
 }
 
 func TestMetadataPreflightCachesCatalogContentWithoutMarkingItValidated(t *testing.T) {
-	metadata := syntheticXMP("bounded-preflight-cache")
+	metadata := syntheticXMP(t, "bounded-preflight-cache")
 	context, err := api.ReadContext(
 		bytes.NewReader(buildPDFWithCompressedCatalogMetadata(t, metadata)),
 		boundedPDFConfiguration(),
@@ -643,7 +644,7 @@ func TestPDFPathsRejectUndecodableMetadataAtomically(t *testing.T) {
 }
 
 func TestMetadataTraversalDeduplicatesOneParentEntryTarget(t *testing.T) {
-	context, err := readPDF(buildPDFWithInfoAndRawMetadataAtLocation(t, map[string]string{}, syntheticXMP("duplicate-target"), catalogMetadata))
+	context, err := readPDF(buildPDFWithInfoAndRawMetadataAtLocation(t, map[string]string{}, syntheticXMP(t, "duplicate-target"), catalogMetadata))
 	require.NoError(t, err)
 	catalog, err := context.Catalog()
 	require.NoError(t, err)
@@ -892,9 +893,9 @@ func buildMetadataRichPDF(t *testing.T) ([]byte, metadataFixtureValues) {
 		creationDate: "D:20260102030405+00'00'",
 		modDate:      "D:20260203040506+00'00'",
 		customValue:  "Synthetic custom value",
-		catalogXMP:   syntheticXMP("catalog-xmp-marker"),
-		pageXMP:      syntheticXMP("page-xmp-marker"),
-		nestedXMP:    syntheticXMP("nested-xmp-marker"),
+		catalogXMP:   syntheticXMP(t, "catalog-xmp-marker"),
+		pageXMP:      syntheticXMP(t, "page-xmp-marker"),
+		nestedXMP:    syntheticXMP(t, "nested-xmp-marker"),
 	}
 
 	infoDictionary := fmt.Sprintf(
@@ -943,7 +944,7 @@ func buildPDFWithInfo(t *testing.T, entries map[string]string) []byte {
 func buildPDFWithInfoAndMetadata(t *testing.T, entries map[string]string, location metadataLocation) []byte {
 	t.Helper()
 
-	return buildPDFWithInfoAndRawMetadataAtLocation(t, entries, syntheticXMP("near-miss-metadata"), location)
+	return buildPDFWithInfoAndRawMetadataAtLocation(t, entries, syntheticXMP(t, "near-miss-metadata"), location)
 }
 
 func buildPDFWithInfoAndRawMetadataAtLocation(t *testing.T, entries map[string]string, metadata string, location metadataLocation) []byte {
@@ -1043,8 +1044,12 @@ func buildUnsignedSignatureLikePDF(t *testing.T) []byte {
 	})
 }
 
-func syntheticXMP(marker string) string {
-	return fmt.Sprintf(`<x:xmpmeta xmlns:x="adobe:ns:meta/"><rdf:RDF xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"><rdf:Description rdf:about="" xmlns:synthetic="urn:synthetic" synthetic:marker="%s"/></rdf:RDF></x:xmpmeta>`, marker)
+func syntheticXMP(t *testing.T, marker string) string {
+	t.Helper()
+
+	var escapedMarker bytes.Buffer
+	require.NoError(t, xml.EscapeText(&escapedMarker, []byte(marker)))
+	return `<x:xmpmeta xmlns:x="adobe:ns:meta/"><rdf:RDF xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"><rdf:Description rdf:about="" xmlns:synthetic="urn:synthetic" synthetic:marker="` + escapedMarker.String() + `"/></rdf:RDF></x:xmpmeta>`
 }
 
 func oversizedXMP(t *testing.T, decodedBytes int) string {
