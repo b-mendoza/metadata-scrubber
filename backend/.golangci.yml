@@ -258,6 +258,7 @@ linters:
         - name: use-errors-new
         - name: useless-break
         - name: var-naming
+        - name: waitgroup-by-value
     # Staged rule settings for the logging policy above.
     # sloglint:
     #   no-global: default
