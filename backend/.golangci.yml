@@ -65,6 +65,16 @@ linters:
   settings:
     asasalint:
       use-builtin-exclusions: false
+    bidichk:
+      left-to-right-embedding: true
+      right-to-left-embedding: true
+      pop-directional-formatting: true
+      left-to-right-override: true
+      right-to-left-override: true
+      left-to-right-isolate: true
+      right-to-left-isolate: true
+      first-strong-isolate: true
+      pop-directional-isolate: true
     custom:
       noemptyinterface:
         type: module
