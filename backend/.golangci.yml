@@ -39,6 +39,7 @@ linters:
     - musttag
     - nestif
     - nilerr
+    - nilnesserr
     - nilnil
     - noemptyinterface
     - nohiddentestsignal
