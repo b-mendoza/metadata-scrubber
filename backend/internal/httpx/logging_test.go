@@ -69,7 +69,7 @@ func TestRequestLoggerDefaultsStatusToOKWhenHandlerOnlyWritesBody(t *testing.T) 
 		require.NoError(t, err)
 	})
 
-	handler.ServeHTTP(httptest.NewRecorder(), httptest.NewRequest(http.MethodGet, "/api/health", nil))
+	handler.ServeHTTP(httptest.NewRecorder(), httptest.NewRequest(http.MethodGet, "/api/health", http.NoBody))
 
 	records := readRecords()
 	require.Len(t, records, 2)
@@ -86,7 +86,7 @@ func TestRequestLoggerLogsPanickedRequests(t *testing.T) {
 	})
 
 	require.PanicsWithValue(t, "panic-value-sensitive-marker", func() {
-		handler.ServeHTTP(httptest.NewRecorder(), httptest.NewRequest(http.MethodGet, "/api/health", nil))
+		handler.ServeHTTP(httptest.NewRecorder(), httptest.NewRequest(http.MethodGet, "/api/health", http.NoBody))
 	})
 
 	records := readRecords()

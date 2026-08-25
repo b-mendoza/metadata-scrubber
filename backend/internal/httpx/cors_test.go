@@ -28,7 +28,7 @@ func TestCORSHandlesPreflightWithoutDelegating(t *testing.T) {
 	}))
 
 	recorder := httptest.NewRecorder()
-	request := httptest.NewRequest(http.MethodOptions, "/api/scrub", nil)
+	request := httptest.NewRequest(http.MethodOptions, "/api/scrub", http.NoBody)
 
 	handler.ServeHTTP(recorder, request)
 
@@ -48,7 +48,7 @@ func TestCORSAddsHeadersAndDelegatesNonPreflightRequests(t *testing.T) {
 	}))
 
 	recorder := httptest.NewRecorder()
-	request := httptest.NewRequest(http.MethodPost, "/api/scrub", nil)
+	request := httptest.NewRequest(http.MethodPost, "/api/scrub", http.NoBody)
 
 	handler.ServeHTTP(recorder, request)
 

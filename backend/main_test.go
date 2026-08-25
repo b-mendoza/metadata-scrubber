@@ -83,7 +83,7 @@ func TestNewServerConfiguresAddressAndHandler(t *testing.T) {
 	require.Equal(t, ":0", server.Addr)
 	require.Equal(t, readHeaderTimeout, server.ReadHeaderTimeout)
 
-	request := httptest.NewRequest(http.MethodGet, "/api/health", nil)
+	request := httptest.NewRequest(http.MethodGet, "/api/health", http.NoBody)
 	recorder := serveServer(server, request)
 
 	require.Equal(t, http.StatusOK, recorder.Code)
@@ -95,7 +95,7 @@ func TestNewServerLogsRequests(t *testing.T) {
 	var logs bytes.Buffer
 	server := newTestServer(slog.New(slog.NewJSONHandler(&logs, nil)))
 
-	request := httptest.NewRequest(http.MethodGet, "/api/health", nil)
+	request := httptest.NewRequest(http.MethodGet, "/api/health", http.NoBody)
 	serveServer(server, request)
 
 	record := readServerCompletionLogRecord(t, logs.Bytes())
@@ -107,7 +107,7 @@ func TestNewServerHandlesCORSPreflight(t *testing.T) {
 	t.Parallel()
 
 	server := newTestServer(discardLogger())
-	request := httptest.NewRequest(http.MethodOptions, "/api/files/scrub", nil)
+	request := httptest.NewRequest(http.MethodOptions, "/api/files/scrub", http.NoBody)
 	recorder := serveServer(server, request)
 
 	require.Equal(t, http.StatusNoContent, recorder.Code)
@@ -129,7 +129,7 @@ func TestNewServerRoutesJSONWorkflowAndRemovesLegacyScrub(t *testing.T) {
 		{path: "/api/scrub", wantStatus: http.StatusNotFound},
 	}
 	for _, testCase := range testCases {
-		request := httptest.NewRequest(http.MethodPost, testCase.path, nil)
+		request := httptest.NewRequest(http.MethodPost, testCase.path, http.NoBody)
 		recorder := serveServer(server, request)
 
 		require.Equal(t, testCase.wantStatus, recorder.Code, testCase.path)
@@ -148,7 +148,7 @@ func TestNewServerRejectsWrongMethodsForJSONWorkflow(t *testing.T) {
 	t.Parallel()
 
 	server := newTestServer(discardLogger())
-	request := httptest.NewRequest(http.MethodGet, "/api/uploads", nil)
+	request := httptest.NewRequest(http.MethodGet, "/api/uploads", http.NoBody)
 	recorder := serveServer(server, request)
 
 	require.Equal(t, http.StatusMethodNotAllowed, recorder.Code)

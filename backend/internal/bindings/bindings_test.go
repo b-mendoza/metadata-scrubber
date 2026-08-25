@@ -28,7 +28,7 @@ func TestInjectPreservesRequestContextValues(t *testing.T) {
 	const wantValue = "request-id"
 	wantBindings := testBindings()
 
-	request := httptest.NewRequest(http.MethodGet, "/", nil)
+	request := httptest.NewRequest(http.MethodGet, "/", http.NoBody)
 	request = request.WithContext(context.WithValue(request.Context(), key, wantValue))
 
 	called := false
@@ -49,7 +49,7 @@ func TestInjectPreservesRequestContextValues(t *testing.T) {
 func TestFromContextReportsMissingBindings(t *testing.T) {
 	t.Parallel()
 
-	_, ok := bindings.FromContext(httptest.NewRequest(http.MethodGet, "/", nil).Context())
+	_, ok := bindings.FromContext(httptest.NewRequest(http.MethodGet, "/", http.NoBody).Context())
 
 	require.False(t, ok)
 }
