@@ -256,6 +256,7 @@ linters:
         - name: unconditional-recursion
         - name: unnecessary-stmt
         - name: use-errors-new
+        - name: useless-break
         - name: var-naming
     # Staged rule settings for the logging policy above.
     # sloglint:
