@@ -25,6 +25,20 @@ Developers build the frontend with [TanStack Start](https://tanstack.com/start) 
 - Developers added the `db` binding code but commented it out. Developers keep the `db` binding code commented out until they connect the database client.
 - On each request, the middleware calls `environmentSchema.parse(process.env)`. `environmentSchema` is a Zod object schema. A validation error rejects the async middleware request. The middleware provides the validated `env` binding to downstream code through `getApplicationBindings()`.
 
+## Backend HTTP
+
+- The `getMessage` tRPC procedure is the frontend's only backend call. It uses ky.
+- The procedure reads `BACKEND_URL` from the request-scoped application bindings. It constructs the fixed `/api/health` path from this base URL.
+- The procedure passes a Zod schema to ky's `.json(schema)` method. The schema validates each successful JSON body.
+- The procedure maps every outbound failure to one safe `BAD_GATEWAY` tRPC error. This mapping also covers an invalid successful JSON body.
+- Each attempt has a 3-second ky timeout. The ky total timeout is 5 seconds.
+- The call permits one retry. It caps the retry delay and the `Retry-After` value at 250 ms.
+- The retry policy enables jitter. It disables retries after a timeout.
+- The procedure creates a 5-second timeout signal for each call.
+- The procedure combines the timeout signal with the tRPC cancellation signal when that signal exists.
+- The combined signal bounds the HTTP request and the response body read.
+- The request policy stays at the call site because the frontend has one backend call.
+
 ## Validation
 
 Use Zod for all validation logic in every environment.
@@ -38,14 +52,17 @@ Use Zod for all validation logic in every environment.
 ## File uploads
 
 - The `POST` handler in `src/routes/api/upload.ts` accepts form data. It validates the form value with a Zod file schema. The schema uses `z.file()`, `.max()`, and `.mime()`. The size limit comes from `MAX_FILE_SIZE_BYTES`. The MIME type list comes from `UPLOADABLE_MIME_TYPES`. Both constants are in `src/domains/wizard/constants/wizard.mod.ts`.
-- The handler returns file metadata and a generated `storageKey`. The handler body is an Effect program. `Effect.runPromise` runs the program at the route boundary.
+- The handler returns file metadata and a generated `storageKey`. The handler uses direct async control flow with `async` and `await`.
 - This service has no storage backend. The route does not persist the file.
 - The project includes S3 SDK dependencies and `@uppy/react` for planned storage work. No storage module exists under `src/`.
 - The Go backend handles upload grants. The Go backend handles file storage and metadata scrubbing. It uses Cloudflare R2 for storage. It handles presigned downloads. Read the service-integration section of the root [architecture reference](../../docs/architecture.md) before you add storage code to the frontend.
 
 ## Testing status
 
-- The suite has zero test files. `vitest.config.ts` sets `passWithNoTests: true`, so `pnpm run test` remains a required check before commits. Remove this setting after developers add the first test files.
+- The suite checks that an HTTP 400 response becomes a safe `BAD_GATEWAY` error when its body matches the health schema.
+- The suite checks that an invalid successful health payload becomes the same safe error.
+- The suite checks the exact backend health URL and ky policy wiring.
+- The suite checks that `getProducts` waits for `PRODUCTS_RESPONSE_DELAY_MS`.
 - Follow the root risk-based coverage rule. Add these tests in this priority order:
   1. Test the upload validation branches in `src/routes/api/upload.ts`.
   2. Test environment parsing and the bindings invariant in the application-bindings middleware.
