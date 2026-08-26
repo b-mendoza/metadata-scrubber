@@ -1,7 +1,4 @@
-import { Data as D } from "effect";
-
 export const createService = () => ({ run: () => true });
 
-export class TaggedFailure extends D.TaggedError("TaggedFailure")<{
-  readonly reason: string;
-}> {}
+export const createServiceError = (message: string, cause: unknown) =>
+  new Error(message, { cause });
