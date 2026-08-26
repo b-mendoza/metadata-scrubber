@@ -6,6 +6,6 @@
   },
   "autoMemoryEnabled": false,
   "disableBundledSkills": true,
-  "enabledMcpjsonServers": ["cloudflare", "context7", "vercel", "xapi"],
+  "enabledMcpjsonServers": ["cloudflare", "context7", "vercel"],
   "workflowSizeGuideline": "medium"
 }
