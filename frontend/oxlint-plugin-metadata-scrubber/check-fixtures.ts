@@ -22,10 +22,9 @@ const cases = [
     "no-classes",
     "no-classes.ts",
     [
-      "`Service` is an application class. Replace it with plain functions and objects, for example a factory function such as `const createService = () => ({ run: () => true })`. Plain functions and objects keep dependencies and mutable state explicit. The only allowed class exception is a class that extends `Class`, `TaggedClass`, `TaggedError`, `TaggedRequest`, or `TaggedStruct` on the `Data` namespace imported from the `effect` package.",
-      "`ServiceExpression` is an application class. Replace it with plain functions and objects, for example a factory function such as `const createService = () => ({ run: () => true })`. Plain functions and objects keep dependencies and mutable state explicit. The only allowed class exception is a class that extends `Class`, `TaggedClass`, `TaggedError`, `TaggedRequest`, or `TaggedStruct` on the `Data` namespace imported from the `effect` package.",
-      "`LocalTaggedFailure` is an application class. Replace it with plain functions and objects, for example a factory function such as `const createService = () => ({ run: () => true })`. Plain functions and objects keep dependencies and mutable state explicit. The only allowed class exception is a class that extends `Class`, `TaggedClass`, `TaggedError`, `TaggedRequest`, or `TaggedStruct` on the `Data` namespace imported from the `effect` package.",
-      "`SchemaRecord` is an application class. Replace it with plain functions and objects, for example a factory function such as `const createService = () => ({ run: () => true })`. Plain functions and objects keep dependencies and mutable state explicit. The only allowed class exception is a class that extends `Class`, `TaggedClass`, `TaggedError`, `TaggedRequest`, or `TaggedStruct` on the `Data` namespace imported from the `effect` package.",
+      "`Service` uses class syntax. Replace it with plain functions and objects. Use a factory function such as `const createService = () => ({ run: () => true })` when code must create an object. Plain functions and objects keep dependencies and mutable state explicit. The rule has no class exceptions, including classes that extend `Error`.",
+      "`ServiceExpression` uses class syntax. Replace it with plain functions and objects. Use a factory function such as `const createService = () => ({ run: () => true })` when code must create an object. Plain functions and objects keep dependencies and mutable state explicit. The rule has no class exceptions, including classes that extend `Error`.",
+      "`ServiceError` uses class syntax. Replace it with plain functions and objects. Use a factory function such as `const createService = () => ({ run: () => true })` when code must create an object. Plain functions and objects keep dependencies and mutable state explicit. The rule has no class exceptions, including classes that extend `Error`.",
     ],
   ],
   [
@@ -107,13 +106,15 @@ const oxlintPath = path.join(
 );
 const ruleName = (ruleId: string): string => `metadata-scrubber/${ruleId}`;
 
-// eslint-disable-next-line zod/prefer-string-schema-with-trim -- Fixture checks compare oxlint diagnostic messages byte-for-byte. The `.trim()` transform would silently alter values and hide whitespace mismatches, so this boundary must return each string unchanged.
-const oxlintJsonStringSchema = z.string();
+const oxlintJsonExactStringSchema = z.custom<string>(
+  (value) => typeof value === "string",
+  "Oxlint JSON diagnostic fields must be strings.",
+);
 
 const oxlintJsonMessageSchema = z.object({
-  code: oxlintJsonStringSchema.nullish(),
-  message: oxlintJsonStringSchema,
-  ruleId: oxlintJsonStringSchema.nullish(),
+  code: oxlintJsonExactStringSchema.nullish(),
+  message: oxlintJsonExactStringSchema,
+  ruleId: oxlintJsonExactStringSchema.nullish(),
 });
 
 const oxlintJsonResultSchema = z.object({
