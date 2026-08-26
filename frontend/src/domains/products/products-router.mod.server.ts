@@ -1,6 +1,8 @@
 import { randomUUID } from "node:crypto";
+import { setTimeout } from "node:timers/promises";
 
-import { Data, Effect } from "effect";
+import { TRPCError } from "@trpc/server";
+import ky from "ky";
 import * as z from "zod";
 
 import {
@@ -9,8 +11,15 @@ import {
 } from "#/shared/libs/trpc/utils/initializer/initializer.mod.server";
 import { getApplicationBindings } from "#/shared/middlewares/application-bindings/application-bindings.mod";
 
+export const BACKEND_HEALTH_ATTEMPT_TIMEOUT_MS = 3000;
+export const BACKEND_HEALTH_RETRY_DELAY_LIMIT_MS = 250;
+export const BACKEND_HEALTH_RETRY_LIMIT = 1;
+export const BACKEND_HEALTH_TOTAL_TIMEOUT_MS = 5000;
+export const PRODUCTS_RESPONSE_DELAY_MS = 5000;
 const SEED_PRODUCT_NAMES = ["Metadata Scrubber", "Privacy Audit Tool"];
-const SLEEP_TIME_MS = 5000;
+
+export const BACKEND_HEALTH_CHECK_FAILURE_MESSAGE =
+  "The backend health check failed. Try again later.";
 
 const productSchema = z.object({
   id: z.uuid({
@@ -39,44 +48,49 @@ const getMessageResponseSchema = z.object({
   }),
 });
 
-class BackendHealthCheckError extends Data.TaggedError(
-  "BackendHealthCheckError",
-)<{
-  readonly cause: unknown;
-}> {}
-
 export const productsRouter = createTRPCRouter({
-  getMessage: publicProcedure.query(async () => {
+  getMessage: publicProcedure.query(async ({ signal }) => {
     const { env } = getApplicationBindings();
 
     // Resolve against the base URL so a trailing slash on BACKEND_URL (e.g. a
     // Vercel binding URL) can't produce a double-slashed path.
     const backendHealthUrl = new URL("/api/health", env.BACKEND_URL);
+    const backendHealthSignals = [
+      AbortSignal.timeout(BACKEND_HEALTH_TOTAL_TIMEOUT_MS),
+    ];
 
-    const backendHealthCheck = Effect.gen(function* () {
-      const response = yield* Effect.tryPromise({
-        try: async () => fetch(backendHealthUrl),
-        catch: (cause) => new BackendHealthCheckError({ cause }),
+    if (signal != null) {
+      backendHealthSignals.push(signal);
+    }
+
+    const backendHealthSignal = AbortSignal.any(backendHealthSignals);
+
+    try {
+      return await ky
+        .get(backendHealthUrl, {
+          retry: {
+            backoffLimit: BACKEND_HEALTH_RETRY_DELAY_LIMIT_MS,
+            jitter: true,
+            limit: BACKEND_HEALTH_RETRY_LIMIT,
+            maxRetryAfter: BACKEND_HEALTH_RETRY_DELAY_LIMIT_MS,
+            retryOnTimeout: false,
+          },
+          signal: backendHealthSignal,
+          throwHttpErrors: true,
+          timeout: BACKEND_HEALTH_ATTEMPT_TIMEOUT_MS,
+          totalTimeout: BACKEND_HEALTH_TOTAL_TIMEOUT_MS,
+        })
+        .json(getMessageResponseSchema);
+    } catch (error: unknown) {
+      throw new TRPCError({
+        cause: error,
+        code: "BAD_GATEWAY",
+        message: BACKEND_HEALTH_CHECK_FAILURE_MESSAGE,
       });
-      const responseBody = yield* Effect.tryPromise<
-        unknown,
-        BackendHealthCheckError
-      >({
-        try: async () => response.json(),
-        catch: (cause) => new BackendHealthCheckError({ cause }),
-      });
-
-      return getMessageResponseSchema.parse(responseBody);
-    });
-
-    return Effect.runPromise(backendHealthCheck);
+    }
   }),
   getProducts: publicProcedure.query(async () => {
-    const productsAfterDelay = Effect.gen(function* () {
-      yield* Effect.sleep(SLEEP_TIME_MS);
-      return PRODUCTS;
-    });
-
-    return Effect.runPromise(productsAfterDelay);
+    await setTimeout(PRODUCTS_RESPONSE_DELAY_MS);
+    return PRODUCTS;
   }),
 });
