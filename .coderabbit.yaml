@@ -22,7 +22,7 @@ reviews:
         Require every generic type parameter to declare an explicit, meaningful constraint.
         Require structural fixes for lint failures. Do not accept lint-suppression comments or rule escape hatches. Accept a suppression only at a third-party API boundary that forces it.
         Review test request and response payloads. Require each test to build payloads from the concrete typed contracts at the call site and serialize them there with errors checked. Accept raw wire literals only in dedicated wire-contract tests.
-        Review server code for idiomatic Effect design. Effect tagged error classes are correct and must stay classes. Do not request object-literal replacements for tagged errors.
+        Review frontend server HTTP boundaries. Require ky for outbound frontend server HTTP calls. Require code to build service URLs from request-scoped application bindings. Require server code to return client-safe tRPC or route errors. Reject client-facing messages that include backend response bodies, service URLs, schema issues, or dependency error text.
         Review test call assertions. Require expect.objectContaining or another partial matcher when the code controls only part of a value. Do not require an exact full-structure assertion unless the code controls the complete value.
         Review design intent and simplicity. Prefer construction that removes invalid states. Report unclear or needless abstractions.
         Review names for clear domain meaning beyond any deterministic denylist.
