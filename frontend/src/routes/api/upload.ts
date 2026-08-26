@@ -1,7 +1,6 @@
 import { randomUUID } from "node:crypto";
 
 import { createFileRoute } from "@tanstack/react-router";
-import { Data, Effect } from "effect";
 import * as z from "zod";
 
 import {
@@ -23,34 +22,32 @@ const uploadedFileSchema = z
     error: `The form data "file" value has an unsupported MIME type. Select a file with one of these MIME types: ${uploadableMimeTypes.join(", ")}.`,
   });
 
-class RequestFormDataError extends Data.TaggedError("RequestFormDataError")<{
-  readonly cause: unknown;
-}> {}
-
 export const Route = createFileRoute("/api/upload")({
   server: {
     handlers: {
       async POST(context) {
-        const uploadEffect = Effect.gen(function* () {
-          const formData = yield* Effect.tryPromise({
-            try: async () => context.request.formData(),
-            catch: (cause) => new RequestFormDataError({ cause }),
-          });
+        const formData = await (async () => {
+          try {
+            return await context.request.formData();
+          } catch (error: unknown) {
+            throw new Error(
+              "The upload request form data could not be read. Send a valid multipart/form-data request.",
+              { cause: error },
+            );
+          }
+        })();
 
-          const unsafeFile = formData.get("file");
-          const validatedFile = uploadedFileSchema.parse(unsafeFile);
+        const unsafeFile = formData.get("file");
+        const validatedFile = uploadedFileSchema.parse(unsafeFile);
 
-          const storageKey = `uploads/${randomUUID()}`;
+        const storageKey = `uploads/${randomUUID()}`;
 
-          return Response.json({
-            fileName: validatedFile.name,
-            fileSizeBytes: validatedFile.size,
-            mimeType: validatedFile.type,
-            storageKey,
-          });
+        return Response.json({
+          fileName: validatedFile.name,
+          fileSizeBytes: validatedFile.size,
+          mimeType: validatedFile.type,
+          storageKey,
         });
-
-        return Effect.runPromise(uploadEffect);
       },
     },
   },
