@@ -20,10 +20,10 @@
       "rule": "Review boundary contracts. Require each boundary to declare and validate external input before domain logic runs. Require contract violations and unknown values to fail with a clear error. Do not accept silent coercion, default values, or dropped input. Prefer construction that removes invalid states."
     },
     {
-      "id": "frontend-idiomatic-effect",
+      "id": "frontend-server-http-boundary",
       "severity": "high",
       "scope": ["frontend/src/**"],
-      "rule": "Review server code for idiomatic Effect design. Effect tagged error classes are correct and must stay classes. Do not request object-literal replacements for tagged errors."
+      "rule": "Review frontend server HTTP boundaries. Require ky for outbound frontend server HTTP calls. Require code to build service URLs from request-scoped application bindings. Require server code to return client-safe tRPC or route errors. Reject client-facing messages that include backend response bodies, service URLs, schema issues, or dependency error text."
     },
     {
       "id": "frontend-partial-call-assertions",
