@@ -38,30 +38,10 @@ const BASE_RESTRICTED_IMPORT_PATTERNS = [
     message:
       'Import Zod from the `zod` package root. Use `import * as z from "zod"` for runtime code or `import type * as z from "zod"` for type-only code. Replace every `zod/*` source with `zod`. The package root is the only supported project entry point.',
   },
-  /**
-   * The project uses Zod for all validation logic.
-   * Zod has wider ecosystem support.
-   * Zod has faster runtime validation in typescript-runtime-type-benchmarks.
-   * Zod gives a better developer experience.
-   * Effect and Data imports from effect stay legal.
-   * A namespace import named E from effect followed by E.Schema is not caught.
-   * The project accepts this gap because the codebase does not use that form.
-   * oxlint compiles these patterns with Rust regex.
-   * Rust regex has no lookahead or lookbehind.
-   * These patterns use neither feature.
-   * We verified that oxlint 1.79.0 enforces both patterns.
-   * The verification combined importNames with regex.
-   */
   {
-    regex: "^effect$",
-    importNames: ["Schema"],
+    regex: "^effect(?:\\u002F.*)?$",
     message:
-      'Do not import `Schema` from the `effect` package. This project uses Zod for all validation logic. Zod has wider community support and faster runtime validation than Effect Schema. Use `import * as z from "zod"` for runtime code or `import type * as z from "zod"` for type-only code. Rewrite the validation with the Zod API. Call `.parse(input)` or `.safeParse(input)` on the schema. Other named imports from `effect`, such as `Effect` and `Data`, stay legal.',
-  },
-  {
-    regex: "^effect\\/Schema(?:\\/.+)?$",
-    message:
-      'Do not import from the `effect/Schema` module or its subpaths. This project uses Zod for all validation logic. Zod has wider community support and faster runtime validation than Effect Schema. Use `import * as z from "zod"` for runtime code or `import type * as z from "zod"` for type-only code. Rewrite the validation with the Zod API. Call `.parse(input)` or `.safeParse(input)` on the schema.',
+      "Do not import from `effect` or an `effect/*` subpath. The frontend does not use Effect. Use async and await for Promise control flow. Use ky for HTTP requests. Use Zod for validation.",
   },
 ];
 
