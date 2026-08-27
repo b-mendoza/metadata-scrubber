@@ -14,7 +14,7 @@ reviews:
         Review design intent and simplicity. Prefer construction that removes invalid states. Report unclear or needless abstractions.
         Review names for clear domain meaning beyond any deterministic denylist. Accept established Go names such as ctx, w, r, ok, and short loop indexes.
         Do not review complexity limits, switch statements, lookup-map structure, formatting, or other rules that deterministic checks own.
-    - path: "frontend/src/**"
+    - path: "{backend/**,frontend/src/**}"
       instructions: |
         Review only concerns that deterministic checks cannot enforce.
         Review boundary contracts. Require each boundary to declare and validate external input before domain logic runs. Require contract violations and unknown values to fail with a clear error. Do not accept silent coercion, default values, or dropped input.
