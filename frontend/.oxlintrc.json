@@ -888,7 +888,12 @@
         "allowWithDecorator": true
       }
     ],
-    "typescript/no-floating-promises": ["error", { "checkThenables": true }],
+    "typescript/no-floating-promises": [
+      "error",
+      {
+        "checkThenables": true
+      }
+    ],
     "typescript/no-for-in-array": ["error"],
     "typescript/no-implied-eval": ["error"],
     "typescript/no-invalid-void-type": ["error"],
