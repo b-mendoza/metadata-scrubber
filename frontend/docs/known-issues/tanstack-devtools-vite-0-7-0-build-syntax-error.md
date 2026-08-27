@@ -4,7 +4,7 @@
 
 ## Summary
 
-**Resolved.** We use `@tanstack/devtools-vite@0.8.3`. On 2026-07-30, `pnpm run build` completed without errors. The plugin stripped devtools code from `src/routes/__root.tsx` without the invalid-JSX regression.
+**Resolved.** We use `@tanstack/devtools-vite@0.8.5`. On 2026-07-30, `pnpm run build` completed without errors. The plugin stripped devtools code from `src/routes/__root.tsx` without the invalid-JSX regression.
 
 History: `@tanstack/devtools-vite@0.7.0` removed devtools code from production bundles. During that removal, it created invalid JSX. The production build failed with a syntax error. We reproduced the failure in this repository after the upgrade to `0.7.0`. We pinned `0.6.1` until the TanStack Devtools maintainers released the fix.
 
@@ -56,8 +56,8 @@ TanStack Router receives the invalid transformed route file. It reports an `Unex
 
 ## Local workaround
 
-We pinned `0.6.1` until the TanStack Devtools maintainers fixed the regression. We removed the historical `0.6.1` workaround pin. The package now uses the exact version `0.8.3`.
+We pinned `0.6.1` until the TanStack Devtools maintainers fixed the regression. We removed the historical `0.6.1` workaround pin. The package now uses the exact version `0.8.5`.
 
 ## Revisit criteria
 
-Revisit this entry when a new `@tanstack/devtools-vite` version changes the devtools stripping behavior. The maintainers published the fixed version, and we adopted `0.8.3`.
+Revisit this entry when a new `@tanstack/devtools-vite` version changes the devtools stripping behavior. The maintainers published the fixed version, and we adopted `0.8.5`.
