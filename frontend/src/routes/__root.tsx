@@ -72,7 +72,7 @@ const PLUGINS: TanStackDevtoolsReactPlugin[] = [
   },
 ];
 
-interface DocumentShellProps extends React.PropsWithChildren {}
+type DocumentShellProps = React.PropsWithChildren;
 
 function DocumentShell(props: Readonly<DocumentShellProps>) {
   const { children } = props;

@@ -19,9 +19,9 @@ const uploadedFileResponseBodySchema = z.object({
   storageKey: z.string().trim(),
 });
 
-export interface UploadedFileResponseBody extends z.output<
+export type UploadedFileResponseBody = z.output<
   typeof uploadedFileResponseBodySchema
-> {}
+>;
 
 const uploadedFileResponseSchema = z.object({
   response: z.object({
