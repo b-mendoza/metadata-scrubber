@@ -51,8 +51,14 @@ Use Zod for all validation logic in every environment.
 
 ## File uploads
 
-- The `POST` handler in `src/routes/api/upload.ts` accepts form data. It validates the form value with a Zod file schema. The schema uses `z.file()`, `.max()`, and `.mime()`. The size limit comes from `MAX_FILE_SIZE_BYTES`. The MIME type list comes from `UPLOADABLE_MIME_TYPES`. Both constants are in `src/domains/wizard/constants/wizard.mod.ts`.
-- The handler returns file metadata and a generated `storageKey`. The handler uses direct async control flow with `async` and `await`.
+- `src/routes/api/upload.ts` exports `postUpload`. The route uses this function as its `POST` handler.
+- The handler wraps `context.request.formData()` in `ResultAsync.fromThrowable()`.
+- The error mapper converts a form-data read failure to an `Error`. It preserves the original failure in `cause`.
+- The route boundary consumes the `Result`. It throws the mapped `Error` when the form-data read fails.
+- The handler validates the `file` value with a Zod file schema after the form-data read succeeds.
+- The schema uses `z.file()`, `.max()`, and `.mime()`. The size limit comes from `MAX_FILE_SIZE_BYTES`. The MIME type list comes from `UPLOADABLE_MIME_TYPES`.
+- An invalid upload value still throws a `ZodError`.
+- The handler returns file metadata and a generated `storageKey`.
 - This service has no storage backend. The route does not persist the file.
 - The project includes S3 SDK dependencies and `@uppy/react` for planned storage work. No storage module exists under `src/`.
 - The Go backend handles upload grants. The Go backend handles file storage and metadata scrubbing. It uses Cloudflare R2 for storage. It handles presigned downloads. Read the service-integration section of the root [architecture reference](../../docs/architecture.md) before you add storage code to the frontend.
@@ -63,7 +69,8 @@ Use Zod for all validation logic in every environment.
 - The suite checks that an invalid successful health payload becomes the same safe error.
 - The suite checks the exact backend health URL and ky policy wiring.
 - The suite checks that `getProducts` waits for `PRODUCTS_RESPONSE_DELAY_MS`.
+- The suite checks that an upload form-data read failure preserves its original cause.
+- The suite checks that a missing `file` value still causes a `ZodError`.
 - Follow the root risk-based coverage rule. Add these tests in this priority order:
-  1. Test the upload validation branches in `src/routes/api/upload.ts`.
+  1. Test that the upload validation uses `MAX_FILE_SIZE_BYTES` and `UPLOADABLE_MIME_TYPES` from `src/domains/wizard/constants/wizard.mod.ts`. Import those production constants in assertions.
   2. Test environment parsing and the bindings invariant in the application-bindings middleware.
-  3. Test that the upload validation in `src/routes/api/upload.ts` uses `MAX_FILE_SIZE_BYTES` and `UPLOADABLE_MIME_TYPES` from `src/domains/wizard/constants/wizard.mod.ts`. Import those production constants in assertions.
