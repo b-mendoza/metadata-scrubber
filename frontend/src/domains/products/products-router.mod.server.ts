@@ -2,19 +2,19 @@ import { randomUUID } from "node:crypto";
 import { setTimeout } from "node:timers/promises";
 
 import { TRPCError } from "@trpc/server";
-import ky from "ky";
+import { ResultAsync } from "neverthrow";
 import * as z from "zod";
 
+import {
+  BACKEND_HTTP_TOTAL_TIMEOUT_MS,
+  backendHttpClient,
+} from "#/shared/libs/ky/backend-http-client.mod.server";
 import {
   createTRPCRouter,
   publicProcedure,
 } from "#/shared/libs/trpc/utils/initializer/initializer.mod.server";
 import { getApplicationBindings } from "#/shared/middlewares/application-bindings/application-bindings.mod";
 
-export const BACKEND_HEALTH_ATTEMPT_TIMEOUT_MS = 3000;
-export const BACKEND_HEALTH_RETRY_DELAY_LIMIT_MS = 250;
-export const BACKEND_HEALTH_RETRY_LIMIT = 1;
-export const BACKEND_HEALTH_TOTAL_TIMEOUT_MS = 5000;
 export const PRODUCTS_RESPONSE_DELAY_MS = 5000;
 const SEED_PRODUCT_NAMES = ["Metadata Scrubber", "Privacy Audit Tool"];
 
@@ -56,7 +56,7 @@ export const productsRouter = createTRPCRouter({
     // Vercel binding URL) can't produce a double-slashed path.
     const backendHealthUrl = new URL("/api/health", env.BACKEND_URL);
     const backendHealthSignals = [
-      AbortSignal.timeout(BACKEND_HEALTH_TOTAL_TIMEOUT_MS),
+      AbortSignal.timeout(BACKEND_HTTP_TOTAL_TIMEOUT_MS),
     ];
 
     if (signal != null) {
@@ -65,29 +65,24 @@ export const productsRouter = createTRPCRouter({
 
     const backendHealthSignal = AbortSignal.any(backendHealthSignals);
 
-    try {
-      return await ky
-        .get(backendHealthUrl, {
-          retry: {
-            backoffLimit: BACKEND_HEALTH_RETRY_DELAY_LIMIT_MS,
-            jitter: true,
-            limit: BACKEND_HEALTH_RETRY_LIMIT,
-            maxRetryAfter: BACKEND_HEALTH_RETRY_DELAY_LIMIT_MS,
-            retryOnTimeout: false,
-          },
-          signal: backendHealthSignal,
-          throwHttpErrors: true,
-          timeout: BACKEND_HEALTH_ATTEMPT_TIMEOUT_MS,
-          totalTimeout: BACKEND_HEALTH_TOTAL_TIMEOUT_MS,
-        })
-        .json(getMessageResponseSchema);
-    } catch (error: unknown) {
-      throw new TRPCError({
-        cause: error,
-        code: "BAD_GATEWAY",
-        message: BACKEND_HEALTH_CHECK_FAILURE_MESSAGE,
-      });
+    const backendHealthResult = await ResultAsync.fromThrowable(
+      async () =>
+        backendHttpClient
+          .get(backendHealthUrl, { signal: backendHealthSignal })
+          .json(getMessageResponseSchema),
+      (cause: unknown) =>
+        new TRPCError({
+          cause,
+          code: "BAD_GATEWAY",
+          message: BACKEND_HEALTH_CHECK_FAILURE_MESSAGE,
+        }),
+    )();
+
+    if (backendHealthResult.isErr()) {
+      throw backendHealthResult.error;
     }
+
+    return backendHealthResult.value;
   }),
   getProducts: publicProcedure.query(async () => {
     await setTimeout(PRODUCTS_RESPONSE_DELAY_MS);
