@@ -17,25 +17,10 @@ const SEED_PRODUCT_NAMES = ["Metadata Scrubber", "Privacy Audit Tool"];
 export const BACKEND_HEALTH_CHECK_FAILURE_MESSAGE =
   "The backend health check failed. Try again later.";
 
-const productSchema = z.object({
-  id: z.uuid({
-    error:
-      "The product id value must be a UUID string in 8-4-4-4-12 hexadecimal form. Provide a valid UUID string for the product id.",
-  }),
-  name: z
-    .string({
-      error:
-        "The product name value must be a string. Provide the product name as a string; surrounding whitespace is removed.",
-    })
-    .trim(),
-});
-
-const PRODUCTS = SEED_PRODUCT_NAMES.map((name) => {
-  return productSchema.parse({
-    id: randomUUID(),
-    name,
-  });
-});
+const PRODUCTS = SEED_PRODUCT_NAMES.map((name) => ({
+  id: randomUUID(),
+  name,
+}));
 
 const getMessageResponseSchema = z.object({
   status: z.literal("reachable", {
