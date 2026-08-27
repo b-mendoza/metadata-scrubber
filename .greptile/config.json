@@ -70,7 +70,10 @@
     {
       "id": "educational-custom-lint-messages",
       "severity": "high",
-      "scope": ["backend/lint/**", "frontend/oxlint-plugin-metadata-scrubber/**"],
+      "scope": [
+        "backend/lint/**",
+        "frontend/oxlint-plugin-metadata-scrubber/**"
+      ],
       "rule": "Write each custom lint rule message so that it is descriptive, actionable, and educational. Explain the required fix. Do not state how to silence or bypass the rule."
     },
     {
@@ -82,7 +85,11 @@
     {
       "id": "typed-test-wire-payloads",
       "severity": "medium",
-      "scope": ["backend/**/*_test.go", "frontend/src/**/*.test.*", "frontend/src/**/*.spec.*"],
+      "scope": [
+        "backend/**/*_test.go",
+        "frontend/src/**/*.test.*",
+        "frontend/src/**/*.spec.*"
+      ],
       "rule": "Build test request and response payloads from the concrete typed contracts at the call site. Serialize them there and check each error. Use raw wire literals only in dedicated wire-contract tests."
     }
   ]
