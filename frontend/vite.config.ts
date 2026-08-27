@@ -13,7 +13,11 @@ export default defineConfig({
   plugins: [
     devtools(),
     tailwindcss(),
-    tanstackStart(),
+    tanstackStart({
+      router: {
+        routeFileIgnorePattern: "\\.test\\.",
+      },
+    }),
     nitro(),
     react(),
     babel({
