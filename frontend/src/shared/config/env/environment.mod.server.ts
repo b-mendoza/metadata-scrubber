@@ -1,7 +1,5 @@
 import * as z from "zod";
 
-import { createURLSchema } from "#/shared/constants/schemas/schemas.mod.server";
-
 const HTTP_PROTOCOL = /^https?$/;
 
 const MINIMUM_DATABASE_URL_LENGTH = 1;
@@ -24,7 +22,11 @@ export const environmentSchema = z.object({
   // On Vercel this is injected by the service binding to the backend
   // container; locally it comes from docker-compose/pnpm. Accept both http
   // (local) and https (Vercel's internal binding URL).
-  BACKEND_URL: createURLSchema(HTTP_PROTOCOL),
+  BACKEND_URL: z
+    .url({
+      protocol: HTTP_PROTOCOL,
+    })
+    .transform((url) => new URL(url)),
 });
 
 export type Environment = z.output<typeof environmentSchema>;
