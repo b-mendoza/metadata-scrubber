@@ -4,11 +4,14 @@ import { createMiddleware, createServerOnlyFn } from "@tanstack/react-start";
 
 import type { Environment } from "#/shared/config/env/environment.mod.server";
 import { environmentSchema } from "#/shared/config/env/environment.mod.server";
+import type { HTTPClient } from "#/shared/libs/ky/http-client.mod.server";
+import { createHttpClient } from "#/shared/libs/ky/http-client.mod.server";
 import { invariant } from "#/shared/utils/invariant/invariant.mod";
 
 interface ApplicationBindingsValue {
   // db: DrizzleDatabaseClient;
   env: Environment;
+  httpClient: HTTPClient;
 }
 
 const ApplicationBindingsStorage =
@@ -23,9 +26,12 @@ export const applicationBindingsMiddleware = createMiddleware({
   //   safeEnvironmentVariables.DATABASE_URL,
   // );
 
+  const httpClient = createHttpClient(safeEnvironmentVariables.BACKEND_URL);
+
   return ApplicationBindingsStorage.run(
     {
       env: safeEnvironmentVariables,
+      httpClient,
     },
     options.next,
   );
