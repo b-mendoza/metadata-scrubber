@@ -2,10 +2,15 @@
 
 This file contains long-lived guidance for TypeScript design in the frontend. The short-lived [conventions reference](../conventions.md) records the current file names and structure.
 
-## Promise control flow
+## Mapped dependency failures
 
-- Use `async` and `await` for Promise control flow.
-- Preserve a wrapped error's original failure in `cause`.
+- Use a `neverthrow` `Result` or `ResultAsync` for an asynchronous dependency operation when a server handler intentionally maps the failure.
+- Convert the dependency failure to a mapped error value at the operation.
+- Consume the `Result` at the route or tRPC boundary.
+- Throw the mapped error at that boundary.
+- Preserve the original failure in `cause`.
+- Let intentional Zod boundary validation throw outside a `Result` unless the handler maps that validation failure.
+- Review every `Result` consumption. The lint checks do not cover every consumption form.
 
 ## External input
 
