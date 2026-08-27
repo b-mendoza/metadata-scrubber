@@ -64,10 +64,9 @@ export const productsRouter = createTRPCRouter({
 
     return backendHealthResult.value;
   }),
-  getProducts: publicProcedure.query(async () => {
-    await setTimeout(PRODUCTS_RESPONSE_DELAY_MS);
-    return PRODUCTS;
-  }),
+  getProducts: publicProcedure.query(async () =>
+    setTimeout(PRODUCTS_RESPONSE_DELAY_MS, PRODUCTS),
+  ),
 });
 
 const getBackendHealthResult = ResultAsync.fromThrowable(
