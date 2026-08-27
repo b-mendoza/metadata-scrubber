@@ -6,10 +6,6 @@ import { ResultAsync } from "neverthrow";
 import * as z from "zod";
 
 import {
-  BACKEND_HTTP_TOTAL_TIMEOUT_MS,
-  backendHttpClient,
-} from "#/shared/libs/ky/backend-http-client.mod.server";
-import {
   createTRPCRouter,
   publicProcedure,
 } from "#/shared/libs/trpc/utils/initializer/initializer.mod.server";
@@ -48,35 +44,19 @@ const getMessageResponseSchema = z.object({
   }),
 });
 
+const API_STATUS_ENDPOINT = "/api/health";
+
 export const productsRouter = createTRPCRouter({
   getMessage: publicProcedure.query(async ({ signal }) => {
-    const { env } = getApplicationBindings();
+    const { httpClient } = getApplicationBindings();
 
-    // Resolve against the base URL so a trailing slash on BACKEND_URL (e.g. a
-    // Vercel binding URL) can't produce a double-slashed path.
-    const backendHealthUrl = new URL("/api/health", env.BACKEND_URL);
-    const backendHealthSignals = [
-      AbortSignal.timeout(BACKEND_HTTP_TOTAL_TIMEOUT_MS),
-    ];
-
-    if (signal != null) {
-      backendHealthSignals.push(signal);
-    }
-
-    const backendHealthSignal = AbortSignal.any(backendHealthSignals);
-
-    const backendHealthResult = await ResultAsync.fromThrowable(
-      async () =>
-        backendHttpClient
-          .get(backendHealthUrl, { signal: backendHealthSignal })
-          .json(getMessageResponseSchema),
-      (cause: unknown) =>
-        new TRPCError({
-          cause,
-          code: "BAD_GATEWAY",
-          message: BACKEND_HEALTH_CHECK_FAILURE_MESSAGE,
-        }),
-    )();
+    const backendHealthResult = await getBackendHealthResult(async () =>
+      httpClient
+        .get(API_STATUS_ENDPOINT, {
+          signal: signal ?? null,
+        })
+        .json(getMessageResponseSchema),
+    );
 
     if (backendHealthResult.isErr()) {
       throw backendHealthResult.error;
@@ -89,3 +69,13 @@ export const productsRouter = createTRPCRouter({
     return PRODUCTS;
   }),
 });
+
+const getBackendHealthResult = ResultAsync.fromThrowable(
+  async <TReturn>(fetcher: () => Promise<TReturn>) => fetcher(),
+  (cause: unknown) =>
+    new TRPCError({
+      cause,
+      code: "BAD_GATEWAY",
+      message: BACKEND_HEALTH_CHECK_FAILURE_MESSAGE,
+    }),
+);
