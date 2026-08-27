@@ -37,7 +37,7 @@ Developers build the frontend with [TanStack Start](https://tanstack.com/start) 
 - The procedure creates a 5-second timeout signal for each call.
 - The procedure combines the timeout signal with the tRPC cancellation signal when that signal exists.
 - The combined signal bounds the HTTP request and the response body read.
-- The request policy stays at the call site because the frontend has one backend call.
+- The shared ky client owns the static transport policy for timeouts and retries. The products router supplies the full request-scoped URL and the signal for each request.
 
 ## Validation
 
