@@ -44,32 +44,32 @@ const getMessageResponseSchema = z.object({
   }),
 });
 
-const API_STATUS_ENDPOINT = "/api/health";
+const BACKEND_HEALTH_STATUS_ENDPOINT = "/api/health";
 
 export const productsRouter = createTRPCRouter({
   getMessage: publicProcedure.query(async ({ signal }) => {
     const { httpClient } = getApplicationBindings();
 
-    const backendHealthResult = await getBackendHealthResult(async () =>
+    const backendHealthStatusResult = await getBackendHealthStatus(async () =>
       httpClient
-        .get(API_STATUS_ENDPOINT, {
+        .get(BACKEND_HEALTH_STATUS_ENDPOINT, {
           signal: signal ?? null,
         })
         .json(getMessageResponseSchema),
     );
 
-    if (backendHealthResult.isErr()) {
-      throw backendHealthResult.error;
+    if (backendHealthStatusResult.isErr()) {
+      throw backendHealthStatusResult.error;
     }
 
-    return backendHealthResult.value;
+    return backendHealthStatusResult.value;
   }),
   getProducts: publicProcedure.query(async () =>
     setTimeout(PRODUCTS_RESPONSE_DELAY_MS, PRODUCTS),
   ),
 });
 
-const getBackendHealthResult = ResultAsync.fromThrowable(
+const getBackendHealthStatus = ResultAsync.fromThrowable(
   async <TReturn>(fetcher: () => Promise<TReturn>) => fetcher(),
   (cause: unknown) =>
     new TRPCError({
