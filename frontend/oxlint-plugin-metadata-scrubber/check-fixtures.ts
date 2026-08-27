@@ -106,15 +106,10 @@ const oxlintPath = path.join(
 );
 const ruleName = (ruleId: string): string => `metadata-scrubber/${ruleId}`;
 
-const oxlintJsonExactStringSchema = z.custom<string>(
-  (value) => typeof value === "string",
-  "Oxlint JSON diagnostic fields must be strings.",
-);
-
 const oxlintJsonMessageSchema = z.object({
-  code: oxlintJsonExactStringSchema.nullish(),
-  message: oxlintJsonExactStringSchema,
-  ruleId: oxlintJsonExactStringSchema.nullish(),
+  code: z.string().trim().nullish(),
+  message: z.string().trim(),
+  ruleId: z.string().trim().nullish(),
 });
 
 const oxlintJsonResultSchema = z.object({
