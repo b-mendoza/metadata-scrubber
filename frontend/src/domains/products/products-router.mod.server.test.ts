@@ -1,17 +1,13 @@
 import { setImmediate } from "node:timers/promises";
 import { promisify } from "node:util";
 
-import ky from "ky";
 import { expect, test, vi } from "vitest";
 
+import { backendHttpClient } from "#/shared/libs/ky/backend-http-client.mod.server";
 import type * as applicationBindingsModule from "#/shared/middlewares/application-bindings/application-bindings.mod";
 
 import {
-  BACKEND_HEALTH_ATTEMPT_TIMEOUT_MS,
   BACKEND_HEALTH_CHECK_FAILURE_MESSAGE,
-  BACKEND_HEALTH_RETRY_DELAY_LIMIT_MS,
-  BACKEND_HEALTH_RETRY_LIMIT,
-  BACKEND_HEALTH_TOTAL_TIMEOUT_MS,
   PRODUCTS_RESPONSE_DELAY_MS,
   productsRouter,
 } from "./products-router.mod.server";
@@ -101,7 +97,7 @@ test("returns a safe error when the backend health payload is invalid", async ()
   });
 });
 
-test("wires the exact backend health URL and ky policy", async () => {
+test("wires the exact backend health URL and signal", async () => {
   interface BackendHealthResponse {
     status: "reachable";
   }
@@ -120,7 +116,9 @@ test("wires the exact backend health URL and ky policy", async () => {
       text: vi.fn(),
     },
   );
-  const kyGetMock = vi.spyOn(ky, "get").mockReturnValue(mockedKyResponse);
+  const backendHttpClientGetMock = vi
+    .spyOn(backendHttpClient, "get")
+    .mockReturnValue(mockedKyResponse);
   const abortController = new AbortController();
   const caller = productsRouter.createCaller(
     {
@@ -133,33 +131,27 @@ test("wires the exact backend health URL and ky policy", async () => {
 
   await caller.getMessage();
 
-  expect(kyGetMock).toHaveBeenCalledOnce();
+  expect(backendHttpClientGetMock).toHaveBeenCalledOnce();
 
-  const [kyCall] = kyGetMock.mock.calls;
-  if (kyCall == null) {
-    throw new Error("The ky.get mock did not record the expected call.");
+  const [backendHttpClientCall] = backendHttpClientGetMock.mock.calls;
+  if (backendHttpClientCall == null) {
+    throw new Error(
+      "The backend HTTP client get mock did not record the expected call.",
+    );
   }
 
-  const [, kyOptions] = kyCall;
-  if (kyOptions?.signal == null) {
-    throw new Error("The ky.get call did not include the expected signal.");
+  const [, recordedOptions] = backendHttpClientCall;
+  if (recordedOptions?.signal == null) {
+    throw new Error(
+      "The backend HTTP client get call did not include the expected signal.",
+    );
   }
 
-  expect(kyOptions.signal).toBeInstanceOf(AbortSignal);
-  expect(kyGetMock).toHaveBeenCalledWith(
+  expect(recordedOptions.signal).toBeInstanceOf(AbortSignal);
+  expect(backendHttpClientGetMock).toHaveBeenCalledWith(
     new URL("https://backend.example.test/api/health"),
     {
-      retry: {
-        backoffLimit: BACKEND_HEALTH_RETRY_DELAY_LIMIT_MS,
-        jitter: true,
-        limit: BACKEND_HEALTH_RETRY_LIMIT,
-        maxRetryAfter: BACKEND_HEALTH_RETRY_DELAY_LIMIT_MS,
-        retryOnTimeout: false,
-      },
-      signal: kyOptions.signal,
-      throwHttpErrors: true,
-      timeout: BACKEND_HEALTH_ATTEMPT_TIMEOUT_MS,
-      totalTimeout: BACKEND_HEALTH_TOTAL_TIMEOUT_MS,
+      signal: recordedOptions.signal,
     },
   );
 });
