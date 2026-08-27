@@ -18,6 +18,6 @@ Validate external input with Zod at each boundary.
 
 ## HTTP requests
 
-- Use ky for HTTP calls from frontend server code.
-- Keep each use case's HTTP request policy with that use case.
-- Add shared HTTP configuration only when several real call sites need one policy.
+- Use ky through the shared backend client for backend calls.
+- Supply a full request-scoped URL and a per-request signal at each call site.
+- Extend the client for one use case only when that use case needs a different transport policy.
