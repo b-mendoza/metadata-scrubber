@@ -162,6 +162,12 @@ export default defineConfig(
         },
       ],
       "@typescript-eslint/no-deprecated": ERROR,
+      "@typescript-eslint/no-floating-promises": [
+        ERROR,
+        {
+          checkThenables: true,
+        },
+      ],
       "@typescript-eslint/no-magic-numbers": [
         ERROR,
         {
