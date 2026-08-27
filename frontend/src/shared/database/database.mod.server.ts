@@ -14,6 +14,6 @@ export const createDrizzleDatabaseClient = (databaseUrl: string) => {
   });
 };
 
-export interface DrizzleDatabaseClient extends ReturnType<
+export type DrizzleDatabaseClient = ReturnType<
   typeof createDrizzleDatabaseClient
-> {}
+>;

@@ -124,9 +124,9 @@ export function getRouterContext(trpcClient: TRPCClient<AppRouter>) {
   };
 }
 
-export interface RouterInputs extends inferRouterInputs<AppRouter> {}
+export type RouterInputs = inferRouterInputs<AppRouter>;
 
-export interface RouterOutputs extends inferRouterOutputs<AppRouter> {}
+export type RouterOutputs = inferRouterOutputs<AppRouter>;
 
 // type TRPCClientTypes = inferTRPCClientTypes<AppRouter>;
 
