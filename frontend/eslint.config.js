@@ -38,11 +38,6 @@ const BASE_RESTRICTED_IMPORT_PATTERNS = [
     message:
       'Import Zod from the `zod` package root. Use `import * as z from "zod"` for runtime code or `import type * as z from "zod"` for type-only code. Replace every `zod/*` source with `zod`. The package root is the only supported project entry point.',
   },
-  {
-    regex: "^effect(?:\\u002F.*)?$",
-    message:
-      "Do not import from `effect` or an `effect/*` subpath. The frontend does not use Effect. Use async and await for Promise control flow. Use ky for HTTP requests. Use Zod for validation.",
-  },
 ];
 
 // The project replaces each switch statement with a lookup map.
