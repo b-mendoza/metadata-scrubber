@@ -106,10 +106,13 @@ const oxlintPath = path.join(
 );
 const ruleName = (ruleId: string): string => `metadata-scrubber/${ruleId}`;
 
+// eslint-disable-next-line zod/prefer-string-schema-with-trim -- This third-party oxlint JSON boundary needs byte-for-byte strings. Trim would hide whitespace mismatches.
+const oxlintJsonExactStringSchema = z.string();
+
 const oxlintJsonMessageSchema = z.object({
-  code: z.string().trim().nullish(),
-  message: z.string().trim(),
-  ruleId: z.string().trim().nullish(),
+  code: oxlintJsonExactStringSchema.nullish(),
+  message: oxlintJsonExactStringSchema,
+  ruleId: oxlintJsonExactStringSchema.nullish(),
 });
 
 const oxlintJsonResultSchema = z.object({
