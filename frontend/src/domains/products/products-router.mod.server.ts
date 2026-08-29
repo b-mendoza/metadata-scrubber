@@ -35,12 +35,18 @@ export const productsRouter = createTRPCRouter({
   getMessage: publicProcedure.query(async ({ signal }) => {
     const { httpClient } = getApplicationBindings();
 
-    const backendHealthStatusResult = await getBackendHealthStatus(async () =>
+    const backendHealthStatusResult = await ResultAsync.fromPromise(
       httpClient
         .get(BACKEND_HEALTH_STATUS_ENDPOINT, {
           signal: signal ?? null,
         })
         .json(getMessageResponseSchema),
+      (cause: unknown) =>
+        new TRPCError({
+          cause,
+          code: "BAD_GATEWAY",
+          message: BACKEND_HEALTH_CHECK_FAILURE_MESSAGE,
+        }),
     );
 
     if (backendHealthStatusResult.isErr()) {
@@ -53,13 +59,3 @@ export const productsRouter = createTRPCRouter({
     setTimeout(PRODUCTS_RESPONSE_DELAY_MS, PRODUCTS),
   ),
 });
-
-const getBackendHealthStatus = ResultAsync.fromThrowable(
-  async <TReturn>(fetcher: () => Promise<TReturn>) => fetcher(),
-  (cause: unknown) =>
-    new TRPCError({
-      cause,
-      code: "BAD_GATEWAY",
-      message: BACKEND_HEALTH_CHECK_FAILURE_MESSAGE,
-    }),
-);
