@@ -242,15 +242,6 @@ func newHandler(logger *slog.Logger, permits chan struct{}, operations handlerOp
 	if permits == nil || cap(permits) != ProcessingPermitCount {
 		panic("handler admission gate must have capacity 2")
 	}
-	if operations.inspect == nil {
-		panic("handler inspect operation must not be nil")
-	}
-	if operations.clean == nil {
-		panic("handler clean operation must not be nil")
-	}
-	if operations.entropy == nil {
-		panic("handler entropy operation must not be nil")
-	}
 
 	return &Handler{
 		logger:              logger,

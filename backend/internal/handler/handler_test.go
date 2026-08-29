@@ -138,50 +138,6 @@ func TestWriteJSONPreservesConcreteResponseContracts(t *testing.T) {
 	}
 }
 
-func TestNewHandlerRejectsNilOperations(t *testing.T) {
-	validInspect := inspectPDFOperation(func([]byte, scrub.InspectionOrigin) ([]scrub.Field, error) { return nil, nil })
-	validClean := cleanPDFOperation(func(input []byte) ([]byte, error) { return bytes.Clone(input), nil })
-	validEntropy := entropyOperation(deterministicEntropy)
-	tests := []struct {
-		name      string
-		inspect   inspectPDFOperation
-		clean     cleanPDFOperation
-		entropy   entropyOperation
-		wantPanic string
-	}{
-		{
-			name:      "inspect",
-			clean:     validClean,
-			entropy:   validEntropy,
-			wantPanic: "handler inspect operation must not be nil",
-		},
-		{
-			name:      "clean",
-			inspect:   validInspect,
-			entropy:   validEntropy,
-			wantPanic: "handler clean operation must not be nil",
-		},
-		{
-			name:      "entropy",
-			inspect:   validInspect,
-			clean:     validClean,
-			wantPanic: "handler entropy operation must not be nil",
-		},
-	}
-
-	for _, testCase := range tests {
-		t.Run(testCase.name, func(t *testing.T) {
-			require.PanicsWithValue(t, testCase.wantPanic, func() {
-				newHandler(nil, make(chan struct{}, ProcessingPermitCount), handlerOperations{
-					inspect: testCase.inspect,
-					clean:   testCase.clean,
-					entropy: testCase.entropy,
-				})
-			})
-		})
-	}
-}
-
 func TestJSONEndpointsValidateEveryBoundaryBeforeWork(t *testing.T) {
 	endpoints := []struct {
 		name                   string
