@@ -2,7 +2,6 @@ package scrub
 
 import (
 	"bytes"
-	"errors"
 	"fmt"
 
 	"github.com/pdfcpu/pdfcpu/pkg/api"
@@ -33,9 +32,6 @@ func readPDF(inputBytes []byte) (*model.Context, error) {
 func readPDFWithValidator(inputBytes []byte, validate validatePDFContextOperation) (*model.Context, error) {
 	if len(inputBytes) > MaxInputBytes {
 		return nil, ErrInputTooLarge
-	}
-	if validate == nil {
-		return nil, errors.New("PDF context validator is nil")
 	}
 
 	context, err := api.ReadContext(bytes.NewReader(inputBytes), boundedPDFConfiguration())
