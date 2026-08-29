@@ -76,23 +76,6 @@ type cleanPDFOperations struct {
 	verify verifyPDFOperation
 }
 
-func newCleanPDFOperations(
-	remove removePDFMetadataOperation,
-	write writePDFOperation,
-	verify verifyPDFOperation,
-) (cleanPDFOperations, error) {
-	if remove == nil {
-		return cleanPDFOperations{}, errors.New("clean PDF remove operation is nil")
-	}
-	if write == nil {
-		return cleanPDFOperations{}, errors.New("clean PDF write operation is nil")
-	}
-	if verify == nil {
-		return cleanPDFOperations{}, errors.New("clean PDF verify operation is nil")
-	}
-	return cleanPDFOperations{remove: remove, write: write, verify: verify}, nil
-}
-
 // DisableConfigDir prevents pdfcpu from creating or reading a per-user config
 // directory. Call once at startup before any PDF inspection or scrub.
 func DisableConfigDir() {
@@ -122,11 +105,11 @@ func InspectPDF(inputBytes []byte, origin InspectionOrigin) ([]Field, error) {
 
 // CleanPDF removes supported metadata from PDF bytes.
 func CleanPDF(inputBytes []byte) ([]byte, error) {
-	operations, err := newCleanPDFOperations(removeAnalyzedMetadata, api.WriteContext, verifyScrubbedPDF)
-	if err != nil {
-		return nil, err
-	}
-	return cleanPDF(inputBytes, operations)
+	return cleanPDF(inputBytes, cleanPDFOperations{
+		remove: removeAnalyzedMetadata,
+		write:  api.WriteContext,
+		verify: verifyScrubbedPDF,
+	})
 }
 
 func cleanPDF(inputBytes []byte, operations cleanPDFOperations) ([]byte, error) {
