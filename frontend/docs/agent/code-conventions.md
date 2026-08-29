@@ -18,6 +18,7 @@ Validate external input with Zod at each boundary.
 
 ## HTTP requests
 
-- Use ky through the shared backend client for backend calls.
-- Supply a full request-scoped URL and a per-request signal at each call site.
+- Read the request-scoped Ky client from application bindings for backend calls.
+- Pass the request signal.
+- Use a relative path. The binding supplies the base URL.
 - Extend the client for one use case only when that use case needs a different transport policy.
