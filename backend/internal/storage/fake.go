@@ -2,7 +2,6 @@ package storage
 
 import (
 	"context"
-	"fmt"
 	"maps"
 	"net/http"
 	"net/url"
@@ -27,21 +26,12 @@ const (
 	FakeUploadSanitized FakeOperation = "upload sanitized object"
 )
 
-func fakeOperationLabel(operation FakeOperation) (string, error) {
-	switch operation {
-	case FakePresignSourceUpload:
-		return operationPresignSourceUpload, nil
-	case FakePresignSanitizedDownload:
-		return operationPresignSanitizedDownload, nil
-	case FakeDownloadSource:
-		return operationDownloadSource, nil
-	case FakeSanitizedExists:
-		return operationCheckSanitizedObject, nil
-	case FakeUploadSanitized:
-		return operationUploadSanitized, nil
-	default:
-		return "", fmt.Errorf("unsupported fake operation %q", operation)
-	}
+var fakeOperations = map[FakeOperation]string{
+	FakePresignSourceUpload:      operationPresignSourceUpload,
+	FakePresignSanitizedDownload: operationPresignSanitizedDownload,
+	FakeDownloadSource:           operationDownloadSource,
+	FakeSanitizedExists:          operationCheckSanitizedObject,
+	FakeUploadSanitized:          operationUploadSanitized,
 }
 
 // FakeCall records the logical and derived inputs observed by a Fake operation.
@@ -143,10 +133,7 @@ func (fake *Fake) Calls() []FakeCall {
 // through injection, while input-validation failures never reach this method
 // and are therefore never recorded.
 func (fake *Fake) recordAttemptLocked(ctx context.Context, call FakeCall) error {
-	operation, err := fakeOperationLabel(call.Operation)
-	if err != nil {
-		return err
-	}
+	operation := fakeOperations[call.Operation]
 	if err := contextError(ctx, operation); err != nil {
 		return err
 	}
