@@ -8,11 +8,11 @@ export const Route = createFileRoute("/")({
     const { queryClient, trpc } = context;
 
     queryClient
-      .prefetchQuery(trpc.products.getMessage.queryOptions())
+      .query(trpc.products.getMessage.queryOptions())
       .catch(() => null);
 
     queryClient
-      .prefetchQuery(trpc.products.getProducts.queryOptions())
+      .query(trpc.products.getProducts.queryOptions())
       .catch(() => null);
   },
   head() {
