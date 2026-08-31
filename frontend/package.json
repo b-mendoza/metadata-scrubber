@@ -53,7 +53,7 @@
     "date-fns": "4.4.0",
     "devalue": "5.9.2",
     "drizzle-orm": "1.0.0-rc.4",
-    "isbot": "5.2.1",
+    "isbot": "5.2.2",
     "ky": "2.0.2",
     "lucide-react": "1.34.0",
     "neverthrow": "8.2.0",
