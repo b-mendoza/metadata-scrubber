@@ -2,6 +2,8 @@ package handler
 
 import (
 	"context"
+	"crypto/sha256"
+	"encoding/hex"
 	"errors"
 	"fmt"
 	"log/slog"
@@ -42,6 +44,13 @@ func validFileName(fileName string) bool {
 
 func formatStorageKey(fileID string) string {
 	return storageKeyPrefix + fileID
+}
+
+const storageKeyDigestBytes = 6
+
+func storageKeyDigest(storageKey string) string {
+	digest := sha256.Sum256([]byte(storageKey))
+	return hex.EncodeToString(digest[:storageKeyDigestBytes])
 }
 
 func parseStorageKey(storageKey string) (string, bool) {
@@ -219,7 +228,7 @@ func (handler *Handler) logStage(event pipelineLogEvent) {
 		event.ctx,
 		level,
 		string(event.stage),
-		"storage_key", event.storageKey,
+		"storage_key_digest", storageKeyDigest(event.storageKey),
 		"outcome", string(event.outcome),
 		"duration_ms", time.Since(event.startedAt).Milliseconds(),
 	)
