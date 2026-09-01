@@ -86,6 +86,7 @@ func newServer(cfg config.Config, objectStorage storage.Storage, logger *slog.Lo
 	mux.HandleFunc("POST /api/files/dry-run", workflow.DryRun)
 	mux.HandleFunc("POST /api/files/scrub", workflow.Scrub)
 	mux.HandleFunc("POST /api/files/download-grant", workflow.DownloadGrant)
+	mux.HandleFunc("POST /api/files/delete", workflow.DeleteFlow)
 
 	return &http.Server{
 		Addr: fmt.Sprintf(":%d", cfg.Port),

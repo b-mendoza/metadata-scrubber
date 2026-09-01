@@ -163,7 +163,15 @@ type downloadGrantResponse struct {
 	ExpiresAt   string `json:"expiresAt"`
 }
 
-func writeJSON[T reachabilityResponse | workflowConfigResponse | uploadResponse | dryRunResponse | scrubResponse | downloadGrantResponse](
+type deleteRequest struct {
+	StorageKey string `json:"storageKey"`
+}
+
+type deleteResponse struct {
+	Status string `json:"status"`
+}
+
+func writeJSON[T reachabilityResponse | workflowConfigResponse | uploadResponse | dryRunResponse | scrubResponse | downloadGrantResponse | deleteResponse](
 	w http.ResponseWriter,
 	status int,
 	body T,
@@ -173,7 +181,7 @@ func writeJSON[T reachabilityResponse | workflowConfigResponse | uploadResponse 
 	return json.NewEncoder(w).Encode(body)
 }
 
-func decodeJSONRequest[T uploadRequest | dryRunRequest | scrubRequest | downloadGrantRequest](
+func decodeJSONRequest[T uploadRequest | dryRunRequest | scrubRequest | downloadGrantRequest | deleteRequest](
 	logger *slog.Logger,
 	w http.ResponseWriter,
 	request *http.Request,
@@ -215,7 +223,7 @@ type jsonDecodeStage struct {
 	decoder *json.Decoder
 }
 
-func decodeJSONBody[T uploadRequest | dryRunRequest | scrubRequest | downloadGrantRequest](stage jsonDecodeStage, destination *T) bool {
+func decodeJSONBody[T uploadRequest | dryRunRequest | scrubRequest | downloadGrantRequest | deleteRequest](stage jsonDecodeStage, destination *T) bool {
 	if err := stage.decoder.Decode(destination); err == nil {
 		return true
 	}
