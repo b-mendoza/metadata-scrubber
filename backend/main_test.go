@@ -127,6 +127,7 @@ func TestNewServerRoutesJSONWorkflowAndRemovesLegacyScrub(t *testing.T) {
 		{path: "/api/files/dry-run", wantStatus: http.StatusUnsupportedMediaType},
 		{path: "/api/files/scrub", wantStatus: http.StatusUnsupportedMediaType},
 		{path: "/api/files/download-grant", wantStatus: http.StatusUnsupportedMediaType},
+		{path: "/api/files/delete", wantStatus: http.StatusUnsupportedMediaType},
 		{path: "/api/scrub", wantStatus: http.StatusNotFound},
 	}
 	for _, testCase := range testCases {
@@ -173,6 +174,7 @@ func TestNewServerRejectsWrongMethodsForJSONWorkflow(t *testing.T) {
 		{method: http.MethodGet, path: "/api/files/dry-run"},
 		{method: http.MethodGet, path: "/api/files/scrub"},
 		{method: http.MethodGet, path: "/api/files/download-grant"},
+		{method: http.MethodGet, path: "/api/files/delete"},
 	}
 	for _, testCase := range tests {
 		request := httptest.NewRequest(testCase.method, testCase.path, http.NoBody)
