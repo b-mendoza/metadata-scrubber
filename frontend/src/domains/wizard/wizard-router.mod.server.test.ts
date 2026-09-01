@@ -5,6 +5,10 @@ import ky from "ky";
 import { afterEach, expect, test, vi } from "vitest";
 
 import { environmentSchema } from "#/shared/config/env/environment.mod.server";
+import {
+  CONFLICT_STATUS_CODE,
+  NOT_FOUND_STATUS_CODE,
+} from "#/shared/constants/http/status-codes/status-codes.mod";
 import { createWorkflowHttpClient } from "#/shared/libs/ky/workflow-http-client.mod.server";
 import {
   createCallerFactory,
@@ -17,11 +21,14 @@ import type {
   CreateUploadResponse,
   DryRunInput,
   DryRunResponse,
+  ScrubFileInput,
+  ScrubFileResponse,
   WorkflowConfig,
 } from "./wizard-router.mod.server";
 import {
   CREATE_UPLOAD_FAILURE_MESSAGE,
   DRY_RUN_FAILURE_MESSAGE,
+  SCRUB_FILE_FAILURE_MESSAGE,
   wizardRouter,
   WORKFLOW_MAX_FILE_SIZE_BYTES,
 } from "./wizard-router.mod.server";
@@ -37,9 +44,11 @@ const BACKEND_BASE_URL = new URL("https://backend.test/");
 const FRONTEND_URL = "https://frontend.test/";
 const STORAGE_KEY = "uploads/00000000-0000-4000-8000-000000000001";
 const CANONICAL_ETAG = "0123456789abcdef0123456789abcdef";
+const DOWNLOAD_URL = "https://downloads.test/sanitized.pdf";
 const UPLOAD_URL = "https://uploads.test/source.pdf";
 const FIRST_FETCH_CALL_INDEX = 0;
 const FETCH_INPUT_ARGUMENT_INDEX = 0;
+const TWO_FETCH_ATTEMPTS = 2;
 const MINIMUM_FILE_SIZE_BYTES = 1;
 
 const testEnvironment = environmentSchema.parse({
@@ -168,6 +177,90 @@ test("dryRun sends the storage key and returns a canonical reviewed revision", a
   expect(backendRequest.url).toBe("https://backend.test/api/files/dry-run");
   await expect(backendRequest.clone().json()).resolves.toEqual(input);
   expect(JSON.stringify(input)).not.toContain("fileBytes");
+});
+
+test("scrubFile forwards the exact reviewed ETag without file bytes", async () => {
+  const input: ScrubFileInput = {
+    etag: CANONICAL_ETAG,
+    storageKey: STORAGE_KEY,
+  };
+  const response: ScrubFileResponse = {
+    result: { downloadUrl: DOWNLOAD_URL },
+    status: "done",
+  };
+  const fetchMock = vi
+    .fn<typeof fetch>()
+    .mockResolvedValue(Response.json(response));
+  vi.stubGlobal("fetch", fetchMock);
+  const request = new Request(FRONTEND_URL);
+
+  const result = await callerForRequest(request).scrubFile(input);
+
+  expect(result).toEqual(response);
+  const backendRequest = onlyFetchRequest(fetchMock);
+  expect(backendRequest.method).toBe("POST");
+  expect(backendRequest.url).toBe("https://backend.test/api/files/scrub");
+  await expect(backendRequest.clone().json()).resolves.toEqual(input);
+  expect(JSON.stringify(input)).not.toContain("fileBytes");
+});
+
+test("scrubFile keeps missing source and revision conflict results distinct", async () => {
+  const input: ScrubFileInput = {
+    etag: CANONICAL_ETAG,
+    storageKey: STORAGE_KEY,
+  };
+  const fetchMock = vi
+    .fn<typeof fetch>()
+    .mockResolvedValueOnce(
+      Response.json(
+        { error: "source file not found" },
+        { status: NOT_FOUND_STATUS_CODE },
+      ),
+    )
+    .mockResolvedValueOnce(
+      Response.json(
+        { error: "source file changed since review" },
+        { status: CONFLICT_STATUS_CODE },
+      ),
+    );
+  vi.stubGlobal("fetch", fetchMock);
+  const request = new Request(FRONTEND_URL);
+  const caller = callerForRequest(request);
+
+  const missingError = await requireTRPCError(caller.scrubFile(input));
+  const conflictError = await requireTRPCError(caller.scrubFile(input));
+
+  expect(missingError.code).toBe("NOT_FOUND");
+  expect(conflictError.code).toBe("CONFLICT");
+  expect(missingError.message).toBe(SCRUB_FILE_FAILURE_MESSAGE);
+  expect(conflictError.message).toBe(SCRUB_FILE_FAILURE_MESSAGE);
+  expect(fetchMock).toHaveBeenCalledTimes(TWO_FETCH_ATTEMPTS);
+});
+
+test("duplicate scrub success returns a fresh normal done response", async () => {
+  const input: ScrubFileInput = {
+    etag: CANONICAL_ETAG,
+    storageKey: STORAGE_KEY,
+  };
+  const firstResponse: ScrubFileResponse = {
+    result: { downloadUrl: "https://downloads.test/first.pdf" },
+    status: "done",
+  };
+  const secondResponse: ScrubFileResponse = {
+    result: { downloadUrl: "https://downloads.test/second.pdf" },
+    status: "done",
+  };
+  const fetchMock = vi
+    .fn<typeof fetch>()
+    .mockResolvedValueOnce(Response.json(firstResponse))
+    .mockResolvedValueOnce(Response.json(secondResponse));
+  vi.stubGlobal("fetch", fetchMock);
+  const request = new Request(FRONTEND_URL);
+  const caller = callerForRequest(request);
+
+  await expect(caller.scrubFile(input)).resolves.toEqual(firstResponse);
+  await expect(caller.scrubFile(input)).resolves.toEqual(secondResponse);
+  expect(fetchMock).toHaveBeenCalledTimes(TWO_FETCH_ATTEMPTS);
 });
 
 test("an unclassified transport failure maps to BAD_GATEWAY without public details", async () => {
