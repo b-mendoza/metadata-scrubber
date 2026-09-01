@@ -164,7 +164,7 @@ var pipelineFailureClassifications = []pipelineFailureClassification{
 		matches: func(err error) bool {
 			return errors.Is(err, storage.ErrSourceObjectTooLarge) || errors.Is(err, scrub.ErrInputTooLarge)
 		},
-		failure: pipelineFailure{status: http.StatusRequestEntityTooLarge, message: "source file exceeds 10 MB limit", outcome: pipelineOutcomeTooLarge},
+		failure: pipelineFailure{status: http.StatusRequestEntityTooLarge, message: "source file exceeds 10 MiB limit", outcome: pipelineOutcomeTooLarge},
 	},
 	{
 		matches: func(err error) bool { return errors.Is(err, storage.ErrSourceRevisionConflict) },

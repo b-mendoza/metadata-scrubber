@@ -263,7 +263,7 @@ func TestPDFByteAPIsEnforceAggregateInputLimit(t *testing.T) {
 }
 
 func TestInspectionSummaryLimitsStayAtApprovedValues(t *testing.T) {
-	require.Equal(t, 10_000_000, MaxInputBytes)
+	require.Equal(t, 10_485_760, MaxInputBytes)
 	require.Equal(t, 256, maxFieldPreviewBytes)
 	require.Equal(t, 128, maxInspectionFields)
 	require.Equal(t, 32_768, maxInspectionBytes)
@@ -503,7 +503,7 @@ func TestPDFPathsEnforceConfiguredStreamLimit(t *testing.T) {
 func TestBoundedPDFConfigurationAssignsEveryResourceLimit(t *testing.T) {
 	configuration := boundedPDFConfiguration()
 
-	require.Equal(t, int64(10_000_000), maxPDFStreamBytes)
+	require.Equal(t, int64(10_485_760), maxPDFStreamBytes)
 	require.Equal(t, int64(20_000_000), maxPDFDecodeBytes)
 	require.Equal(t, int64(10_000_000), maxPDFImagePixels)
 	require.Equal(t, int64(40_000_000), maxPDFImageBytes)
