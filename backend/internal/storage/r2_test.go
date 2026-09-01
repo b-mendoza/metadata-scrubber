@@ -223,6 +223,38 @@ func TestR2ReportsAMissingSourceAsSourceNotFound(t *testing.T) {
 	require.NotErrorIs(t, err, ErrSourceRevisionConflict)
 }
 
+func TestR2SourceExistenceUsesOnlyTheExactSourceKey(t *testing.T) {
+	t.Parallel()
+
+	requests := make(chan observedStorageRequest, 3)
+	adapter := newTestR2Server(t, http.HandlerFunc(func(response http.ResponseWriter, request *http.Request) {
+		requests <- observedStorageRequest{method: request.Method, path: request.URL.Path}
+		response.WriteHeader(http.StatusOK)
+	}))
+
+	exists, err := adapter.SourceExists(context.Background(), "file-1")
+	require.NoError(t, err)
+	require.True(t, exists)
+
+	request := <-requests
+	require.Equal(t, http.MethodHead, request.method)
+	require.Equal(t, "/"+testBucket+"/source/file-1", request.path)
+}
+
+func TestR2SourceExistenceMapsOnlyNotFoundToAbsence(t *testing.T) {
+	t.Parallel()
+
+	missing := newTestR2StatusServer(t, http.StatusNotFound)
+	exists, err := missing.SourceExists(context.Background(), "file-1")
+	require.NoError(t, err)
+	require.False(t, exists)
+
+	forbidden := newTestR2StatusServer(t, http.StatusForbidden)
+	exists, err = forbidden.SourceExists(context.Background(), "file-1")
+	require.False(t, exists)
+	require.ErrorIs(t, err, ErrDependency)
+}
+
 func TestR2SanitizedExistenceUsesOnlyTheExactRevisionKey(t *testing.T) {
 	t.Parallel()
 
@@ -341,7 +373,9 @@ func TestR2RejectsInvalidInputsBeforeStorageRequests(t *testing.T) {
 		requestCount.Add(1)
 	}))
 
-	_, err := adapter.PresignSourceUpload(context.Background(), "folder/file", 1024, time.Minute)
+	_, err := adapter.SourceExists(context.Background(), "folder/file")
+	require.ErrorIs(t, err, ErrInvalidFileID)
+	_, err = adapter.PresignSourceUpload(context.Background(), "folder/file", 1024, time.Minute)
 	require.ErrorIs(t, err, ErrInvalidFileID)
 	_, err = adapter.PresignSanitizedDownload(context.Background(), "file-1", `"0123456789abcdef0123456789abcdef"`, time.Minute)
 	require.ErrorIs(t, err, ErrInvalidETag)
@@ -415,6 +449,8 @@ func TestR2PropagatesContextAndSanitizesProviderFailures(t *testing.T) {
 	_, err := adapter.PresignSourceUpload(ctx, "file-1", 1024, time.Minute)
 	require.ErrorIs(t, err, context.Canceled)
 	_, err = adapter.PresignSanitizedDownload(ctx, "file-1", "0123456789abcdef0123456789abcdef", time.Minute)
+	require.ErrorIs(t, err, context.Canceled)
+	_, err = adapter.SourceExists(ctx, "file-1")
 	require.ErrorIs(t, err, context.Canceled)
 	_, err = adapter.DownloadSource(ctx, "file-1", "")
 	require.ErrorIs(t, err, context.Canceled)

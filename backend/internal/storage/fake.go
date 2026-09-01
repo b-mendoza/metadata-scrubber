@@ -18,6 +18,8 @@ const (
 	FakePresignSourceUpload FakeOperation = "presign source upload"
 	// FakePresignSanitizedDownload identifies sanitized download grant creation.
 	FakePresignSanitizedDownload FakeOperation = "presign sanitized download"
+	// FakeSourceExists identifies exact source-object lookups.
+	FakeSourceExists FakeOperation = "check source object"
 	// FakeDownloadSource identifies source-object reads.
 	FakeDownloadSource FakeOperation = "download source"
 	// FakeSanitizedExists identifies exact sanitized-object lookups.
@@ -29,6 +31,7 @@ const (
 var fakeOperations = map[FakeOperation]string{
 	FakePresignSourceUpload:      operationPresignSourceUpload,
 	FakePresignSanitizedDownload: operationPresignSanitizedDownload,
+	FakeSourceExists:             operationCheckSourceObject,
 	FakeDownloadSource:           operationDownloadSource,
 	FakeSanitizedExists:          operationCheckSanitizedObject,
 	FakeUploadSanitized:          operationUploadSanitized,
@@ -215,6 +218,30 @@ func (fake *Fake) PresignSanitizedDownload(
 		URL:             fakeGrantURL(objectKey, fake.grantSequence),
 		RequiredHeaders: make(http.Header),
 	}, nil
+}
+
+// SourceExists reports whether the exact source object exists.
+func (fake *Fake) SourceExists(ctx context.Context, fileID string) (bool, error) {
+	if err := contextError(ctx, operationCheckSourceObject); err != nil {
+		return false, err
+	}
+	objectKey, err := SourceObjectKey(fileID)
+	if err != nil {
+		return false, err
+	}
+
+	fake.mu.Lock()
+	defer fake.mu.Unlock()
+	if err := fake.recordAttemptLocked(ctx, FakeCall{
+		Operation: FakeSourceExists,
+		FileID:    fileID,
+		ObjectKey: objectKey,
+	}); err != nil {
+		return false, err
+	}
+
+	_, exists := fake.sources[fileID]
+	return exists, nil
 }
 
 // DownloadSource reads the current source revision and optionally enforces an expected ETag.

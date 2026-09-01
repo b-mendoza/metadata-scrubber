@@ -218,6 +218,30 @@ func TestFakeReportsAMissingSourceAsSourceNotFound(t *testing.T) {
 	require.NotErrorIs(t, err, storage.ErrSourceRevisionConflict)
 }
 
+func TestFakeSourceExistenceUsesTheExactSourceKey(t *testing.T) {
+	t.Parallel()
+
+	fake := storage.NewFake()
+	exists, err := fake.SourceExists(context.Background(), "file-1")
+	require.NoError(t, err)
+	require.False(t, exists)
+
+	require.NoError(t, fake.SetSource("file-1", storage.SourceObject{
+		PDFBytes: []byte("source"),
+		ETag:     canonicalETagOne,
+	}))
+	exists, err = fake.SourceExists(context.Background(), "file-1")
+	require.NoError(t, err)
+	require.True(t, exists)
+
+	calls := fake.Calls()
+	require.Len(t, calls, 2)
+	for _, call := range calls {
+		require.Equal(t, storage.FakeSourceExists, call.Operation)
+		require.Equal(t, "source/file-1", call.ObjectKey)
+	}
+}
+
 func TestFakeUsesExactSanitizedRevisionForExistenceGrantsAndUploads(t *testing.T) {
 	t.Parallel()
 
@@ -333,6 +357,14 @@ func TestFakeKeepsInputValidationOrder(t *testing.T) {
 		wantErr error
 	}{
 		{
+			name: "source existence file ID",
+			invoke: func(fake *storage.Fake) error {
+				_, err := fake.SourceExists(context.Background(), "folder/file")
+				return err
+			},
+			wantErr: storage.ErrInvalidFileID,
+		},
+		{
 			name: "source upload file ID before size and expiry",
 			invoke: func(fake *storage.Fake) error {
 				_, err := fake.PresignSourceUpload(context.Background(), "folder/file", 0, 0)
@@ -443,6 +475,9 @@ func invokeFakeOperation(t *testing.T, fake *storage.Fake, operation storage.Fak
 	case storage.FakePresignSanitizedDownload:
 		_, err := fake.PresignSanitizedDownload(context.Background(), "file-1", canonicalETagOne, time.Minute)
 		return err
+	case storage.FakeSourceExists:
+		_, err := fake.SourceExists(context.Background(), "file-1")
+		return err
 	case storage.FakeDownloadSource:
 		_, err := fake.DownloadSource(context.Background(), "file-1", "")
 		return err
@@ -464,6 +499,7 @@ func TestFakeInjectsIndependentOrdinaryFailuresForEveryOperation(t *testing.T) {
 	for _, operation := range []storage.FakeOperation{
 		storage.FakePresignSourceUpload,
 		storage.FakePresignSanitizedDownload,
+		storage.FakeSourceExists,
 		storage.FakeDownloadSource,
 		storage.FakeSanitizedExists,
 		storage.FakeUploadSanitized,
