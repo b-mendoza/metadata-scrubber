@@ -28,6 +28,7 @@ const (
 const (
 	operationPresignSourceUpload      = "presigning source upload"
 	operationPresignSanitizedDownload = "presigning sanitized download"
+	operationCheckSourceObject        = "checking source object"
 	operationDownloadSource           = "downloading source object"
 	operationCheckSanitizedObject     = "checking sanitized object"
 	operationUploadSanitized          = "uploading sanitized object"
@@ -52,31 +53,38 @@ var (
 	ErrDependency = errors.New("storage dependency failed")
 )
 
-// Storage is the provider-neutral private PDF storage boundary.
-//
-// PresignSourceUpload binds the validated expected size into the grant, so the
-// store rejects uploads whose byte count differs. DownloadSource reports a
-// missing source as ErrSourceNotFound. UploadSanitized may overwrite: a
-// revision key encodes its exact source ETag, so every write to it carries an
-// equivalent sanitized copy of the same source revision. Every implementation
-// returns a SourceObject that the caller owns, Metadata included, so no
-// implementation keeps a reference to the returned state.
-type Storage interface {
+// UploadStorage grants one direct source upload.
+type UploadStorage interface {
 	PresignSourceUpload(
 		ctx context.Context,
 		fileID string,
 		sizeBytes int64,
 		expiry time.Duration,
 	) (PresignedRequest, error)
+}
+
+// FileWorkflowStorage reads sources and manages exact sanitized revisions.
+//
+// DownloadSource reports a missing source as ErrSourceNotFound.
+// UploadSanitized may overwrite because the revision key identifies one exact
+// source ETag. Every implementation returns state that the caller owns.
+type FileWorkflowStorage interface {
 	PresignSanitizedDownload(
 		ctx context.Context,
 		fileID string,
 		sourceETag string,
 		expiry time.Duration,
 	) (PresignedRequest, error)
+	SourceExists(ctx context.Context, fileID string) (bool, error)
 	DownloadSource(ctx context.Context, fileID string, expectedETag string) (SourceObject, error)
 	SanitizedExists(ctx context.Context, fileID string, sourceETag string) (bool, error)
 	UploadSanitized(ctx context.Context, fileID string, sourceETag string, pdfBytes []byte) error
+}
+
+// Storage is the provider-neutral private PDF storage boundary.
+type Storage interface {
+	UploadStorage
+	FileWorkflowStorage
 }
 
 // PresignedRequest is a short-lived object operation grant and its required headers.
