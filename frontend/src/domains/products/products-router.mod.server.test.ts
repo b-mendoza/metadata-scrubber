@@ -41,6 +41,9 @@ test("getMessage maps a rejected backend health request to BAD_GATEWAY", async (
         ],
       },
     }),
+    workflowHttpClient: ky.create({
+      baseUrl: new URL("https://backend.test/"),
+    }),
   });
 
   try {
@@ -77,6 +80,9 @@ test("getMessage returns the reachable backend health status", async () => {
       hooks: {
         beforeRequest: [(): Response => Response.json(reachableHealthResponse)],
       },
+    }),
+    workflowHttpClient: ky.create({
+      baseUrl: new URL("https://backend.test/"),
     }),
   });
 
