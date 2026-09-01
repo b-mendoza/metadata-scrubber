@@ -10,9 +10,10 @@ import {
 } from "#/shared/libs/trpc/utils/initializer/initializer.mod.server";
 import { getApplicationBindings } from "#/shared/middlewares/application-bindings/application-bindings.mod";
 
+import type { CreateUploadInput } from "./wizard-router.mod.server";
 import {
   canonicalETagSchema,
-  createUploadInputSchema,
+  CREATE_UPLOAD_FAILURE_MESSAGE,
   scrubFileInputSchema,
   storageKeySchema,
   wizardRouter,
@@ -104,13 +105,20 @@ test("storage key schema rejects a non-upload key", () => {
   expect(storageKeySchema.safeParse("source/not-public").success).toBe(false);
 });
 
-test("createUpload input schema rejects an invalid file name and oversized file", () => {
-  const result = createUploadInputSchema.safeParse({
-    fileName: "../report.pdf",
-    fileSizeBytes: WORKFLOW_MAX_FILE_SIZE_BYTES + ONE_BYTE,
-  });
+test("createUpload rejects invalid input before fetch", async () => {
+  const fetchMock = vi.fn<typeof fetch>();
+  vi.stubGlobal("fetch", fetchMock);
+  const request = new Request(FRONTEND_URL);
 
-  expect(result.success).toBe(false);
+  const error = await requireTRPCError(
+    callerForRequest(request).createUpload({
+      fileName: "../report.pdf",
+      fileSizeBytes: WORKFLOW_MAX_FILE_SIZE_BYTES + ONE_BYTE,
+    }),
+  );
+
+  expect(error.code).toBe("BAD_REQUEST");
+  expect(fetchMock).not.toHaveBeenCalled();
 });
 
 test("the scrub input schema rejects a missing ETag", () => {
@@ -135,4 +143,25 @@ test("getWorkflowConfig rejects a wrong backend-owned byte limit", async () => {
   expect(error.code).toBe("BAD_GATEWAY");
   expect(error.message).toBe(WORKFLOW_CONFIG_FAILURE_MESSAGE);
   expect(fetchMock).toHaveBeenCalledOnce();
+});
+
+test("createUpload rejects an invalid backend upload URL", async () => {
+  const input: CreateUploadInput = {
+    fileName: "report.pdf",
+    fileSizeBytes: ONE_BYTE,
+  };
+  const fetchMock = vi
+    .fn<typeof fetch>()
+    .mockResolvedValue(
+      Response.json({ storageKey: STORAGE_KEY, uploadUrl: "not-a-url" }),
+    );
+  vi.stubGlobal("fetch", fetchMock);
+  const request = new Request(FRONTEND_URL);
+
+  const error = await requireTRPCError(
+    callerForRequest(request).createUpload(input),
+  );
+
+  expect(error.code).toBe("BAD_GATEWAY");
+  expect(error.message).toBe(CREATE_UPLOAD_FAILURE_MESSAGE);
 });

@@ -17,6 +17,7 @@ import {
 import {
   WORKFLOW_CONFIG_TIMEOUT_MS,
   WORKFLOW_NO_RETRY_OPTIONS,
+  WORKFLOW_ONE_SHOT_TIMEOUT_MS,
 } from "#/shared/libs/ky/workflow-http-client.mod.server";
 import {
   createTRPCRouter,
@@ -40,6 +41,7 @@ export const CONFIRM_DELETE_FAILURE_MESSAGE =
   "Could not delete the file. Try again later.";
 
 const WORKFLOW_CONFIG_ENDPOINT = "/api/files/config";
+const CREATE_UPLOAD_ENDPOINT = "/api/uploads";
 
 const MINIMUM_FILE_SIZE_BYTES = 1;
 const MINIMUM_TEXT_LENGTH = 1;
@@ -241,4 +243,28 @@ export const wizardRouter = createTRPCRouter({
     }
     return responseResult.value;
   }),
+  createUpload: publicProcedure
+    .input(createUploadInputSchema)
+    .mutation(async ({ input, signal }) => {
+      const { workflowHttpClient } = getApplicationBindings();
+      const responseResult = await ResultAsync.fromPromise(
+        workflowHttpClient
+          .post(CREATE_UPLOAD_ENDPOINT, {
+            json: input,
+            retry: WORKFLOW_NO_RETRY_OPTIONS,
+            signal: signal ?? null,
+            timeout: WORKFLOW_ONE_SHOT_TIMEOUT_MS,
+            totalTimeout: WORKFLOW_ONE_SHOT_TIMEOUT_MS,
+          })
+          .json(createUploadResponseSchema),
+        (cause: unknown) => cause,
+      );
+      if (responseResult.isErr()) {
+        throw await mapWorkflowRequestFailure(
+          responseResult.error,
+          CREATE_UPLOAD_FAILURE_MESSAGE,
+        );
+      }
+      return responseResult.value;
+    }),
 });
