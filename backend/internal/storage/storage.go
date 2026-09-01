@@ -152,9 +152,19 @@ func SourceObjectKey(fileID string) (string, error) {
 	return "source/" + fileID, nil
 }
 
+// SanitizedObjectPrefix derives the private prefix for every sanitized revision of one file.
+func SanitizedObjectPrefix(fileID string) (string, error) {
+	if err := validateFileID(fileID); err != nil {
+		return "", err
+	}
+
+	return "sanitized/" + fileID + "/", nil
+}
+
 // SanitizedObjectKey derives an immutable key whose final segment reversibly encodes the source ETag.
 func SanitizedObjectKey(fileID string, sourceETag string) (string, error) {
-	if err := validateFileID(fileID); err != nil {
+	prefix, err := SanitizedObjectPrefix(fileID)
+	if err != nil {
 		return "", err
 	}
 	if err := validateCanonicalETag(sourceETag); err != nil {
@@ -162,7 +172,7 @@ func SanitizedObjectKey(fileID string, sourceETag string) (string, error) {
 	}
 
 	encodedETag := base64.RawURLEncoding.EncodeToString([]byte(sourceETag))
-	return "sanitized/" + fileID + "/" + encodedETag, nil
+	return prefix + encodedETag, nil
 }
 
 // NormalizeProviderETag converts one quoted strong provider ETag into canonical domain form.
