@@ -10,6 +10,7 @@ import {
   NOT_FOUND_STATUS_CODE,
 } from "#/shared/constants/http/status-codes/status-codes.mod";
 import { createWorkflowHttpClient } from "#/shared/libs/ky/workflow-http-client.mod.server";
+import { caller as createApplicationCaller } from "#/shared/libs/trpc/routers/routers.mod.server";
 import {
   createCallerFactory,
   createTRPCRequestContext,
@@ -256,6 +257,24 @@ test("confirmDelete sends one typed request and returns confirmed deletion", asy
   expect(backendRequest.url).toBe("https://backend.test/api/files/delete");
   await expect(backendRequest.clone().json()).resolves.toEqual(input);
   expect(JSON.stringify(input)).not.toContain("fileBytes");
+});
+
+test("the root application caller registers the wizard router", async () => {
+  const response: WorkflowConfig = {
+    maxFileSizeBytes: WORKFLOW_MAX_FILE_SIZE_BYTES,
+  };
+  const fetchMock = vi
+    .fn<typeof fetch>()
+    .mockResolvedValue(Response.json(response));
+  vi.stubGlobal("fetch", fetchMock);
+  setApplicationBindings();
+  const request = new Request(FRONTEND_URL);
+
+  const result =
+    await createApplicationCaller(request).wizard.getWorkflowConfig();
+
+  expect(result).toEqual(response);
+  expect(fetchMock).toHaveBeenCalledOnce();
 });
 
 test("scrubFile keeps missing source and revision conflict results distinct", async () => {
