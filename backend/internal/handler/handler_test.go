@@ -29,13 +29,16 @@ import (
 )
 
 const (
-	fileIDOne          = "00000000-0000-4000-8000-000000000001"
-	fileIDTwo          = "00000000-0000-4000-8000-000000000002"
-	fileIDThree        = "00000000-0000-4000-8000-000000000003"
-	generatedFileID    = "00010203-0405-4607-8809-0a0b0c0d0e0f"
-	canonicalETagOne   = "0123456789abcdef0123456789abcdef"
-	canonicalETagTwo   = "fedcba9876543210fedcba9876543210"
-	canonicalETagThree = "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+	fileIDOne                 = "00000000-0000-4000-8000-000000000001"
+	fileIDTwo                 = "00000000-0000-4000-8000-000000000002"
+	fileIDThree               = "00000000-0000-4000-8000-000000000003"
+	generatedFileID           = "00010203-0405-4607-8809-0a0b0c0d0e0f"
+	storageKeyDigestOne       = "77376c868b92"
+	storageKeyDigestTwo       = "8fb905d391d9"
+	generatedStorageKeyDigest = "1e8eaec2a78b"
+	canonicalETagOne          = "0123456789abcdef0123456789abcdef"
+	canonicalETagTwo          = "fedcba9876543210fedcba9876543210"
+	canonicalETagThree        = "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
 )
 
 func TestReachabilityReportsReachableStatus(t *testing.T) {
@@ -1114,12 +1117,12 @@ func TestPipelineLogsRecordAllApprovedSuccessStages(t *testing.T) {
 	}
 	records := readLogRecords(t, logs.Bytes())
 	require.Equal(t, []pipelineLogRecord{
-		{Message: "upload-created", Level: "INFO", StorageKey: formatStorageKey(generatedFileID), Outcome: "success"},
-		{Message: "sniffed", Level: "INFO", StorageKey: formatStorageKey(fileIDOne), Outcome: "accepted"},
-		{Message: "dry-run", Level: "INFO", StorageKey: formatStorageKey(fileIDOne), Outcome: "success"},
-		{Message: "sniffed", Level: "INFO", StorageKey: formatStorageKey(fileIDTwo), Outcome: "accepted"},
-		{Message: "scrubbed", Level: "INFO", StorageKey: formatStorageKey(fileIDTwo), Outcome: "success"},
-		{Message: "presigned", Level: "INFO", StorageKey: formatStorageKey(fileIDTwo), Outcome: "success"},
+		{Message: "upload-created", Level: "INFO", StorageKeyDigest: generatedStorageKeyDigest, Outcome: "success"},
+		{Message: "sniffed", Level: "INFO", StorageKeyDigest: storageKeyDigestOne, Outcome: "accepted"},
+		{Message: "dry-run", Level: "INFO", StorageKeyDigest: storageKeyDigestOne, Outcome: "success"},
+		{Message: "sniffed", Level: "INFO", StorageKeyDigest: storageKeyDigestTwo, Outcome: "accepted"},
+		{Message: "scrubbed", Level: "INFO", StorageKeyDigest: storageKeyDigestTwo, Outcome: "success"},
+		{Message: "presigned", Level: "INFO", StorageKeyDigest: storageKeyDigestTwo, Outcome: "success"},
 	}, withoutLogDurations(records))
 }
 
@@ -1167,8 +1170,8 @@ func TestPipelineLogsShortCircuitFailuresAndDescribeCacheHitsTruthfully(t *testi
 			body:       string(sniffRejectionBody),
 			wantStatus: http.StatusUnsupportedMediaType,
 			wantRecords: []pipelineLogRecord{
-				{Message: "sniffed", Level: "INFO", StorageKey: formatStorageKey(fileIDOne), Outcome: "rejected"},
-				{Message: "dry-run", Level: "INFO", StorageKey: formatStorageKey(fileIDOne), Outcome: "not-pdf"},
+				{Message: "sniffed", Level: "INFO", StorageKeyDigest: storageKeyDigestOne, Outcome: "rejected"},
+				{Message: "dry-run", Level: "INFO", StorageKeyDigest: storageKeyDigestOne, Outcome: "not-pdf"},
 			},
 		},
 		{
@@ -1183,8 +1186,8 @@ func TestPipelineLogsShortCircuitFailuresAndDescribeCacheHitsTruthfully(t *testi
 			body:       string(inspectionFailureBody),
 			wantStatus: http.StatusInternalServerError,
 			wantRecords: []pipelineLogRecord{
-				{Message: "sniffed", Level: "INFO", StorageKey: formatStorageKey(fileIDOne), Outcome: "accepted"},
-				{Message: "dry-run", Level: "ERROR", StorageKey: formatStorageKey(fileIDOne), Outcome: "failed"},
+				{Message: "sniffed", Level: "INFO", StorageKeyDigest: storageKeyDigestOne, Outcome: "accepted"},
+				{Message: "dry-run", Level: "ERROR", StorageKeyDigest: storageKeyDigestOne, Outcome: "failed"},
 			},
 		},
 		{
@@ -1197,8 +1200,8 @@ func TestPipelineLogsShortCircuitFailuresAndDescribeCacheHitsTruthfully(t *testi
 			body:       string(cleanFailureBody),
 			wantStatus: http.StatusInternalServerError,
 			wantRecords: []pipelineLogRecord{
-				{Message: "sniffed", Level: "INFO", StorageKey: formatStorageKey(fileIDOne), Outcome: "accepted"},
-				{Message: "scrubbed", Level: "ERROR", StorageKey: formatStorageKey(fileIDOne), Outcome: "failed"},
+				{Message: "sniffed", Level: "INFO", StorageKeyDigest: storageKeyDigestOne, Outcome: "accepted"},
+				{Message: "scrubbed", Level: "ERROR", StorageKeyDigest: storageKeyDigestOne, Outcome: "failed"},
 			},
 		},
 		{
@@ -1211,8 +1214,8 @@ func TestPipelineLogsShortCircuitFailuresAndDescribeCacheHitsTruthfully(t *testi
 			body:       string(uploadFailureAfterScrubBody),
 			wantStatus: http.StatusInternalServerError,
 			wantRecords: []pipelineLogRecord{
-				{Message: "sniffed", Level: "INFO", StorageKey: formatStorageKey(fileIDOne), Outcome: "accepted"},
-				{Message: "scrubbed", Level: "INFO", StorageKey: formatStorageKey(fileIDOne), Outcome: "success"},
+				{Message: "sniffed", Level: "INFO", StorageKeyDigest: storageKeyDigestOne, Outcome: "accepted"},
+				{Message: "scrubbed", Level: "INFO", StorageKeyDigest: storageKeyDigestOne, Outcome: "success"},
 			},
 		},
 		{
@@ -1225,8 +1228,8 @@ func TestPipelineLogsShortCircuitFailuresAndDescribeCacheHitsTruthfully(t *testi
 			body:       string(presignFailureBody),
 			wantStatus: http.StatusInternalServerError,
 			wantRecords: []pipelineLogRecord{
-				{Message: "sniffed", Level: "INFO", StorageKey: formatStorageKey(fileIDOne), Outcome: "accepted"},
-				{Message: "scrubbed", Level: "INFO", StorageKey: formatStorageKey(fileIDOne), Outcome: "success"},
+				{Message: "sniffed", Level: "INFO", StorageKeyDigest: storageKeyDigestOne, Outcome: "accepted"},
+				{Message: "scrubbed", Level: "INFO", StorageKeyDigest: storageKeyDigestOne, Outcome: "success"},
 			},
 		},
 		{
@@ -1238,7 +1241,7 @@ func TestPipelineLogsShortCircuitFailuresAndDescribeCacheHitsTruthfully(t *testi
 			body:       string(cacheHitBody),
 			wantStatus: http.StatusOK,
 			wantRecords: []pipelineLogRecord{
-				{Message: "presigned", Level: "INFO", StorageKey: formatStorageKey(fileIDOne), Outcome: "cache-hit"},
+				{Message: "presigned", Level: "INFO", StorageKeyDigest: storageKeyDigestOne, Outcome: "cache-hit"},
 			},
 		},
 	}
@@ -1308,8 +1311,11 @@ func TestPipelineLogsExcludeSeededSensitiveValues(t *testing.T) {
 	require.Equal(t, http.StatusOK, dryRunRecorder.Code, dryRunRecorder.Body.String())
 	require.Equal(t, http.StatusInternalServerError, dependencyFailureRecorder.Code, dependencyFailureRecorder.Body.String())
 	rawLogs := logs.String()
-	require.Contains(t, rawLogs, `"storage_key":"`+formatStorageKey(fileIDOne)+`"`)
+	require.Contains(t, rawLogs, `"storage_key_digest":"`+storageKeyDigestOne+`"`)
 	for _, secret := range []string{
+		formatStorageKey(generatedFileID),
+		formatStorageKey(fileIDOne),
+		formatStorageKey(fileIDTwo),
 		"source-bytes-secret",
 		"private-object-marker",
 		"private-metadata-marker",
@@ -1745,7 +1751,7 @@ func (objectStorage *sensitiveGrantStorage) PresignSourceUpload(
 type pipelineLogRecord struct {
 	Message              string `json:"msg"`
 	Level                string `json:"level"`
-	StorageKey           string `json:"storage_key"`
+	StorageKeyDigest     string `json:"storage_key_digest"`
 	Outcome              string `json:"outcome"`
 	DurationMilliseconds *int64 `json:"duration_ms"`
 }
