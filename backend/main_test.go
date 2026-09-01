@@ -136,6 +136,21 @@ func TestNewServerRoutesJSONWorkflowAndRemovesLegacyScrub(t *testing.T) {
 	}
 }
 
+func TestNewServerRoutesBackendOwnedWorkflowConfig(t *testing.T) {
+	t.Parallel()
+
+	server := newTestServer(discardLogger())
+	request := httptest.NewRequest(http.MethodGet, "/api/files/config", http.NoBody)
+	recorder := serveServer(server, request)
+
+	require.Equal(t, http.StatusOK, recorder.Code, recorder.Body.String())
+	var response struct {
+		MaxFileSizeBytes int `json:"maxFileSizeBytes"`
+	}
+	require.NoError(t, json.Unmarshal(recorder.Body.Bytes(), &response))
+	require.Equal(t, 10_485_760, response.MaxFileSizeBytes)
+}
+
 func TestCanonicalCapacityAndSizeLimitsStayPinned(t *testing.T) {
 	t.Parallel()
 
@@ -148,10 +163,21 @@ func TestNewServerRejectsWrongMethodsForJSONWorkflow(t *testing.T) {
 	t.Parallel()
 
 	server := newTestServer(discardLogger())
-	request := httptest.NewRequest(http.MethodGet, "/api/uploads", http.NoBody)
-	recorder := serveServer(server, request)
+	tests := []struct {
+		method string
+		path   string
+	}{
+		{method: http.MethodPost, path: "/api/files/config"},
+		{method: http.MethodGet, path: "/api/uploads"},
+		{method: http.MethodGet, path: "/api/files/dry-run"},
+		{method: http.MethodGet, path: "/api/files/scrub"},
+	}
+	for _, testCase := range tests {
+		request := httptest.NewRequest(testCase.method, testCase.path, http.NoBody)
+		recorder := serveServer(server, request)
 
-	require.Equal(t, http.StatusMethodNotAllowed, recorder.Code)
+		require.Equal(t, http.StatusMethodNotAllowed, recorder.Code, testCase.path)
+	}
 }
 
 func TestNewServerSharesOneCapacityTwoGateAcrossDryRunAndScrubMisses(t *testing.T) {
