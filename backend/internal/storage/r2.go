@@ -12,6 +12,7 @@ import (
 	"github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/aws/aws-sdk-go-v2/credentials"
 	"github.com/aws/aws-sdk-go-v2/service/s3"
+	s3types "github.com/aws/aws-sdk-go-v2/service/s3/types"
 	"github.com/aws/smithy-go/middleware"
 	smithyhttp "github.com/aws/smithy-go/transport/http"
 
@@ -26,6 +27,8 @@ const (
 	// response would otherwise hang until the caller's context ends.
 	r2RequestTimeout = 30 * time.Second
 )
+
+var errPartialDeleteResult = errors.New("partial delete result")
 
 // R2 implements Storage for a private Cloudflare R2 bucket.
 type R2 struct {
@@ -282,6 +285,125 @@ func (r2 *R2) UploadSanitized(
 		return r2OperationError(ctx, operationUploadSanitized)
 	}
 
+	return nil
+}
+
+// DeleteFlow removes the source and every sanitized revision for one file ID.
+func (r2 *R2) DeleteFlow(ctx context.Context, fileID string) error {
+	if err := contextError(ctx, operationDeleteFlow); err != nil {
+		return err
+	}
+	sourceKey, err := SourceObjectKey(fileID)
+	if err != nil {
+		return err
+	}
+	sanitizedPrefix, err := SanitizedObjectPrefix(fileID)
+	if err != nil {
+		return err
+	}
+
+	if err := r2.deleteSource(ctx, sourceKey); err != nil {
+		return err
+	}
+	deleteErr := r2.deleteSanitizedRevisions(ctx, sanitizedPrefix)
+	if deleteErr != nil && !errors.Is(deleteErr, errPartialDeleteResult) {
+		return deleteErr
+	}
+	return r2.verifyFlowEmpty(ctx, sourceKey, sanitizedPrefix)
+}
+
+func (r2 *R2) deleteSource(ctx context.Context, sourceKey string) error {
+	_, err := r2.client.DeleteObject(ctx, &s3.DeleteObjectInput{
+		Bucket: aws.String(r2.bucket),
+		Key:    aws.String(sourceKey),
+	})
+	if err == nil {
+		return nil
+	}
+	if statusCode, hasStatusCode := httpStatusCode(err); hasStatusCode && statusCode == http.StatusNotFound {
+		return nil
+	}
+	return r2OperationError(ctx, operationDeleteFlow)
+}
+
+func (r2 *R2) deleteSanitizedRevisions(ctx context.Context, sanitizedPrefix string) error {
+	paginator := s3.NewListObjectsV2Paginator(r2.client, &s3.ListObjectsV2Input{
+		Bucket: aws.String(r2.bucket),
+		Prefix: aws.String(sanitizedPrefix),
+	})
+	partialDeleteResult := false
+	for paginator.HasMorePages() {
+		page, err := paginator.NextPage(ctx)
+		if err != nil {
+			return r2OperationError(ctx, operationDeleteFlow)
+		}
+		pageHasPartialResult, err := r2.deleteSanitizedPage(ctx, page.Contents)
+		if err != nil {
+			return err
+		}
+		partialDeleteResult = partialDeleteResult || pageHasPartialResult
+	}
+	if partialDeleteResult {
+		return operationError(operationDeleteFlow, errPartialDeleteResult)
+	}
+	return nil
+}
+
+func (r2 *R2) deleteSanitizedPage(ctx context.Context, contents []s3types.Object) (bool, error) {
+	if len(contents) == 0 {
+		return false, nil
+	}
+	objects, err := sanitizedObjectIdentifiers(contents)
+	if err != nil {
+		return false, err
+	}
+	output, err := r2.client.DeleteObjects(ctx, &s3.DeleteObjectsInput{
+		Bucket: aws.String(r2.bucket),
+		Delete: &s3types.Delete{Objects: objects, Quiet: aws.Bool(true)},
+	})
+	if err != nil {
+		return false, r2OperationError(ctx, operationDeleteFlow)
+	}
+	if output == nil {
+		return false, operationError(operationDeleteFlow, ErrDependency)
+	}
+	return len(output.Errors) != 0, nil
+}
+
+func sanitizedObjectIdentifiers(contents []s3types.Object) ([]s3types.ObjectIdentifier, error) {
+	objects := make([]s3types.ObjectIdentifier, len(contents))
+	for index, object := range contents {
+		if object.Key == nil {
+			return nil, operationError(operationDeleteFlow, ErrDependency)
+		}
+		objects[index] = s3types.ObjectIdentifier{Key: object.Key}
+	}
+	return objects, nil
+}
+
+func (r2 *R2) verifyFlowEmpty(ctx context.Context, sourceKey string, sanitizedPrefix string) error {
+	_, err := r2.client.HeadObject(ctx, &s3.HeadObjectInput{
+		Bucket: aws.String(r2.bucket),
+		Key:    aws.String(sourceKey),
+	})
+	sourceRemains := err == nil
+	if err != nil {
+		if statusCode, hasStatusCode := httpStatusCode(err); !hasStatusCode || statusCode != http.StatusNotFound {
+			return r2OperationError(ctx, operationDeleteFlow)
+		}
+	}
+
+	output, err := r2.client.ListObjectsV2(ctx, &s3.ListObjectsV2Input{
+		Bucket:  aws.String(r2.bucket),
+		Prefix:  aws.String(sanitizedPrefix),
+		MaxKeys: aws.Int32(1),
+	})
+	if err != nil {
+		return r2OperationError(ctx, operationDeleteFlow)
+	}
+	if sourceRemains || len(output.Contents) != 0 {
+		return operationError(operationDeleteFlow, ErrFlowObjectsRemain)
+	}
 	return nil
 }
 
