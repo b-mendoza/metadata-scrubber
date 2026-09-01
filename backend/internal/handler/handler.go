@@ -106,6 +106,10 @@ type reachabilityResponse struct {
 	Status string `json:"status"`
 }
 
+type workflowConfigResponse struct {
+	MaxFileSizeBytes int `json:"maxFileSizeBytes"`
+}
+
 type uploadRequest struct {
 	FileName      string `json:"fileName"`
 	FileSizeBytes int64  `json:"fileSizeBytes"`
@@ -147,7 +151,7 @@ type scrubResponseResult struct {
 	DownloadURL string `json:"downloadUrl"`
 }
 
-func writeJSON[T reachabilityResponse | uploadResponse | dryRunResponse | scrubResponse](
+func writeJSON[T reachabilityResponse | workflowConfigResponse | uploadResponse | dryRunResponse | scrubResponse](
 	w http.ResponseWriter,
 	status int,
 	body T,

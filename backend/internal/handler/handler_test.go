@@ -50,6 +50,20 @@ func TestReachabilityReportsReachableStatus(t *testing.T) {
 	require.JSONEq(t, `{"status":"reachable"}`, recorder.Body.String())
 }
 
+func TestWorkflowConfigReturnsBackendOwnedFileSize(t *testing.T) {
+	recorder := httptest.NewRecorder()
+	request := httptest.NewRequest(http.MethodGet, "/api/files/config", http.NoBody)
+
+	newTestHandler(t, nil, nil, nil).WorkflowConfig(recorder, request)
+
+	require.Equal(t, http.StatusOK, recorder.Code)
+	require.Equal(t, mediatype.JSON, recorder.Header().Get(header.ContentType))
+	var response workflowConfigResponse
+	require.NoError(t, json.Unmarshal(recorder.Body.Bytes(), &response))
+	require.Equal(t, 10_485_760, response.MaxFileSizeBytes)
+	require.Equal(t, storage.MaxSourceObjectBytes, response.MaxFileSizeBytes)
+}
+
 func TestReachabilityLogsResponseWriteFailure(t *testing.T) {
 	responseWriteErr := errors.New("response write failure sentinel")
 	writer := &failingResponseWriter{header: make(http.Header), err: responseWriteErr}
@@ -108,6 +122,13 @@ func TestWriteJSONPreservesConcreteResponseContracts(t *testing.T) {
 				require.NoError(t, writeJSON(w, http.StatusAccepted, reachabilityResponse{Status: "reachable"}))
 			},
 			wantBody: "{\"status\":\"reachable\"}\n",
+		},
+		{
+			name: "workflow config",
+			write: func(w http.ResponseWriter) {
+				require.NoError(t, writeJSON(w, http.StatusAccepted, workflowConfigResponse{MaxFileSizeBytes: storage.MaxSourceObjectBytes}))
+			},
+			wantBody: "{\"maxFileSizeBytes\":10485760}\n",
 		},
 		{
 			name: "upload",
