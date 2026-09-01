@@ -23,11 +23,13 @@ import { getApplicationBindings } from "#/shared/middlewares/application-binding
 import type {
   CreateUploadInput,
   DryRunInput,
+  ScrubFileInput,
 } from "./wizard-router.mod.server";
 import {
   canonicalETagSchema,
   CREATE_UPLOAD_FAILURE_MESSAGE,
   DRY_RUN_FAILURE_MESSAGE,
+  SCRUB_FILE_FAILURE_MESSAGE,
   scrubFileInputSchema,
   storageKeySchema,
   wizardRouter,
@@ -206,6 +208,28 @@ test("dryRun rejects an invalid backend ETag", async () => {
 
   expect(error.code).toBe("BAD_GATEWAY");
   expect(error.message).toBe(DRY_RUN_FAILURE_MESSAGE);
+});
+
+test("scrubFile rejects an invalid backend success payload", async () => {
+  const input: ScrubFileInput = {
+    etag: CANONICAL_ETAG,
+    storageKey: STORAGE_KEY,
+  };
+  const fetchMock = vi.fn<typeof fetch>().mockResolvedValue(
+    Response.json({
+      result: { downloadUrl: "not-a-url" },
+      status: "done",
+    }),
+  );
+  vi.stubGlobal("fetch", fetchMock);
+  const request = new Request(FRONTEND_URL);
+
+  const error = await requireTRPCError(
+    callerForRequest(request).scrubFile(input),
+  );
+
+  expect(error.code).toBe("BAD_GATEWAY");
+  expect(error.message).toBe(SCRUB_FILE_FAILURE_MESSAGE);
 });
 
 test.each([
