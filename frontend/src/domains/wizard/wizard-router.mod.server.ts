@@ -16,8 +16,10 @@ import {
 } from "#/shared/constants/http/status-codes/status-codes.mod";
 import {
   WORKFLOW_CONFIG_TIMEOUT_MS,
+  WORKFLOW_DRY_RUN_TIMEOUT_MS,
   WORKFLOW_NO_RETRY_OPTIONS,
   WORKFLOW_ONE_SHOT_TIMEOUT_MS,
+  WORKFLOW_SERVER_DIRECTED_RETRY_OPTIONS,
 } from "#/shared/libs/ky/workflow-http-client.mod.server";
 import {
   createTRPCRouter,
@@ -42,6 +44,7 @@ export const CONFIRM_DELETE_FAILURE_MESSAGE =
 
 const WORKFLOW_CONFIG_ENDPOINT = "/api/files/config";
 const CREATE_UPLOAD_ENDPOINT = "/api/uploads";
+const DRY_RUN_ENDPOINT = "/api/files/dry-run";
 
 const MINIMUM_FILE_SIZE_BYTES = 1;
 const MINIMUM_TEXT_LENGTH = 1;
@@ -263,6 +266,31 @@ export const wizardRouter = createTRPCRouter({
         throw await mapWorkflowRequestFailure(
           responseResult.error,
           CREATE_UPLOAD_FAILURE_MESSAGE,
+        );
+      }
+      return responseResult.value;
+    }),
+
+  dryRun: publicProcedure
+    .input(dryRunInputSchema)
+    .mutation(async ({ input, signal }) => {
+      const { workflowHttpClient } = getApplicationBindings();
+      const responseResult = await ResultAsync.fromPromise(
+        workflowHttpClient
+          .post(DRY_RUN_ENDPOINT, {
+            json: input,
+            retry: WORKFLOW_SERVER_DIRECTED_RETRY_OPTIONS,
+            signal: signal ?? null,
+            timeout: WORKFLOW_DRY_RUN_TIMEOUT_MS,
+            totalTimeout: WORKFLOW_DRY_RUN_TIMEOUT_MS,
+          })
+          .json(dryRunResponseSchema),
+        (cause: unknown) => cause,
+      );
+      if (responseResult.isErr()) {
+        throw await mapWorkflowRequestFailure(
+          responseResult.error,
+          DRY_RUN_FAILURE_MESSAGE,
         );
       }
       return responseResult.value;
