@@ -14,7 +14,15 @@ import {
   UNPROCESSABLE_ENTITY_STATUS_CODE,
   UNSUPPORTED_MEDIA_TYPE_STATUS_CODE,
 } from "#/shared/constants/http/status-codes/status-codes.mod";
-import { createTRPCRouter } from "#/shared/libs/trpc/utils/initializer/initializer.mod.server";
+import {
+  WORKFLOW_CONFIG_TIMEOUT_MS,
+  WORKFLOW_NO_RETRY_OPTIONS,
+} from "#/shared/libs/ky/workflow-http-client.mod.server";
+import {
+  createTRPCRouter,
+  publicProcedure,
+} from "#/shared/libs/trpc/utils/initializer/initializer.mod.server";
+import { getApplicationBindings } from "#/shared/middlewares/application-bindings/application-bindings.mod";
 
 export const WORKFLOW_MAX_FILE_SIZE_BYTES = 10_485_760;
 
@@ -30,6 +38,8 @@ export const REFRESH_DOWNLOAD_GRANT_FAILURE_MESSAGE =
   "Could not refresh the download. Try again later.";
 export const CONFIRM_DELETE_FAILURE_MESSAGE =
   "Could not delete the file. Try again later.";
+
+const WORKFLOW_CONFIG_ENDPOINT = "/api/files/config";
 
 const MINIMUM_FILE_SIZE_BYTES = 1;
 const MINIMUM_TEXT_LENGTH = 1;
@@ -165,7 +175,7 @@ type WorkflowFailureMessage =
   | typeof REFRESH_DOWNLOAD_GRANT_FAILURE_MESSAGE
   | typeof CONFIRM_DELETE_FAILURE_MESSAGE;
 
-export const mapWorkflowRequestFailure = async (
+const mapWorkflowRequestFailure = async (
   cause: unknown,
   message: WorkflowFailureMessage,
 ): Promise<TRPCError> => {
@@ -209,4 +219,26 @@ export type ConfirmDeleteResponse = z.output<
   typeof confirmDeleteResponseSchema
 >;
 
-export const wizardRouter = createTRPCRouter({});
+export const wizardRouter = createTRPCRouter({
+  getWorkflowConfig: publicProcedure.query(async ({ signal }) => {
+    const { workflowHttpClient } = getApplicationBindings();
+    const responseResult = await ResultAsync.fromPromise(
+      workflowHttpClient
+        .get(WORKFLOW_CONFIG_ENDPOINT, {
+          retry: WORKFLOW_NO_RETRY_OPTIONS,
+          signal: signal ?? null,
+          timeout: WORKFLOW_CONFIG_TIMEOUT_MS,
+          totalTimeout: WORKFLOW_CONFIG_TIMEOUT_MS,
+        })
+        .json(workflowConfigResponseSchema),
+      (cause: unknown) => cause,
+    );
+    if (responseResult.isErr()) {
+      throw await mapWorkflowRequestFailure(
+        responseResult.error,
+        WORKFLOW_CONFIG_FAILURE_MESSAGE,
+      );
+    }
+    return responseResult.value;
+  }),
+});
