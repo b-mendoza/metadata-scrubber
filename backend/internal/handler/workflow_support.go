@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"log/slog"
 	"net/http"
+	"strconv"
 	"strings"
 	"time"
 	"unicode"
@@ -126,13 +127,25 @@ func (handler *Handler) acquirePermit(ctx context.Context) (func(), error) {
 
 func (handler *Handler) writeAdmissionFailure(w http.ResponseWriter, request *http.Request, err error) {
 	if errors.Is(err, errAdmissionTimeout) {
-		w.Header().Set(header.RetryAfter, admissionRetryAfter)
+		w.Header().Set(header.RetryAfter, handler.admissionRetryAfter(request.Context()))
 		if writeErr := httpx.WriteError(w, http.StatusServiceUnavailable, admissionTimeoutMessage); writeErr != nil {
 			handler.logger.ErrorContext(request.Context(), "could not write JSON response", "error", writeErr)
 		}
 		return
 	}
 	handler.writeUnexpectedFailure(w, request, err, "could not start PDF processing")
+}
+
+
+func (handler *Handler) admissionRetryAfter(ctx context.Context) string {
+	jitter, err := handler.admissionJitter()
+	if err != nil {
+		handler.logger.ErrorContext(ctx, "could not generate admission retry jitter", "error", err)
+		return strconv.Itoa(admissionRetryBaseSeconds)
+	}
+
+	delaySeconds := max(admissionRetryBaseSeconds+jitter, 1)
+	return strconv.Itoa(delaySeconds)
 }
 
 func (handler *Handler) writeUnexpectedFailure(w http.ResponseWriter, request *http.Request, err error, internalMessage string) {
