@@ -15,15 +15,20 @@ import (
 	"metadata-scrubber/internal/storage"
 )
 
+const (
+	canonicalETagOne = "0123456789abcdef0123456789abcdef"
+	canonicalETagTwo = "fedcba9876543210fedcba9876543210"
+)
+
 var _ storage.Storage = (*storage.Fake)(nil)
 
 func TestNormalizeProviderETagAcceptsOneQuotedStrongETag(t *testing.T) {
 	t.Parallel()
 
-	normalized, err := storage.NormalizeProviderETag(`"revision-1"`)
+	normalized, err := storage.NormalizeProviderETag(`"` + canonicalETagOne + `"`)
 
 	require.NoError(t, err)
-	require.Equal(t, "revision-1", normalized)
+	require.Equal(t, canonicalETagOne, normalized)
 }
 
 func TestNormalizeProviderETagRejectsMalformedValues(t *testing.T) {
@@ -31,13 +36,15 @@ func TestNormalizeProviderETagRejectsMalformedValues(t *testing.T) {
 
 	for _, providerETag := range []string{
 		"",
-		"revision-1",
-		`W/"revision-1"`,
+		canonicalETagOne,
+		`W/"` + canonicalETagOne + `"`,
 		`""`,
-		`""revision-1""`,
-		` "revision-1"`,
-		`"revision-1" `,
-		"\"revision\n1\"",
+		`""` + canonicalETagOne + `""`,
+		` "` + canonicalETagOne + `"`,
+		`"` + canonicalETagOne + `" `,
+		`"0123456789abcdef0123456789abcde` + "\n" + `"`,
+		`"0123456789ABCDEF0123456789ABCDEF"`,
+		`"0123456789abcdef0123456789abcdef-2"`,
 	} {
 		t.Run(providerETag, func(t *testing.T) {
 			_, err := storage.NormalizeProviderETag(providerETag)
@@ -63,38 +70,20 @@ func TestObjectKeysBindSanitizedStateToExactRevision(t *testing.T) {
 		{
 			name:       "canonical revision",
 			fileID:     "file-1",
-			sourceETag: "revision-1",
-			want:       "sanitized/file-1/cmV2aXNpb24tMQ",
-		},
-		{
-			name:       "opaque path-unsafe revision",
-			fileID:     "file-1",
-			sourceETag: `a/b+=%"..`,
-			want:       "sanitized/file-1/YS9iKz0lIi4u",
-		},
-		{
-			name:       "case-sensitive revision",
-			fileID:     "file-1",
-			sourceETag: "Case",
-			want:       "sanitized/file-1/Q2FzZQ",
+			sourceETag: canonicalETagOne,
+			want:       "sanitized/file-1/MDEyMzQ1Njc4OWFiY2RlZjAxMjM0NTY3ODlhYmNkZWY",
 		},
 		{
 			name:       "different revision",
 			fileID:     "file-1",
-			sourceETag: "revision-2",
-			want:       "sanitized/file-1/cmV2aXNpb24tMg",
+			sourceETag: canonicalETagTwo,
+			want:       "sanitized/file-1/ZmVkY2JhOTg3NjU0MzIxMGZlZGNiYTk4NzY1NDMyMTA",
 		},
 		{
 			name:       "different file",
 			fileID:     "file-2",
-			sourceETag: "revision-1",
-			want:       "sanitized/file-2/cmV2aXNpb24tMQ",
-		},
-		{
-			name:       "lowercase revision",
-			fileID:     "file-1",
-			sourceETag: "case",
-			want:       "sanitized/file-1/Y2FzZQ",
+			sourceETag: canonicalETagOne,
+			want:       "sanitized/file-2/MDEyMzQ1Njc4OWFiY2RlZjAxMjM0NTY3ODlhYmNkZWY",
 		},
 	} {
 		t.Run(testCase.name, func(t *testing.T) {
@@ -113,14 +102,26 @@ func TestObjectKeysRejectInvalidLogicalIdentifiers(t *testing.T) {
 	for _, fileID := range []string{"", ".", "..", "folder/file", " file", "file\n"} {
 		t.Run("file ID "+fileID, func(t *testing.T) {
 			_, sourceErr := storage.SourceObjectKey(fileID)
-			_, sanitizedErr := storage.SanitizedObjectKey(fileID, "revision-1")
+			_, sanitizedErr := storage.SanitizedObjectKey(fileID, canonicalETagOne)
 
 			require.ErrorIs(t, sourceErr, storage.ErrInvalidFileID)
 			require.ErrorIs(t, sanitizedErr, storage.ErrInvalidFileID)
 		})
 	}
 
-	for _, sourceETag := range []string{"", `"revision-1"`, `W/"revision-1"`, " revision-1", "revision\n1"} {
+	for _, sourceETag := range []string{
+		"",
+		`"` + canonicalETagOne + `"`,
+		`W/"` + canonicalETagOne + `"`,
+		" " + canonicalETagOne,
+		canonicalETagOne + " ",
+		"0123456789abcdef0123456789abcde\n",
+		"0123456789ABCDEF0123456789ABCDEF",
+		canonicalETagOne + "-2",
+		"0123456789abcdef0123456789abcde",
+		canonicalETagOne + "0",
+		"g123456789abcdef0123456789abcdef",
+	} {
 		t.Run("ETag "+sourceETag, func(t *testing.T) {
 			_, err := storage.SanitizedObjectKey("file-1", sourceETag)
 
@@ -138,7 +139,7 @@ func TestFakeReadsCopiedSourceStateAndEnforcesReviewedRevision(t *testing.T) {
 	require.NoError(t, fake.SetSource("file-1", storage.SourceObject{
 		PDFBytes: seedBytes,
 		Metadata: seedMetadata,
-		ETag:     "revision-1",
+		ETag:     "0123456789abcdef0123456789abcdef",
 	}))
 	seedBytes[0] = 'X'
 	seedMetadata["author"] = "mutated"
@@ -147,7 +148,7 @@ func TestFakeReadsCopiedSourceStateAndEnforcesReviewedRevision(t *testing.T) {
 	require.NoError(t, err)
 	require.Equal(t, []byte("source revision one"), source.PDFBytes)
 	require.Equal(t, map[string]string{"author": "synthetic-author"}, source.Metadata)
-	require.Equal(t, "revision-1", source.ETag)
+	require.Equal(t, "0123456789abcdef0123456789abcdef", source.ETag)
 
 	source.PDFBytes[0] = 'Y'
 	source.Metadata["author"] = "returned mutation"
@@ -159,16 +160,16 @@ func TestFakeReadsCopiedSourceStateAndEnforcesReviewedRevision(t *testing.T) {
 	require.NoError(t, fake.SetSource("file-1", storage.SourceObject{
 		PDFBytes: []byte("source revision two"),
 		Metadata: map[string]string{"author": "second-author"},
-		ETag:     "revision-2",
+		ETag:     "fedcba9876543210fedcba9876543210",
 	}))
 
-	_, err = fake.DownloadSource(context.Background(), "file-1", "revision-1")
+	_, err = fake.DownloadSource(context.Background(), "file-1", "0123456789abcdef0123456789abcdef")
 	require.ErrorIs(t, err, storage.ErrSourceRevisionConflict)
 	require.NotErrorIs(t, err, storage.ErrDependency)
 
 	currentSource, err := fake.DownloadSource(context.Background(), "file-1", "")
 	require.NoError(t, err)
-	require.Equal(t, "revision-2", currentSource.ETag)
+	require.Equal(t, "fedcba9876543210fedcba9876543210", currentSource.ETag)
 }
 
 func TestFakeEnforcesTheSourceObjectMemoryBoundary(t *testing.T) {
@@ -177,7 +178,7 @@ func TestFakeEnforcesTheSourceObjectMemoryBoundary(t *testing.T) {
 	require.NoError(t, fake.SetSource("file-1", storage.SourceObject{
 		PDFBytes: exactLimit,
 		Metadata: map[string]string{"classification": "metadata-value-sentinel"},
-		ETag:     "revision-1",
+		ETag:     "0123456789abcdef0123456789abcdef",
 	}))
 
 	source, err := fake.DownloadSource(context.Background(), "file-1", "")
@@ -187,7 +188,7 @@ func TestFakeEnforcesTheSourceObjectMemoryBoundary(t *testing.T) {
 	require.NoError(t, fake.SetSource("file-identifier-sentinel", storage.SourceObject{
 		PDFBytes: make([]byte, storage.MaxSourceObjectBytes+1),
 		Metadata: map[string]string{"classification": "metadata-value-sentinel"},
-		ETag:     "revision-sensitive-sentinel",
+		ETag:     "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
 	}))
 
 	_, err = fake.DownloadSource(context.Background(), "file-identifier-sentinel", "")
@@ -197,7 +198,7 @@ func TestFakeEnforcesTheSourceObjectMemoryBoundary(t *testing.T) {
 	for _, sensitiveValue := range []string{
 		"file-identifier-sentinel",
 		"metadata-value-sentinel",
-		"revision-sensitive-sentinel",
+		"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
 	} {
 		require.NotContains(t, err.Error(), sensitiveValue)
 	}
@@ -212,7 +213,7 @@ func TestFakeReportsAMissingSourceAsSourceNotFound(t *testing.T) {
 	require.ErrorIs(t, err, storage.ErrSourceNotFound)
 	require.NotErrorIs(t, err, storage.ErrDependency)
 
-	_, err = fake.DownloadSource(context.Background(), "file-1", "revision-1")
+	_, err = fake.DownloadSource(context.Background(), "file-1", "0123456789abcdef0123456789abcdef")
 	require.ErrorIs(t, err, storage.ErrSourceNotFound)
 	require.NotErrorIs(t, err, storage.ErrSourceRevisionConflict)
 }
@@ -221,49 +222,49 @@ func TestFakeUsesExactSanitizedRevisionForExistenceGrantsAndUploads(t *testing.T
 	t.Parallel()
 
 	fake := storage.NewFake()
-	require.NoError(t, fake.SetSanitized("file-1", "revision-1", []byte("sanitized one")))
+	require.NoError(t, fake.SetSanitized("file-1", "0123456789abcdef0123456789abcdef", []byte("sanitized one")))
 
-	exists, err := fake.SanitizedExists(context.Background(), "file-1", "revision-1")
+	exists, err := fake.SanitizedExists(context.Background(), "file-1", "0123456789abcdef0123456789abcdef")
 	require.NoError(t, err)
 	require.True(t, exists)
 
-	exists, err = fake.SanitizedExists(context.Background(), "file-1", "revision-2")
+	exists, err = fake.SanitizedExists(context.Background(), "file-1", "fedcba9876543210fedcba9876543210")
 	require.NoError(t, err)
 	require.False(t, exists)
 
-	firstGrant, err := fake.PresignSanitizedDownload(context.Background(), "file-1", "revision-1", time.Minute)
+	firstGrant, err := fake.PresignSanitizedDownload(context.Background(), "file-1", "0123456789abcdef0123456789abcdef", time.Minute)
 	require.NoError(t, err)
-	secondGrant, err := fake.PresignSanitizedDownload(context.Background(), "file-1", "revision-1", time.Minute)
+	secondGrant, err := fake.PresignSanitizedDownload(context.Background(), "file-1", "0123456789abcdef0123456789abcdef", time.Minute)
 	require.NoError(t, err)
 	require.NotEqual(t, firstGrant.URL, secondGrant.URL)
 	require.Empty(t, firstGrant.RequiredHeaders)
 
 	parsedGrant, err := url.Parse(firstGrant.URL)
 	require.NoError(t, err)
-	revisionOneKey, err := storage.SanitizedObjectKey("file-1", "revision-1")
+	revisionOneKey, err := storage.SanitizedObjectKey("file-1", "0123456789abcdef0123456789abcdef")
 	require.NoError(t, err)
 	require.Equal(t, "/"+revisionOneKey, parsedGrant.Path)
 
 	oversizedPDF := make([]byte, scrub.MaxInputBytes+1)
-	require.NoError(t, fake.UploadSanitized(context.Background(), "file-1", "revision-2", oversizedPDF))
-	storedBytes, exists, err := fake.SanitizedBytes("file-1", "revision-2")
+	require.NoError(t, fake.UploadSanitized(context.Background(), "file-1", "fedcba9876543210fedcba9876543210", oversizedPDF))
+	storedBytes, exists, err := fake.SanitizedBytes("file-1", "fedcba9876543210fedcba9876543210")
 	require.NoError(t, err)
 	require.True(t, exists)
 	require.Len(t, storedBytes, scrub.MaxInputBytes+1)
 	storedBytes[0] = 1
-	again, exists, err := fake.SanitizedBytes("file-1", "revision-2")
+	again, exists, err := fake.SanitizedBytes("file-1", "fedcba9876543210fedcba9876543210")
 	require.NoError(t, err)
 	require.True(t, exists)
 	require.Zero(t, again[0])
 
-	revisionOneBytes, exists, err := fake.SanitizedBytes("file-1", "revision-1")
+	revisionOneBytes, exists, err := fake.SanitizedBytes("file-1", "0123456789abcdef0123456789abcdef")
 	require.NoError(t, err)
 	require.True(t, exists)
 	require.Equal(t, []byte("sanitized one"), revisionOneBytes)
 
 	for _, call := range fake.Calls() {
 		if call.Operation == storage.FakeUploadSanitized {
-			require.NotEqual(t, "revision-1", call.SourceETag, "reuse sequence must not rewrite revision one")
+			require.NotEqual(t, "0123456789abcdef0123456789abcdef", call.SourceETag, "reuse sequence must not rewrite revision one")
 		}
 		if call.Operation == storage.FakePresignSanitizedDownload {
 			require.Equal(t, revisionOneKey, call.ObjectKey)
@@ -411,9 +412,9 @@ func TestFakePropagatesContextCancellationWithoutMutation(t *testing.T) {
 
 	_, err := fake.PresignSourceUpload(ctx, "file-1", 1024, time.Minute)
 	require.ErrorIs(t, err, context.Canceled)
-	err = fake.UploadSanitized(ctx, "file-1", "revision-1", []byte("not stored"))
+	err = fake.UploadSanitized(ctx, "file-1", canonicalETagOne, []byte("not stored"))
 	require.ErrorIs(t, err, context.Canceled)
-	_, exists, stateErr := fake.SanitizedBytes("file-1", "revision-1")
+	_, exists, stateErr := fake.SanitizedBytes("file-1", canonicalETagOne)
 	require.NoError(t, stateErr)
 	require.False(t, exists)
 }
@@ -440,16 +441,16 @@ func invokeFakeOperation(t *testing.T, fake *storage.Fake, operation storage.Fak
 		_, err := fake.PresignSourceUpload(context.Background(), "file-1", 1024, time.Minute)
 		return err
 	case storage.FakePresignSanitizedDownload:
-		_, err := fake.PresignSanitizedDownload(context.Background(), "file-1", "revision-1", time.Minute)
+		_, err := fake.PresignSanitizedDownload(context.Background(), "file-1", canonicalETagOne, time.Minute)
 		return err
 	case storage.FakeDownloadSource:
 		_, err := fake.DownloadSource(context.Background(), "file-1", "")
 		return err
 	case storage.FakeSanitizedExists:
-		_, err := fake.SanitizedExists(context.Background(), "file-1", "revision-1")
+		_, err := fake.SanitizedExists(context.Background(), "file-1", canonicalETagOne)
 		return err
 	case storage.FakeUploadSanitized:
-		return fake.UploadSanitized(context.Background(), "file-1", "revision-1", []byte("not stored"))
+		return fake.UploadSanitized(context.Background(), "file-1", canonicalETagOne, []byte("not stored"))
 	default:
 		t.Fatalf("unknown fake operation %q", operation)
 		return nil
@@ -475,7 +476,7 @@ func TestFakeInjectsIndependentOrdinaryFailuresForEveryOperation(t *testing.T) {
 
 			require.ErrorIs(t, err, injectedErr)
 			require.NotErrorIs(t, err, storage.ErrSourceRevisionConflict)
-			_, exists, stateErr := fake.SanitizedBytes("file-1", "revision-1")
+			_, exists, stateErr := fake.SanitizedBytes("file-1", canonicalETagOne)
 			require.NoError(t, stateErr)
 			require.False(t, exists)
 		})
@@ -489,22 +490,22 @@ func TestFakeSupportsConcurrentExactRevisionOperations(t *testing.T) {
 	require.NoError(t, fake.SetSource("file-1", storage.SourceObject{
 		PDFBytes: []byte("source"),
 		Metadata: map[string]string{"key": "value"},
-		ETag:     "revision-1",
+		ETag:     "0123456789abcdef0123456789abcdef",
 	}))
 
 	operationErrors := make(chan error, 60)
 	var waitGroup sync.WaitGroup
 	for index := range 20 {
 		waitGroup.Go(func() {
-			_, readErr := fake.DownloadSource(context.Background(), "file-1", "revision-1")
+			_, readErr := fake.DownloadSource(context.Background(), "file-1", "0123456789abcdef0123456789abcdef")
 			operationErrors <- readErr
 			operationErrors <- fake.UploadSanitized(
 				context.Background(),
 				"file-1",
-				"revision-1",
+				"0123456789abcdef0123456789abcdef",
 				[]byte(strings.Repeat("x", index+1)),
 			)
-			_, lookupErr := fake.SanitizedExists(context.Background(), "file-1", "revision-1")
+			_, lookupErr := fake.SanitizedExists(context.Background(), "file-1", "0123456789abcdef0123456789abcdef")
 			operationErrors <- lookupErr
 		})
 	}
@@ -514,7 +515,7 @@ func TestFakeSupportsConcurrentExactRevisionOperations(t *testing.T) {
 		require.NoError(t, operationErr)
 	}
 
-	_, exists, err := fake.SanitizedBytes("file-1", "revision-1")
+	_, exists, err := fake.SanitizedBytes("file-1", "0123456789abcdef0123456789abcdef")
 	require.NoError(t, err)
 	require.True(t, exists)
 }

@@ -29,9 +29,11 @@ import (
 )
 
 const (
-	testAccessKey = "test-access-key-sentinel"
-	testSecretKey = "test-secret-key-sentinel"
-	testBucket    = "test-bucket-sentinel"
+	testAccessKey      = "test-access-key-sentinel"
+	testSecretKey      = "test-secret-key-sentinel"
+	testBucket         = "test-bucket-sentinel"
+	canonicalR2ETagOne = "0123456789abcdef0123456789abcdef"
+	canonicalR2ETagTwo = "fedcba9876543210fedcba9876543210"
 )
 
 func TestR2PresignsOperationSpecificExactKeysAndExpiry(t *testing.T) {
@@ -57,11 +59,11 @@ func TestR2PresignsOperationSpecificExactKeysAndExpiry(t *testing.T) {
 	download, err := adapter.PresignSanitizedDownload(
 		context.Background(),
 		"file-1",
-		"revision-1",
+		"0123456789abcdef0123456789abcdef",
 		downloadExpiry,
 	)
 	require.NoError(t, err)
-	revisionKey, err := SanitizedObjectKey("file-1", "revision-1")
+	revisionKey, err := SanitizedObjectKey("file-1", "0123456789abcdef0123456789abcdef")
 	require.NoError(t, err)
 	require.Equal(t, http.MethodGet, <-presignMethods)
 	assertPresignedRequest(t, download, "/"+testBucket+"/"+revisionKey, downloadExpiry)
@@ -73,7 +75,7 @@ func TestR2SourceReadsReturnCopiedMetadataAndRoundTripIfMatch(t *testing.T) {
 
 	requests := make(chan observedStorageRequest, 2)
 	adapter := newTestR2Server(t, http.HandlerFunc(func(response http.ResponseWriter, request *http.Request) {
-		response.Header().Set("ETag", `"revision-1"`)
+		response.Header().Set("ETag", `"0123456789abcdef0123456789abcdef"`)
 		response.Header().Set("X-Amz-Meta-Author", "synthetic-author")
 		response.Header().Set("X-Amz-Meta-Document-Type", "report")
 		_, writeErr := io.WriteString(response, "source-pdf")
@@ -88,7 +90,7 @@ func TestR2SourceReadsReturnCopiedMetadataAndRoundTripIfMatch(t *testing.T) {
 	dryRun, err := adapter.DownloadSource(context.Background(), "file-1", "")
 	require.NoError(t, err)
 	require.Equal(t, []byte("source-pdf"), dryRun.PDFBytes)
-	require.Equal(t, "revision-1", dryRun.ETag)
+	require.Equal(t, "0123456789abcdef0123456789abcdef", dryRun.ETag)
 	require.Equal(t, map[string]string{
 		"author":        "synthetic-author",
 		"document-type": "report",
@@ -105,7 +107,7 @@ func TestR2SourceReadsReturnCopiedMetadataAndRoundTripIfMatch(t *testing.T) {
 		require.Equal(t, "/"+testBucket+"/source/file-1", request.path)
 	}
 	require.Empty(t, dryRunRequest.ifMatch)
-	require.Equal(t, `"revision-1"`, matchedRequest.ifMatch)
+	require.Equal(t, `"0123456789abcdef0123456789abcdef"`, matchedRequest.ifMatch)
 }
 
 func TestR2EnforcesTheSourceObjectMemoryBoundary(t *testing.T) {
@@ -128,7 +130,7 @@ func TestR2EnforcesTheSourceObjectMemoryBoundary(t *testing.T) {
 						ProtoMajor: 1,
 						ProtoMinor: 1,
 						Header: http.Header{
-							"Etag":              []string{`"revision-1"`},
+							"Etag":              []string{`"0123456789abcdef0123456789abcdef"`},
 							"X-Amz-Meta-Author": []string{"synthetic-author"},
 						},
 						Body:          body,
@@ -152,7 +154,7 @@ func TestR2EnforcesTheSourceObjectMemoryBoundary(t *testing.T) {
 
 			require.NoError(t, err)
 			require.Len(t, source.PDFBytes, MaxSourceObjectBytes)
-			require.Equal(t, "revision-1", source.ETag)
+			require.Equal(t, "0123456789abcdef0123456789abcdef", source.ETag)
 			require.Equal(t, "synthetic-author", source.Metadata["author"])
 		})
 	}
@@ -163,7 +165,7 @@ func TestR2MapsOnlyConditionalSourcePreconditionFailureToConflict(t *testing.T) 
 
 	adapter := newTestR2StatusServer(t, http.StatusPreconditionFailed)
 
-	_, err := adapter.DownloadSource(context.Background(), "file-1", "revision-1")
+	_, err := adapter.DownloadSource(context.Background(), "file-1", "0123456789abcdef0123456789abcdef")
 	require.ErrorIs(t, err, ErrSourceRevisionConflict)
 	require.NotErrorIs(t, err, ErrDependency)
 
@@ -178,7 +180,7 @@ func TestR2KeepsOrdinarySourceFailuresDistinctFromRevisionConflict(t *testing.T)
 
 	adapter := newTestR2StatusServer(t, http.StatusForbidden)
 
-	_, err := adapter.DownloadSource(context.Background(), "file-1", "revision-1")
+	_, err := adapter.DownloadSource(context.Background(), "file-1", "0123456789abcdef0123456789abcdef")
 
 	require.ErrorIs(t, err, ErrDependency)
 	require.NotErrorIs(t, err, ErrSourceRevisionConflict)
@@ -188,7 +190,7 @@ func TestR2KeepsOrdinarySourceFailuresDistinctFromRevisionConflict(t *testing.T)
 func TestR2TreatsMalformedProviderETagsAsOrdinaryFailures(t *testing.T) {
 	t.Parallel()
 
-	for _, providerETag := range []string{"", "revision-1"} {
+	for _, providerETag := range []string{"", "0123456789abcdef0123456789abcdef"} {
 		t.Run(providerETag, func(t *testing.T) {
 			adapter := newTestR2Server(t, http.HandlerFunc(func(response http.ResponseWriter, _ *http.Request) {
 				if providerETag != "" {
@@ -216,7 +218,7 @@ func TestR2ReportsAMissingSourceAsSourceNotFound(t *testing.T) {
 	require.NotErrorIs(t, err, ErrDependency)
 	assertSafeStorageError(t, err)
 
-	_, err = adapter.DownloadSource(context.Background(), "file-identifier-sentinel", "revision-1")
+	_, err = adapter.DownloadSource(context.Background(), "file-identifier-sentinel", "0123456789abcdef0123456789abcdef")
 	require.ErrorIs(t, err, ErrSourceNotFound)
 	require.NotErrorIs(t, err, ErrSourceRevisionConflict)
 }
@@ -224,9 +226,9 @@ func TestR2ReportsAMissingSourceAsSourceNotFound(t *testing.T) {
 func TestR2SanitizedExistenceUsesOnlyTheExactRevisionKey(t *testing.T) {
 	t.Parallel()
 
-	revisionOneKey, err := SanitizedObjectKey("file-1", "revision-1")
+	revisionOneKey, err := SanitizedObjectKey("file-1", "0123456789abcdef0123456789abcdef")
 	require.NoError(t, err)
-	revisionTwoKey, err := SanitizedObjectKey("file-1", "revision-2")
+	revisionTwoKey, err := SanitizedObjectKey("file-1", "fedcba9876543210fedcba9876543210")
 	require.NoError(t, err)
 
 	requests := make(chan observedStorageRequest, 2)
@@ -243,11 +245,11 @@ func TestR2SanitizedExistenceUsesOnlyTheExactRevisionKey(t *testing.T) {
 		requests <- observedStorageRequest{method: request.Method, path: request.URL.Path}
 	}))
 
-	exists, err := adapter.SanitizedExists(context.Background(), "file-1", "revision-1")
+	exists, err := adapter.SanitizedExists(context.Background(), "file-1", "0123456789abcdef0123456789abcdef")
 	require.NoError(t, err)
 	require.True(t, exists)
 
-	exists, err = adapter.SanitizedExists(context.Background(), "file-1", "revision-2")
+	exists, err = adapter.SanitizedExists(context.Background(), "file-1", "fedcba9876543210fedcba9876543210")
 	require.NoError(t, err)
 	require.False(t, exists)
 
@@ -266,7 +268,7 @@ func TestR2SanitizedExistenceMapsOnlyNotFoundToAbsence(t *testing.T) {
 		response.WriteHeader(http.StatusForbidden)
 	}))
 
-	exists, err := adapter.SanitizedExists(context.Background(), "file-1", "revision-1")
+	exists, err := adapter.SanitizedExists(context.Background(), "file-1", "0123456789abcdef0123456789abcdef")
 
 	require.False(t, exists)
 	require.ErrorIs(t, err, ErrDependency)
@@ -276,7 +278,7 @@ func TestR2SanitizedExistenceMapsOnlyNotFoundToAbsence(t *testing.T) {
 func TestR2SanitizedUploadPinsPDFContentTypeAndPerformsNoFollowUp(t *testing.T) {
 	t.Parallel()
 
-	revisionKey, err := SanitizedObjectKey("file-1", "revision-1")
+	revisionKey, err := SanitizedObjectKey("file-1", "0123456789abcdef0123456789abcdef")
 	require.NoError(t, err)
 	oversizedPDF := []byte(strings.Repeat("x", scrub.MaxInputBytes+1))
 	var requestCount atomic.Int64
@@ -296,7 +298,7 @@ func TestR2SanitizedUploadPinsPDFContentTypeAndPerformsNoFollowUp(t *testing.T) 
 		response.WriteHeader(http.StatusOK)
 	}))
 
-	err = adapter.UploadSanitized(context.Background(), "file-1", "revision-1", oversizedPDF)
+	err = adapter.UploadSanitized(context.Background(), "file-1", "0123456789abcdef0123456789abcdef", oversizedPDF)
 
 	require.NoError(t, err)
 	request := <-requests
@@ -322,7 +324,7 @@ func TestR2SanitizedUploadReturnsASanitizedDependencyError(t *testing.T) {
 	err := adapter.UploadSanitized(
 		context.Background(),
 		"file-identifier-sentinel",
-		"revision-1",
+		"0123456789abcdef0123456789abcdef",
 		[]byte("pdf"),
 	)
 
@@ -341,7 +343,7 @@ func TestR2RejectsInvalidInputsBeforeStorageRequests(t *testing.T) {
 
 	_, err := adapter.PresignSourceUpload(context.Background(), "folder/file", 1024, time.Minute)
 	require.ErrorIs(t, err, ErrInvalidFileID)
-	_, err = adapter.PresignSanitizedDownload(context.Background(), "file-1", `"revision-1"`, time.Minute)
+	_, err = adapter.PresignSanitizedDownload(context.Background(), "file-1", `"0123456789abcdef0123456789abcdef"`, time.Minute)
 	require.ErrorIs(t, err, ErrInvalidETag)
 	_, err = adapter.PresignSourceUpload(context.Background(), "file-1", 1024, 0)
 	require.ErrorIs(t, err, ErrInvalidPresignExpiry)
@@ -349,11 +351,11 @@ func TestR2RejectsInvalidInputsBeforeStorageRequests(t *testing.T) {
 	require.ErrorIs(t, err, ErrInvalidSourceSize)
 	_, err = adapter.PresignSourceUpload(context.Background(), "file-1", MaxSourceObjectBytes+1, time.Minute)
 	require.ErrorIs(t, err, ErrSourceObjectTooLarge)
-	_, err = adapter.DownloadSource(context.Background(), "file-1", `"revision-1"`)
+	_, err = adapter.DownloadSource(context.Background(), "file-1", `"0123456789abcdef0123456789abcdef"`)
 	require.ErrorIs(t, err, ErrInvalidETag)
 	_, err = adapter.SanitizedExists(context.Background(), "file-1", "")
 	require.ErrorIs(t, err, ErrInvalidETag)
-	err = adapter.UploadSanitized(context.Background(), "../file", "revision-1", []byte("pdf"))
+	err = adapter.UploadSanitized(context.Background(), "../file", "0123456789abcdef0123456789abcdef", []byte("pdf"))
 	require.ErrorIs(t, err, ErrInvalidFileID)
 	require.Zero(t, requestCount.Load())
 }
@@ -412,18 +414,18 @@ func TestR2PropagatesContextAndSanitizesProviderFailures(t *testing.T) {
 
 	_, err := adapter.PresignSourceUpload(ctx, "file-1", 1024, time.Minute)
 	require.ErrorIs(t, err, context.Canceled)
-	_, err = adapter.PresignSanitizedDownload(ctx, "file-1", "revision-1", time.Minute)
+	_, err = adapter.PresignSanitizedDownload(ctx, "file-1", "0123456789abcdef0123456789abcdef", time.Minute)
 	require.ErrorIs(t, err, context.Canceled)
 	_, err = adapter.DownloadSource(ctx, "file-1", "")
 	require.ErrorIs(t, err, context.Canceled)
-	_, err = adapter.SanitizedExists(ctx, "file-1", "revision-1")
+	_, err = adapter.SanitizedExists(ctx, "file-1", "0123456789abcdef0123456789abcdef")
 	require.ErrorIs(t, err, context.Canceled)
-	err = adapter.UploadSanitized(ctx, "file-1", "revision-1", []byte("pdf"))
+	err = adapter.UploadSanitized(ctx, "file-1", "0123456789abcdef0123456789abcdef", []byte("pdf"))
 	require.ErrorIs(t, err, context.Canceled)
 
 	deadlineCtx, deadlineCancel := context.WithDeadline(context.Background(), time.Now().Add(-time.Second))
 	defer deadlineCancel()
-	_, err = adapter.SanitizedExists(deadlineCtx, "file-1", "revision-1")
+	_, err = adapter.SanitizedExists(deadlineCtx, "file-1", "0123456789abcdef0123456789abcdef")
 	require.ErrorIs(t, err, context.DeadlineExceeded)
 
 	adapter = newTestR2FailingTransport(errors.New("transport-provider-body-sentinel"))
@@ -533,7 +535,7 @@ func assertSafeStorageError(t *testing.T, err error) {
 		"endpoint-sentinel",
 		testBucket,
 		"file-identifier-sentinel",
-		"revision-1",
+		"0123456789abcdef0123456789abcdef",
 		"synthetic-author",
 		"provider-body-sentinel",
 		"request-id-sentinel",
