@@ -217,6 +217,7 @@ func TestJSONEndpointsValidateEveryBoundaryBeforeWork(t *testing.T) {
 				}))
 			},
 			wantAcceptedOperations: []storage.FakeOperation{
+				storage.FakeSourceExists,
 				storage.FakeSanitizedExists,
 				storage.FakeDownloadSource,
 				storage.FakeUploadSanitized,
@@ -595,8 +596,53 @@ func TestDryRunClassifiesContentAndDependencyFailuresWithoutLeakingDetails(t *te
 	}
 }
 
+func TestScrubMissingSourceStopsBeforeCacheAdmissionAndPDFWork(t *testing.T) {
+	fake := storage.NewFake()
+	require.NoError(t, fake.SetSanitized(fileIDOne, canonicalETagOne, []byte("orphaned-clean")))
+	inspectCalls, cleanCalls := 0, 0
+	handler := newTestHandler(t, func([]byte, scrub.InspectionOrigin) ([]scrub.Field, error) {
+		inspectCalls++
+		return nil, nil
+	}, func([]byte) ([]byte, error) {
+		cleanCalls++
+		return nil, nil
+	}, nil)
+	body, err := json.Marshal(scrubRequest{StorageKey: formatStorageKey(fileIDOne), ETag: canonicalETagOne})
+	require.NoError(t, err)
+
+	recorder := serveJSONRequest(t, jsonHandlerRequest{
+		handler: handler, objectStorage: fake, method: scrubMethod, body: string(body),
+	})
+
+	require.Equal(t, http.StatusNotFound, recorder.Code)
+	require.Equal(t, "source file not found", errorMessage(t, recorder))
+	require.Equal(t, []storage.FakeOperation{storage.FakeSourceExists}, callOperations(fake.Calls()))
+	require.Zero(t, inspectCalls)
+	require.Zero(t, cleanCalls)
+	require.Empty(t, handler.permits)
+}
+
+func TestScrubSourceLookupFailureStopsBeforeLaterWork(t *testing.T) {
+	fake := storage.NewFake()
+	fake.SetFailure(storage.FakeSourceExists, errors.New("provider-source-secret"))
+	handler := newTestHandler(t, nil, nil, nil)
+	body, err := json.Marshal(scrubRequest{StorageKey: formatStorageKey(fileIDOne), ETag: canonicalETagOne})
+	require.NoError(t, err)
+
+	recorder := serveJSONRequest(t, jsonHandlerRequest{
+		handler: handler, objectStorage: fake, method: scrubMethod, body: string(body),
+	})
+
+	require.Equal(t, http.StatusInternalServerError, recorder.Code)
+	require.Equal(t, "could not check source file", errorMessage(t, recorder))
+	require.NotContains(t, recorder.Body.String(), "provider-source-secret")
+	require.Equal(t, []storage.FakeOperation{storage.FakeSourceExists}, callOperations(fake.Calls()))
+	require.Empty(t, handler.permits)
+}
+
 func TestScrubCacheHitBypassesAdmissionAndReusesExactRevision(t *testing.T) {
 	fake := storage.NewFake()
+	seedCandidateSources(t, fake, fileIDThree)
 	require.NoError(t, fake.SetSanitized(fileIDThree, canonicalETagThree, []byte("already-clean")))
 	permits := make(chan struct{}, ProcessingPermitCount)
 	permits <- struct{}{}
@@ -619,7 +665,7 @@ func TestScrubCacheHitBypassesAdmissionAndReusesExactRevision(t *testing.T) {
 	require.Zero(t, inspectCalls)
 	require.Zero(t, cleanCalls)
 	calls := fake.Calls()
-	require.Equal(t, []storage.FakeOperation{storage.FakeSanitizedExists, storage.FakePresignSanitizedDownload}, callOperations(calls))
+	require.Equal(t, []storage.FakeOperation{storage.FakeSourceExists, storage.FakeSanitizedExists, storage.FakePresignSanitizedDownload}, callOperations(calls))
 	stored, exists, err := fake.SanitizedBytes(fileIDThree, canonicalETagThree)
 	require.NoError(t, err)
 	require.True(t, exists)
@@ -647,12 +693,17 @@ func TestScrubCacheMissBindsEveryOperationToReviewedRevision(t *testing.T) {
 	require.Empty(t, permits)
 	calls := fake.Calls()
 	require.Equal(t, []storage.FakeOperation{
+		storage.FakeSourceExists,
 		storage.FakeSanitizedExists,
 		storage.FakeDownloadSource,
 		storage.FakeUploadSanitized,
 		storage.FakePresignSanitizedDownload,
 	}, callOperations(calls))
 	for _, call := range calls {
+		if call.Operation == storage.FakeSourceExists {
+			require.Empty(t, call.SourceETag)
+			continue
+		}
 		if call.Operation != storage.FakeSanitizedExists || call.SourceETag != "" {
 			require.Equal(t, canonicalETagOne, call.SourceETag)
 		}
@@ -697,7 +748,7 @@ func TestScrubReturnsConflictBeforePDFOrWriteWork(t *testing.T) {
 	require.Equal(t, http.StatusConflict, recorder.Code)
 	require.Equal(t, "source file changed since review", errorMessage(t, recorder))
 	require.Zero(t, cleanCalls)
-	require.Equal(t, []storage.FakeOperation{storage.FakeSanitizedExists, storage.FakeDownloadSource}, callOperations(fake.Calls()))
+	require.Equal(t, []storage.FakeOperation{storage.FakeSourceExists, storage.FakeSanitizedExists, storage.FakeDownloadSource}, callOperations(fake.Calls()))
 	require.Empty(t, handler.permits)
 }
 
@@ -719,14 +770,14 @@ func TestScrubFailuresStopAtTheFailedStage(t *testing.T) {
 			failureOp:   storage.FakeSanitizedExists,
 			wantStatus:  http.StatusInternalServerError,
 			wantMessage: "could not check scrubbed file",
-			wantCalls:   []storage.FakeOperation{storage.FakeSanitizedExists},
+			wantCalls:   []storage.FakeOperation{storage.FakeSourceExists, storage.FakeSanitizedExists},
 		},
 		{
 			name:        "spoofed content",
 			pdfBytes:    []byte("not-pdf"),
 			wantStatus:  http.StatusUnsupportedMediaType,
 			wantMessage: "file is not a PDF",
-			wantCalls:   []storage.FakeOperation{storage.FakeSanitizedExists, storage.FakeDownloadSource},
+			wantCalls:   []storage.FakeOperation{storage.FakeSourceExists, storage.FakeSanitizedExists, storage.FakeDownloadSource},
 		},
 		{
 			name:        "signed PDF",
@@ -734,7 +785,7 @@ func TestScrubFailuresStopAtTheFailedStage(t *testing.T) {
 			cleanErr:    scrub.ErrSignedPDF,
 			wantStatus:  http.StatusUnprocessableEntity,
 			wantMessage: "signed PDFs are not supported in v1",
-			wantCalls:   []storage.FakeOperation{storage.FakeSanitizedExists, storage.FakeDownloadSource},
+			wantCalls:   []storage.FakeOperation{storage.FakeSourceExists, storage.FakeSanitizedExists, storage.FakeDownloadSource},
 		},
 		{
 			name:        "clean failure",
@@ -742,7 +793,7 @@ func TestScrubFailuresStopAtTheFailedStage(t *testing.T) {
 			cleanErr:    errors.New("pdf-secret"),
 			wantStatus:  http.StatusInternalServerError,
 			wantMessage: "could not scrub PDF",
-			wantCalls:   []storage.FakeOperation{storage.FakeSanitizedExists, storage.FakeDownloadSource},
+			wantCalls:   []storage.FakeOperation{storage.FakeSourceExists, storage.FakeSanitizedExists, storage.FakeDownloadSource},
 		},
 		{
 			name:        "upload failure",
@@ -750,7 +801,7 @@ func TestScrubFailuresStopAtTheFailedStage(t *testing.T) {
 			failureOp:   storage.FakeUploadSanitized,
 			wantStatus:  http.StatusInternalServerError,
 			wantMessage: "could not store scrubbed file",
-			wantCalls:   []storage.FakeOperation{storage.FakeSanitizedExists, storage.FakeDownloadSource, storage.FakeUploadSanitized},
+			wantCalls:   []storage.FakeOperation{storage.FakeSourceExists, storage.FakeSanitizedExists, storage.FakeDownloadSource, storage.FakeUploadSanitized},
 		},
 		{
 			name:        "presign failure",
@@ -759,6 +810,7 @@ func TestScrubFailuresStopAtTheFailedStage(t *testing.T) {
 			wantStatus:  http.StatusInternalServerError,
 			wantMessage: "could not create download",
 			wantCalls: []storage.FakeOperation{
+				storage.FakeSourceExists,
 				storage.FakeSanitizedExists,
 				storage.FakeDownloadSource,
 				storage.FakeUploadSanitized,
@@ -804,7 +856,6 @@ func runScrubFailureTest(t *testing.T, testCase scrubFailureTestCase) {
 		require.Zero(t, cleanCalls)
 	}
 }
-
 
 func TestAdmissionTimeoutUsesFreshWholeSecondJitterAtResponseBoundary(t *testing.T) {
 	for _, testCase := range []struct {
@@ -984,7 +1035,7 @@ func TestCancellationWhileWaitingReturnsSanitizedResponseWithoutStorageWork(t *t
 func TestExactRevisionCacheHitSucceedsWhileBothPermitsAreHeld(t *testing.T) {
 	fake := storage.NewFake()
 	observer := newBlockingStorage(fake, fileIDOne, fileIDTwo)
-	seedCandidateSources(t, fake, fileIDOne, fileIDTwo)
+	seedCandidateSources(t, fake, fileIDOne, fileIDTwo, fileIDThree)
 	require.NoError(t, fake.SetSanitized(fileIDThree, canonicalETagThree, []byte("clean")))
 	handler := newTestHandler(t, nil, nil, nil)
 	holderResponses := startGuardedRequests(t, handler, observer, []guardedRequest{
@@ -998,7 +1049,7 @@ func TestExactRevisionCacheHitSucceedsWhileBothPermitsAreHeld(t *testing.T) {
 
 	require.Equal(t, http.StatusOK, recorder.Code, recorder.Body.String())
 	require.Equal(t, 2, observer.peakDownloads())
-	require.Equal(t, []storage.FakeOperation{storage.FakeSanitizedExists, storage.FakePresignSanitizedDownload}, callOperationsFor(fake.Calls(), fileIDThree))
+	require.Equal(t, []storage.FakeOperation{storage.FakeSourceExists, storage.FakeSanitizedExists, storage.FakePresignSanitizedDownload}, callOperationsFor(fake.Calls(), fileIDThree))
 
 	observer.releaseDownloads()
 	requireResponsesSuccess(t, holderResponses, 2, "timed out waiting for holder response")
@@ -1330,6 +1381,7 @@ func TestPipelineLogsShortCircuitFailuresAndDescribeCacheHitsTruthfully(t *testi
 			name:   "cache hit records presign reuse without scrub work",
 			method: scrubMethod,
 			configure: func(t *testing.T, fake *storage.Fake) {
+				seedCandidateSources(t, fake, fileIDOne)
 				require.NoError(t, fake.SetSanitized(fileIDOne, canonicalETagOne, []byte("clean")))
 			},
 			body:       string(cacheHitBody),
