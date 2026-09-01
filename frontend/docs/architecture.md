@@ -8,44 +8,74 @@ Developers build the frontend with [TanStack Start](https://tanstack.com/start) 
 
 ## Source layout
 
-- Developers group feature code by domain under `src/domains/<domain>/`. The current domains include `wizard` and `products`. Each domain contains the code for its feature area. This code can include components, constants, or routers.
-- Developers keep cross-domain code under `src/shared/`. It contains `config`, `constants`, `database`, `libs` for tRPC and ky, `middlewares`, and `utils`.
+- Developers group feature code by domain under `src/domains/<domain>/`. The current domains include `wizard` and `products`.
+- The wizard domain contains the typed file-workflow tRPC router and its tests.
+- Developers keep cross-domain code under `src/shared/`. It contains `config`, `constants`, `database`, `libs` for tRPC and Ky, `middlewares`, and `utils`.
 - TanStack Router reads file-based routes from `src/routes/`. Developers keep API routes under `src/routes/api/`.
 - Developers keep test setup and shared render helpers under `src/tests/`. The render helpers are in `src/tests/utils/renderers/`.
 
 ## Server boundaries
 
 - Use route server handlers and server functions for small operations. Keep each operation direct and single-purpose. See `src/routes/api/upload.ts`. Wrap server-only code with `createServerOnlyFn` from `@tanstack/react-start`.
-- Use tRPC procedures for database queries and business logic. Use tRPC procedures for multi-step operations. Developers place routers in `src/shared/libs/trpc/` and in domain files such as `src/domains/products/products-router.mod.server.ts`.
+- Use tRPC procedures for database queries, business logic, and the small-JSON backend workflow.
+- The root tRPC router registers the `products` and `wizard` routers.
+- The wizard router provides these procedures:
+  - `getWorkflowConfig`
+  - `createUpload`
+  - `dryRun`
+  - `scrubFile`
+  - `refreshDownloadGrant`
+  - `confirmDelete`
+- Each procedure has an explicit Zod input schema when it accepts input. Each procedure validates its backend success body with Zod.
+- The tRPC workflow sends storage keys, canonical ETags, file names, and file sizes. It never sends file bytes.
 
 ## Application bindings
 
 - Developers implement request-scoped dependency injection with `AsyncLocalStorage` in `src/shared/middlewares/application-bindings/application-bindings.mod.ts`.
-- Server code calls `getApplicationBindings()`. The function returns `{ env, httpClient }`.
+- Server code calls `getApplicationBindings()`. The function returns `{ env, httpClient, workflowHttpClient }`.
 - The `env` binding contains the environment that the middleware validated.
-- The `httpClient` binding is the request-scoped Ky client.
-- The bindings create Ky with `BACKEND_URL` as `baseUrl`.
-- Developers added the `db` binding code but commented it out. Developers keep the `db` binding code commented out until they connect the database client.
-- On each request, the middleware calls `environmentSchema.parse(process.env)`. `environmentSchema` is a Zod object schema. A validation error rejects the async middleware request. The middleware provides the validated bindings to downstream code through `getApplicationBindings()`.
+- The `httpClient` binding is the request-scoped health-check Ky client.
+- The `workflowHttpClient` binding is the request-scoped file-workflow Ky client.
+- Both clients use the validated `BACKEND_URL` as `baseUrl`.
+- Developers added the `db` binding code but commented it out. Keep the code commented out until the application connects the database client.
+- On each request, the middleware calls `environmentSchema.parse(process.env)`. A validation error rejects the middleware request. The middleware provides the validated bindings to downstream code through `getApplicationBindings()`.
 
 ## Backend HTTP
 
-- The `getMessage` tRPC procedure is the frontend's only backend call. It uses ky.
-- The procedure reads `httpClient` from the request-scoped application bindings.
-- The procedure requests relative `/api/health`.
-- The procedure passes the tRPC request signal.
-- The procedure passes a Zod schema to ky's `.json(schema)` method. The schema validates each successful JSON body.
-- The procedure maps every outbound failure to one safe `BAD_GATEWAY` tRPC error. This mapping also covers an invalid successful JSON body.
-- The shared Ky client owns the transport policy.
-- Each attempt has a 3000 ms timeout.
-- The total timeout is 5000 ms.
-- The client permits one retry.
-- The client caps the retry delay and the `Retry-After` value at 250 ms.
-- The client does not retry after a timeout.
+### Health transport
+
+- The `getMessage` procedure reads `httpClient` from the request-scoped bindings.
+- It requests relative `/api/health` and passes the tRPC request signal.
+- It validates the success body with Zod.
+- It maps every outbound failure to one safe `BAD_GATEWAY` tRPC error.
+- Each attempt has a 3000 ms timeout. The total timeout is 5000 ms.
+- The client permits one retry. It caps retry delay and `Retry-After` at 250 ms. It does not retry a timeout.
+
+### Workflow transport
+
+- Each wizard procedure reads `workflowHttpClient` from the request-scoped bindings.
+- Each procedure calls one relative backend route and passes the tRPC request signal.
+- `getWorkflowConfig`, `createUpload`, `refreshDownloadGrant`, and `confirmDelete` use a 10-second attempt timeout and a 10-second total timeout. They do not retry.
+- `dryRun` uses a 90-second attempt timeout and a 90-second total timeout.
+- `scrubFile` uses a 240-second attempt timeout and a 240-second total timeout.
+- Dry-run and scrub permit at most two retries. They retry only `POST` responses with status `503` and a positive whole-second `Retry-After` header.
+- The workflow client uses the server's `Retry-After` value. It applies no client delay or client jitter. It caps `Retry-After` at 4000 ms. It does not retry timeouts, network failures, other status codes, or invalid header values.
+- Backend status `400`, `404`, `408`, `409`, `413`, `415`, `422`, and `503` map to the matching safe tRPC error code.
+- A Ky timeout maps to `TIMEOUT`. Invalid backend success JSON and invalid backend error JSON map to `BAD_GATEWAY`. Other upstream failures also map to `BAD_GATEWAY`.
+- Public tRPC errors do not include backend error text, provider details, credentials, object keys, request IDs, or presigned URL details.
+- Outbound failure handling uses neverthrow. The frontend does not use Effect.
 
 ## Validation
 
 Use Zod for all validation logic in every environment.
+
+The workflow schemas enforce these contracts:
+
+- The maximum source size is exactly `10_485_760` bytes.
+- A storage key contains an `uploads/` prefix and one lower-case UUIDv4 value.
+- A canonical ETag contains exactly 32 lower-case hexadecimal characters. It has no quotes or whitespace.
+- A download-grant expiry is an RFC 3339 whole-second timestamp.
+- Backend success and error objects reject unknown properties.
 
 ## Database
 
@@ -55,24 +85,18 @@ Use Zod for all validation logic in every environment.
 
 ## File uploads
 
-- `src/routes/api/upload.ts` exports `postUpload`. The route uses this function as its `POST` handler.
-- The handler wraps `context.request.formData()` in `ResultAsync.fromThrowable()`.
-- The error mapper converts a form-data read failure to an `Error`. It preserves the original failure in `cause`.
-- The route boundary consumes the `Result`. It throws the mapped `Error` when the form-data read fails.
-- The handler validates the `file` value with a Zod file schema after the form-data read succeeds.
-- The schema uses `z.file()`, `.max()`, and `.mime()`. The size limit comes from `MAX_FILE_SIZE_BYTES`. The MIME type list comes from `UPLOADABLE_MIME_TYPES`.
-- An invalid upload value still throws a `ZodError`.
-- The handler returns file metadata and a generated `storageKey`.
-- This service has no storage backend. The route does not persist the file.
-- The project includes S3 SDK dependencies and `@uppy/react` for planned storage work. No storage module exists under `src/`.
-- The Go backend handles upload grants. The Go backend handles file storage and metadata scrubbing. It uses Cloudflare R2 for storage. It handles presigned downloads. Read the service-integration section of the root [architecture reference](../../docs/architecture.md) before you add storage code to the frontend.
+- The typed workflow requests an upload grant through `createUpload`.
+- The grant contract contains a storage key and a presigned upload URL. The tRPC call contains no file bytes.
+- The Go backend owns private storage, PDF inspection, metadata removal, sanitized revisions, download grants, and confirmed deletion.
+- `src/routes/api/upload.ts` still contains the earlier local form-data metadata handler. It does not persist a file. It is not part of the typed backend workflow.
+- The project includes S3 SDK dependencies and `@uppy/react`. No frontend storage adapter exists under `src/`.
+- Read the service-integration section of the root [architecture reference](../../docs/architecture.md) before you add storage code to the frontend.
 
 ## Testing status
 
-- The suite checks that a rejected backend health request becomes a safe `BAD_GATEWAY` error.
-- The suite checks that a reachable health payload returns that status.
-- The suite checks that a hung fetch rejects as a Ky timeout at 3000 ms and that `fetch` runs once.
-- The suite checks that a 502 response rejects as an HTTP error and that `fetch` runs twice.
-- Follow the root risk-based coverage rule. Add these tests in this priority order:
-  1. Test that the upload validation uses `MAX_FILE_SIZE_BYTES` and `UPLOADABLE_MIME_TYPES` from `src/domains/wizard/constants/wizard.mod.ts`. Import those production constants in assertions.
-  2. Test environment parsing and the bindings invariant in the application-bindings middleware.
+- Direct tRPC caller tests cover all six workflow procedures and root-router registration.
+- Tests check exact backend methods, paths, and JSON bodies. They check that no contract contains file bytes.
+- Tests cover canonical ETag validation, invalid procedure inputs, invalid backend success bodies, safe status mapping, invalid backend error bodies, timeouts, and caller cancellation.
+- Workflow transport tests cover exact server-directed delays, the 4000 ms cap, the three-attempt limit, rejected retry conditions, operation timeouts, total-timeout expiry, no-retry operations, and caller abort.
+- Health transport tests keep the separate health retry and timeout contract under regression coverage.
+- `vitest.config.ts` requires test discovery. It does not permit a successful run with no tests.
