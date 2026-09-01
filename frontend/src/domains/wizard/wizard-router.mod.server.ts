@@ -48,6 +48,7 @@ const CREATE_UPLOAD_ENDPOINT = "/api/uploads";
 const DRY_RUN_ENDPOINT = "/api/files/dry-run";
 const SCRUB_FILE_ENDPOINT = "/api/files/scrub";
 const REFRESH_DOWNLOAD_GRANT_ENDPOINT = "/api/files/download-grant";
+const CONFIRM_DELETE_ENDPOINT = "/api/files/delete";
 
 const MINIMUM_FILE_SIZE_BYTES = 1;
 const MINIMUM_TEXT_LENGTH = 1;
@@ -249,6 +250,7 @@ export const wizardRouter = createTRPCRouter({
     }
     return responseResult.value;
   }),
+
   createUpload: publicProcedure
     .input(createUploadInputSchema)
     .mutation(async ({ input, signal }) => {
@@ -344,6 +346,31 @@ export const wizardRouter = createTRPCRouter({
         throw await mapWorkflowRequestFailure(
           responseResult.error,
           REFRESH_DOWNLOAD_GRANT_FAILURE_MESSAGE,
+        );
+      }
+      return responseResult.value;
+    }),
+
+  confirmDelete: publicProcedure
+    .input(confirmDeleteInputSchema)
+    .mutation(async ({ input, signal }) => {
+      const { workflowHttpClient } = getApplicationBindings();
+      const responseResult = await ResultAsync.fromPromise(
+        workflowHttpClient
+          .post(CONFIRM_DELETE_ENDPOINT, {
+            json: input,
+            retry: WORKFLOW_NO_RETRY_OPTIONS,
+            signal: signal ?? null,
+            timeout: WORKFLOW_ONE_SHOT_TIMEOUT_MS,
+            totalTimeout: WORKFLOW_ONE_SHOT_TIMEOUT_MS,
+          })
+          .json(confirmDeleteResponseSchema),
+        (cause: unknown) => cause,
+      );
+      if (responseResult.isErr()) {
+        throw await mapWorkflowRequestFailure(
+          responseResult.error,
+          CONFIRM_DELETE_FAILURE_MESSAGE,
         );
       }
       return responseResult.value;

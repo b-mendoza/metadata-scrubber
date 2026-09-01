@@ -21,6 +21,7 @@ import {
 import { getApplicationBindings } from "#/shared/middlewares/application-bindings/application-bindings.mod";
 
 import type {
+  ConfirmDeleteInput,
   CreateUploadInput,
   DryRunInput,
   RefreshDownloadGrantInput,
@@ -28,6 +29,7 @@ import type {
 } from "./wizard-router.mod.server";
 import {
   canonicalETagSchema,
+  CONFIRM_DELETE_FAILURE_MESSAGE,
   CREATE_UPLOAD_FAILURE_MESSAGE,
   DRY_RUN_FAILURE_MESSAGE,
   REFRESH_DOWNLOAD_GRANT_FAILURE_MESSAGE,
@@ -156,6 +158,8 @@ test("dryRun rejects an invalid storage key before fetch", async () => {
 test("the scrub input schema rejects a missing ETag", () => {
   const result = scrubFileInputSchema.safeParse({ storageKey: STORAGE_KEY });
 
+  expect(result.success).toBe(false);
+});
 
 test("refreshDownloadGrant rejects an invalid ETag before fetch", async () => {
   const fetchMock = vi.fn<typeof fetch>();
@@ -173,7 +177,19 @@ test("refreshDownloadGrant rejects an invalid ETag before fetch", async () => {
   expect(fetchMock).not.toHaveBeenCalled();
 });
 
-  expect(result.success).toBe(false);
+test("confirmDelete rejects an invalid storage key before fetch", async () => {
+  const fetchMock = vi.fn<typeof fetch>();
+  vi.stubGlobal("fetch", fetchMock);
+  const request = new Request(FRONTEND_URL);
+
+  const error = await requireTRPCError(
+    callerForRequest(request).confirmDelete({
+      storageKey: "uploads/not-a-uuid",
+    }),
+  );
+
+  expect(error.code).toBe("BAD_REQUEST");
+  expect(fetchMock).not.toHaveBeenCalled();
 });
 
 test("getWorkflowConfig rejects a wrong backend-owned byte limit", async () => {
@@ -272,6 +288,22 @@ test("refreshDownloadGrant rejects an invalid backend timestamp", async () => {
 
   expect(error.code).toBe("BAD_GATEWAY");
   expect(error.message).toBe(REFRESH_DOWNLOAD_GRANT_FAILURE_MESSAGE);
+});
+
+test("confirmDelete rejects an unconfirmed backend success payload", async () => {
+  const input: ConfirmDeleteInput = { storageKey: STORAGE_KEY };
+  const fetchMock = vi
+    .fn<typeof fetch>()
+    .mockResolvedValue(Response.json({ status: "pending" }));
+  vi.stubGlobal("fetch", fetchMock);
+  const request = new Request(FRONTEND_URL);
+
+  const error = await requireTRPCError(
+    callerForRequest(request).confirmDelete(input),
+  );
+
+  expect(error.code).toBe("BAD_GATEWAY");
+  expect(error.message).toBe(CONFIRM_DELETE_FAILURE_MESSAGE);
 });
 
 test.each([
