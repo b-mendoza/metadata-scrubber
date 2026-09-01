@@ -23,12 +23,14 @@ import { getApplicationBindings } from "#/shared/middlewares/application-binding
 import type {
   CreateUploadInput,
   DryRunInput,
+  RefreshDownloadGrantInput,
   ScrubFileInput,
 } from "./wizard-router.mod.server";
 import {
   canonicalETagSchema,
   CREATE_UPLOAD_FAILURE_MESSAGE,
   DRY_RUN_FAILURE_MESSAGE,
+  REFRESH_DOWNLOAD_GRANT_FAILURE_MESSAGE,
   SCRUB_FILE_FAILURE_MESSAGE,
   scrubFileInputSchema,
   storageKeySchema,
@@ -49,6 +51,7 @@ const FRONTEND_URL = "https://frontend.test/";
 const STORAGE_KEY = "uploads/00000000-0000-4000-8000-000000000001";
 const CANONICAL_ETAG = "0123456789abcdef0123456789abcdef";
 const ALTERNATE_CANONICAL_ETAG = "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa";
+const DOWNLOAD_URL = "https://downloads.test/sanitized.pdf";
 const ONE_BYTE = 1;
 
 const testEnvironment = environmentSchema.parse({
@@ -153,6 +156,23 @@ test("dryRun rejects an invalid storage key before fetch", async () => {
 test("the scrub input schema rejects a missing ETag", () => {
   const result = scrubFileInputSchema.safeParse({ storageKey: STORAGE_KEY });
 
+
+test("refreshDownloadGrant rejects an invalid ETag before fetch", async () => {
+  const fetchMock = vi.fn<typeof fetch>();
+  vi.stubGlobal("fetch", fetchMock);
+  const request = new Request(FRONTEND_URL);
+
+  const error = await requireTRPCError(
+    callerForRequest(request).refreshDownloadGrant({
+      etag: `"${CANONICAL_ETAG}"`,
+      storageKey: STORAGE_KEY,
+    }),
+  );
+
+  expect(error.code).toBe("BAD_REQUEST");
+  expect(fetchMock).not.toHaveBeenCalled();
+});
+
   expect(result.success).toBe(false);
 });
 
@@ -230,6 +250,28 @@ test("scrubFile rejects an invalid backend success payload", async () => {
 
   expect(error.code).toBe("BAD_GATEWAY");
   expect(error.message).toBe(SCRUB_FILE_FAILURE_MESSAGE);
+});
+
+
+test("refreshDownloadGrant rejects an invalid backend timestamp", async () => {
+  const input: RefreshDownloadGrantInput = {
+    etag: CANONICAL_ETAG,
+    storageKey: STORAGE_KEY,
+  };
+  const fetchMock = vi
+    .fn<typeof fetch>()
+    .mockResolvedValue(
+      Response.json({ downloadUrl: DOWNLOAD_URL, expiresAt: "tomorrow" }),
+    );
+  vi.stubGlobal("fetch", fetchMock);
+  const request = new Request(FRONTEND_URL);
+
+  const error = await requireTRPCError(
+    callerForRequest(request).refreshDownloadGrant(input),
+  );
+
+  expect(error.code).toBe("BAD_GATEWAY");
+  expect(error.message).toBe(REFRESH_DOWNLOAD_GRANT_FAILURE_MESSAGE);
 });
 
 test.each([

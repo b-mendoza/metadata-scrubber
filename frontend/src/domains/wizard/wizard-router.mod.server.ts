@@ -47,6 +47,7 @@ const WORKFLOW_CONFIG_ENDPOINT = "/api/files/config";
 const CREATE_UPLOAD_ENDPOINT = "/api/uploads";
 const DRY_RUN_ENDPOINT = "/api/files/dry-run";
 const SCRUB_FILE_ENDPOINT = "/api/files/scrub";
+const REFRESH_DOWNLOAD_GRANT_ENDPOINT = "/api/files/download-grant";
 
 const MINIMUM_FILE_SIZE_BYTES = 1;
 const MINIMUM_TEXT_LENGTH = 1;
@@ -318,6 +319,31 @@ export const wizardRouter = createTRPCRouter({
         throw await mapWorkflowRequestFailure(
           responseResult.error,
           SCRUB_FILE_FAILURE_MESSAGE,
+        );
+      }
+      return responseResult.value;
+    }),
+
+  refreshDownloadGrant: publicProcedure
+    .input(refreshDownloadGrantInputSchema)
+    .mutation(async ({ input, signal }) => {
+      const { workflowHttpClient } = getApplicationBindings();
+      const responseResult = await ResultAsync.fromPromise(
+        workflowHttpClient
+          .post(REFRESH_DOWNLOAD_GRANT_ENDPOINT, {
+            json: input,
+            retry: WORKFLOW_NO_RETRY_OPTIONS,
+            signal: signal ?? null,
+            timeout: WORKFLOW_ONE_SHOT_TIMEOUT_MS,
+            totalTimeout: WORKFLOW_ONE_SHOT_TIMEOUT_MS,
+          })
+          .json(refreshDownloadGrantResponseSchema),
+        (cause: unknown) => cause,
+      );
+      if (responseResult.isErr()) {
+        throw await mapWorkflowRequestFailure(
+          responseResult.error,
+          REFRESH_DOWNLOAD_GRANT_FAILURE_MESSAGE,
         );
       }
       return responseResult.value;
