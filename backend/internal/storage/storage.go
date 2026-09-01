@@ -16,7 +16,7 @@ const (
 	// PDFContentType is the media type required for PDF uploads.
 	PDFContentType = "application/pdf"
 	// MaxSourceObjectBytes is the maximum source PDF size read into backend memory.
-	MaxSourceObjectBytes = 10_000_000
+	MaxSourceObjectBytes = 10_485_760
 
 	minimumPresignExpiry = time.Second
 	maximumPresignExpiry = 7 * 24 * time.Hour
@@ -36,7 +36,7 @@ var (
 	// ErrSourceRevisionConflict means the source no longer has the reviewed ETag.
 	ErrSourceRevisionConflict = errors.New("source revision changed")
 	// ErrSourceObjectTooLarge means the source exceeds the backend memory boundary.
-	ErrSourceObjectTooLarge = errors.New("source object exceeds 10 MB limit")
+	ErrSourceObjectTooLarge = errors.New("source object exceeds 10 MiB limit")
 	// ErrSourceNotFound means no source object exists for the logical file ID.
 	ErrSourceNotFound = errors.New("source object not found")
 	// ErrInvalidSourceSize means an expected upload size is not a positive byte count.

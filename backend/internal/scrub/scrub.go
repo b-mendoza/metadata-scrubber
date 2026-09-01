@@ -14,7 +14,7 @@ import (
 
 const (
 	// MaxInputBytes is the aggregate PDF input boundary shared by every caller.
-	MaxInputBytes = 10_000_000
+	MaxInputBytes = 10_485_760
 
 	// Inspection summaries stay small enough for synchronous responses.
 	maxFieldPreviewBytes    = 256
@@ -55,7 +55,7 @@ type Field struct {
 
 var (
 	// ErrInputTooLarge classifies PDF inputs above the aggregate product boundary.
-	ErrInputTooLarge = errors.New("PDF input exceeds 10 MB limit")
+	ErrInputTooLarge = errors.New("PDF input exceeds 10 MiB limit")
 	// ErrSignedPDF classifies a structurally signed PDF that must not be rewritten.
 	ErrSignedPDF = errors.New("signed PDF is unsupported")
 	// ErrInspectionLimit classifies metadata inventories too large to report completely.

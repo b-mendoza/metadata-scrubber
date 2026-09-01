@@ -140,8 +140,8 @@ func TestCanonicalCapacityAndSizeLimitsStayPinned(t *testing.T) {
 	t.Parallel()
 
 	require.Equal(t, 2, handler.ProcessingPermitCount)
-	require.Equal(t, 10_000_000, storage.MaxSourceObjectBytes)
-	require.Equal(t, 10_000_000, scrub.MaxInputBytes)
+	require.Equal(t, 10_485_760, storage.MaxSourceObjectBytes)
+	require.Equal(t, 10_485_760, scrub.MaxInputBytes)
 }
 
 func TestNewServerRejectsWrongMethodsForJSONWorkflow(t *testing.T) {
