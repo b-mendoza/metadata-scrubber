@@ -29,6 +29,7 @@ type (
 	cleanPDFOperation        func([]byte) ([]byte, error)
 	entropyOperation         func([]byte) (int, error)
 	admissionJitterOperation func() (int, error)
+	clockOperation           func() time.Time
 )
 
 const (
@@ -96,6 +97,7 @@ type Handler struct {
 	clean            cleanPDFOperation
 	entropy          entropyOperation
 	admissionJitter  admissionJitterOperation
+	now              clockOperation
 	admissionTimeout time.Duration
 	// beforeAcquireSelect must stay a non-nil no-op in production: acquirePermit calls it
 	// unconditionally, and only a test replaces it to observe the admission select.
@@ -151,7 +153,17 @@ type scrubResponseResult struct {
 	DownloadURL string `json:"downloadUrl"`
 }
 
-func writeJSON[T reachabilityResponse | workflowConfigResponse | uploadResponse | dryRunResponse | scrubResponse](
+type downloadGrantRequest struct {
+	StorageKey string `json:"storageKey"`
+	ETag       string `json:"etag"`
+}
+
+type downloadGrantResponse struct {
+	DownloadURL string `json:"downloadUrl"`
+	ExpiresAt   string `json:"expiresAt"`
+}
+
+func writeJSON[T reachabilityResponse | workflowConfigResponse | uploadResponse | dryRunResponse | scrubResponse | downloadGrantResponse](
 	w http.ResponseWriter,
 	status int,
 	body T,
@@ -161,7 +173,7 @@ func writeJSON[T reachabilityResponse | workflowConfigResponse | uploadResponse 
 	return json.NewEncoder(w).Encode(body)
 }
 
-func decodeJSONRequest[T uploadRequest | dryRunRequest | scrubRequest](
+func decodeJSONRequest[T uploadRequest | dryRunRequest | scrubRequest | downloadGrantRequest](
 	logger *slog.Logger,
 	w http.ResponseWriter,
 	request *http.Request,
@@ -203,7 +215,7 @@ type jsonDecodeStage struct {
 	decoder *json.Decoder
 }
 
-func decodeJSONBody[T uploadRequest | dryRunRequest | scrubRequest](stage jsonDecodeStage, destination *T) bool {
+func decodeJSONBody[T uploadRequest | dryRunRequest | scrubRequest | downloadGrantRequest](stage jsonDecodeStage, destination *T) bool {
 	if err := stage.decoder.Decode(destination); err == nil {
 		return true
 	}
@@ -233,6 +245,7 @@ type handlerOperations struct {
 	clean           cleanPDFOperation
 	entropy         entropyOperation
 	admissionJitter admissionJitterOperation
+	now             clockOperation
 }
 
 // New constructs the JSON workflow handler around one server-owned admission gate.
@@ -242,6 +255,7 @@ func New(logger *slog.Logger, permits chan struct{}) *Handler {
 		clean:           scrub.CleanPDF,
 		entropy:         rand.Read,
 		admissionJitter: randomAdmissionJitter,
+		now:             time.Now,
 	})
 }
 
@@ -263,6 +277,9 @@ func newHandler(logger *slog.Logger, permits chan struct{}, operations handlerOp
 	if operations.admissionJitter == nil {
 		operations.admissionJitter = randomAdmissionJitter
 	}
+	if operations.now == nil {
+		operations.now = time.Now
+	}
 
 	return &Handler{
 		logger:              logger,
@@ -271,6 +288,7 @@ func newHandler(logger *slog.Logger, permits chan struct{}, operations handlerOp
 		clean:               operations.clean,
 		entropy:             operations.entropy,
 		admissionJitter:     operations.admissionJitter,
+		now:                 operations.now,
 		admissionTimeout:    defaultAdmissionTimeout,
 		beforeAcquireSelect: func() {},
 	}

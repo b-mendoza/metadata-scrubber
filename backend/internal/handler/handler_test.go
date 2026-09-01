@@ -151,6 +151,13 @@ func TestWriteJSONPreservesConcreteResponseContracts(t *testing.T) {
 			},
 			wantBody: "{\"status\":\"done\",\"result\":{\"downloadUrl\":\"https://download.example\"}}\n",
 		},
+		{
+			name: "download grant",
+			write: func(w http.ResponseWriter) {
+				require.NoError(t, writeJSON(w, http.StatusAccepted, downloadGrantResponse{DownloadURL: "https://download.example", ExpiresAt: "2026-09-01T12:15:00Z"}))
+			},
+			wantBody: "{\"downloadUrl\":\"https://download.example\",\"expiresAt\":\"2026-09-01T12:15:00Z\"}\n",
+		},
 	}
 
 	for _, testCase := range tests {
@@ -224,6 +231,21 @@ func TestJSONEndpointsValidateEveryBoundaryBeforeWork(t *testing.T) {
 				storage.FakePresignSanitizedDownload,
 			},
 			wantCleanCalls: 1,
+		},
+		{
+			name:                  "download grant",
+			method:                downloadGrantMethod,
+			wrongTypeBody:         `{"storageKey":"` + formatStorageKey(fileIDOne) + `","etag":1}`,
+			missingFieldBody:      `{"storageKey":"` + formatStorageKey(fileIDOne) + `"}`,
+			oversizedBody:         `{"storageKey":"` + strings.Repeat("x", maxJSONBodyBytes) + `","etag":"` + canonicalETagOne + `"}`,
+			acceptedParameterBody: `{"storageKey":"` + formatStorageKey(fileIDOne) + `","etag":"` + canonicalETagOne + `"}` + " \n\t",
+			configureAccepted: func(t *testing.T, fake *storage.Fake) {
+				require.NoError(t, fake.SetSanitized(fileIDOne, canonicalETagOne, []byte("clean")))
+			},
+			wantAcceptedOperations: []storage.FakeOperation{
+				storage.FakeSanitizedExists,
+				storage.FakePresignSanitizedDownload,
+			},
 		},
 	}
 
@@ -441,9 +463,32 @@ func TestPublicStorageKeysAndETagsAreValidatedBeforeStorage(t *testing.T) {
 		t.Run("scrub ETag "+invalidETag.name, func(t *testing.T) {
 			fake := storage.NewFake()
 			handler := newTestHandler(t, nil, nil, nil)
-			body, err := json.Marshal(scrubRequest{StorageKey: formatStorageKey(fileIDOne), ETag: invalidETag.value})
+			body, err := json.Marshal(scrubRequest{
+				StorageKey: formatStorageKey(fileIDOne),
+				ETag:       invalidETag.value,
+			})
 			require.NoError(t, err)
-			recorder := serveJSONRequest(t, jsonHandlerRequest{handler: handler, objectStorage: fake, method: scrubMethod, body: string(body)})
+
+			recorder := serveJSONRequest(t, jsonHandlerRequest{
+				handler: handler, objectStorage: fake, method: scrubMethod, body: string(body),
+			})
+
+			require.Equal(t, http.StatusBadRequest, recorder.Code)
+			require.Empty(t, fake.Calls())
+		})
+		t.Run("download grant ETag "+invalidETag.name, func(t *testing.T) {
+			fake := storage.NewFake()
+			handler := newTestHandler(t, nil, nil, nil)
+			body, err := json.Marshal(downloadGrantRequest{
+				StorageKey: formatStorageKey(fileIDOne),
+				ETag:       invalidETag.value,
+			})
+			require.NoError(t, err)
+
+			recorder := serveJSONRequest(t, jsonHandlerRequest{
+				handler: handler, objectStorage: fake, method: downloadGrantMethod, body: string(body),
+			})
+
 			require.Equal(t, http.StatusBadRequest, recorder.Code)
 			require.Empty(t, fake.Calls())
 		})
@@ -856,6 +901,121 @@ func runScrubFailureTest(t *testing.T, testCase scrubFailureTestCase) {
 		require.Zero(t, cleanCalls)
 	}
 }
+
+func TestDownloadGrantRefreshesExactSanitizedRevisionFromOneOperationTime(t *testing.T) {
+	fake := storage.NewFake()
+	require.NoError(t, fake.SetSanitized(fileIDOne, canonicalETagOne, []byte("clean")))
+	inspectCalls, cleanCalls := 0, 0
+	operationTime := time.Date(2026, time.September, 1, 12, 34, 56, 987_000_000, time.UTC)
+	handler := newTestHandlerWithLogger(t, testHandlerOptions{
+		permits: make(chan struct{}, ProcessingPermitCount),
+		logger:  slog.New(slog.NewTextHandler(io.Discard, nil)),
+		inspect: func([]byte, scrub.InspectionOrigin) ([]scrub.Field, error) {
+			inspectCalls++
+			return nil, nil
+		},
+		clean: func([]byte) ([]byte, error) {
+			cleanCalls++
+			return nil, nil
+		},
+		now: func() time.Time { return operationTime },
+	})
+	body, err := json.Marshal(downloadGrantRequest{
+		StorageKey: formatStorageKey(fileIDOne),
+		ETag:       canonicalETagOne,
+	})
+	require.NoError(t, err)
+
+	recorder := serveJSONRequest(t, jsonHandlerRequest{
+		handler: handler, objectStorage: fake, method: downloadGrantMethod, body: string(body),
+	})
+
+	require.Equal(t, http.StatusOK, recorder.Code, recorder.Body.String())
+	var response downloadGrantResponse
+	require.NoError(t, json.Unmarshal(recorder.Body.Bytes(), &response))
+	require.NotEmpty(t, response.DownloadURL)
+	require.Equal(t, "2026-09-01T12:49:56Z", response.ExpiresAt)
+	calls := fake.Calls()
+	require.Equal(t, []storage.FakeOperation{
+		storage.FakeSanitizedExists,
+		storage.FakePresignSanitizedDownload,
+	}, callOperations(calls))
+	for _, call := range calls {
+		require.Equal(t, fileIDOne, call.FileID)
+		require.Equal(t, canonicalETagOne, call.SourceETag)
+	}
+	require.Equal(t, downloadGrantExpiry, calls[1].Expiry)
+	require.Zero(t, inspectCalls)
+	require.Zero(t, cleanCalls)
+	require.Empty(t, handler.permits)
+}
+
+func TestDownloadGrantReturnsNotFoundWithoutPresignForMissingRevision(t *testing.T) {
+	fake := storage.NewFake()
+	handler := newTestHandler(t, nil, nil, nil)
+	body, err := json.Marshal(downloadGrantRequest{
+		StorageKey: formatStorageKey(fileIDOne),
+		ETag:       canonicalETagOne,
+	})
+	require.NoError(t, err)
+
+	recorder := serveJSONRequest(t, jsonHandlerRequest{
+		handler: handler, objectStorage: fake, method: downloadGrantMethod, body: string(body),
+	})
+
+	require.Equal(t, http.StatusNotFound, recorder.Code)
+	require.Equal(t, "scrubbed file not found", errorMessage(t, recorder))
+	require.Equal(t, []storage.FakeOperation{storage.FakeSanitizedExists}, callOperations(fake.Calls()))
+}
+
+func TestDownloadGrantFailuresStopAtFailedStorageOperation(t *testing.T) {
+	tests := []struct {
+		name        string
+		failureOp   storage.FakeOperation
+		wantMessage string
+		wantCalls   []storage.FakeOperation
+	}{
+		{
+			name:        "lookup failure",
+			failureOp:   storage.FakeSanitizedExists,
+			wantMessage: "could not check scrubbed file",
+			wantCalls:   []storage.FakeOperation{storage.FakeSanitizedExists},
+		},
+		{
+			name:        "presign failure",
+			failureOp:   storage.FakePresignSanitizedDownload,
+			wantMessage: "could not create download",
+			wantCalls: []storage.FakeOperation{
+				storage.FakeSanitizedExists,
+				storage.FakePresignSanitizedDownload,
+			},
+		},
+	}
+
+	for _, testCase := range tests {
+		t.Run(testCase.name, func(t *testing.T) {
+			fake := storage.NewFake()
+			require.NoError(t, fake.SetSanitized(fileIDOne, canonicalETagOne, []byte("clean")))
+			fake.SetFailure(testCase.failureOp, errors.New("download-provider-secret"))
+			handler := newTestHandler(t, nil, nil, nil)
+			body, err := json.Marshal(downloadGrantRequest{
+				StorageKey: formatStorageKey(fileIDOne),
+				ETag:       canonicalETagOne,
+			})
+			require.NoError(t, err)
+
+			recorder := serveJSONRequest(t, jsonHandlerRequest{
+				handler: handler, objectStorage: fake, method: downloadGrantMethod, body: string(body),
+			})
+
+			require.Equal(t, http.StatusInternalServerError, recorder.Code)
+			require.Equal(t, testCase.wantMessage, errorMessage(t, recorder))
+			require.NotContains(t, recorder.Body.String(), "download-provider-secret")
+			require.Equal(t, testCase.wantCalls, callOperations(fake.Calls()))
+		})
+	}
+}
+
 
 func TestAdmissionTimeoutUsesFreshWholeSecondJitterAtResponseBoundary(t *testing.T) {
 	for _, testCase := range []struct {
@@ -1496,6 +1656,7 @@ const (
 	uploadMethod handlerMethod = iota
 	dryRunMethod
 	scrubMethod
+	downloadGrantMethod
 )
 
 func assertAcceptedResponse(t *testing.T, method handlerMethod, recorder *httptest.ResponseRecorder) {
@@ -1517,6 +1678,11 @@ func assertAcceptedResponse(t *testing.T, method handlerMethod, recorder *httpte
 		require.NoError(t, json.Unmarshal(recorder.Body.Bytes(), &response))
 		require.Equal(t, "done", response.Status)
 		require.NotEmpty(t, response.Result.DownloadURL)
+	case downloadGrantMethod:
+		var response downloadGrantResponse
+		require.NoError(t, json.Unmarshal(recorder.Body.Bytes(), &response))
+		require.NotEmpty(t, response.DownloadURL)
+		require.NotEmpty(t, response.ExpiresAt)
 	default:
 		t.Fatalf("unknown handler method %d", method)
 	}
@@ -1545,6 +1711,7 @@ type testHandlerOptions struct {
 	clean           cleanPDFOperation
 	entropy         entropyOperation
 	admissionJitter admissionJitterOperation
+	now             clockOperation
 }
 
 func newTestHandlerWithLogger(t *testing.T, options testHandlerOptions) *Handler {
@@ -1561,11 +1728,15 @@ func newTestHandlerWithLogger(t *testing.T, options testHandlerOptions) *Handler
 	if options.admissionJitter == nil {
 		options.admissionJitter = func() (int, error) { return 0, nil }
 	}
+	if options.now == nil {
+		options.now = time.Now
+	}
 	return newHandler(options.logger, options.permits, handlerOperations{
 		inspect:         options.inspect,
 		clean:           options.clean,
 		entropy:         options.entropy,
 		admissionJitter: options.admissionJitter,
+		now:             options.now,
 	})
 }
 
@@ -1594,6 +1765,8 @@ func serveRequest(t *testing.T, input handlerRequest) *httptest.ResponseRecorder
 		endpoint = input.handler.DryRun
 	case scrubMethod:
 		endpoint = input.handler.Scrub
+	case downloadGrantMethod:
+		endpoint = input.handler.DownloadGrant
 	default:
 		t.Fatalf("unknown handler method %d", input.method)
 		return recorder
