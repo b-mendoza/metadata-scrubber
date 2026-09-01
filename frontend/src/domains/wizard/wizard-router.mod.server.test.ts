@@ -21,6 +21,8 @@ import type {
   CreateUploadResponse,
   DryRunInput,
   DryRunResponse,
+  RefreshDownloadGrantInput,
+  RefreshDownloadGrantResponse,
   ScrubFileInput,
   ScrubFileResponse,
   WorkflowConfig,
@@ -28,6 +30,7 @@ import type {
 import {
   CREATE_UPLOAD_FAILURE_MESSAGE,
   DRY_RUN_FAILURE_MESSAGE,
+  REFRESH_DOWNLOAD_GRANT_FAILURE_MESSAGE,
   SCRUB_FILE_FAILURE_MESSAGE,
   wizardRouter,
   WORKFLOW_MAX_FILE_SIZE_BYTES,
@@ -46,6 +49,7 @@ const STORAGE_KEY = "uploads/00000000-0000-4000-8000-000000000001";
 const CANONICAL_ETAG = "0123456789abcdef0123456789abcdef";
 const DOWNLOAD_URL = "https://downloads.test/sanitized.pdf";
 const UPLOAD_URL = "https://uploads.test/source.pdf";
+const EXPIRES_AT = "2026-09-01T12:15:00Z";
 const FIRST_FETCH_CALL_INDEX = 0;
 const FETCH_INPUT_ARGUMENT_INDEX = 0;
 const TWO_FETCH_ATTEMPTS = 2;
@@ -204,6 +208,34 @@ test("scrubFile forwards the exact reviewed ETag without file bytes", async () =
   expect(JSON.stringify(input)).not.toContain("fileBytes");
 });
 
+
+test("refreshDownloadGrant targets one exact sanitized revision", async () => {
+  const input: RefreshDownloadGrantInput = {
+    etag: CANONICAL_ETAG,
+    storageKey: STORAGE_KEY,
+  };
+  const response: RefreshDownloadGrantResponse = {
+    downloadUrl: DOWNLOAD_URL,
+    expiresAt: EXPIRES_AT,
+  };
+  const fetchMock = vi
+    .fn<typeof fetch>()
+    .mockResolvedValue(Response.json(response));
+  vi.stubGlobal("fetch", fetchMock);
+  const request = new Request(FRONTEND_URL);
+
+  const result = await callerForRequest(request).refreshDownloadGrant(input);
+
+  expect(result).toEqual(response);
+  const backendRequest = onlyFetchRequest(fetchMock);
+  expect(backendRequest.method).toBe("POST");
+  expect(backendRequest.url).toBe(
+    "https://backend.test/api/files/download-grant",
+  );
+  await expect(backendRequest.clone().json()).resolves.toEqual(input);
+  expect(JSON.stringify(input)).not.toContain("fileBytes");
+});
+
 test("scrubFile keeps missing source and revision conflict results distinct", async () => {
   const input: ScrubFileInput = {
     etag: CANONICAL_ETAG,
@@ -261,6 +293,56 @@ test("duplicate scrub success returns a fresh normal done response", async () =>
   await expect(caller.scrubFile(input)).resolves.toEqual(firstResponse);
   await expect(caller.scrubFile(input)).resolves.toEqual(secondResponse);
   expect(fetchMock).toHaveBeenCalledTimes(TWO_FETCH_ATTEMPTS);
+});
+
+
+test("refreshDownloadGrant maps a missing revision to NOT_FOUND", async () => {
+  const input: RefreshDownloadGrantInput = {
+    etag: CANONICAL_ETAG,
+    storageKey: STORAGE_KEY,
+  };
+  const fetchMock = vi
+    .fn<typeof fetch>()
+    .mockResolvedValue(
+      Response.json(
+        { error: "scrubbed file not found" },
+        { status: NOT_FOUND_STATUS_CODE },
+      ),
+    );
+  vi.stubGlobal("fetch", fetchMock);
+  const request = new Request(FRONTEND_URL);
+
+  const error = await requireTRPCError(
+    callerForRequest(request).refreshDownloadGrant(input),
+  );
+
+  expect(error.code).toBe("NOT_FOUND");
+  expect(error.message).toBe(REFRESH_DOWNLOAD_GRANT_FAILURE_MESSAGE);
+  expect(fetchMock).toHaveBeenCalledOnce();
+});
+
+
+test("a workflow client timeout maps to TIMEOUT without a retry", async () => {
+  vi.useFakeTimers();
+  const input: RefreshDownloadGrantInput = {
+    etag: CANONICAL_ETAG,
+    storageKey: STORAGE_KEY,
+  };
+  const fetchMock = vi
+    .fn<typeof fetch>()
+    .mockReturnValue(Promise.race<Response>([]));
+  vi.stubGlobal("fetch", fetchMock);
+  const request = new Request(FRONTEND_URL);
+
+  const errorPromise = requireTRPCError(
+    callerForRequest(request).refreshDownloadGrant(input),
+  );
+  await vi.runAllTimersAsync();
+  const error = await errorPromise;
+
+  expect(error.code).toBe("TIMEOUT");
+  expect(error.message).toBe(REFRESH_DOWNLOAD_GRANT_FAILURE_MESSAGE);
+  expect(fetchMock).toHaveBeenCalledOnce();
 });
 
 test("an unclassified transport failure maps to BAD_GATEWAY without public details", async () => {
