@@ -130,12 +130,16 @@ func (handler *Handler) Scrub(w http.ResponseWriter, request *http.Request) {
 		return
 	}
 
-	exists, err := objectStorage.SanitizedExists(request.Context(), fileID, input.ETag)
+	if !handler.scrubSourceAvailable(w, request, objectStorage, fileID) {
+		return
+	}
+
+	sanitizedExists, err := objectStorage.SanitizedExists(request.Context(), fileID, input.ETag)
 	if err != nil {
 		handler.writeUnexpectedFailure(w, request, err, "could not check scrubbed file")
 		return
 	}
-	if exists {
+	if sanitizedExists {
 		handler.presignScrubbed(w, scrubDownloadRequest{
 			request: request, objectStorage: objectStorage, fileID: fileID,
 			input: input, outcome: pipelineOutcomeCacheHit, startedAt: startedAt,
@@ -153,6 +157,26 @@ func (handler *Handler) Scrub(w http.ResponseWriter, request *http.Request) {
 		request: request, objectStorage: objectStorage, fileID: fileID,
 		input: input, outcome: pipelineOutcomeSuccess, startedAt: startedAt,
 	})
+}
+
+func (handler *Handler) scrubSourceAvailable(
+	w http.ResponseWriter,
+	request *http.Request,
+	objectStorage storage.Storage,
+	fileID string,
+) bool {
+	sourceExists, err := objectStorage.SourceExists(request.Context(), fileID)
+	if err != nil {
+		handler.writeUnexpectedFailure(w, request, err, "could not check source file")
+		return false
+	}
+	if sourceExists {
+		return true
+	}
+	if writeErr := httpx.WriteError(w, http.StatusNotFound, "source file not found"); writeErr != nil {
+		handler.logger.ErrorContext(request.Context(), "could not write JSON response", "error", writeErr)
+	}
+	return false
 }
 
 func (handler *Handler) scrubFileID(w http.ResponseWriter, request *http.Request, input scrubRequest) (string, bool) {
