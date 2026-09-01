@@ -6,17 +6,25 @@
 
 | Path | Contents |
 | --- | --- |
-| `backend/` | Go HTTP backend service for scrubbing, request handling, configuration, and storage. The service has its own `AGENTS.md`. |
-| `frontend/` | TypeScript/React frontend service on TanStack Start and Vite. `pnpm` manages the service. The service has its own `AGENTS.md`. |
+| `backend/` | Go HTTP backend service for scrubbing, request handling, configuration, and private storage. The service has its own `AGENTS.md`. |
+| `frontend/` | TypeScript and React frontend service on TanStack Start and Vite. `pnpm` manages the service. The service has its own `AGENTS.md`. |
 | `docs/` | Cross-service documentation. Long-lived guidance is under `docs/agent/`. Short-lived references include this file. |
 | `docker-compose.yml` | Runs the backend and frontend together for local development. |
 
 ## Service integration
 
-- Clients send public requests to the frontend. Frontend server code calls the backend over HTTP. The frontend server code uses the URL in the `BACKEND_URL` environment variable.
+- Clients send public application requests to the frontend. Frontend server code calls the backend over HTTP.
+- The frontend validates `BACKEND_URL` and creates request-scoped Ky clients with this URL as the base URL.
 - On Vercel, `vercel.json` injects `BACKEND_URL` as a service binding to the backend container. For local development, `docker-compose` or the shell supplies the value.
-- The health check in `frontend/src/domains/products/products-router.mod.server.ts` is the only current consumer of the backend HTTP API.
-- Both services restrict uploads. The frontend accepts the types in `UPLOADABLE_MIME_TYPES`: JPEG, PNG, WebP, and PDF. It accepts files up to `MAX_FILE_SIZE_BYTES`. The backend accepts PDF and no other type. It checks for `%PDF-` at offset zero. Apply each accepted-type or size-limit change to both services.
+- The products tRPC router calls backend health.
+- The wizard tRPC router provides typed proxies for workflow configuration, upload grants, dry-run inspection, revision-bound scrubbing, download-grant refresh, and confirmed deletion.
+- The tRPC workflow sends only small JSON values. It does not send file bytes.
+- The backend owns the maximum source size of `10_485_760` bytes. The frontend workflow config schema requires the same value.
+- The scrub workflow accepts PDF input only. The backend checks for `%PDF-` at offset zero and then parses the PDF structure.
+- The earlier frontend-local upload metadata route still accepts JPEG, PNG, WebP, and PDF values. It does not persist files and is not part of the typed backend workflow.
+- Source objects are private. The backend stores each sanitized result under an immutable source-revision key. The frontend uses the canonical source ETag to bind review, scrub, and download refresh to one revision.
+- The backend confirms full-flow deletion before it reports success. The operation removes the source and every sanitized revision for the file.
+- Backend workflow errors contain safe public text. The frontend maps them to safe tRPC errors and does not return provider details.
 
 ## Short-lived references for each service
 
