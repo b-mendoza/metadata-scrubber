@@ -7,6 +7,7 @@ import (
 	"errors"
 	"io"
 	"log/slog"
+	"math/big"
 	"mime"
 	"net/http"
 	"regexp"
@@ -24,9 +25,10 @@ type (
 	pipelineOutcome   string
 	publicFieldAction string
 
-	inspectPDFOperation func([]byte, scrub.InspectionOrigin) ([]scrub.Field, error)
-	cleanPDFOperation   func([]byte) ([]byte, error)
-	entropyOperation    func([]byte) (int, error)
+	inspectPDFOperation      func([]byte, scrub.InspectionOrigin) ([]scrub.Field, error)
+	cleanPDFOperation        func([]byte) ([]byte, error)
+	entropyOperation         func([]byte) (int, error)
+	admissionJitterOperation func() (int, error)
 )
 
 const (
@@ -44,10 +46,11 @@ const (
 
 	storageKeyPrefix = "uploads/"
 
-	uploadGrantExpiry       = 5 * time.Minute
-	downloadGrantExpiry     = 15 * time.Minute
-	defaultAdmissionTimeout = 2 * time.Second
-	admissionRetryAfter     = "2"
+	uploadGrantExpiry         = 5 * time.Minute
+	downloadGrantExpiry       = 15 * time.Minute
+	defaultAdmissionTimeout   = 2 * time.Second
+	admissionRetryBaseSeconds = 2
+	admissionJitterValues     = 3
 
 	admissionTimeoutMessage = "processing capacity temporarily unavailable"
 	cancellationMessage     = "request canceled"
@@ -92,6 +95,7 @@ type Handler struct {
 	inspect          inspectPDFOperation
 	clean            cleanPDFOperation
 	entropy          entropyOperation
+	admissionJitter  admissionJitterOperation
 	admissionTimeout time.Duration
 	// beforeAcquireSelect must stay a non-nil no-op in production: acquirePermit calls it
 	// unconditionally, and only a test replaces it to observe the admission select.
@@ -221,18 +225,28 @@ func requestHasSingleJSONValue(
 }
 
 type handlerOperations struct {
-	inspect inspectPDFOperation
-	clean   cleanPDFOperation
-	entropy entropyOperation
+	inspect         inspectPDFOperation
+	clean           cleanPDFOperation
+	entropy         entropyOperation
+	admissionJitter admissionJitterOperation
 }
 
 // New constructs the JSON workflow handler around one server-owned admission gate.
 func New(logger *slog.Logger, permits chan struct{}) *Handler {
 	return newHandler(logger, permits, handlerOperations{
-		inspect: scrub.InspectPDF,
-		clean:   scrub.CleanPDF,
-		entropy: rand.Read,
+		inspect:         scrub.InspectPDF,
+		clean:           scrub.CleanPDF,
+		entropy:         rand.Read,
+		admissionJitter: randomAdmissionJitter,
 	})
+}
+
+func randomAdmissionJitter() (int, error) {
+	value, err := rand.Int(rand.Reader, big.NewInt(admissionJitterValues))
+	if err != nil {
+		return 0, err
+	}
+	return int(value.Int64()), nil
 }
 
 func newHandler(logger *slog.Logger, permits chan struct{}, operations handlerOperations) *Handler {
@@ -242,6 +256,9 @@ func newHandler(logger *slog.Logger, permits chan struct{}, operations handlerOp
 	if permits == nil || cap(permits) != ProcessingPermitCount {
 		panic("handler admission gate must have capacity 2")
 	}
+	if operations.admissionJitter == nil {
+		operations.admissionJitter = randomAdmissionJitter
+	}
 
 	return &Handler{
 		logger:              logger,
@@ -249,6 +266,7 @@ func newHandler(logger *slog.Logger, permits chan struct{}, operations handlerOp
 		inspect:             operations.inspect,
 		clean:               operations.clean,
 		entropy:             operations.entropy,
+		admissionJitter:     operations.admissionJitter,
 		admissionTimeout:    defaultAdmissionTimeout,
 		beforeAcquireSelect: func() {},
 	}

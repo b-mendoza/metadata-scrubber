@@ -784,6 +784,79 @@ func runScrubFailureTest(t *testing.T, testCase scrubFailureTestCase) {
 	}
 }
 
+
+func TestAdmissionTimeoutUsesFreshWholeSecondJitterAtResponseBoundary(t *testing.T) {
+	for _, testCase := range []struct {
+		name       string
+		jitter     int
+		wantHeader string
+	}{
+		{name: "zero seconds", jitter: 0, wantHeader: "2"},
+		{name: "one second", jitter: 1, wantHeader: "3"},
+		{name: "two seconds", jitter: 2, wantHeader: "4"},
+		{name: "floor", jitter: -10, wantHeader: "1"},
+	} {
+		t.Run(testCase.name, func(t *testing.T) {
+			handler := newTestHandlerWithLogger(t, testHandlerOptions{
+				permits: make(chan struct{}, ProcessingPermitCount),
+				logger:  slog.New(slog.NewTextHandler(io.Discard, nil)),
+				admissionJitter: func() (int, error) {
+					return testCase.jitter, nil
+				},
+			})
+			recorder := httptest.NewRecorder()
+			request := httptest.NewRequest(http.MethodPost, "/api/files/dry-run", http.NoBody)
+
+			handler.writeAdmissionFailure(recorder, request, errAdmissionTimeout)
+
+			require.Equal(t, http.StatusServiceUnavailable, recorder.Code)
+			require.Equal(t, testCase.wantHeader, recorder.Header().Get(header.RetryAfter))
+			require.Regexp(t, `^[1-9][0-9]*$`, recorder.Header().Get(header.RetryAfter))
+			require.Equal(t, admissionTimeoutMessage, errorMessage(t, recorder))
+		})
+	}
+
+	jitterValues := []int{0, 2}
+	jitterCalls := 0
+	handler := newTestHandlerWithLogger(t, testHandlerOptions{
+		permits: make(chan struct{}, ProcessingPermitCount),
+		logger:  slog.New(slog.NewTextHandler(io.Discard, nil)),
+		admissionJitter: func() (int, error) {
+			value := jitterValues[jitterCalls]
+			jitterCalls++
+			return value, nil
+		},
+	})
+	for index, wantHeader := range []string{"2", "4"} {
+		recorder := httptest.NewRecorder()
+		request := httptest.NewRequest(http.MethodPost, "/api/files/dry-run", http.NoBody)
+		handler.writeAdmissionFailure(recorder, request, errAdmissionTimeout)
+		require.Equal(t, wantHeader, recorder.Header().Get(header.RetryAfter), "response %d", index)
+	}
+	require.Equal(t, 2, jitterCalls)
+}
+
+func TestAdmissionJitterFailureUsesBaseDelayAndWritesSafeLog(t *testing.T) {
+	var logs bytes.Buffer
+	handler := newTestHandlerWithLogger(t, testHandlerOptions{
+		permits: make(chan struct{}, ProcessingPermitCount),
+		logger:  slog.New(slog.NewJSONHandler(&logs, nil)),
+		admissionJitter: func() (int, error) {
+			return 0, errors.New("random-source-failure")
+		},
+	})
+	recorder := httptest.NewRecorder()
+	request := httptest.NewRequest(http.MethodPost, "/api/files/dry-run", http.NoBody)
+
+	handler.writeAdmissionFailure(recorder, request, errAdmissionTimeout)
+
+	require.Equal(t, http.StatusServiceUnavailable, recorder.Code)
+	require.Equal(t, "2", recorder.Header().Get(header.RetryAfter))
+	require.Equal(t, admissionTimeoutMessage, errorMessage(t, recorder))
+	require.Contains(t, logs.String(), `"msg":"could not generate admission retry jitter"`)
+	require.NotContains(t, recorder.Body.String(), "random-source-failure")
+}
+
 func TestSaturatedAdmissionReturnsRetryable503WithoutDownloadingWaitingSource(t *testing.T) {
 	fake := storage.NewFake()
 	observer := newBlockingStorage(fake, fileIDOne, fileIDTwo)
@@ -806,7 +879,7 @@ func TestSaturatedAdmissionReturnsRetryable503WithoutDownloadingWaitingSource(t 
 	elapsed := time.Since(startedAt)
 
 	require.Equal(t, http.StatusServiceUnavailable, recorder.Code, recorder.Body.String())
-	require.Equal(t, admissionRetryAfter, recorder.Header().Get(header.RetryAfter))
+	require.Equal(t, "2", recorder.Header().Get(header.RetryAfter))
 	require.Equal(t, admissionTimeoutMessage, errorMessage(t, recorder))
 	require.GreaterOrEqual(t, elapsed, 75*time.Millisecond)
 	require.False(t, observer.downloadObserved(fileIDThree))
@@ -1393,11 +1466,12 @@ func newTestHandler(
 }
 
 type testHandlerOptions struct {
-	permits chan struct{}
-	logger  *slog.Logger
-	inspect inspectPDFOperation
-	clean   cleanPDFOperation
-	entropy entropyOperation
+	permits         chan struct{}
+	logger          *slog.Logger
+	inspect         inspectPDFOperation
+	clean           cleanPDFOperation
+	entropy         entropyOperation
+	admissionJitter admissionJitterOperation
 }
 
 func newTestHandlerWithLogger(t *testing.T, options testHandlerOptions) *Handler {
@@ -1411,8 +1485,14 @@ func newTestHandlerWithLogger(t *testing.T, options testHandlerOptions) *Handler
 	if options.entropy == nil {
 		options.entropy = deterministicEntropy
 	}
+	if options.admissionJitter == nil {
+		options.admissionJitter = func() (int, error) { return 0, nil }
+	}
 	return newHandler(options.logger, options.permits, handlerOperations{
-		inspect: options.inspect, clean: options.clean, entropy: options.entropy,
+		inspect:         options.inspect,
+		clean:           options.clean,
+		entropy:         options.entropy,
+		admissionJitter: options.admissionJitter,
 	})
 }
 
