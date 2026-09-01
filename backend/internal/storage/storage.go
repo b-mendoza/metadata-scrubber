@@ -18,6 +18,7 @@ const (
 	// MaxSourceObjectBytes is the maximum source PDF size read into backend memory.
 	MaxSourceObjectBytes = 10_485_760
 
+	canonicalETagLength  = 32
 	minimumPresignExpiry = time.Second
 	maximumPresignExpiry = 7 * 24 * time.Hour
 )
@@ -190,14 +191,13 @@ func validateFileID(fileID string) error {
 }
 
 func validateCanonicalETag(sourceETag string) error {
-	if sourceETag == "" || strings.HasPrefix(sourceETag, "W/") {
+	if len(sourceETag) != canonicalETagLength {
 		return ErrInvalidETag
 	}
-	if strings.TrimSpace(sourceETag) != sourceETag || strings.IndexFunc(sourceETag, unicode.IsControl) >= 0 {
-		return ErrInvalidETag
-	}
-	if strings.HasPrefix(sourceETag, "\"") && strings.HasSuffix(sourceETag, "\"") {
-		return ErrInvalidETag
+	for _, character := range sourceETag {
+		if (character < '0' || character > '9') && (character < 'a' || character > 'f') {
+			return ErrInvalidETag
+		}
 	}
 
 	return nil

@@ -155,6 +155,14 @@ func TestNewServerRejectsWrongMethodsForJSONWorkflow(t *testing.T) {
 }
 
 func TestNewServerSharesOneCapacityTwoGateAcrossDryRunAndScrubMisses(t *testing.T) {
+	type dryRunRequest struct {
+		StorageKey string `json:"storageKey"`
+	}
+	type scrubRequest struct {
+		StorageKey string `json:"storageKey"`
+		ETag       string `json:"etag"`
+	}
+
 	const (
 		firstFileID  = "00000000-0000-4000-8000-000000000001"
 		secondFileID = "00000000-0000-4000-8000-000000000002"
@@ -167,7 +175,7 @@ func TestNewServerSharesOneCapacityTwoGateAcrossDryRunAndScrubMisses(t *testing.
 	for _, fileID := range []string{firstFileID, secondFileID, thirdFileID} {
 		require.NoError(t, fake.SetSource(fileID, storage.SourceObject{
 			PDFBytes: pdfBytes,
-			ETag:     "revision-" + fileID,
+			ETag:     "0123456789abcdef0123456789abcdef",
 		}))
 	}
 	observer := &serverAdmissionStorage{
@@ -179,24 +187,26 @@ func TestNewServerSharesOneCapacityTwoGateAcrossDryRunAndScrubMisses(t *testing.
 	}
 	server := newServer(config.Config{Port: 0}, observer, discardLogger())
 
+	firstDryRunBody, err := json.Marshal(dryRunRequest{StorageKey: "uploads/" + firstFileID})
+	require.NoError(t, err)
+	secondDryRunBody, err := json.Marshal(dryRunRequest{StorageKey: "uploads/" + secondFileID})
+	require.NoError(t, err)
+	scrubBody, err := json.Marshal(scrubRequest{
+		StorageKey: "uploads/" + thirdFileID,
+		ETag:       "0123456789abcdef0123456789abcdef",
+	})
+	require.NoError(t, err)
+
 	responses := make(chan *httptest.ResponseRecorder, 3)
-	for _, fileID := range []string{firstFileID, secondFileID} {
-		go func(id string) {
-			responses <- serveServerJSON(
-				server,
-				"/api/files/dry-run",
-				`{"storageKey":"uploads/`+id+`"}`,
-			)
-		}(fileID)
+	for _, body := range [][]byte{firstDryRunBody, secondDryRunBody} {
+		go func(requestBody []byte) {
+			responses <- serveServerJSON(server, "/api/files/dry-run", string(requestBody))
+		}(body)
 	}
 	observer.waitForTwoDownloads(t)
 
 	go func() {
-		responses <- serveServerJSON(
-			server,
-			"/api/files/scrub",
-			`{"storageKey":"uploads/`+thirdFileID+`","etag":"revision-`+thirdFileID+`"}`,
-		)
+		responses <- serveServerJSON(server, "/api/files/scrub", string(scrubBody))
 	}()
 	observer.waitForObservedScrubLookup(t)
 
