@@ -242,6 +242,49 @@ func TestFakeSourceExistenceUsesTheExactSourceKey(t *testing.T) {
 	}
 }
 
+func TestFakeDeleteFlowRemovesOnlyTheSelectedFileAndIsIdempotent(t *testing.T) {
+	t.Parallel()
+
+	fake := storage.NewFake()
+	for _, fileID := range []string{"file-1", "file-2"} {
+		require.NoError(t, fake.SetSource(fileID, storage.SourceObject{
+			PDFBytes: []byte("source"),
+			ETag:     canonicalETagOne,
+		}))
+		require.NoError(t, fake.SetSanitized(fileID, canonicalETagOne, []byte("sanitized one")))
+		require.NoError(t, fake.SetSanitized(fileID, canonicalETagTwo, []byte("sanitized two")))
+	}
+
+	require.NoError(t, fake.DeleteFlow(context.Background(), "file-1"))
+	firstCalls := fake.Calls()
+	require.Equal(t, []storage.FakeCall{{
+		Operation:    storage.FakeDeleteFlow,
+		FileID:       "file-1",
+		ObjectKey:    "source/file-1",
+		ObjectPrefix: "sanitized/file-1/",
+	}}, firstCalls)
+
+	exists, err := fake.SourceExists(context.Background(), "file-1")
+	require.NoError(t, err)
+	require.False(t, exists)
+	for _, sourceETag := range []string{canonicalETagOne, canonicalETagTwo} {
+		_, exists, err = fake.SanitizedBytes("file-1", sourceETag)
+		require.NoError(t, err)
+		require.False(t, exists)
+	}
+
+	exists, err = fake.SourceExists(context.Background(), "file-2")
+	require.NoError(t, err)
+	require.True(t, exists)
+	for _, sourceETag := range []string{canonicalETagOne, canonicalETagTwo} {
+		_, exists, err = fake.SanitizedBytes("file-2", sourceETag)
+		require.NoError(t, err)
+		require.True(t, exists)
+	}
+
+	require.NoError(t, fake.DeleteFlow(context.Background(), "file-1"))
+}
+
 func TestFakeUsesExactSanitizedRevisionForExistenceGrantsAndUploads(t *testing.T) {
 	t.Parallel()
 
@@ -365,6 +408,13 @@ func TestFakeKeepsInputValidationOrder(t *testing.T) {
 			wantErr: storage.ErrInvalidFileID,
 		},
 		{
+			name: "flow deletion file ID",
+			invoke: func(fake *storage.Fake) error {
+				return fake.DeleteFlow(context.Background(), "folder/file")
+			},
+			wantErr: storage.ErrInvalidFileID,
+		},
+		{
 			name: "source upload file ID before size and expiry",
 			invoke: func(fake *storage.Fake) error {
 				_, err := fake.PresignSourceUpload(context.Background(), "folder/file", 0, 0)
@@ -446,6 +496,8 @@ func TestFakePropagatesContextCancellationWithoutMutation(t *testing.T) {
 	require.ErrorIs(t, err, context.Canceled)
 	err = fake.UploadSanitized(ctx, "file-1", canonicalETagOne, []byte("not stored"))
 	require.ErrorIs(t, err, context.Canceled)
+	err = fake.DeleteFlow(ctx, "file-1")
+	require.ErrorIs(t, err, context.Canceled)
 	_, exists, stateErr := fake.SanitizedBytes("file-1", canonicalETagOne)
 	require.NoError(t, stateErr)
 	require.False(t, exists)
@@ -465,50 +517,67 @@ func TestFakeCanceledContextTakesPriorityOverInvalidInput(t *testing.T) {
 	require.Empty(t, fake.Calls())
 }
 
-func invokeFakeOperation(t *testing.T, fake *storage.Fake, operation storage.FakeOperation) error {
-	t.Helper()
-
-	switch operation {
-	case storage.FakePresignSourceUpload:
-		_, err := fake.PresignSourceUpload(context.Background(), "file-1", 1024, time.Minute)
-		return err
-	case storage.FakePresignSanitizedDownload:
-		_, err := fake.PresignSanitizedDownload(context.Background(), "file-1", canonicalETagOne, time.Minute)
-		return err
-	case storage.FakeSourceExists:
-		_, err := fake.SourceExists(context.Background(), "file-1")
-		return err
-	case storage.FakeDownloadSource:
-		_, err := fake.DownloadSource(context.Background(), "file-1", "")
-		return err
-	case storage.FakeSanitizedExists:
-		_, err := fake.SanitizedExists(context.Background(), "file-1", canonicalETagOne)
-		return err
-	case storage.FakeUploadSanitized:
-		return fake.UploadSanitized(context.Background(), "file-1", canonicalETagOne, []byte("not stored"))
-	default:
-		t.Fatalf("unknown fake operation %q", operation)
-		return nil
-	}
-}
-
 func TestFakeInjectsIndependentOrdinaryFailuresForEveryOperation(t *testing.T) {
 	t.Parallel()
 
 	injectedErr := errors.New("synthetic dependency failure")
-	for _, operation := range []storage.FakeOperation{
-		storage.FakePresignSourceUpload,
-		storage.FakePresignSanitizedDownload,
-		storage.FakeSourceExists,
-		storage.FakeDownloadSource,
-		storage.FakeSanitizedExists,
-		storage.FakeUploadSanitized,
+	for _, testCase := range []struct {
+		operation storage.FakeOperation
+		invoke    func(*storage.Fake) error
+	}{
+		{
+			operation: storage.FakePresignSourceUpload,
+			invoke: func(fake *storage.Fake) error {
+				_, err := fake.PresignSourceUpload(context.Background(), "file-1", 1024, time.Minute)
+				return err
+			},
+		},
+		{
+			operation: storage.FakePresignSanitizedDownload,
+			invoke: func(fake *storage.Fake) error {
+				_, err := fake.PresignSanitizedDownload(context.Background(), "file-1", canonicalETagOne, time.Minute)
+				return err
+			},
+		},
+		{
+			operation: storage.FakeSourceExists,
+			invoke: func(fake *storage.Fake) error {
+				_, err := fake.SourceExists(context.Background(), "file-1")
+				return err
+			},
+		},
+		{
+			operation: storage.FakeDownloadSource,
+			invoke: func(fake *storage.Fake) error {
+				_, err := fake.DownloadSource(context.Background(), "file-1", "")
+				return err
+			},
+		},
+		{
+			operation: storage.FakeSanitizedExists,
+			invoke: func(fake *storage.Fake) error {
+				_, err := fake.SanitizedExists(context.Background(), "file-1", canonicalETagOne)
+				return err
+			},
+		},
+		{
+			operation: storage.FakeUploadSanitized,
+			invoke: func(fake *storage.Fake) error {
+				return fake.UploadSanitized(context.Background(), "file-1", canonicalETagOne, []byte("not stored"))
+			},
+		},
+		{
+			operation: storage.FakeDeleteFlow,
+			invoke: func(fake *storage.Fake) error {
+				return fake.DeleteFlow(context.Background(), "file-1")
+			},
+		},
 	} {
-		t.Run(string(operation), func(t *testing.T) {
+		t.Run(string(testCase.operation), func(t *testing.T) {
 			fake := storage.NewFake()
-			fake.SetFailure(operation, injectedErr)
+			fake.SetFailure(testCase.operation, injectedErr)
 
-			err := invokeFakeOperation(t, fake, operation)
+			err := testCase.invoke(fake)
 
 			require.ErrorIs(t, err, injectedErr)
 			require.NotErrorIs(t, err, storage.ErrSourceRevisionConflict)
@@ -517,6 +586,37 @@ func TestFakeInjectsIndependentOrdinaryFailuresForEveryOperation(t *testing.T) {
 			require.False(t, exists)
 		})
 	}
+}
+
+func TestFakeSupportsConcurrentIdempotentFlowDeletion(t *testing.T) {
+	t.Parallel()
+
+	fake := storage.NewFake()
+	require.NoError(t, fake.SetSource("file-1", storage.SourceObject{
+		PDFBytes: []byte("source"),
+		ETag:     canonicalETagOne,
+	}))
+	require.NoError(t, fake.SetSanitized("file-1", canonicalETagOne, []byte("sanitized")))
+
+	operationErrors := make(chan error, 20)
+	var waitGroup sync.WaitGroup
+	for range 20 {
+		waitGroup.Go(func() {
+			operationErrors <- fake.DeleteFlow(context.Background(), "file-1")
+		})
+	}
+	waitGroup.Wait()
+	close(operationErrors)
+	for operationErr := range operationErrors {
+		require.NoError(t, operationErr)
+	}
+
+	exists, err := fake.SourceExists(context.Background(), "file-1")
+	require.NoError(t, err)
+	require.False(t, exists)
+	_, exists, err = fake.SanitizedBytes("file-1", canonicalETagOne)
+	require.NoError(t, err)
+	require.False(t, exists)
 }
 
 func TestFakeSupportsConcurrentExactRevisionOperations(t *testing.T) {

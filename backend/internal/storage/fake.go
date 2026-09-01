@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"net/url"
 	"strconv"
+	"strings"
 	"sync"
 	"time"
 )
@@ -26,6 +27,8 @@ const (
 	FakeSanitizedExists FakeOperation = "check sanitized object"
 	// FakeUploadSanitized identifies sanitized PDF writes.
 	FakeUploadSanitized FakeOperation = "upload sanitized object"
+	// FakeDeleteFlow identifies full file-flow deletion.
+	FakeDeleteFlow FakeOperation = "delete file flow"
 )
 
 var fakeOperations = map[FakeOperation]string{
@@ -35,16 +38,18 @@ var fakeOperations = map[FakeOperation]string{
 	FakeDownloadSource:           operationDownloadSource,
 	FakeSanitizedExists:          operationCheckSanitizedObject,
 	FakeUploadSanitized:          operationUploadSanitized,
+	FakeDeleteFlow:               operationDeleteFlow,
 }
 
 // FakeCall records the logical and derived inputs observed by a Fake operation.
 type FakeCall struct {
-	Operation  FakeOperation
-	FileID     string
-	SourceETag string
-	ObjectKey  string
-	SizeBytes  int64
-	Expiry     time.Duration
+	Operation    FakeOperation
+	FileID       string
+	SourceETag   string
+	ObjectKey    string
+	ObjectPrefix string
+	SizeBytes    int64
+	Expiry       time.Duration
 }
 
 // Fake is a synchronized in-memory implementation of Storage for application tests.
@@ -339,6 +344,40 @@ func (fake *Fake) UploadSanitized(
 	}
 
 	fake.sanitizedObjects[objectKey] = copyBytes(pdfBytes)
+	return nil
+}
+
+// DeleteFlow removes the source and every sanitized revision for one file ID.
+func (fake *Fake) DeleteFlow(ctx context.Context, fileID string) error {
+	if err := contextError(ctx, operationDeleteFlow); err != nil {
+		return err
+	}
+	objectKey, err := SourceObjectKey(fileID)
+	if err != nil {
+		return err
+	}
+	objectPrefix, err := SanitizedObjectPrefix(fileID)
+	if err != nil {
+		return err
+	}
+
+	fake.mu.Lock()
+	defer fake.mu.Unlock()
+	if err := fake.recordAttemptLocked(ctx, FakeCall{
+		Operation:    FakeDeleteFlow,
+		FileID:       fileID,
+		ObjectKey:    objectKey,
+		ObjectPrefix: objectPrefix,
+	}); err != nil {
+		return err
+	}
+
+	delete(fake.sources, fileID)
+	for sanitizedKey := range fake.sanitizedObjects {
+		if strings.HasPrefix(sanitizedKey, objectPrefix) {
+			delete(fake.sanitizedObjects, sanitizedKey)
+		}
+	}
 	return nil
 }
 

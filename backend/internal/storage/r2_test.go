@@ -365,6 +365,219 @@ func TestR2SanitizedUploadReturnsASanitizedDependencyError(t *testing.T) {
 	assertSafeStorageError(t, err)
 }
 
+func TestR2DeleteFlowDeletesEveryListedPageAndVerifiesBothLocations(t *testing.T) {
+	t.Parallel()
+
+	firstKey, err := SanitizedObjectKey("file-1", canonicalR2ETagOne)
+	require.NoError(t, err)
+	secondKey, err := SanitizedObjectKey("file-1", canonicalR2ETagTwo)
+	require.NoError(t, err)
+
+	requests := make(chan observedStorageRequest, 7)
+	responses := []func(http.ResponseWriter, *observedStorageRequest){
+		func(response http.ResponseWriter, _ *observedStorageRequest) {
+			response.WriteHeader(http.StatusNoContent)
+		},
+		func(response http.ResponseWriter, record *observedStorageRequest) {
+			response.Header().Set("Content-Type", "application/xml")
+			_, record.err = io.WriteString(response, listObjectsResponse(firstKey, true, "next-page"))
+		},
+		func(response http.ResponseWriter, record *observedStorageRequest) {
+			response.Header().Set("Content-Type", "application/xml")
+			_, record.err = io.WriteString(response, `<DeleteResult xmlns="http://s3.amazonaws.com/doc/2006-03-01/"></DeleteResult>`)
+		},
+		func(response http.ResponseWriter, record *observedStorageRequest) {
+			response.Header().Set("Content-Type", "application/xml")
+			_, record.err = io.WriteString(response, listObjectsResponse(secondKey, false, ""))
+		},
+		func(response http.ResponseWriter, record *observedStorageRequest) {
+			response.Header().Set("Content-Type", "application/xml")
+			_, record.err = io.WriteString(response, `<DeleteResult xmlns="http://s3.amazonaws.com/doc/2006-03-01/"></DeleteResult>`)
+		},
+		func(response http.ResponseWriter, _ *observedStorageRequest) {
+			response.WriteHeader(http.StatusNotFound)
+		},
+		func(response http.ResponseWriter, record *observedStorageRequest) {
+			response.Header().Set("Content-Type", "application/xml")
+			_, record.err = io.WriteString(response, listObjectsResponse("", false, ""))
+		},
+	}
+	var requestCount atomic.Int64
+	adapter := newTestR2Server(t, http.HandlerFunc(func(response http.ResponseWriter, request *http.Request) {
+		responseIndex := int(requestCount.Add(1)) - 1
+		body, readErr := io.ReadAll(request.Body)
+		record := observedStorageRequest{
+			method:   request.Method,
+			path:     request.URL.Path,
+			rawQuery: request.URL.RawQuery,
+			body:     body,
+			err:      readErr,
+		}
+		if responseIndex >= len(responses) {
+			response.WriteHeader(http.StatusInternalServerError)
+		} else {
+			responses[responseIndex](response, &record)
+		}
+		requests <- record
+	}))
+
+	require.NoError(t, adapter.DeleteFlow(context.Background(), "file-1"))
+	close(requests)
+
+	observed := make([]observedStorageRequest, 0, 7)
+	for request := range requests {
+		require.NoError(t, request.err)
+		observed = append(observed, request)
+	}
+	require.Len(t, observed, 7)
+	require.Equal(t, http.MethodDelete, observed[0].method)
+	require.Equal(t, "/"+testBucket+"/source/file-1", observed[0].path)
+	require.Equal(t, http.MethodGet, observed[1].method)
+	require.Contains(t, observed[1].rawQuery, "list-type=2")
+	require.Contains(t, observed[1].rawQuery, "prefix=sanitized%2Ffile-1%2F")
+	require.Equal(t, http.MethodPost, observed[2].method)
+	require.Contains(t, string(observed[2].body), firstKey)
+	require.Equal(t, http.MethodGet, observed[3].method)
+	require.Contains(t, observed[3].rawQuery, "continuation-token=next-page")
+	require.Equal(t, http.MethodPost, observed[4].method)
+	require.Contains(t, string(observed[4].body), secondKey)
+	require.Equal(t, http.MethodHead, observed[5].method)
+	require.Equal(t, "/"+testBucket+"/source/file-1", observed[5].path)
+	require.Equal(t, http.MethodGet, observed[6].method)
+	require.Contains(t, observed[6].rawQuery, "max-keys=1")
+}
+
+func TestR2DeleteFlowSucceedsWhenVerificationIsEmptyAfterAPartialProviderResult(t *testing.T) {
+	t.Parallel()
+
+	objectKey, err := SanitizedObjectKey("file-identifier-sentinel", canonicalR2ETagOne)
+	require.NoError(t, err)
+	var requestCount atomic.Int64
+	adapter := newTestR2Server(t, http.HandlerFunc(func(response http.ResponseWriter, _ *http.Request) {
+		switch requestCount.Add(1) {
+		case 1:
+			response.WriteHeader(http.StatusNoContent)
+		case 2:
+			response.Header().Set("Content-Type", "application/xml")
+			_, writeErr := io.WriteString(response, listObjectsResponse(objectKey, false, ""))
+			assert.NoError(t, writeErr)
+		case 3:
+			response.Header().Set("Content-Type", "application/xml")
+			_, writeErr := io.WriteString(response, `<DeleteResult xmlns="http://s3.amazonaws.com/doc/2006-03-01/"><Error><Key>`+objectKey+`</Key><Code>AccessDenied</Code><Message>provider-body-sentinel</Message></Error></DeleteResult>`)
+			assert.NoError(t, writeErr)
+		case 4:
+			response.WriteHeader(http.StatusNotFound)
+		case 5:
+			response.Header().Set("Content-Type", "application/xml")
+			_, writeErr := io.WriteString(response, listObjectsResponse("", false, ""))
+			assert.NoError(t, writeErr)
+		default:
+			response.WriteHeader(http.StatusInternalServerError)
+		}
+	}))
+
+	require.NoError(t, adapter.DeleteFlow(context.Background(), "file-identifier-sentinel"))
+	require.Equal(t, int64(5), requestCount.Load())
+}
+
+func TestR2DeleteFlowReportsRemainingObjectAfterAPartialProviderResult(t *testing.T) {
+	t.Parallel()
+
+	objectKey, err := SanitizedObjectKey("file-identifier-sentinel", canonicalR2ETagOne)
+	require.NoError(t, err)
+	var requestCount atomic.Int64
+	adapter := newTestR2Server(t, http.HandlerFunc(func(response http.ResponseWriter, _ *http.Request) {
+		switch requestCount.Add(1) {
+		case 1:
+			response.WriteHeader(http.StatusNoContent)
+		case 2:
+			response.Header().Set("Content-Type", "application/xml")
+			_, writeErr := io.WriteString(response, listObjectsResponse(objectKey, false, ""))
+			assert.NoError(t, writeErr)
+		case 3:
+			response.Header().Set("Content-Type", "application/xml")
+			_, writeErr := io.WriteString(response, `<DeleteResult xmlns="http://s3.amazonaws.com/doc/2006-03-01/"><Error><Key>`+objectKey+`</Key><Code>AccessDenied</Code><Message>provider-body-sentinel</Message></Error></DeleteResult>`)
+			assert.NoError(t, writeErr)
+		case 4:
+			response.WriteHeader(http.StatusNotFound)
+		case 5:
+			response.Header().Set("Content-Type", "application/xml")
+			_, writeErr := io.WriteString(response, listObjectsResponse(objectKey, false, ""))
+			assert.NoError(t, writeErr)
+		default:
+			response.WriteHeader(http.StatusInternalServerError)
+		}
+	}))
+
+	err = adapter.DeleteFlow(context.Background(), "file-identifier-sentinel")
+
+	require.ErrorIs(t, err, ErrFlowObjectsRemain)
+	require.NotErrorIs(t, err, ErrDependency)
+	assertSafeStorageError(t, err)
+	require.Equal(t, int64(5), requestCount.Load())
+}
+
+func TestR2DeleteFlowReturnsTypedFailureWhenFinalVerificationFindsAnObject(t *testing.T) {
+	for _, testCase := range []struct {
+		name          string
+		finalHeadCode int
+		finalListKey  string
+	}{
+		{name: "source remains", finalHeadCode: http.StatusOK},
+		{name: "sanitized revision remains", finalHeadCode: http.StatusNotFound, finalListKey: "sanitized/file-identifier-sentinel/remaining-object-sentinel"},
+	} {
+		t.Run(testCase.name, func(t *testing.T) {
+			var requestCount atomic.Int64
+			adapter := newTestR2Server(t, http.HandlerFunc(func(response http.ResponseWriter, request *http.Request) {
+				switch requestCount.Add(1) {
+				case 1:
+					response.WriteHeader(http.StatusNoContent)
+				case 2:
+					response.Header().Set("Content-Type", "application/xml")
+					_, writeErr := io.WriteString(response, listObjectsResponse("", false, ""))
+					assert.NoError(t, writeErr)
+				case 3:
+					response.WriteHeader(testCase.finalHeadCode)
+				case 4:
+					response.Header().Set("Content-Type", "application/xml")
+					_, writeErr := io.WriteString(response, listObjectsResponse(testCase.finalListKey, false, ""))
+					assert.NoError(t, writeErr)
+				default:
+					response.WriteHeader(http.StatusInternalServerError)
+				}
+			}))
+
+			err := adapter.DeleteFlow(context.Background(), "file-identifier-sentinel")
+
+			require.ErrorIs(t, err, ErrFlowObjectsRemain)
+			require.NotErrorIs(t, err, ErrDependency)
+			assertSafeStorageError(t, err)
+			require.Equal(t, int64(4), requestCount.Load())
+		})
+	}
+}
+
+func TestR2DeleteFlowTreatsMissingObjectsAsSuccess(t *testing.T) {
+	t.Parallel()
+
+	var requestCount atomic.Int64
+	adapter := newTestR2Server(t, http.HandlerFunc(func(response http.ResponseWriter, request *http.Request) {
+		switch requestCount.Add(1) {
+		case 1, 3:
+			response.WriteHeader(http.StatusNotFound)
+		case 2, 4:
+			response.Header().Set("Content-Type", "application/xml")
+			_, writeErr := io.WriteString(response, listObjectsResponse("", false, ""))
+			assert.NoError(t, writeErr)
+		default:
+			response.WriteHeader(http.StatusInternalServerError)
+		}
+	}))
+
+	require.NoError(t, adapter.DeleteFlow(context.Background(), "file-1"))
+	require.Equal(t, int64(4), requestCount.Load())
+}
+
 func TestR2RejectsInvalidInputsBeforeStorageRequests(t *testing.T) {
 	t.Parallel()
 
@@ -374,6 +587,8 @@ func TestR2RejectsInvalidInputsBeforeStorageRequests(t *testing.T) {
 	}))
 
 	_, err := adapter.SourceExists(context.Background(), "folder/file")
+	require.ErrorIs(t, err, ErrInvalidFileID)
+	err = adapter.DeleteFlow(context.Background(), "folder/file")
 	require.ErrorIs(t, err, ErrInvalidFileID)
 	_, err = adapter.PresignSourceUpload(context.Background(), "folder/file", 1024, time.Minute)
 	require.ErrorIs(t, err, ErrInvalidFileID)
@@ -446,11 +661,13 @@ func TestR2PropagatesContextAndSanitizesProviderFailures(t *testing.T) {
 	cancel()
 	adapter := newTestR2FailingTransport(errors.New("transport-provider-body-sentinel"))
 
-	_, err := adapter.PresignSourceUpload(ctx, "file-1", 1024, time.Minute)
+	_, err := adapter.SourceExists(ctx, "file-1")
+	require.ErrorIs(t, err, context.Canceled)
+	err = adapter.DeleteFlow(ctx, "file-1")
+	require.ErrorIs(t, err, context.Canceled)
+	_, err = adapter.PresignSourceUpload(ctx, "file-1", 1024, time.Minute)
 	require.ErrorIs(t, err, context.Canceled)
 	_, err = adapter.PresignSanitizedDownload(ctx, "file-1", "0123456789abcdef0123456789abcdef", time.Minute)
-	require.ErrorIs(t, err, context.Canceled)
-	_, err = adapter.SourceExists(ctx, "file-1")
 	require.ErrorIs(t, err, context.Canceled)
 	_, err = adapter.DownloadSource(ctx, "file-1", "")
 	require.ErrorIs(t, err, context.Canceled)
@@ -562,6 +779,27 @@ func parsePresignedURL(t *testing.T, rawURL string) *url.URL {
 	return parsed
 }
 
+func listObjectsResponse(objectKey string, truncated bool, nextToken string) string {
+	contents := ""
+	keyCount := 0
+	if objectKey != "" {
+		contents = "<Contents><Key>" + objectKey + "</Key></Contents>"
+		keyCount = 1
+	}
+	nextTokenElement := ""
+	if nextToken != "" {
+		nextTokenElement = "<NextContinuationToken>" + nextToken + "</NextContinuationToken>"
+	}
+	return fmt.Sprintf(
+		`<ListBucketResult xmlns="http://s3.amazonaws.com/doc/2006-03-01/"><Name>%s</Name><KeyCount>%d</KeyCount><MaxKeys>1000</MaxKeys><IsTruncated>%t</IsTruncated>%s%s</ListBucketResult>`,
+		testBucket,
+		keyCount,
+		truncated,
+		contents,
+		nextTokenElement,
+	)
+}
+
 func assertSafeStorageError(t *testing.T, err error) {
 	t.Helper()
 
@@ -584,6 +822,7 @@ func assertSafeStorageError(t *testing.T, err error) {
 type observedStorageRequest struct {
 	method             string
 	path               string
+	rawQuery           string
 	ifMatch            string
 	contentType        string
 	sourceETagMetadata string

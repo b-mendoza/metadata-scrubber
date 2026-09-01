@@ -32,6 +32,7 @@ const (
 	operationDownloadSource           = "downloading source object"
 	operationCheckSanitizedObject     = "checking sanitized object"
 	operationUploadSanitized          = "uploading sanitized object"
+	operationDeleteFlow               = "deleting file flow"
 )
 
 var (
@@ -49,6 +50,8 @@ var (
 	ErrInvalidETag = errors.New("invalid ETag")
 	// ErrInvalidPresignExpiry means a grant lifetime is outside the supported range.
 	ErrInvalidPresignExpiry = errors.New("invalid presign expiry")
+	// ErrFlowObjectsRemain means deletion could not prove that the file flow is empty.
+	ErrFlowObjectsRemain = errors.New("file flow objects remain")
 	// ErrDependency means the private object store could not complete an operation.
 	ErrDependency = errors.New("storage dependency failed")
 )
@@ -81,10 +84,16 @@ type FileWorkflowStorage interface {
 	UploadSanitized(ctx context.Context, fileID string, sourceETag string, pdfBytes []byte) error
 }
 
+// LifecycleStorage removes all objects for one logical file flow.
+type LifecycleStorage interface {
+	DeleteFlow(ctx context.Context, fileID string) error
+}
+
 // Storage is the provider-neutral private PDF storage boundary.
 type Storage interface {
 	UploadStorage
 	FileWorkflowStorage
+	LifecycleStorage
 }
 
 // PresignedRequest is a short-lived object operation grant and its required headers.
