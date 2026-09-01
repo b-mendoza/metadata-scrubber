@@ -3,6 +3,16 @@ import ky from "ky";
 import { afterEach, expect, test, vi } from "vitest";
 
 import { environmentSchema } from "#/shared/config/env/environment.mod.server";
+import {
+  BAD_REQUEST_STATUS_CODE,
+  CONFLICT_STATUS_CODE,
+  NOT_FOUND_STATUS_CODE,
+  PAYLOAD_TOO_LARGE_STATUS_CODE,
+  REQUEST_TIMEOUT_STATUS_CODE,
+  SERVICE_UNAVAILABLE_STATUS_CODE,
+  UNPROCESSABLE_ENTITY_STATUS_CODE,
+  UNSUPPORTED_MEDIA_TYPE_STATUS_CODE,
+} from "#/shared/constants/http/status-codes/status-codes.mod";
 import { createWorkflowHttpClient } from "#/shared/libs/ky/workflow-http-client.mod.server";
 import {
   createCallerFactory,
@@ -10,10 +20,14 @@ import {
 } from "#/shared/libs/trpc/utils/initializer/initializer.mod.server";
 import { getApplicationBindings } from "#/shared/middlewares/application-bindings/application-bindings.mod";
 
-import type { CreateUploadInput } from "./wizard-router.mod.server";
+import type {
+  CreateUploadInput,
+  DryRunInput,
+} from "./wizard-router.mod.server";
 import {
   canonicalETagSchema,
   CREATE_UPLOAD_FAILURE_MESSAGE,
+  DRY_RUN_FAILURE_MESSAGE,
   scrubFileInputSchema,
   storageKeySchema,
   wizardRouter,
@@ -121,6 +135,19 @@ test("createUpload rejects invalid input before fetch", async () => {
   expect(fetchMock).not.toHaveBeenCalled();
 });
 
+test("dryRun rejects an invalid storage key before fetch", async () => {
+  const fetchMock = vi.fn<typeof fetch>();
+  vi.stubGlobal("fetch", fetchMock);
+  const request = new Request(FRONTEND_URL);
+
+  const error = await requireTRPCError(
+    callerForRequest(request).dryRun({ storageKey: "source/not-public" }),
+  );
+
+  expect(error.code).toBe("BAD_REQUEST");
+  expect(fetchMock).not.toHaveBeenCalled();
+});
+
 test("the scrub input schema rejects a missing ETag", () => {
   const result = scrubFileInputSchema.safeParse({ storageKey: STORAGE_KEY });
 
@@ -164,4 +191,46 @@ test("createUpload rejects an invalid backend upload URL", async () => {
 
   expect(error.code).toBe("BAD_GATEWAY");
   expect(error.message).toBe(CREATE_UPLOAD_FAILURE_MESSAGE);
+});
+test("dryRun rejects an invalid backend ETag", async () => {
+  const input: DryRunInput = { storageKey: STORAGE_KEY };
+  const fetchMock = vi
+    .fn<typeof fetch>()
+    .mockResolvedValue(
+      Response.json({ etag: `"${CANONICAL_ETAG}"`, fields: [] }),
+    );
+  vi.stubGlobal("fetch", fetchMock);
+  const request = new Request(FRONTEND_URL);
+
+  const error = await requireTRPCError(callerForRequest(request).dryRun(input));
+
+  expect(error.code).toBe("BAD_GATEWAY");
+  expect(error.message).toBe(DRY_RUN_FAILURE_MESSAGE);
+});
+
+test.each([
+  [BAD_REQUEST_STATUS_CODE, "BAD_REQUEST"],
+  [NOT_FOUND_STATUS_CODE, "NOT_FOUND"],
+  [REQUEST_TIMEOUT_STATUS_CODE, "TIMEOUT"],
+  [CONFLICT_STATUS_CODE, "CONFLICT"],
+  [PAYLOAD_TOO_LARGE_STATUS_CODE, "PAYLOAD_TOO_LARGE"],
+  [UNSUPPORTED_MEDIA_TYPE_STATUS_CODE, "UNSUPPORTED_MEDIA_TYPE"],
+  [UNPROCESSABLE_ENTITY_STATUS_CODE, "UNPROCESSABLE_CONTENT"],
+  [SERVICE_UNAVAILABLE_STATUS_CODE, "SERVICE_UNAVAILABLE"],
+] as const)("dryRun maps backend HTTP %i to %s", async (status, code) => {
+  const input: DryRunInput = { storageKey: STORAGE_KEY };
+  const fetchMock = vi
+    .fn<typeof fetch>()
+    .mockResolvedValue(
+      Response.json({ error: "safe backend error" }, { status }),
+    );
+  vi.stubGlobal("fetch", fetchMock);
+  const request = new Request(FRONTEND_URL);
+
+  const error = await requireTRPCError(callerForRequest(request).dryRun(input));
+
+  expect(error.code).toBe(code);
+  expect(error.message).toBe(DRY_RUN_FAILURE_MESSAGE);
+  expect(error.message).not.toContain("safe backend error");
+  expect(fetchMock).toHaveBeenCalledOnce();
 });

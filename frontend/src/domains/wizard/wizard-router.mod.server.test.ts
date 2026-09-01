@@ -1,3 +1,5 @@
+import { once } from "node:events";
+
 import { TRPCError } from "@trpc/server";
 import ky from "ky";
 import { afterEach, expect, test, vi } from "vitest";
@@ -13,10 +15,13 @@ import { getApplicationBindings } from "#/shared/middlewares/application-binding
 import type {
   CreateUploadInput,
   CreateUploadResponse,
+  DryRunInput,
+  DryRunResponse,
   WorkflowConfig,
 } from "./wizard-router.mod.server";
 import {
   CREATE_UPLOAD_FAILURE_MESSAGE,
+  DRY_RUN_FAILURE_MESSAGE,
   wizardRouter,
   WORKFLOW_MAX_FILE_SIZE_BYTES,
 } from "./wizard-router.mod.server";
@@ -31,6 +36,7 @@ vi.mock(
 const BACKEND_BASE_URL = new URL("https://backend.test/");
 const FRONTEND_URL = "https://frontend.test/";
 const STORAGE_KEY = "uploads/00000000-0000-4000-8000-000000000001";
+const CANONICAL_ETAG = "0123456789abcdef0123456789abcdef";
 const UPLOAD_URL = "https://uploads.test/source.pdf";
 const FIRST_FETCH_CALL_INDEX = 0;
 const FETCH_INPUT_ARGUMENT_INDEX = 0;
@@ -134,6 +140,36 @@ test("createUpload sends only its typed small-JSON contract", async () => {
   expect(JSON.stringify(input)).not.toContain("fileBytes");
 });
 
+test("dryRun sends the storage key and returns a canonical reviewed revision", async () => {
+  const input: DryRunInput = { storageKey: STORAGE_KEY };
+  const response: DryRunResponse = {
+    etag: CANONICAL_ETAG,
+    fields: [
+      {
+        action: "remove",
+        label: "Title",
+        name: "title",
+        originalByteSize: 7,
+        preview: "private",
+      },
+    ],
+  };
+  const fetchMock = vi
+    .fn<typeof fetch>()
+    .mockResolvedValue(Response.json(response));
+  vi.stubGlobal("fetch", fetchMock);
+  const request = new Request(FRONTEND_URL);
+
+  const result = await callerForRequest(request).dryRun(input);
+
+  expect(result).toEqual(response);
+  const backendRequest = onlyFetchRequest(fetchMock);
+  expect(backendRequest.method).toBe("POST");
+  expect(backendRequest.url).toBe("https://backend.test/api/files/dry-run");
+  await expect(backendRequest.clone().json()).resolves.toEqual(input);
+  expect(JSON.stringify(input)).not.toContain("fileBytes");
+});
+
 test("an unclassified transport failure maps to BAD_GATEWAY without public details", async () => {
   const input: CreateUploadInput = {
     fileName: "report.pdf",
@@ -153,5 +189,32 @@ test("an unclassified transport failure maps to BAD_GATEWAY without public detai
   expect(error.message).toBe(CREATE_UPLOAD_FAILURE_MESSAGE);
   expect(error.message).not.toContain(providerDetails);
   expect(error.cause).toBe(transportFailure);
+  expect(fetchMock).toHaveBeenCalledOnce();
+});
+test("caller cancellation maps safely and starts no extra fetch", async () => {
+  const input: DryRunInput = { storageKey: STORAGE_KEY };
+  const fetchMock = vi.fn<typeof fetch>(
+    async (fetchInput): Promise<Response> => {
+      const backendRequest =
+        fetchInput instanceof Request ? fetchInput : new Request(fetchInput);
+      await once(backendRequest.signal, "abort");
+      throw new DOMException("aborted", "AbortError");
+    },
+  );
+  vi.stubGlobal("fetch", fetchMock);
+  const controller = new AbortController();
+  const request = new Request(FRONTEND_URL, { signal: controller.signal });
+
+  const errorPromise = requireTRPCError(
+    callerForRequest(request).dryRun(input),
+  );
+  await vi.waitFor(() => {
+    expect(fetchMock).toHaveBeenCalledOnce();
+  });
+  controller.abort();
+  const error = await errorPromise;
+
+  expect(error.code).toBe("BAD_GATEWAY");
+  expect(error.message).toBe(DRY_RUN_FAILURE_MESSAGE);
   expect(fetchMock).toHaveBeenCalledOnce();
 });
