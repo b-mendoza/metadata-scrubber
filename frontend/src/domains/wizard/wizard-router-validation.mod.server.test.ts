@@ -1,33 +1,74 @@
 import { TRPCError } from "@trpc/server";
-import { HTTPError, TimeoutError } from "ky";
-import { expect, test } from "vitest";
+import ky from "ky";
+import { afterEach, expect, test, vi } from "vitest";
 
+import { environmentSchema } from "#/shared/config/env/environment.mod.server";
+import { createWorkflowHttpClient } from "#/shared/libs/ky/workflow-http-client.mod.server";
 import {
-  BAD_REQUEST_STATUS_CODE,
-  CONFLICT_STATUS_CODE,
-  NOT_FOUND_STATUS_CODE,
-  PAYLOAD_TOO_LARGE_STATUS_CODE,
-  REQUEST_TIMEOUT_STATUS_CODE,
-  SERVICE_UNAVAILABLE_STATUS_CODE,
-  UNPROCESSABLE_ENTITY_STATUS_CODE,
-  UNSUPPORTED_MEDIA_TYPE_STATUS_CODE,
-} from "#/shared/constants/http/status-codes/status-codes.mod";
+  createCallerFactory,
+  createTRPCRequestContext,
+} from "#/shared/libs/trpc/utils/initializer/initializer.mod.server";
+import { getApplicationBindings } from "#/shared/middlewares/application-bindings/application-bindings.mod";
 
 import {
   canonicalETagSchema,
   createUploadInputSchema,
-  DRY_RUN_FAILURE_MESSAGE,
-  mapWorkflowRequestFailure,
   scrubFileInputSchema,
   storageKeySchema,
+  wizardRouter,
+  WORKFLOW_CONFIG_FAILURE_MESSAGE,
   WORKFLOW_MAX_FILE_SIZE_BYTES,
 } from "./wizard-router.mod.server";
 
+vi.mock(
+  import("#/shared/middlewares/application-bindings/application-bindings.mod"),
+  () => ({
+    getApplicationBindings: vi.fn(),
+  }),
+);
+
+const BACKEND_BASE_URL = new URL("https://backend.test/");
+const FRONTEND_URL = "https://frontend.test/";
 const STORAGE_KEY = "uploads/00000000-0000-4000-8000-000000000001";
 const CANONICAL_ETAG = "0123456789abcdef0123456789abcdef";
 const ALTERNATE_CANONICAL_ETAG = "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa";
 const ONE_BYTE = 1;
-const BACKEND_REQUEST = new Request("https://backend.test/api/files/dry-run");
+
+const testEnvironment = environmentSchema.parse({
+  BACKEND_URL: BACKEND_BASE_URL.href,
+});
+const createWizardCaller = createCallerFactory(wizardRouter);
+
+type WizardCaller = ReturnType<typeof createWizardCaller>;
+
+const callerForRequest = (request: Request): WizardCaller => {
+  vi.mocked(getApplicationBindings).mockReturnValue({
+    env: testEnvironment,
+    httpClient: ky.create({ baseUrl: BACKEND_BASE_URL }),
+    workflowHttpClient: createWorkflowHttpClient(BACKEND_BASE_URL),
+  });
+  return createWizardCaller(createTRPCRequestContext(request), {
+    signal: request.signal,
+  });
+};
+
+const requireTRPCError = async (
+  operation: Promise<unknown>,
+): Promise<TRPCError> => {
+  try {
+    await operation;
+  } catch (error) {
+    expect(error).toBeInstanceOf(TRPCError);
+    if (error instanceof TRPCError) {
+      return error;
+    }
+  }
+  expect.fail("the workflow procedure must reject with a TRPCError");
+};
+
+afterEach(() => {
+  vi.unstubAllGlobals();
+});
 
 test.each([
   ["lower-case mixed hex", CANONICAL_ETAG, true],
@@ -78,67 +119,20 @@ test("the scrub input schema rejects a missing ETag", () => {
   expect(result.success).toBe(false);
 });
 
-test("mapWorkflowRequestFailure maps TimeoutError to TIMEOUT", async () => {
-  const error = await mapWorkflowRequestFailure(
-    new TimeoutError(BACKEND_REQUEST),
-    DRY_RUN_FAILURE_MESSAGE,
-  );
-
-  expect(error).toBeInstanceOf(TRPCError);
-  expect(error.code).toBe("TIMEOUT");
-  expect(error.message).toBe(DRY_RUN_FAILURE_MESSAGE);
-});
-
-test("mapWorkflowRequestFailure maps unknown causes to BAD_GATEWAY", async () => {
-  const error = await mapWorkflowRequestFailure(
-    new Error("network down"),
-    DRY_RUN_FAILURE_MESSAGE,
-  );
-
-  expect(error).toBeInstanceOf(TRPCError);
-  expect(error.code).toBe("BAD_GATEWAY");
-  expect(error.message).toBe(DRY_RUN_FAILURE_MESSAGE);
-});
-
-test("mapWorkflowRequestFailure maps an invalid HTTP body to BAD_GATEWAY", async () => {
-  const response = new Response("not-json", { status: BAD_REQUEST_STATUS_CODE });
-  const error = await mapWorkflowRequestFailure(
-    new HTTPError(response, BACKEND_REQUEST, {
-      method: "POST",
-      url: BACKEND_REQUEST.url,
+test("getWorkflowConfig rejects a wrong backend-owned byte limit", async () => {
+  const fetchMock = vi.fn<typeof fetch>().mockResolvedValue(
+    Response.json({
+      maxFileSizeBytes: WORKFLOW_MAX_FILE_SIZE_BYTES - ONE_BYTE,
     }),
-    DRY_RUN_FAILURE_MESSAGE,
+  );
+  vi.stubGlobal("fetch", fetchMock);
+  const request = new Request(FRONTEND_URL);
+
+  const error = await requireTRPCError(
+    callerForRequest(request).getWorkflowConfig(),
   );
 
-  expect(error).toBeInstanceOf(TRPCError);
   expect(error.code).toBe("BAD_GATEWAY");
-  expect(error.message).toBe(DRY_RUN_FAILURE_MESSAGE);
+  expect(error.message).toBe(WORKFLOW_CONFIG_FAILURE_MESSAGE);
+  expect(fetchMock).toHaveBeenCalledOnce();
 });
-
-test.each([
-  [BAD_REQUEST_STATUS_CODE, "BAD_REQUEST"],
-  [NOT_FOUND_STATUS_CODE, "NOT_FOUND"],
-  [REQUEST_TIMEOUT_STATUS_CODE, "TIMEOUT"],
-  [CONFLICT_STATUS_CODE, "CONFLICT"],
-  [PAYLOAD_TOO_LARGE_STATUS_CODE, "PAYLOAD_TOO_LARGE"],
-  [UNSUPPORTED_MEDIA_TYPE_STATUS_CODE, "UNSUPPORTED_MEDIA_TYPE"],
-  [UNPROCESSABLE_ENTITY_STATUS_CODE, "UNPROCESSABLE_CONTENT"],
-  [SERVICE_UNAVAILABLE_STATUS_CODE, "SERVICE_UNAVAILABLE"],
-] as const)(
-  "mapWorkflowRequestFailure maps backend HTTP %i to %s",
-  async (status, code) => {
-    const response = Response.json({ error: "safe backend error" }, { status });
-    const error = await mapWorkflowRequestFailure(
-      new HTTPError(response, BACKEND_REQUEST, {
-        method: "POST",
-        url: BACKEND_REQUEST.url,
-      }),
-      DRY_RUN_FAILURE_MESSAGE,
-    );
-
-    expect(error).toBeInstanceOf(TRPCError);
-    expect(error.code).toBe(code);
-    expect(error.message).toBe(DRY_RUN_FAILURE_MESSAGE);
-    expect(error.message).not.toContain("safe backend error");
-  },
-);
