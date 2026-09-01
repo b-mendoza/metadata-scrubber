@@ -17,6 +17,8 @@ import {
 import { getApplicationBindings } from "#/shared/middlewares/application-bindings/application-bindings.mod";
 
 import type {
+  ConfirmDeleteInput,
+  ConfirmDeleteResponse,
   CreateUploadInput,
   CreateUploadResponse,
   DryRunInput,
@@ -28,6 +30,7 @@ import type {
   WorkflowConfig,
 } from "./wizard-router.mod.server";
 import {
+  CONFIRM_DELETE_FAILURE_MESSAGE,
   CREATE_UPLOAD_FAILURE_MESSAGE,
   DRY_RUN_FAILURE_MESSAGE,
   REFRESH_DOWNLOAD_GRANT_FAILURE_MESSAGE,
@@ -236,6 +239,25 @@ test("refreshDownloadGrant targets one exact sanitized revision", async () => {
   expect(JSON.stringify(input)).not.toContain("fileBytes");
 });
 
+test("confirmDelete sends one typed request and returns confirmed deletion", async () => {
+  const input: ConfirmDeleteInput = { storageKey: STORAGE_KEY };
+  const response: ConfirmDeleteResponse = { status: "deleted" };
+  const fetchMock = vi
+    .fn<typeof fetch>()
+    .mockResolvedValue(Response.json(response));
+  vi.stubGlobal("fetch", fetchMock);
+  const request = new Request(FRONTEND_URL);
+
+  const result = await callerForRequest(request).confirmDelete(input);
+
+  expect(result).toEqual(response);
+  const backendRequest = onlyFetchRequest(fetchMock);
+  expect(backendRequest.method).toBe("POST");
+  expect(backendRequest.url).toBe("https://backend.test/api/files/delete");
+  await expect(backendRequest.clone().json()).resolves.toEqual(input);
+  expect(JSON.stringify(input)).not.toContain("fileBytes");
+});
+
 test("scrubFile keeps missing source and revision conflict results distinct", async () => {
   const input: ScrubFileInput = {
     etag: CANONICAL_ETAG,
@@ -321,6 +343,49 @@ test("refreshDownloadGrant maps a missing revision to NOT_FOUND", async () => {
   expect(fetchMock).toHaveBeenCalledOnce();
 });
 
+
+test("confirmDelete maps unconfirmed deletion to CONFLICT", async () => {
+  const input: ConfirmDeleteInput = { storageKey: STORAGE_KEY };
+  const fetchMock = vi
+    .fn<typeof fetch>()
+    .mockResolvedValue(
+      Response.json(
+        { error: "file deletion could not be confirmed" },
+        { status: CONFLICT_STATUS_CODE },
+      ),
+    );
+  vi.stubGlobal("fetch", fetchMock);
+  const request = new Request(FRONTEND_URL);
+
+  const error = await requireTRPCError(
+    callerForRequest(request).confirmDelete(input),
+  );
+
+  expect(error.code).toBe("CONFLICT");
+  expect(error.message).toBe(CONFIRM_DELETE_FAILURE_MESSAGE);
+  expect(fetchMock).toHaveBeenCalledOnce();
+});
+
+test("invalid backend error JSON maps to BAD_GATEWAY without public details", async () => {
+  const input: ConfirmDeleteInput = { storageKey: STORAGE_KEY };
+  const providerDetails = "provider-request-id-and-object-key";
+  const fetchMock = vi
+    .fn<typeof fetch>()
+    .mockResolvedValue(
+      new Response(providerDetails, { status: CONFLICT_STATUS_CODE }),
+    );
+  vi.stubGlobal("fetch", fetchMock);
+  const request = new Request(FRONTEND_URL);
+
+  const error = await requireTRPCError(
+    callerForRequest(request).confirmDelete(input),
+  );
+
+  expect(error.code).toBe("BAD_GATEWAY");
+  expect(error.message).toBe(CONFIRM_DELETE_FAILURE_MESSAGE);
+  expect(error.message).not.toContain(providerDetails);
+  expect(fetchMock).toHaveBeenCalledOnce();
+});
 
 test("a workflow client timeout maps to TIMEOUT without a retry", async () => {
   vi.useFakeTimers();
