@@ -78,7 +78,7 @@ func TestRunRejectsIncompleteOrInvalidR2ConfigurationBeforeStartingServer(t *tes
 func TestNewServerConfiguresAddressAndHandler(t *testing.T) {
 	t.Parallel()
 
-	server := newTestServer(discardLogger())
+	server := newTestServer(slog.New(slog.DiscardHandler))
 
 	require.Equal(t, ":0", server.Addr)
 	require.Equal(t, readHeaderTimeout, server.ReadHeaderTimeout)
@@ -106,7 +106,7 @@ func TestNewServerLogsRequests(t *testing.T) {
 func TestNewServerHandlesCORSPreflight(t *testing.T) {
 	t.Parallel()
 
-	server := newTestServer(discardLogger())
+	server := newTestServer(slog.New(slog.DiscardHandler))
 	request := httptest.NewRequest(http.MethodOptions, "/api/files/scrub", http.NoBody)
 	recorder := serveServer(server, request)
 
@@ -118,7 +118,7 @@ func TestNewServerHandlesCORSPreflight(t *testing.T) {
 func TestNewServerRoutesJSONWorkflowAndRemovesLegacyScrub(t *testing.T) {
 	t.Parallel()
 
-	server := newTestServer(discardLogger())
+	server := newTestServer(slog.New(slog.DiscardHandler))
 	testCases := []struct {
 		path       string
 		wantStatus int
@@ -141,7 +141,7 @@ func TestNewServerRoutesJSONWorkflowAndRemovesLegacyScrub(t *testing.T) {
 func TestNewServerRoutesBackendOwnedWorkflowConfig(t *testing.T) {
 	t.Parallel()
 
-	server := newTestServer(discardLogger())
+	server := newTestServer(slog.New(slog.DiscardHandler))
 	request := httptest.NewRequest(http.MethodGet, "/api/files/config", http.NoBody)
 	recorder := serveServer(server, request)
 
@@ -164,7 +164,7 @@ func TestCanonicalCapacityAndSizeLimitsStayPinned(t *testing.T) {
 func TestNewServerRejectsWrongMethodsForJSONWorkflow(t *testing.T) {
 	t.Parallel()
 
-	server := newTestServer(discardLogger())
+	server := newTestServer(slog.New(slog.DiscardHandler))
 	tests := []struct {
 		method string
 		path   string
@@ -215,7 +215,7 @@ func TestNewServerSharesOneCapacityTwoGateAcrossDryRunAndScrubMisses(t *testing.
 		observedScrubFileID: thirdFileID,
 		observedScrubLookup: make(chan struct{}),
 	}
-	server := newServer(config.Config{Port: 0}, observer, discardLogger())
+	server := newServer(config.Config{Port: 0}, observer, slog.New(slog.DiscardHandler))
 
 	firstDryRunBody, err := json.Marshal(dryRunRequest{StorageKey: "uploads/" + firstFileID})
 	require.NoError(t, err)
@@ -262,10 +262,6 @@ func TestNewServerSharesOneCapacityTwoGateAcrossDryRunAndScrubMisses(t *testing.
 		}
 	}
 	require.Equal(t, 2, observer.peakDownloads())
-}
-
-func discardLogger() *slog.Logger {
-	return slog.New(slog.DiscardHandler)
 }
 
 func newTestServer(logger *slog.Logger) *http.Server {
