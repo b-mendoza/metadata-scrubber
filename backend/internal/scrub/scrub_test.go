@@ -591,18 +591,14 @@ func TestCleanPDFFailurePathsReturnNilOutput(t *testing.T) {
 func TestPDFPathsRejectUndecodableMetadataAtomically(t *testing.T) {
 	testCases := []struct {
 		name     string
-		pdfBytes func(*testing.T) []byte
+		pdfBytes []byte
 	}{
-		{name: "unsupported Info value", pdfBytes: func(t *testing.T) []byte {
-			return buildPDFWithInfo(t, map[string]string{"Custom": "[1 2]"})
-		}},
-		{name: "non UTF-8 metadata stream", pdfBytes: func(t *testing.T) []byte {
-			return buildPDFWithInfoAndRawMetadataAtLocation(t, map[string]string{}, string([]byte{0xff, 0xfe}), catalogMetadata)
-		}},
+		{name: "unsupported Info value", pdfBytes: buildPDFWithInfo(t, map[string]string{"Custom": "[1 2]"})},
+		{name: "non UTF-8 metadata stream", pdfBytes: buildPDFWithInfoAndRawMetadataAtLocation(t, map[string]string{}, string([]byte{0xff, 0xfe}), catalogMetadata)},
 	}
 	for _, testCase := range testCases {
 		t.Run(testCase.name, func(t *testing.T) {
-			pdfBytes := testCase.pdfBytes(t)
+			pdfBytes := testCase.pdfBytes
 			work := &observedPDFWork{}
 
 			fields, inspectErr := InspectPDF(pdfBytes, PublicInput)
