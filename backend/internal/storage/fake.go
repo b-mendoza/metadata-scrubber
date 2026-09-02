@@ -31,16 +31,6 @@ const (
 	FakeDeleteFlow FakeOperation = "delete file flow"
 )
 
-var fakeOperations = map[FakeOperation]string{
-	FakePresignSourceUpload:      operationPresignSourceUpload,
-	FakePresignSanitizedDownload: operationPresignSanitizedDownload,
-	FakeSourceExists:             operationCheckSourceObject,
-	FakeDownloadSource:           operationDownloadSource,
-	FakeSanitizedExists:          operationCheckSanitizedObject,
-	FakeUploadSanitized:          operationUploadSanitized,
-	FakeDeleteFlow:               operationDeleteFlow,
-}
-
 // FakeCall records the logical and derived inputs observed by a Fake operation.
 type FakeCall struct {
 	Operation    FakeOperation
@@ -140,8 +130,7 @@ func (fake *Fake) Calls() []FakeCall {
 // failure: Calls reports every validated attempt, including attempts that fail
 // through injection, while input-validation failures never reach this method
 // and are therefore never recorded.
-func (fake *Fake) recordAttemptLocked(ctx context.Context, call FakeCall) error {
-	operation := fakeOperations[call.Operation]
+func (fake *Fake) recordAttemptLocked(ctx context.Context, operation string, call FakeCall) error {
 	if err := contextError(ctx, operation); err != nil {
 		return err
 	}
@@ -171,7 +160,7 @@ func (fake *Fake) PresignSourceUpload(
 
 	fake.mu.Lock()
 	defer fake.mu.Unlock()
-	if err := fake.recordAttemptLocked(ctx, FakeCall{
+	if err := fake.recordAttemptLocked(ctx, operationPresignSourceUpload, FakeCall{
 		Operation: FakePresignSourceUpload,
 		FileID:    fileID,
 		ObjectKey: objectKey,
@@ -208,7 +197,7 @@ func (fake *Fake) PresignSanitizedDownload(
 
 	fake.mu.Lock()
 	defer fake.mu.Unlock()
-	if err := fake.recordAttemptLocked(ctx, FakeCall{
+	if err := fake.recordAttemptLocked(ctx, operationPresignSanitizedDownload, FakeCall{
 		Operation:  FakePresignSanitizedDownload,
 		FileID:     fileID,
 		SourceETag: sourceETag,
@@ -237,7 +226,7 @@ func (fake *Fake) SourceExists(ctx context.Context, fileID string) (bool, error)
 
 	fake.mu.Lock()
 	defer fake.mu.Unlock()
-	if err := fake.recordAttemptLocked(ctx, FakeCall{
+	if err := fake.recordAttemptLocked(ctx, operationCheckSourceObject, FakeCall{
 		Operation: FakeSourceExists,
 		FileID:    fileID,
 		ObjectKey: objectKey,
@@ -265,7 +254,7 @@ func (fake *Fake) DownloadSource(
 
 	fake.mu.Lock()
 	defer fake.mu.Unlock()
-	if err := fake.recordAttemptLocked(ctx, FakeCall{
+	if err := fake.recordAttemptLocked(ctx, operationDownloadSource, FakeCall{
 		Operation:  FakeDownloadSource,
 		FileID:     fileID,
 		SourceETag: expectedETag,
@@ -304,7 +293,7 @@ func (fake *Fake) SanitizedExists(
 
 	fake.mu.Lock()
 	defer fake.mu.Unlock()
-	if err := fake.recordAttemptLocked(ctx, FakeCall{
+	if err := fake.recordAttemptLocked(ctx, operationCheckSanitizedObject, FakeCall{
 		Operation:  FakeSanitizedExists,
 		FileID:     fileID,
 		SourceETag: sourceETag,
@@ -334,7 +323,7 @@ func (fake *Fake) UploadSanitized(
 
 	fake.mu.Lock()
 	defer fake.mu.Unlock()
-	if err := fake.recordAttemptLocked(ctx, FakeCall{
+	if err := fake.recordAttemptLocked(ctx, operationUploadSanitized, FakeCall{
 		Operation:  FakeUploadSanitized,
 		FileID:     fileID,
 		SourceETag: sourceETag,
@@ -363,7 +352,7 @@ func (fake *Fake) DeleteFlow(ctx context.Context, fileID string) error {
 
 	fake.mu.Lock()
 	defer fake.mu.Unlock()
-	if err := fake.recordAttemptLocked(ctx, FakeCall{
+	if err := fake.recordAttemptLocked(ctx, operationDeleteFlow, FakeCall{
 		Operation:    FakeDeleteFlow,
 		FileID:       fileID,
 		ObjectKey:    objectKey,
