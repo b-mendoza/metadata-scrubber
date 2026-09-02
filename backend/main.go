@@ -27,20 +27,16 @@ const (
 
 func main() {
 	logger := slog.New(slog.NewJSONHandler(os.Stdout, nil))
-	if err := runProcess(logger); err != nil {
-		logger.Error("metadata-scrubber stopped", "error", err)
-		os.Exit(1)
-	}
-}
-
-func runProcess(logger *slog.Logger) error {
 	slog.SetDefault(logger)
 	scrub.DisableConfigDir()
 
 	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
-	defer stop()
-
-	return run(ctx)
+	if err := run(ctx); err != nil {
+		stop()
+		logger.Error("metadata-scrubber stopped", "error", err)
+		os.Exit(1)
+	}
+	stop()
 }
 
 // run returns the first ready listener result or the result of graceful shutdown after cancellation.
