@@ -51,10 +51,6 @@ const FRONTEND_URL = "https://frontend.test/";
 const STORAGE_KEY = "uploads/00000000-0000-4000-8000-000000000001";
 const CANONICAL_ETAG = "0123456789abcdef0123456789abcdef";
 const DOWNLOAD_URL = "https://downloads.test/sanitized.pdf";
-const UPLOAD_URL = "https://uploads.test/source.pdf";
-const EXPIRES_AT = "2026-09-01T12:15:00Z";
-const FIRST_FETCH_CALL_INDEX = 0;
-const FETCH_INPUT_ARGUMENT_INDEX = 0;
 const TWO_FETCH_ATTEMPTS = 2;
 const MINIMUM_FILE_SIZE_BYTES = 1;
 
@@ -92,9 +88,9 @@ const onlyFetchRequest = (
   fetchMock: ReturnType<typeof vi.fn<typeof fetch>>,
 ): Request => {
   expect(fetchMock).toHaveBeenCalledOnce();
-  const firstFetchCall = fetchMock.mock.calls.at(FIRST_FETCH_CALL_INDEX);
+  const [firstFetchCall] = fetchMock.mock.calls;
   expect(firstFetchCall).toBeDefined();
-  const request = firstFetchCall?.at(FETCH_INPUT_ARGUMENT_INDEX);
+  const [request] = firstFetchCall ?? [];
   expect(request).toBeInstanceOf(Request);
   if (!(request instanceof Request)) {
     expect.fail("Ky must call fetch with a Request");
@@ -132,7 +128,7 @@ test("createUpload sends only its typed small-JSON contract", async () => {
   };
   const response: CreateUploadResponse = {
     storageKey: STORAGE_KEY,
-    uploadUrl: UPLOAD_URL,
+    uploadUrl: "https://uploads.test/source.pdf",
   };
   const fetchMock = vi
     .fn<typeof fetch>()
@@ -212,7 +208,7 @@ test("refreshDownloadGrant targets one exact sanitized revision", async () => {
   };
   const response: RefreshDownloadGrantResponse = {
     downloadUrl: DOWNLOAD_URL,
-    expiresAt: EXPIRES_AT,
+    expiresAt: "2026-09-01T12:15:00Z",
   };
   const fetchMock = vi
     .fn<typeof fetch>()
