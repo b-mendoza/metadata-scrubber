@@ -212,7 +212,6 @@ test("scrubFile forwards the exact reviewed ETag without file bytes", async () =
   expect(JSON.stringify(input)).not.toContain("fileBytes");
 });
 
-
 test("refreshDownloadGrant targets one exact sanitized revision", async () => {
   const input: RefreshDownloadGrantInput = {
     etag: CANONICAL_ETAG,
@@ -336,7 +335,6 @@ test("duplicate scrub success returns a fresh normal done response", async () =>
   expect(fetchMock).toHaveBeenCalledTimes(TWO_FETCH_ATTEMPTS);
 });
 
-
 test("refreshDownloadGrant maps a missing revision to NOT_FOUND", async () => {
   const input: RefreshDownloadGrantInput = {
     etag: CANONICAL_ETAG,
@@ -361,7 +359,6 @@ test("refreshDownloadGrant maps a missing revision to NOT_FOUND", async () => {
   expect(error.message).toBe(REFRESH_DOWNLOAD_GRANT_FAILURE_MESSAGE);
   expect(fetchMock).toHaveBeenCalledOnce();
 });
-
 
 test("confirmDelete maps unconfirmed deletion to CONFLICT", async () => {
   const input: ConfirmDeleteInput = { storageKey: STORAGE_KEY };
@@ -406,6 +403,28 @@ test("invalid backend error JSON maps to BAD_GATEWAY without public details", as
   expect(fetchMock).toHaveBeenCalledOnce();
 });
 
+test("an unclassified transport failure maps to BAD_GATEWAY without public details", async () => {
+  const input: CreateUploadInput = {
+    fileName: "report.pdf",
+    fileSizeBytes: MINIMUM_FILE_SIZE_BYTES,
+  };
+  const providerDetails = "provider-credential-sentinel";
+  const transportFailure = new Error(providerDetails);
+  const fetchMock = vi.fn<typeof fetch>().mockRejectedValue(transportFailure);
+  vi.stubGlobal("fetch", fetchMock);
+  const request = new Request(FRONTEND_URL);
+
+  const error = await requireTRPCError(
+    callerForRequest(request).createUpload(input),
+  );
+
+  expect(error.code).toBe("BAD_GATEWAY");
+  expect(error.message).toBe(CREATE_UPLOAD_FAILURE_MESSAGE);
+  expect(error.message).not.toContain(providerDetails);
+  expect(error.cause).toBe(transportFailure);
+  expect(fetchMock).toHaveBeenCalledOnce();
+});
+
 test("a workflow client timeout maps to TIMEOUT without a retry", async () => {
   vi.useFakeTimers();
   const input: RefreshDownloadGrantInput = {
@@ -429,27 +448,6 @@ test("a workflow client timeout maps to TIMEOUT without a retry", async () => {
   expect(fetchMock).toHaveBeenCalledOnce();
 });
 
-test("an unclassified transport failure maps to BAD_GATEWAY without public details", async () => {
-  const input: CreateUploadInput = {
-    fileName: "report.pdf",
-    fileSizeBytes: MINIMUM_FILE_SIZE_BYTES,
-  };
-  const providerDetails = "provider-credential-sentinel";
-  const transportFailure = new Error(providerDetails);
-  const fetchMock = vi.fn<typeof fetch>().mockRejectedValue(transportFailure);
-  vi.stubGlobal("fetch", fetchMock);
-  const request = new Request(FRONTEND_URL);
-
-  const error = await requireTRPCError(
-    callerForRequest(request).createUpload(input),
-  );
-
-  expect(error.code).toBe("BAD_GATEWAY");
-  expect(error.message).toBe(CREATE_UPLOAD_FAILURE_MESSAGE);
-  expect(error.message).not.toContain(providerDetails);
-  expect(error.cause).toBe(transportFailure);
-  expect(fetchMock).toHaveBeenCalledOnce();
-});
 test("caller cancellation maps safely and starts no extra fetch", async () => {
   const input: DryRunInput = { storageKey: STORAGE_KEY };
   const fetchMock = vi.fn<typeof fetch>(
