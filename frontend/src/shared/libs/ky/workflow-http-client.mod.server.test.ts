@@ -256,6 +256,27 @@ test.each([
   },
 );
 
+test("workflow retries reject a network failure after one attempt", async () => {
+  vi.useFakeTimers();
+  const networkFailure = new TypeError("synthetic network failure");
+  const fetchMock = vi.fn<typeof fetch>().mockRejectedValue(networkFailure);
+  vi.stubGlobal("fetch", fetchMock);
+  const client = createWorkflowHttpClient(BACKEND_BASE_URL);
+
+  const failurePromise = captureFailure(
+    client.post(WORKFLOW_PATH, {
+      retry: WORKFLOW_SERVER_DIRECTED_RETRY_OPTIONS,
+      timeout: WORKFLOW_DRY_RUN_TIMEOUT_MS,
+      totalTimeout: WORKFLOW_DRY_RUN_TIMEOUT_MS,
+    }),
+  );
+  await vi.runAllTimersAsync();
+
+  const error = await failurePromise;
+  expect(error).toBe(networkFailure);
+  expect(fetchMock).toHaveBeenCalledOnce();
+});
+
 test("a one-shot request does not retry any upstream failure", async () => {
   vi.useFakeTimers();
   const fetchMock = vi
