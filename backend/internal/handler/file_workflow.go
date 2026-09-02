@@ -118,7 +118,7 @@ func (handler *Handler) Scrub(w http.ResponseWriter, request *http.Request) {
 	if objectStorage == nil {
 		return
 	}
-	workflowRequest := scrubWorkflowRequest{
+	scrubWorkflow := scrubWorkflowRequest{
 		request: request, objectStorage: objectStorage, fileID: fileID, input: input, startedAt: startedAt,
 	}
 
@@ -132,14 +132,14 @@ func (handler *Handler) Scrub(w http.ResponseWriter, request *http.Request) {
 		return
 	}
 	if sanitizedExists {
-		handler.presignScrubbed(w, workflowRequest, pipelineOutcomeCacheHit)
+		handler.presignScrubbed(w, scrubWorkflow, pipelineOutcomeCacheHit)
 		return
 	}
 
-	if !handler.materializeScrubbed(w, workflowRequest) {
+	if !handler.materializeScrubbed(w, scrubWorkflow) {
 		return
 	}
-	handler.presignScrubbed(w, workflowRequest, pipelineOutcomeSuccess)
+	handler.presignScrubbed(w, scrubWorkflow, pipelineOutcomeSuccess)
 }
 
 func (handler *Handler) scrubSourceAvailable(w http.ResponseWriter, request *http.Request, objectStorage storage.Storage, fileID string) bool {
@@ -182,66 +182,66 @@ type scrubWorkflowRequest struct {
 	startedAt     time.Time
 }
 
-func (handler *Handler) materializeScrubbed(w http.ResponseWriter, input scrubWorkflowRequest) bool {
-	cleanedBytes, err := handler.cleanSource(input)
+func (handler *Handler) materializeScrubbed(w http.ResponseWriter, scrubWorkflow scrubWorkflowRequest) bool {
+	cleanedBytes, err := handler.cleanSource(scrubWorkflow)
 	if errors.Is(err, errAdmissionFailure) {
-		handler.writeAdmissionFailure(w, input.request, err)
+		handler.writeAdmissionFailure(w, scrubWorkflow.request, err)
 		return false
 	}
 	if err != nil {
 		failure := classifyPipelineFailure(err, "could not scrub PDF")
-		handler.logStage(pipelineLogEvent{ctx: input.request.Context(), stage: pipelineStageScrubbed, storageKey: input.input.StorageKey, outcome: failure.outcome, startedAt: input.startedAt})
+		handler.logStage(pipelineLogEvent{ctx: scrubWorkflow.request.Context(), stage: pipelineStageScrubbed, storageKey: scrubWorkflow.input.StorageKey, outcome: failure.outcome, startedAt: scrubWorkflow.startedAt})
 		if writeErr := httpx.WriteError(w, failure.status, failure.message); writeErr != nil {
-			handler.logger.ErrorContext(input.request.Context(), "could not write JSON response", "error", writeErr)
+			handler.logger.ErrorContext(scrubWorkflow.request.Context(), "could not write JSON response", "error", writeErr)
 		}
 		return false
 	}
-	handler.logStage(pipelineLogEvent{ctx: input.request.Context(), stage: pipelineStageScrubbed, storageKey: input.input.StorageKey, outcome: pipelineOutcomeSuccess, startedAt: input.startedAt})
+	handler.logStage(pipelineLogEvent{ctx: scrubWorkflow.request.Context(), stage: pipelineStageScrubbed, storageKey: scrubWorkflow.input.StorageKey, outcome: pipelineOutcomeSuccess, startedAt: scrubWorkflow.startedAt})
 
-	if err := input.objectStorage.UploadSanitized(input.request.Context(), input.fileID, input.input.ETag, cleanedBytes); err != nil {
-		handler.writeUnexpectedFailure(w, input.request, err, "could not store scrubbed file")
+	if err := scrubWorkflow.objectStorage.UploadSanitized(scrubWorkflow.request.Context(), scrubWorkflow.fileID, scrubWorkflow.input.ETag, cleanedBytes); err != nil {
+		handler.writeUnexpectedFailure(w, scrubWorkflow.request, err, "could not store scrubbed file")
 		return false
 	}
 	return true
 }
 
-func (handler *Handler) cleanSource(input scrubWorkflowRequest) ([]byte, error) {
-	release, err := handler.acquirePermit(input.request.Context())
+func (handler *Handler) cleanSource(scrubWorkflow scrubWorkflowRequest) ([]byte, error) {
+	release, err := handler.acquirePermit(scrubWorkflow.request.Context())
 	if err != nil {
 		return nil, fmt.Errorf("%w: %w", errAdmissionFailure, err)
 	}
 	defer release()
 
-	source, err := input.objectStorage.DownloadSource(input.request.Context(), input.fileID, input.input.ETag)
+	source, err := scrubWorkflow.objectStorage.DownloadSource(scrubWorkflow.request.Context(), scrubWorkflow.fileID, scrubWorkflow.input.ETag)
 	if err != nil {
 		return nil, err
 	}
 	if !sniff.IsPDFCandidate(source.PDFBytes) {
-		handler.logStage(pipelineLogEvent{ctx: input.request.Context(), stage: pipelineStageSniffed, storageKey: input.input.StorageKey, outcome: pipelineOutcomeRejected, startedAt: input.startedAt})
+		handler.logStage(pipelineLogEvent{ctx: scrubWorkflow.request.Context(), stage: pipelineStageSniffed, storageKey: scrubWorkflow.input.StorageKey, outcome: pipelineOutcomeRejected, startedAt: scrubWorkflow.startedAt})
 		return nil, errNotPDF
 	}
-	handler.logStage(pipelineLogEvent{ctx: input.request.Context(), stage: pipelineStageSniffed, storageKey: input.input.StorageKey, outcome: pipelineOutcomeAccepted, startedAt: input.startedAt})
+	handler.logStage(pipelineLogEvent{ctx: scrubWorkflow.request.Context(), stage: pipelineStageSniffed, storageKey: scrubWorkflow.input.StorageKey, outcome: pipelineOutcomeAccepted, startedAt: scrubWorkflow.startedAt})
 
 	return handler.clean(source.PDFBytes)
 }
 
-func (handler *Handler) presignScrubbed(w http.ResponseWriter, input scrubWorkflowRequest, outcome pipelineOutcome) {
-	grant, err := input.objectStorage.PresignSanitizedDownload(
-		input.request.Context(),
-		input.fileID,
-		input.input.ETag,
+func (handler *Handler) presignScrubbed(w http.ResponseWriter, scrubWorkflow scrubWorkflowRequest, outcome pipelineOutcome) {
+	grant, err := scrubWorkflow.objectStorage.PresignSanitizedDownload(
+		scrubWorkflow.request.Context(),
+		scrubWorkflow.fileID,
+		scrubWorkflow.input.ETag,
 		downloadGrantExpiry,
 	)
 	if err != nil {
-		handler.writeUnexpectedFailure(w, input.request, err, "could not create download")
+		handler.writeUnexpectedFailure(w, scrubWorkflow.request, err, "could not create download")
 		return
 	}
 
-	handler.logStage(pipelineLogEvent{ctx: input.request.Context(), stage: pipelineStagePresigned, storageKey: input.input.StorageKey, outcome: outcome, startedAt: input.startedAt})
+	handler.logStage(pipelineLogEvent{ctx: scrubWorkflow.request.Context(), stage: pipelineStagePresigned, storageKey: scrubWorkflow.input.StorageKey, outcome: outcome, startedAt: scrubWorkflow.startedAt})
 	if err := writeJSON(w, http.StatusOK, scrubResponse{
 		Status: "done",
 		Result: scrubResponseResult{DownloadURL: grant.URL},
 	}); err != nil {
-		handler.logger.ErrorContext(input.request.Context(), "could not write JSON response", "error", err)
+		handler.logger.ErrorContext(scrubWorkflow.request.Context(), "could not write JSON response", "error", err)
 	}
 }
