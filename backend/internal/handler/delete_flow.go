@@ -14,8 +14,11 @@ func (handler *Handler) DeleteFlow(w http.ResponseWriter, request *http.Request)
 	if !ok {
 		return
 	}
-	fileID, ok := handler.deleteFlowFileID(w, request, input)
+	fileID, ok := parseStorageKey(input.StorageKey)
 	if !ok {
+		if err := httpx.WriteError(w, http.StatusBadRequest, "invalid storage key"); err != nil {
+			handler.logger.ErrorContext(request.Context(), "could not write JSON response", "error", err)
+		}
 		return
 	}
 	objectStorage := handler.storageFromRequest(w, request)
@@ -23,56 +26,30 @@ func (handler *Handler) DeleteFlow(w http.ResponseWriter, request *http.Request)
 		return
 	}
 
-	if !handler.deleteStoredFlow(w, deleteFlowOperation{
-		request: request, objectStorage: objectStorage, fileID: fileID,
-	}) {
+	if !handler.deleteStoredFlow(w, request, objectStorage, fileID) {
 		return
 	}
-	handler.writeDeleteFlowSuccess(w, request)
-}
-
-type deleteFlowOperation struct {
-	request       *http.Request
-	objectStorage storage.Storage
-	fileID        string
-}
-
-func (handler *Handler) deleteStoredFlow(w http.ResponseWriter, operation deleteFlowOperation) bool {
-	err := operation.objectStorage.DeleteFlow(operation.request.Context(), operation.fileID)
-	if err == nil {
-		return true
-	}
-	if errors.Is(err, storage.ErrFlowObjectsRemain) {
-		handler.writeDeleteFlowConflict(w, operation.request)
-		return false
-	}
-	handler.writeUnexpectedFailure(w, operation.request, err, "could not delete file")
-	return false
-}
-
-func (handler *Handler) writeDeleteFlowConflict(w http.ResponseWriter, request *http.Request) {
-	if writeErr := httpx.WriteError(w, http.StatusConflict, "file deletion could not be confirmed"); writeErr != nil {
-		handler.logger.ErrorContext(request.Context(), "could not write JSON response", "error", writeErr)
-	}
-}
-
-func (handler *Handler) writeDeleteFlowSuccess(w http.ResponseWriter, request *http.Request) {
 	if err := writeJSON(w, http.StatusOK, deleteResponse{Status: "deleted"}); err != nil {
 		handler.logger.ErrorContext(request.Context(), "could not write JSON response", "error", err)
 	}
 }
 
-func (handler *Handler) deleteFlowFileID(
+func (handler *Handler) deleteStoredFlow(
 	w http.ResponseWriter,
 	request *http.Request,
-	input deleteRequest,
-) (string, bool) {
-	fileID, ok := parseStorageKey(input.StorageKey)
-	if ok {
-		return fileID, true
+	objectStorage storage.Storage,
+	fileID string,
+) bool {
+	err := objectStorage.DeleteFlow(request.Context(), fileID)
+	if errors.Is(err, storage.ErrFlowObjectsRemain) {
+		if writeErr := httpx.WriteError(w, http.StatusConflict, "file deletion could not be confirmed"); writeErr != nil {
+			handler.logger.ErrorContext(request.Context(), "could not write JSON response", "error", writeErr)
+		}
+		return false
 	}
-	if err := httpx.WriteError(w, http.StatusBadRequest, "invalid storage key"); err != nil {
-		handler.logger.ErrorContext(request.Context(), "could not write JSON response", "error", err)
+	if err != nil {
+		handler.writeUnexpectedFailure(w, request, err, "could not delete file")
+		return false
 	}
-	return "", false
+	return true
 }
