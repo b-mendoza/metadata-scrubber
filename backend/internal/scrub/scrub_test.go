@@ -61,7 +61,7 @@ func TestInspectPDFRejectsMalformedCandidatesWithoutSignedClassification(t *test
 
 			require.ErrorIs(t, err, ErrMalformedPDF)
 			require.Nil(t, fields)
-			requireNotSignedPDF(t, err)
+			require.NotErrorIs(t, err, ErrSignedPDF, "unexpected signed-PDF classification: %v", err)
 		})
 	}
 }
@@ -641,26 +641,27 @@ func TestMetadataTraversalDeduplicatesOneParentEntryTarget(t *testing.T) {
 
 func TestInspectPDFRejectsEverySignedStructureBeforeMutationOrWriting(t *testing.T) {
 	testCases := []struct {
-		name     string
-		pdfBytes func(*testing.T) []byte
+		name    string
+		variant signedPDFVariant
 	}{
-		{name: "signature dictionary", pdfBytes: func(t *testing.T) []byte { return buildSignedPDF(t, signedDictionary) }},
-		{name: "document timestamp dictionary", pdfBytes: func(t *testing.T) []byte { return buildSignedPDF(t, documentTimestampDictionary) }},
-		{name: "certification permission", pdfBytes: func(t *testing.T) []byte { return buildSignedPDF(t, certificationPermission) }},
-		{name: "usage rights permission", pdfBytes: func(t *testing.T) []byte { return buildSignedPDF(t, usageRightsPermission) }},
-		{name: "cached signed form state", pdfBytes: func(t *testing.T) []byte { return buildSignedPDF(t, cachedSignedForm) }},
+		{name: "signature dictionary", variant: signedDictionary},
+		{name: "document timestamp dictionary", variant: documentTimestampDictionary},
+		{name: "certification permission", variant: certificationPermission},
+		{name: "usage rights permission", variant: usageRightsPermission},
+		{name: "cached signed form state", variant: cachedSignedForm},
 	}
 	for _, testCase := range testCases {
 		t.Run(testCase.name, func(t *testing.T) {
-			pdfBytes := testCase.pdfBytes(t)
+			pdfBytes := buildSignedPDF(t, testCase.variant)
 			work := &observedPDFWork{}
 
 			fields, inspectErr := InspectPDF(pdfBytes, PublicInput)
 			outputBytes, scrubErr := work.clean(pdfBytes)
 
-			requireSignedPDF(t, signedPDFResults{
-				fields: fields, outputBytes: outputBytes, inspectErr: inspectErr, scrubErr: scrubErr,
-			})
+			require.ErrorIs(t, inspectErr, ErrSignedPDF)
+			require.Nil(t, fields)
+			require.ErrorIs(t, scrubErr, ErrSignedPDF)
+			require.Nil(t, outputBytes)
 			requireNoPDFWork(t, work)
 		})
 	}
@@ -710,16 +711,12 @@ func TestCachedSignatureVariantsAreClassifiedAsSigned(t *testing.T) {
 		name    string
 		context *model.Context
 	}{
-		{name: "signature flag", context: signatureContext(func(pdfContext *model.Context) { pdfContext.SignatureExist = true })},
-		{name: "append only flag", context: signatureContext(func(pdfContext *model.Context) { pdfContext.AppendOnly = true })},
-		{name: "usage rights dictionary", context: signatureContext(func(pdfContext *model.Context) {
-			pdfContext.URSignature = types.Dict{"Filter": types.Name("Synthetic")}
-		})},
-		{name: "certified signature object", context: signatureContext(func(pdfContext *model.Context) { pdfContext.CertifiedSigObjNr = 9 })},
-		{name: "trusted document timestamp", context: signatureContext(func(pdfContext *model.Context) { pdfContext.DTS = time.Unix(1, 0) })},
-		{name: "signed cached signature", context: signatureContext(func(pdfContext *model.Context) {
-			pdfContext.Signatures = map[int]map[int]model.Signature{0: {9: {Signed: true}}}
-		})},
+		{name: "signature flag", context: &model.Context{XRefTable: &model.XRefTable{SignatureExist: true}}},
+		{name: "append only flag", context: &model.Context{XRefTable: &model.XRefTable{AppendOnly: true}}},
+		{name: "usage rights dictionary", context: &model.Context{XRefTable: &model.XRefTable{URSignature: types.Dict{"Filter": types.Name("Synthetic")}}}},
+		{name: "certified signature object", context: &model.Context{XRefTable: &model.XRefTable{CertifiedSigObjNr: 9}}},
+		{name: "trusted document timestamp", context: &model.Context{XRefTable: &model.XRefTable{DTS: time.Unix(1, 0)}}},
+		{name: "signed cached signature", context: &model.Context{XRefTable: &model.XRefTable{Signatures: map[int]map[int]model.Signature{0: {9: {Signed: true}}}}}},
 	}
 	for _, testCase := range testCases {
 		t.Run(testCase.name, func(t *testing.T) {
@@ -733,7 +730,7 @@ func TestInspectPDFAcceptsSignatureLikeTextAndEmptySignatureField(t *testing.T) 
 
 	fields, err := InspectPDF(pdfBytes, PublicInput)
 
-	requireNotSignedPDF(t, err)
+	require.NotErrorIs(t, err, ErrSignedPDF, "unexpected signed-PDF classification: %v", err)
 	require.NoError(t, err)
 	require.NotEmpty(t, fields)
 }
@@ -1215,12 +1212,6 @@ func requireExpectedActions(t *testing.T, fields []Field) {
 	}
 }
 
-func signatureContext(apply func(*model.Context)) *model.Context {
-	pdfContext := &model.Context{XRefTable: &model.XRefTable{}}
-	apply(pdfContext)
-	return pdfContext
-}
-
 func fieldNames(fields []Field) []string {
 	names := make([]string, len(fields))
 	for index, field := range fields {
@@ -1250,26 +1241,4 @@ func requireNoPDFWork(t *testing.T, work *observedPDFWork) {
 	require.Zero(t, work.mutations)
 	require.Zero(t, work.writes)
 	require.Zero(t, work.verifications)
-}
-
-type signedPDFResults struct {
-	fields      []Field
-	outputBytes []byte
-	inspectErr  error
-	scrubErr    error
-}
-
-func requireSignedPDF(t *testing.T, results signedPDFResults) {
-	t.Helper()
-
-	require.ErrorIs(t, results.inspectErr, ErrSignedPDF)
-	require.Nil(t, results.fields)
-	require.ErrorIs(t, results.scrubErr, ErrSignedPDF)
-	require.Nil(t, results.outputBytes)
-}
-
-func requireNotSignedPDF(t *testing.T, err error) {
-	t.Helper()
-
-	require.NotErrorIs(t, err, ErrSignedPDF, "unexpected signed-PDF classification: %v", err)
 }
