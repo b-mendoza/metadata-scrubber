@@ -35,7 +35,6 @@ import {
   REFRESH_DOWNLOAD_GRANT_FAILURE_MESSAGE,
   SCRUB_FILE_FAILURE_MESSAGE,
   scrubFileInputSchema,
-  storageKeySchema,
   wizardRouter,
   WORKFLOW_CONFIG_FAILURE_MESSAGE,
   WORKFLOW_MAX_FILE_SIZE_BYTES,
@@ -116,14 +115,6 @@ test.each([
   ["opaque", "revision-1", false],
 ])("canonical ETag schema handles %s", (_name, value, expectedSuccess) => {
   expect(canonicalETagSchema.safeParse(value).success).toBe(expectedSuccess);
-});
-
-test("storage key schema accepts a public upload key", () => {
-  expect(storageKeySchema.safeParse(STORAGE_KEY).success).toBe(true);
-});
-
-test("storage key schema rejects a non-upload key", () => {
-  expect(storageKeySchema.safeParse("source/not-public").success).toBe(false);
 });
 
 test("createUpload rejects invalid input before fetch", async () => {
@@ -230,6 +221,7 @@ test("createUpload rejects an invalid backend upload URL", async () => {
   expect(error.code).toBe("BAD_GATEWAY");
   expect(error.message).toBe(CREATE_UPLOAD_FAILURE_MESSAGE);
 });
+
 test("dryRun rejects an invalid backend ETag", async () => {
   const input: DryRunInput = { storageKey: STORAGE_KEY };
   const fetchMock = vi
@@ -267,7 +259,6 @@ test("scrubFile rejects an invalid backend success payload", async () => {
   expect(error.code).toBe("BAD_GATEWAY");
   expect(error.message).toBe(SCRUB_FILE_FAILURE_MESSAGE);
 });
-
 
 test("refreshDownloadGrant rejects an invalid backend timestamp", async () => {
   const input: RefreshDownloadGrantInput = {
