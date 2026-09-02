@@ -43,13 +43,6 @@ export const REFRESH_DOWNLOAD_GRANT_FAILURE_MESSAGE =
 export const CONFIRM_DELETE_FAILURE_MESSAGE =
   "Could not delete the file. Try again later.";
 
-const WORKFLOW_CONFIG_ENDPOINT = "/api/files/config";
-const CREATE_UPLOAD_ENDPOINT = "/api/uploads";
-const DRY_RUN_ENDPOINT = "/api/files/dry-run";
-const SCRUB_FILE_ENDPOINT = "/api/files/scrub";
-const REFRESH_DOWNLOAD_GRANT_ENDPOINT = "/api/files/download-grant";
-const CONFIRM_DELETE_ENDPOINT = "/api/files/delete";
-
 const MINIMUM_FILE_SIZE_BYTES = 1;
 const MINIMUM_TEXT_LENGTH = 1;
 const WHOLE_SECOND_PRECISION = 0;
@@ -233,7 +226,7 @@ export const wizardRouter = createTRPCRouter({
     const { workflowHttpClient } = getApplicationBindings();
     const responseResult = await ResultAsync.fromPromise(
       workflowHttpClient
-        .get(WORKFLOW_CONFIG_ENDPOINT, {
+        .get("/api/files/config", {
           retry: WORKFLOW_NO_RETRY_OPTIONS,
           signal: signal ?? null,
           timeout: WORKFLOW_CONFIG_TIMEOUT_MS,
@@ -257,7 +250,7 @@ export const wizardRouter = createTRPCRouter({
       const { workflowHttpClient } = getApplicationBindings();
       const responseResult = await ResultAsync.fromPromise(
         workflowHttpClient
-          .post(CREATE_UPLOAD_ENDPOINT, {
+          .post("/api/uploads", {
             json: input,
             retry: WORKFLOW_NO_RETRY_OPTIONS,
             signal: signal ?? null,
@@ -282,7 +275,7 @@ export const wizardRouter = createTRPCRouter({
       const { workflowHttpClient } = getApplicationBindings();
       const responseResult = await ResultAsync.fromPromise(
         workflowHttpClient
-          .post(DRY_RUN_ENDPOINT, {
+          .post("/api/files/dry-run", {
             json: input,
             retry: WORKFLOW_SERVER_DIRECTED_RETRY_OPTIONS,
             signal: signal ?? null,
@@ -307,7 +300,7 @@ export const wizardRouter = createTRPCRouter({
       const { workflowHttpClient } = getApplicationBindings();
       const responseResult = await ResultAsync.fromPromise(
         workflowHttpClient
-          .post(SCRUB_FILE_ENDPOINT, {
+          .post("/api/files/scrub", {
             json: input,
             retry: WORKFLOW_SERVER_DIRECTED_RETRY_OPTIONS,
             signal: signal ?? null,
@@ -332,7 +325,7 @@ export const wizardRouter = createTRPCRouter({
       const { workflowHttpClient } = getApplicationBindings();
       const responseResult = await ResultAsync.fromPromise(
         workflowHttpClient
-          .post(REFRESH_DOWNLOAD_GRANT_ENDPOINT, {
+          .post("/api/files/download-grant", {
             json: input,
             retry: WORKFLOW_NO_RETRY_OPTIONS,
             signal: signal ?? null,
@@ -357,7 +350,7 @@ export const wizardRouter = createTRPCRouter({
       const { workflowHttpClient } = getApplicationBindings();
       const responseResult = await ResultAsync.fromPromise(
         workflowHttpClient
-          .post(CONFIRM_DELETE_ENDPOINT, {
+          .post("/api/files/delete", {
             json: input,
             retry: WORKFLOW_NO_RETRY_OPTIONS,
             signal: signal ?? null,
