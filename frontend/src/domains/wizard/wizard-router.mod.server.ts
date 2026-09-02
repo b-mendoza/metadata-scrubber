@@ -99,7 +99,7 @@ const fileNameSchema = z
     error: "The file name contains a character that is not allowed.",
   });
 
-export const storageKeySchema = z
+const storageKeySchema = z
   .string({ error: "The storage key must be a string." })
   .regex(STORAGE_KEY_PATTERN, { error: "The storage key is invalid." })
   .trim();
@@ -108,11 +108,11 @@ export const canonicalETagSchema = z
   .regex(CANONICAL_ETAG_PATTERN, { error: "The ETag is invalid." })
   .trim();
 
-export const workflowConfigResponseSchema = z.strictObject({
+const workflowConfigResponseSchema = z.strictObject({
   maxFileSizeBytes: z.literal(WORKFLOW_MAX_FILE_SIZE_BYTES),
 });
 
-export const createUploadInputSchema = z.strictObject({
+const createUploadInputSchema = z.strictObject({
   fileName: fileNameSchema,
   fileSizeBytes: z
     .int()
@@ -120,12 +120,12 @@ export const createUploadInputSchema = z.strictObject({
     .max(WORKFLOW_MAX_FILE_SIZE_BYTES),
 });
 
-export const createUploadResponseSchema = z.strictObject({
+const createUploadResponseSchema = z.strictObject({
   storageKey: storageKeySchema,
   uploadUrl: z.url({ protocol: HTTP_PROTOCOL }),
 });
 
-export const dryRunInputSchema = z.strictObject({
+const dryRunInputSchema = z.strictObject({
   storageKey: storageKeySchema,
 });
 
@@ -137,7 +137,7 @@ const publicFieldSchema = z.strictObject({
   preview: z.string().trim(),
 });
 
-export const dryRunResponseSchema = z.strictObject({
+const dryRunResponseSchema = z.strictObject({
   etag: canonicalETagSchema,
   fields: z.array(publicFieldSchema),
 });
@@ -147,28 +147,28 @@ export const scrubFileInputSchema = z.strictObject({
   storageKey: storageKeySchema,
 });
 
-export const scrubFileResponseSchema = z.strictObject({
+const scrubFileResponseSchema = z.strictObject({
   result: z.strictObject({
     downloadUrl: z.url({ protocol: HTTP_PROTOCOL }),
   }),
   status: z.literal("done"),
 });
 
-export const refreshDownloadGrantInputSchema = z.strictObject({
+const refreshDownloadGrantInputSchema = z.strictObject({
   etag: canonicalETagSchema,
   storageKey: storageKeySchema,
 });
 
-export const refreshDownloadGrantResponseSchema = z.strictObject({
+const refreshDownloadGrantResponseSchema = z.strictObject({
   downloadUrl: z.url({ protocol: HTTP_PROTOCOL }),
   expiresAt: z.iso.datetime({ precision: WHOLE_SECOND_PRECISION }),
 });
 
-export const confirmDeleteInputSchema = z.strictObject({
+const confirmDeleteInputSchema = z.strictObject({
   storageKey: storageKeySchema,
 });
 
-export const confirmDeleteResponseSchema = z.strictObject({
+const confirmDeleteResponseSchema = z.strictObject({
   status: z.literal("deleted"),
 });
 
