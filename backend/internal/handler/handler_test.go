@@ -1405,8 +1405,27 @@ func runTerminalPathTest(t *testing.T, testCase terminalPathTestCase) {
 	seedCandidateSources(t, fake, fileIDOne, fileIDTwo, fileIDThree)
 	observer := newBlockingStorage(fake, fileIDTwo, fileIDThree)
 	configureTerminalDownload(observer, testCase)
-	handler := newTerminalPathHandler(t, testCase)
-	request := terminalPathRequest(t, handler, observer, testCase)
+	handler := newTestHandler(t, terminalInspectOperation(testCase), func(input []byte) ([]byte, error) {
+		switch {
+		case !bytes.Contains(input, []byte(fileIDOne)):
+			return bytes.Clone(input), nil
+		case testCase.cleanPanic != "":
+			panic(testCase.cleanPanic)
+		case testCase.cleanErr != nil:
+			return nil, testCase.cleanErr
+		default:
+			return bytes.Clone(input), nil
+		}
+	}, nil)
+	var body []byte
+	var err error
+	if testCase.method == scrubMethod {
+		body, err = json.Marshal(scrubRequest{StorageKey: formatStorageKey(fileIDOne), ETag: canonicalETagOne})
+	} else {
+		body, err = json.Marshal(dryRunRequest{StorageKey: formatStorageKey(fileIDOne)})
+	}
+	require.NoError(t, err)
+	request := handlerRequest{ctx: context.Background(), handler: handler, objectStorage: observer, method: testCase.method, contentType: mediatype.JSON, body: string(body)}
 	panicValue := testCase.downloadPanic + testCase.inspectPanic + testCase.cleanPanic
 	if panicValue != "" {
 		require.PanicsWithValue(t, panicValue, func() { serveRequest(t, request) })
@@ -1415,7 +1434,16 @@ func runTerminalPathTest(t *testing.T, testCase terminalPathTestCase) {
 		require.Equal(t, testCase.wantStatus, recorder.Code, recorder.Body.String())
 	}
 	require.Empty(t, handler.permits)
-	assertFollowUpWorkflowsAcquire(t, handler, observer)
+
+	followUpResponses := startGuardedRequests(t, handler, observer, []guardedRequest{
+		{method: dryRunMethod, fileID: fileIDTwo},
+		{method: scrubMethod, fileID: fileIDThree},
+	})
+	require.Len(t, handler.permits, ProcessingPermitCount, "both follow-up workflows must acquire after terminal path")
+	require.Equal(t, 2, observer.peakDownloads())
+	observer.releaseDownloads()
+	requireResponsesSuccess(t, followUpResponses, 2, "timed out waiting for holder response")
+	require.Empty(t, handler.permits)
 }
 
 func configureTerminalDownload(observer *blockingStorage, testCase terminalPathTestCase) {
@@ -1425,10 +1453,6 @@ func configureTerminalDownload(observer *blockingStorage, testCase terminalPathT
 	if testCase.downloadPanic != "" {
 		observer.panicDownload(fileIDOne, testCase.downloadPanic)
 	}
-}
-
-func newTerminalPathHandler(t *testing.T, testCase terminalPathTestCase) *Handler {
-	return newTestHandler(t, terminalInspectOperation(testCase), terminalCleanOperation(testCase), nil)
 }
 
 func terminalInspectOperation(testCase terminalPathTestCase) inspectPDFOperation {
@@ -1441,46 +1465,6 @@ func terminalInspectOperation(testCase terminalPathTestCase) inspectPDFOperation
 		}
 		return nil, testCase.inspectErr
 	}
-}
-
-func terminalCleanOperation(testCase terminalPathTestCase) cleanPDFOperation {
-	return func(input []byte) ([]byte, error) {
-		if !bytes.Contains(input, []byte(fileIDOne)) {
-			return bytes.Clone(input), nil
-		}
-		if testCase.cleanPanic != "" {
-			panic(testCase.cleanPanic)
-		}
-		if testCase.cleanErr != nil {
-			return nil, testCase.cleanErr
-		}
-		return bytes.Clone(input), nil
-	}
-}
-
-func terminalPathRequest(t *testing.T, handler *Handler, observer *blockingStorage, testCase terminalPathTestCase) handlerRequest {
-	t.Helper()
-	var body []byte
-	var err error
-	if testCase.method == scrubMethod {
-		body, err = json.Marshal(scrubRequest{StorageKey: formatStorageKey(fileIDOne), ETag: canonicalETagOne})
-	} else {
-		body, err = json.Marshal(dryRunRequest{StorageKey: formatStorageKey(fileIDOne)})
-	}
-	require.NoError(t, err)
-	return handlerRequest{ctx: context.Background(), handler: handler, objectStorage: observer, method: testCase.method, contentType: mediatype.JSON, body: string(body)}
-}
-
-func assertFollowUpWorkflowsAcquire(t *testing.T, handler *Handler, observer *blockingStorage) {
-	followUpResponses := startGuardedRequests(t, handler, observer, []guardedRequest{
-		{method: dryRunMethod, fileID: fileIDTwo},
-		{method: scrubMethod, fileID: fileIDThree},
-	})
-	require.Len(t, handler.permits, ProcessingPermitCount, "both follow-up workflows must acquire after terminal path")
-	require.Equal(t, 2, observer.peakDownloads())
-	observer.releaseDownloads()
-	requireResponsesSuccess(t, followUpResponses, 2, "timed out waiting for holder response")
-	require.Empty(t, handler.permits)
 }
 
 func TestScrubReleasesPermitBeforeUploadingSanitizedBytes(t *testing.T) {
