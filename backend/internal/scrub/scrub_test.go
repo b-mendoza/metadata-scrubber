@@ -174,7 +174,16 @@ func TestPDFPathsRejectAggregateDecodedMetadataBudgetBeforeWriting(t *testing.T)
 
 func TestPDFPathsRejectOversizedCompressedCatalogMetadataBeforeValidation(t *testing.T) {
 	decodedBytes := maxDecodedMetadataBytes + 1
-	pdfBytes := buildPDFWithCompressedCatalogMetadata(t, oversizedXMP(t, decodedBytes))
+	const prefix = `<x:xmpmeta xmlns:x="adobe:ns:meta/"><rdf:RDF xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"><rdf:Description>`
+	const suffix = `</rdf:Description></rdf:RDF></x:xmpmeta>`
+	require.Greater(t, decodedBytes, len(prefix)+len(suffix))
+
+	var metadata strings.Builder
+	metadata.Grow(decodedBytes)
+	metadata.WriteString(prefix)
+	metadata.WriteString(strings.Repeat("x", decodedBytes-len(prefix)-len(suffix)))
+	metadata.WriteString(suffix)
+	pdfBytes := buildPDFWithCompressedCatalogMetadata(t, metadata.String())
 	require.Less(t, len(pdfBytes), MaxInputBytes)
 	work := &observedPDFWork{}
 	validationCalls := 0
@@ -227,13 +236,36 @@ func TestAnalyzePDFReleasesDecodedMetadataStreamCaches(t *testing.T) {
 	const decodedStreamBytes = 1 << 20
 	pdfContext, err := readPDF(buildPDFWithCompressedMetadataStreams(t, 2, decodedStreamBytes))
 	require.NoError(t, err)
-	require.Equal(t, 2, primeMetadataStreamCaches(t, pdfContext, decodedStreamBytes))
+	metadataStreamType := "Metadata"
+	primedMetadataStreamCount := 0
+	for _, objectNumber := range sortedLiveObjectNumbers(pdfContext) {
+		entry := pdfContext.Table[objectNumber]
+		stream, ok := entry.Object.(types.StreamDict)
+		if !ok || !reflect.DeepEqual(stream.Type(), &metadataStreamType) {
+			continue
+		}
+		stream.Content = bytes.Repeat([]byte("x"), decodedStreamBytes)
+		entry.Object = stream
+		primedMetadataStreamCount++
+	}
+	require.Equal(t, 2, primedMetadataStreamCount)
 
 	analysis, err := analyzePDF(pdfContext, PublicInput)
 
 	require.NoError(t, err)
 	require.Len(t, analysis.fields, 2)
-	requireMetadataStreamCachesCleared(t, pdfContext)
+	clearedMetadataStreamCount := 0
+	for _, objectNumber := range sortedLiveObjectNumbers(pdfContext) {
+		entry := pdfContext.Table[objectNumber]
+		stream, ok := entry.Object.(types.StreamDict)
+		if !ok || !reflect.DeepEqual(stream.Type(), &metadataStreamType) {
+			continue
+		}
+		require.Nil(t, stream.Content)
+		require.NotEmpty(t, stream.Raw)
+		clearedMetadataStreamCount++
+	}
+	require.Positive(t, clearedMetadataStreamCount)
 
 	removeAnalyzedMetadata(pdfContext, analysis)
 	var output bytes.Buffer
@@ -242,7 +274,9 @@ func TestAnalyzePDFReleasesDecodedMetadataStreamCaches(t *testing.T) {
 }
 
 func TestPDFByteAPIsEnforceAggregateInputLimit(t *testing.T) {
-	exactLimitPDF := padPDFToSize(t, buildCleanPDF(t), MaxInputBytes)
+	basePDF := buildCleanPDF(t)
+	require.LessOrEqual(t, len(basePDF), MaxInputBytes)
+	exactLimitPDF := slices.Concat(basePDF, bytes.Repeat([]byte{' '}, MaxInputBytes-len(basePDF)))
 
 	fields, err := InspectPDF(exactLimitPDF, PublicInput)
 	require.NoError(t, err)
@@ -781,53 +815,6 @@ func compressedMetadataStreamObject(t *testing.T, content string) string {
 	return fmt.Sprintf("<< /Type /Metadata /Subtype /XML /Filter /FlateDecode /Length %d >>\nstream\n%s\nendstream", compressed.Len(), compressed.String())
 }
 
-func forEachMetadataStream(pdfContext *model.Context, visit func(*model.XRefTableEntry, types.StreamDict)) int {
-	visited := 0
-	for _, entry := range pdfContext.Table {
-		if entry == nil || entry.Object == nil {
-			continue
-		}
-		stream, ok := entry.Object.(types.StreamDict)
-		if !ok || stream.Type() == nil || *stream.Type() != "Metadata" {
-			continue
-		}
-		visit(entry, stream)
-		visited++
-	}
-	return visited
-}
-
-func primeMetadataStreamCaches(t *testing.T, pdfContext *model.Context, decodedStreamBytes int) int {
-	t.Helper()
-
-	return forEachMetadataStream(pdfContext, func(entry *model.XRefTableEntry, stream types.StreamDict) {
-		stream.Content = bytes.Repeat([]byte("x"), decodedStreamBytes)
-		entry.Object = stream
-	})
-}
-
-func requireMetadataStreamCachesCleared(t *testing.T, pdfContext *model.Context) {
-	t.Helper()
-
-	metadataStreamCount := forEachMetadataStream(pdfContext, func(_ *model.XRefTableEntry, stream types.StreamDict) {
-		require.Nil(t, stream.Content)
-		require.NotEmpty(t, stream.Raw)
-	})
-	require.Positive(t, metadataStreamCount)
-}
-
-func padPDFToSize(t *testing.T, pdfBytes []byte, size int) []byte {
-	t.Helper()
-	require.LessOrEqual(t, len(pdfBytes), size)
-
-	paddedPDF := make([]byte, size)
-	copy(paddedPDF, pdfBytes)
-	for index := len(pdfBytes); index < len(paddedPDF); index++ {
-		paddedPDF[index] = ' '
-	}
-	return paddedPDF
-}
-
 func buildCleanPDF(t *testing.T) []byte {
 	t.Helper()
 
@@ -1019,21 +1006,6 @@ func syntheticXMP(t *testing.T, marker string) string {
 	var escapedMarker bytes.Buffer
 	require.NoError(t, xml.EscapeText(&escapedMarker, []byte(marker)))
 	return `<x:xmpmeta xmlns:x="adobe:ns:meta/"><rdf:RDF xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"><rdf:Description rdf:about="" xmlns:synthetic="urn:synthetic" synthetic:marker="` + escapedMarker.String() + `"/></rdf:RDF></x:xmpmeta>`
-}
-
-func oversizedXMP(t *testing.T, decodedBytes int) string {
-	t.Helper()
-
-	const prefix = `<x:xmpmeta xmlns:x="adobe:ns:meta/"><rdf:RDF xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"><rdf:Description>`
-	const suffix = `</rdf:Description></rdf:RDF></x:xmpmeta>`
-	require.Greater(t, decodedBytes, len(prefix)+len(suffix))
-
-	var metadata strings.Builder
-	metadata.Grow(decodedBytes)
-	metadata.WriteString(prefix)
-	metadata.WriteString(strings.Repeat("x", decodedBytes-len(prefix)-len(suffix)))
-	metadata.WriteString(suffix)
-	return metadata.String()
 }
 
 func pdfString(value string) string {
