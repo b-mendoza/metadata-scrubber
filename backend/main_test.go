@@ -9,7 +9,6 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"os"
-	"strings"
 	"sync"
 	"testing"
 	"time"
@@ -19,6 +18,7 @@ import (
 	"metadata-scrubber/internal/config"
 	"metadata-scrubber/internal/handler"
 	"metadata-scrubber/internal/httpx/header"
+	"metadata-scrubber/internal/httpx/mediatype"
 	"metadata-scrubber/internal/scrub"
 	"metadata-scrubber/internal/storage"
 )
@@ -252,13 +252,13 @@ func TestNewServerSharesOneCapacityTwoGateAcrossDryRunAndScrubMisses(t *testing.
 	responses := make(chan *httptest.ResponseRecorder, 3)
 	for _, body := range [][]byte{firstDryRunBody, secondDryRunBody} {
 		go func(requestBody []byte) {
-			responses <- serveServerJSON(server, "/api/files/dry-run", string(requestBody))
+			responses <- serveServerJSON(server, "/api/files/dry-run", requestBody)
 		}(body)
 	}
 	observer.waitForTwoDownloads(t)
 
 	go func() {
-		responses <- serveServerJSON(server, "/api/files/scrub", string(scrubBody))
+		responses <- serveServerJSON(server, "/api/files/scrub", scrubBody)
 	}()
 	observer.waitForObservedScrubLookup(t)
 
@@ -269,7 +269,7 @@ func TestNewServerSharesOneCapacityTwoGateAcrossDryRunAndScrubMisses(t *testing.
 	}
 	require.Equal(t, 2, observer.peakDownloads())
 
-	observer.releaseOneDownload()
+	observer.downloadRelease <- struct{}{}
 	observer.requireDownloadStarts(t, thirdFileID)
 	require.Equal(t, 2, observer.peakDownloads())
 
@@ -296,9 +296,9 @@ func serveServer(server *http.Server, request *http.Request) *httptest.ResponseR
 	return recorder
 }
 
-func serveServerJSON(server *http.Server, path string, body string) *httptest.ResponseRecorder {
-	request := httptest.NewRequest(http.MethodPost, path, strings.NewReader(body))
-	request.Header.Set(header.ContentType, "application/json")
+func serveServerJSON(server *http.Server, path string, body []byte) *httptest.ResponseRecorder {
+	request := httptest.NewRequest(http.MethodPost, path, bytes.NewReader(body))
+	request.Header.Set(header.ContentType, mediatype.JSON)
 	return serveServer(server, request)
 }
 
