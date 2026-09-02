@@ -412,7 +412,7 @@ func TestUploadStopsBeforeStorageWhenEntropyFails(t *testing.T) {
 	})
 	body, err := json.Marshal(uploadRequest{FileName: "report.pdf", FileSizeBytes: 1})
 	require.NoError(t, err)
-	recorder := serveJSONRequest(t, jsonHandlerRequest{handler: handler, objectStorage: fake, method: uploadMethod, body: string(body)})
+	recorder := serveRequest(t, handlerRequest{ctx: context.Background(), contentType: mediatype.JSON, handler: handler, objectStorage: fake, method: uploadMethod, body: string(body)})
 
 	require.Equal(t, http.StatusInternalServerError, recorder.Code)
 	require.Equal(t, "could not create upload", errorMessage(t, recorder))
@@ -426,7 +426,7 @@ func TestUploadPresignFailureIsSanitized(t *testing.T) {
 	handler := newTestHandler(t, nil, nil, nil)
 	body, err := json.Marshal(uploadRequest{FileName: "report.pdf", FileSizeBytes: 1})
 	require.NoError(t, err)
-	recorder := serveJSONRequest(t, jsonHandlerRequest{handler: handler, objectStorage: fake, method: uploadMethod, body: string(body)})
+	recorder := serveRequest(t, handlerRequest{ctx: context.Background(), contentType: mediatype.JSON, handler: handler, objectStorage: fake, method: uploadMethod, body: string(body)})
 
 	require.Equal(t, http.StatusInternalServerError, recorder.Code)
 	require.Equal(t, "could not create upload", errorMessage(t, recorder))
@@ -445,7 +445,7 @@ func TestPublicStorageKeysAndETagsAreValidatedBeforeStorage(t *testing.T) {
 			handler := newTestHandler(t, nil, nil, nil)
 			body, err := json.Marshal(dryRunRequest{StorageKey: invalidKey})
 			require.NoError(t, err)
-			recorder := serveJSONRequest(t, jsonHandlerRequest{handler: handler, objectStorage: fake, method: dryRunMethod, body: string(body)})
+			recorder := serveRequest(t, handlerRequest{ctx: context.Background(), contentType: mediatype.JSON, handler: handler, objectStorage: fake, method: dryRunMethod, body: string(body)})
 			require.Equal(t, http.StatusBadRequest, recorder.Code)
 			require.Empty(t, fake.Calls())
 		})
@@ -485,7 +485,8 @@ func TestPublicStorageKeysAndETagsAreValidatedBeforeStorage(t *testing.T) {
 			})
 			require.NoError(t, err)
 
-			recorder := serveJSONRequest(t, jsonHandlerRequest{
+			recorder := serveRequest(t, handlerRequest{
+				ctx: context.Background(), contentType: mediatype.JSON,
 				handler: handler, objectStorage: fake, method: scrubMethod, body: string(body),
 			})
 
@@ -501,7 +502,8 @@ func TestPublicStorageKeysAndETagsAreValidatedBeforeStorage(t *testing.T) {
 			})
 			require.NoError(t, err)
 
-			recorder := serveJSONRequest(t, jsonHandlerRequest{
+			recorder := serveRequest(t, handlerRequest{
+				ctx: context.Background(), contentType: mediatype.JSON,
 				handler: handler, objectStorage: fake, method: downloadGrantMethod, body: string(body),
 			})
 
@@ -523,7 +525,7 @@ func TestDryRunReturnsReviewedRevisionAndBackendOwnedFields(t *testing.T) {
 	}, nil, nil)
 	body, err := json.Marshal(dryRunRequest{StorageKey: formatStorageKey(fileIDOne)})
 	require.NoError(t, err)
-	recorder := serveJSONRequest(t, jsonHandlerRequest{handler: handler, objectStorage: fake, method: dryRunMethod, body: string(body)})
+	recorder := serveRequest(t, handlerRequest{ctx: context.Background(), contentType: mediatype.JSON, handler: handler, objectStorage: fake, method: dryRunMethod, body: string(body)})
 
 	require.Equal(t, http.StatusOK, recorder.Code, recorder.Body.String())
 	var response map[string]json.RawMessage
@@ -552,7 +554,7 @@ func TestDryRunReportsServerFailureForUnknownInspectedFieldAction(t *testing.T) 
 	body, err := json.Marshal(dryRunRequest{StorageKey: formatStorageKey(fileIDOne)})
 	require.NoError(t, err)
 
-	recorder := serveJSONRequest(t, jsonHandlerRequest{handler: handler, objectStorage: fake, method: dryRunMethod, body: string(body)})
+	recorder := serveRequest(t, handlerRequest{ctx: context.Background(), contentType: mediatype.JSON, handler: handler, objectStorage: fake, method: dryRunMethod, body: string(body)})
 
 	require.Equal(t, http.StatusInternalServerError, recorder.Code, recorder.Body.String())
 	require.Equal(t, "could not inspect PDF", errorMessage(t, recorder))
@@ -564,7 +566,7 @@ func TestDryRunReturnsNonNullEmptyFieldsForCleanPDF(t *testing.T) {
 	handler := newTestHandler(t, nil, nil, nil)
 	body, err := json.Marshal(dryRunRequest{StorageKey: formatStorageKey(fileIDOne)})
 	require.NoError(t, err)
-	recorder := serveJSONRequest(t, jsonHandlerRequest{handler: handler, objectStorage: fake, method: dryRunMethod, body: string(body)})
+	recorder := serveRequest(t, handlerRequest{ctx: context.Background(), contentType: mediatype.JSON, handler: handler, objectStorage: fake, method: dryRunMethod, body: string(body)})
 
 	require.Equal(t, http.StatusOK, recorder.Code)
 	var response dryRunResponse
@@ -582,7 +584,7 @@ func TestDryRunIntegratesWithPublicPDFInspection(t *testing.T) {
 	handler := newTestHandler(t, scrub.InspectPDF, nil, nil)
 	body, err := json.Marshal(dryRunRequest{StorageKey: formatStorageKey(fileIDOne)})
 	require.NoError(t, err)
-	recorder := serveJSONRequest(t, jsonHandlerRequest{handler: handler, objectStorage: fake, method: dryRunMethod, body: string(body)})
+	recorder := serveRequest(t, handlerRequest{ctx: context.Background(), contentType: mediatype.JSON, handler: handler, objectStorage: fake, method: dryRunMethod, body: string(body)})
 
 	require.Equal(t, http.StatusOK, recorder.Code, recorder.Body.String())
 	var response dryRunResponse
@@ -599,7 +601,7 @@ func TestConstructedDryRunRejectsStructurallySignedPDFFixtureWithoutMutation(t *
 	workflow := New(slog.New(slog.NewTextHandler(io.Discard, nil)), make(chan struct{}, ProcessingPermitCount))
 	body, err := json.Marshal(dryRunRequest{StorageKey: formatStorageKey(fileIDOne)})
 	require.NoError(t, err)
-	recorder := serveJSONRequest(t, jsonHandlerRequest{handler: workflow, objectStorage: fake, method: dryRunMethod, body: string(body)})
+	recorder := serveRequest(t, handlerRequest{ctx: context.Background(), contentType: mediatype.JSON, handler: workflow, objectStorage: fake, method: dryRunMethod, body: string(body)})
 
 	require.Equal(t, http.StatusUnprocessableEntity, recorder.Code, recorder.Body.String())
 	require.Equal(t, "signed PDFs are not supported in v1", errorMessage(t, recorder))
@@ -643,7 +645,7 @@ func TestDryRunClassifiesContentAndDependencyFailuresWithoutLeakingDetails(t *te
 			}, nil, nil)
 			body, err := json.Marshal(dryRunRequest{StorageKey: formatStorageKey(fileIDOne)})
 			require.NoError(t, err)
-			recorder := serveJSONRequest(t, jsonHandlerRequest{handler: handler, objectStorage: fake, method: dryRunMethod, body: string(body)})
+			recorder := serveRequest(t, handlerRequest{ctx: context.Background(), contentType: mediatype.JSON, handler: handler, objectStorage: fake, method: dryRunMethod, body: string(body)})
 
 			require.Equal(t, testCase.wantStatus, recorder.Code, recorder.Body.String())
 			require.Equal(t, testCase.wantMessage, errorMessage(t, recorder))
@@ -671,7 +673,8 @@ func TestScrubMissingSourceStopsBeforeCacheAdmissionAndPDFWork(t *testing.T) {
 	body, err := json.Marshal(scrubRequest{StorageKey: formatStorageKey(fileIDOne), ETag: canonicalETagOne})
 	require.NoError(t, err)
 
-	recorder := serveJSONRequest(t, jsonHandlerRequest{
+	recorder := serveRequest(t, handlerRequest{
+		ctx: context.Background(), contentType: mediatype.JSON,
 		handler: handler, objectStorage: fake, method: scrubMethod, body: string(body),
 	})
 
@@ -690,7 +693,8 @@ func TestScrubSourceLookupFailureStopsBeforeLaterWork(t *testing.T) {
 	body, err := json.Marshal(scrubRequest{StorageKey: formatStorageKey(fileIDOne), ETag: canonicalETagOne})
 	require.NoError(t, err)
 
-	recorder := serveJSONRequest(t, jsonHandlerRequest{
+	recorder := serveRequest(t, handlerRequest{
+		ctx: context.Background(), contentType: mediatype.JSON,
 		handler: handler, objectStorage: fake, method: scrubMethod, body: string(body),
 	})
 
@@ -718,7 +722,7 @@ func TestScrubCacheHitBypassesAdmissionAndReusesExactRevision(t *testing.T) {
 	}})
 	body, err := json.Marshal(scrubRequest{StorageKey: formatStorageKey(fileIDThree), ETag: "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"})
 	require.NoError(t, err)
-	recorder := serveJSONRequest(t, jsonHandlerRequest{handler: handler, objectStorage: fake, method: scrubMethod, body: string(body)})
+	recorder := serveRequest(t, handlerRequest{ctx: context.Background(), contentType: mediatype.JSON, handler: handler, objectStorage: fake, method: scrubMethod, body: string(body)})
 
 	require.Equal(t, http.StatusOK, recorder.Code, recorder.Body.String())
 	require.Contains(t, recorder.Body.String(), `"status":"done"`)
@@ -747,7 +751,7 @@ func TestScrubCacheMissBindsEveryOperationToReviewedRevision(t *testing.T) {
 	}})
 	body, err := json.Marshal(scrubRequest{StorageKey: formatStorageKey(fileIDOne), ETag: "0123456789abcdef0123456789abcdef"})
 	require.NoError(t, err)
-	recorder := serveJSONRequest(t, jsonHandlerRequest{handler: handler, objectStorage: fake, method: scrubMethod, body: string(body)})
+	recorder := serveRequest(t, handlerRequest{ctx: context.Background(), contentType: mediatype.JSON, handler: handler, objectStorage: fake, method: scrubMethod, body: string(body)})
 
 	require.Equal(t, http.StatusOK, recorder.Code, recorder.Body.String())
 	require.Equal(t, 1, cleanCalls)
@@ -781,7 +785,7 @@ func TestScrubIntegratesWithDeepPDFCleaning(t *testing.T) {
 	handler := newTestHandler(t, scrub.InspectPDF, scrub.CleanPDF, nil)
 	body, err := json.Marshal(scrubRequest{StorageKey: formatStorageKey(fileIDOne), ETag: "0123456789abcdef0123456789abcdef"})
 	require.NoError(t, err)
-	recorder := serveJSONRequest(t, jsonHandlerRequest{handler: handler, objectStorage: fake, method: scrubMethod, body: string(body)})
+	recorder := serveRequest(t, handlerRequest{ctx: context.Background(), contentType: mediatype.JSON, handler: handler, objectStorage: fake, method: scrubMethod, body: string(body)})
 
 	require.Equal(t, http.StatusOK, recorder.Code, recorder.Body.String())
 	stored, exists, err := fake.SanitizedBytes(fileIDOne, "0123456789abcdef0123456789abcdef")
@@ -802,7 +806,7 @@ func TestScrubReturnsConflictBeforePDFOrWriteWork(t *testing.T) {
 	}, nil)
 	body, err := json.Marshal(scrubRequest{StorageKey: formatStorageKey(fileIDOne), ETag: "cccccccccccccccccccccccccccccccc"})
 	require.NoError(t, err)
-	recorder := serveJSONRequest(t, jsonHandlerRequest{handler: handler, objectStorage: fake, method: scrubMethod, body: string(body)})
+	recorder := serveRequest(t, handlerRequest{ctx: context.Background(), contentType: mediatype.JSON, handler: handler, objectStorage: fake, method: scrubMethod, body: string(body)})
 
 	require.Equal(t, http.StatusConflict, recorder.Code)
 	require.Equal(t, "source file changed since review", errorMessage(t, recorder))
@@ -900,7 +904,8 @@ func runScrubFailureTest(t *testing.T, testCase scrubFailureTestCase) {
 	}, nil)
 	body, err := json.Marshal(scrubRequest{StorageKey: formatStorageKey(fileIDOne), ETag: "0123456789abcdef0123456789abcdef"})
 	require.NoError(t, err)
-	recorder := serveJSONRequest(t, jsonHandlerRequest{
+	recorder := serveRequest(t, handlerRequest{
+		ctx: context.Background(), contentType: mediatype.JSON,
 		handler: handler, objectStorage: fake, method: scrubMethod,
 		body: string(body),
 	})
@@ -940,7 +945,8 @@ func TestDownloadGrantRefreshesExactSanitizedRevisionFromOneOperationTime(t *tes
 	})
 	require.NoError(t, err)
 
-	recorder := serveJSONRequest(t, jsonHandlerRequest{
+	recorder := serveRequest(t, handlerRequest{
+		ctx: context.Background(), contentType: mediatype.JSON,
 		handler: handler, objectStorage: fake, method: downloadGrantMethod, body: string(body),
 	})
 
@@ -973,7 +979,8 @@ func TestDownloadGrantReturnsNotFoundWithoutPresignForMissingRevision(t *testing
 	})
 	require.NoError(t, err)
 
-	recorder := serveJSONRequest(t, jsonHandlerRequest{
+	recorder := serveRequest(t, handlerRequest{
+		ctx: context.Background(), contentType: mediatype.JSON,
 		handler: handler, objectStorage: fake, method: downloadGrantMethod, body: string(body),
 	})
 
@@ -1018,7 +1025,8 @@ func TestDownloadGrantFailuresStopAtFailedStorageOperation(t *testing.T) {
 			})
 			require.NoError(t, err)
 
-			recorder := serveJSONRequest(t, jsonHandlerRequest{
+			recorder := serveRequest(t, handlerRequest{
+				ctx: context.Background(), contentType: mediatype.JSON,
 				handler: handler, objectStorage: fake, method: downloadGrantMethod, body: string(body),
 			})
 
@@ -1039,7 +1047,8 @@ func TestConfirmedDeleteCallsOneFlowOperationAndReturnsFixedSuccess(t *testing.T
 	body, err := json.Marshal(deleteRequest{StorageKey: formatStorageKey(fileIDOne)})
 	require.NoError(t, err)
 
-	recorder := serveJSONRequest(t, jsonHandlerRequest{
+	recorder := serveRequest(t, handlerRequest{
+		ctx: context.Background(), contentType: mediatype.JSON,
 		handler: handler, objectStorage: fake, method: deleteFlowMethod, body: string(body),
 	})
 
@@ -1062,7 +1071,8 @@ func TestConfirmedDeleteTreatsAlreadyEmptyFlowAsSuccess(t *testing.T) {
 	body, err := json.Marshal(deleteRequest{StorageKey: formatStorageKey(fileIDOne)})
 	require.NoError(t, err)
 
-	recorder := serveJSONRequest(t, jsonHandlerRequest{
+	recorder := serveRequest(t, handlerRequest{
+		ctx: context.Background(), contentType: mediatype.JSON,
 		handler: handler, objectStorage: fake, method: deleteFlowMethod, body: string(body),
 	})
 
@@ -1102,7 +1112,8 @@ func TestConfirmedDeleteMapsRemainingAndDependencyFailuresSafely(t *testing.T) {
 			body, err := json.Marshal(deleteRequest{StorageKey: formatStorageKey(fileIDOne)})
 			require.NoError(t, err)
 
-			recorder := serveJSONRequest(t, jsonHandlerRequest{
+			recorder := serveRequest(t, handlerRequest{
+				ctx: context.Background(), contentType: mediatype.JSON,
 				handler: handler, objectStorage: fake, method: deleteFlowMethod, body: string(body),
 			})
 
@@ -1844,7 +1855,12 @@ func newTestHandlerWithLogger(t *testing.T, options testHandlerOptions) *Handler
 		options.clean = func(input []byte) ([]byte, error) { return bytes.Clone(input), nil }
 	}
 	if options.entropy == nil {
-		options.entropy = deterministicEntropy
+		options.entropy = func(destination []byte) (int, error) {
+			for index := range destination {
+				destination[index] = byte(index)
+			}
+			return len(destination), nil
+		}
 	}
 	if options.admissionJitter == nil {
 		options.admissionJitter = func() (int, error) { return 0, nil }
@@ -1896,32 +1912,6 @@ func serveRequest(t *testing.T, input handlerRequest) *httptest.ResponseRecorder
 	}
 	bindings.Inject(bindings.Bindings{Storage: input.objectStorage})(endpoint).ServeHTTP(recorder, request)
 	return recorder
-}
-
-type jsonHandlerRequest struct {
-	handler       *Handler
-	objectStorage storage.Storage
-	method        handlerMethod
-	body          string
-}
-
-func serveJSONRequest(t *testing.T, input jsonHandlerRequest) *httptest.ResponseRecorder {
-	t.Helper()
-	return serveRequest(t, handlerRequest{
-		ctx:           context.Background(),
-		handler:       input.handler,
-		objectStorage: input.objectStorage,
-		method:        input.method,
-		contentType:   mediatype.JSON,
-		body:          input.body,
-	})
-}
-
-func deterministicEntropy(destination []byte) (int, error) {
-	for index := range destination {
-		destination[index] = byte(index)
-	}
-	return len(destination), nil
 }
 
 func errorMessage(t *testing.T, recorder *httptest.ResponseRecorder) string {
