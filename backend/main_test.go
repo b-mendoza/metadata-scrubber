@@ -273,8 +273,8 @@ func TestNewServerSharesOneCapacityTwoGateAcrossDryRunAndScrubMisses(t *testing.
 	observer.requireDownloadStarts(t, thirdFileID)
 	require.Equal(t, 2, observer.peakDownloads())
 
-	observer.releaseOneDownload()
-	observer.releaseOneDownload()
+	observer.downloadRelease <- struct{}{}
+	observer.downloadRelease <- struct{}{}
 	for range 3 {
 		select {
 		case recorder := <-responses:
@@ -383,10 +383,6 @@ func (observer *serverAdmissionStorage) waitForObservedScrubLookup(t *testing.T)
 	case <-time.After(time.Second):
 		require.FailNow(t, "timed out waiting for scrub miss lookup")
 	}
-}
-
-func (observer *serverAdmissionStorage) releaseOneDownload() {
-	observer.downloadRelease <- struct{}{}
 }
 
 func (observer *serverAdmissionStorage) peakDownloads() int {
