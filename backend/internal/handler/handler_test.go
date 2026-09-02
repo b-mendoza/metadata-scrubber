@@ -765,9 +765,7 @@ func TestScrubCacheMissBindsEveryOperationToReviewedRevision(t *testing.T) {
 			require.Empty(t, call.SourceETag)
 			continue
 		}
-		if call.Operation != storage.FakeSanitizedExists || call.SourceETag != "" {
-			require.Equal(t, canonicalETagOne, call.SourceETag)
-		}
+		require.Equal(t, canonicalETagOne, call.SourceETag)
 	}
 	stored, exists, err := fake.SanitizedBytes(fileIDOne, "0123456789abcdef0123456789abcdef")
 	require.NoError(t, err)
