@@ -1534,7 +1534,7 @@ func TestPipelineLogsRecordAllApprovedSuccessStages(t *testing.T) {
 		{Message: "sniffed", Level: "INFO", StorageKeyDigest: storageKeyDigestTwo, Outcome: "accepted"},
 		{Message: "scrubbed", Level: "INFO", StorageKeyDigest: storageKeyDigestTwo, Outcome: "success"},
 		{Message: "presigned", Level: "INFO", StorageKeyDigest: storageKeyDigestTwo, Outcome: "success"},
-	}, withoutLogDurations(records))
+	}, records)
 }
 
 func TestPipelineLogsShortCircuitFailuresAndDescribeCacheHitsTruthfully(t *testing.T) {
@@ -1674,7 +1674,7 @@ func TestPipelineLogsShortCircuitFailuresAndDescribeCacheHitsTruthfully(t *testi
 
 			require.Equal(t, testCase.wantStatus, recorder.Code, recorder.Body.String())
 			records := readLogRecords(t, logs.Bytes())
-			require.Equal(t, testCase.wantRecords, withoutLogDurations(records))
+			require.Equal(t, testCase.wantRecords, records)
 		})
 	}
 }
@@ -2172,18 +2172,6 @@ type pipelineLogRecord struct {
 	DurationMilliseconds *int64 `json:"duration_ms"`
 }
 
-func withoutLogDurations(records []pipelineLogRecord) []pipelineLogRecord {
-	if len(records) == 0 {
-		return nil
-	}
-	withoutDurations := make([]pipelineLogRecord, len(records))
-	for index, record := range records {
-		record.DurationMilliseconds = nil
-		withoutDurations[index] = record
-	}
-	return withoutDurations
-}
-
 func readLogRecords(t *testing.T, data []byte) []pipelineLogRecord {
 	t.Helper()
 	var records []pipelineLogRecord
@@ -2193,6 +2181,7 @@ func readLogRecords(t *testing.T, data []byte) []pipelineLogRecord {
 		require.NoError(t, json.Unmarshal(scanner.Bytes(), &record))
 		require.NotNil(t, record.DurationMilliseconds)
 		require.GreaterOrEqual(t, *record.DurationMilliseconds, int64(0))
+		record.DurationMilliseconds = nil
 		records = append(records, record)
 	}
 	require.NoError(t, scanner.Err())
