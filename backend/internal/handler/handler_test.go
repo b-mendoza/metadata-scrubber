@@ -1342,12 +1342,7 @@ func TestExactRevisionCacheHitSucceedsWhileBothPermitsAreHeld(t *testing.T) {
 	requireResponsesSuccess(t, holderResponses, 2, "timed out waiting for holder response")
 }
 
-func TestSharedAdmissionNeverExceedsTwoAndReleasesAfterEveryTerminalPath(t *testing.T) {
-	t.Run("mixed dry run and scrub misses peak at two", testMixedWorkflowsPeakAtTwo)
-	testTerminalPathsReleasePermits(t)
-}
-
-func testMixedWorkflowsPeakAtTwo(t *testing.T) {
+func TestMixedWorkflowsPeakAtTwo(t *testing.T) {
 	fake := storage.NewFake()
 	observer := newBlockingStorage(fake, fileIDOne, fileIDTwo, fileIDThree)
 	seedCandidateSources(t, fake, fileIDOne, fileIDTwo, fileIDThree)
@@ -1384,7 +1379,7 @@ type terminalPathTestCase struct {
 	wantStatus    int
 }
 
-func testTerminalPathsReleasePermits(t *testing.T) {
+func TestTerminalPathsReleasePermits(t *testing.T) {
 	terminalCases := []terminalPathTestCase{
 		{name: "dry run success", method: dryRunMethod, wantStatus: http.StatusOK},
 		{name: "scrub success", method: scrubMethod, wantStatus: http.StatusOK},
