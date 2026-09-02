@@ -29,8 +29,6 @@ const (
 	r2RequestTimeout = 30 * time.Second
 )
 
-var errPartialDeleteResult = errors.New("partial delete result")
-
 // R2 implements Storage for a private Cloudflare R2 bucket.
 type R2 struct {
 	client    *s3.Client
@@ -306,9 +304,8 @@ func (r2 *R2) DeleteFlow(ctx context.Context, fileID string) error {
 	if err := r2.deleteSource(ctx, sourceKey); err != nil {
 		return err
 	}
-	deleteErr := r2.deleteSanitizedRevisions(ctx, sanitizedPrefix)
-	if deleteErr != nil && !errors.Is(deleteErr, errPartialDeleteResult) {
-		return deleteErr
+	if err := r2.deleteSanitizedRevisions(ctx, sanitizedPrefix); err != nil {
+		return err
 	}
 	return r2.verifyFlowEmpty(ctx, sourceKey, sanitizedPrefix)
 }
@@ -332,20 +329,14 @@ func (r2 *R2) deleteSanitizedRevisions(ctx context.Context, sanitizedPrefix stri
 		Bucket: aws.String(r2.bucket),
 		Prefix: aws.String(sanitizedPrefix),
 	})
-	partialDeleteResult := false
 	for paginator.HasMorePages() {
 		page, err := paginator.NextPage(ctx)
 		if err != nil {
 			return r2OperationError(ctx, operationDeleteFlow)
 		}
-		pageHasPartialResult, err := r2.deleteSanitizedPage(ctx, page.Contents, sanitizedPrefix)
-		if err != nil {
+		if err := r2.deleteSanitizedPage(ctx, page.Contents, sanitizedPrefix); err != nil {
 			return err
 		}
-		partialDeleteResult = partialDeleteResult || pageHasPartialResult
-	}
-	if partialDeleteResult {
-		return operationError(operationDeleteFlow, errPartialDeleteResult)
 	}
 	return nil
 }
@@ -354,25 +345,25 @@ func (r2 *R2) deleteSanitizedPage(
 	ctx context.Context,
 	contents []s3types.Object,
 	sanitizedPrefix string,
-) (bool, error) {
+) error {
 	if len(contents) == 0 {
-		return false, nil
+		return nil
 	}
 	objects, err := sanitizedObjectIdentifiers(contents, sanitizedPrefix)
 	if err != nil {
-		return false, err
+		return err
 	}
 	output, err := r2.client.DeleteObjects(ctx, &s3.DeleteObjectsInput{
 		Bucket: aws.String(r2.bucket),
 		Delete: &s3types.Delete{Objects: objects, Quiet: aws.Bool(true)},
 	})
 	if err != nil {
-		return false, r2OperationError(ctx, operationDeleteFlow)
+		return r2OperationError(ctx, operationDeleteFlow)
 	}
 	if output == nil {
-		return false, operationError(operationDeleteFlow, ErrDependency)
+		return operationError(operationDeleteFlow, ErrDependency)
 	}
-	return len(output.Errors) != 0, nil
+	return nil
 }
 
 func sanitizedObjectIdentifiers(
