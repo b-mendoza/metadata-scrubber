@@ -23,7 +23,7 @@ const POSITIVE_WHOLE_SECONDS_PATTERN = /^\d+$/;
 
 export const shouldRetryServerDirectedWorkflowRequest = ({
   error,
-}: ShouldRetryState) => {
+}: ShouldRetryState): false | undefined => {
   if (!(error instanceof HTTPError)) {
     return false;
   }
@@ -41,6 +41,8 @@ export const shouldRetryServerDirectedWorkflowRequest = ({
     Number.isSafeInteger(retryAfterSeconds) &&
     retryAfterSeconds >= MINIMUM_RETRY_AFTER_SECONDS
   ) {
+    // Ky 2.1.0 applies the server Retry-After delay and the maxRetryAfter cap only when shouldRetry returns undefined.
+    // Returning true would replace the server-directed delay with Ky's own computed delay.
     return;
   }
   return false;
