@@ -64,16 +64,10 @@ var (
 	ErrMalformedPDF = errors.New("malformed PDF")
 )
 
-type (
-	removePDFMetadataOperation func(*model.Context, *pdfAnalysis)
-	writePDFOperation          func(*model.Context, io.Writer) error
-	verifyPDFOperation         func([]byte) error
-)
-
 type cleanPDFOperations struct {
-	remove removePDFMetadataOperation
-	write  writePDFOperation
-	verify verifyPDFOperation
+	remove func(*model.Context, *pdfAnalysis)
+	write  func(*model.Context, io.Writer) error
+	verify func([]byte) error
 }
 
 // DisableConfigDir prevents pdfcpu from creating or reading a per-user config
