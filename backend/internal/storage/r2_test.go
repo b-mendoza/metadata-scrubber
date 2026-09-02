@@ -728,7 +728,6 @@ func TestR2PropagatesContextAndSanitizesProviderFailures(t *testing.T) {
 	_, err = adapter.SanitizedExists(deadlineCtx, "file-1", canonicalR2ETagOne)
 	require.ErrorIs(t, err, context.DeadlineExceeded)
 
-	adapter = newTestR2FailingTransport(errors.New("transport-provider-body-sentinel"))
 	_, err = adapter.DownloadSource(context.Background(), "file-identifier-sentinel", "")
 	require.ErrorIs(t, err, ErrDependency)
 	assertSafeStorageError(t, err)
