@@ -71,15 +71,7 @@ test("an eligible 503 waits for the server Retry-After value before it retries",
   vi.useFakeTimers();
   const fetchMock = vi
     .fn<typeof fetch>()
-    .mockResolvedValueOnce(
-      Response.json(
-        { error: "processing capacity temporarily unavailable" },
-        {
-          headers: { "Retry-After": "1" },
-          status: SERVICE_UNAVAILABLE_STATUS_CODE,
-        },
-      ),
-    )
+    .mockResolvedValueOnce(unavailableResponse())
     .mockResolvedValueOnce(Response.json({ status: "ok" }));
   vi.stubGlobal("fetch", fetchMock);
   const client = createWorkflowHttpClient(BACKEND_BASE_URL);
