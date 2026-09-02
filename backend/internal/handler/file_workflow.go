@@ -118,6 +118,9 @@ func (handler *Handler) Scrub(w http.ResponseWriter, request *http.Request) {
 	if objectStorage == nil {
 		return
 	}
+	workflowRequest := scrubWorkflowRequest{
+		request: request, objectStorage: objectStorage, fileID: fileID, input: input, startedAt: startedAt,
+	}
 
 	if !handler.scrubSourceAvailable(w, request, objectStorage, fileID) {
 		return
@@ -129,31 +132,17 @@ func (handler *Handler) Scrub(w http.ResponseWriter, request *http.Request) {
 		return
 	}
 	if sanitizedExists {
-		handler.presignScrubbed(w, scrubDownloadRequest{
-			request: request, objectStorage: objectStorage, fileID: fileID,
-			input: input, outcome: pipelineOutcomeCacheHit, startedAt: startedAt,
-		})
+		handler.presignScrubbed(w, workflowRequest, pipelineOutcomeCacheHit)
 		return
 	}
 
-	if !handler.materializeScrubbed(w, scrubMaterializeRequest{
-		request: request, objectStorage: objectStorage, fileID: fileID,
-		input: input, startedAt: startedAt,
-	}) {
+	if !handler.materializeScrubbed(w, workflowRequest) {
 		return
 	}
-	handler.presignScrubbed(w, scrubDownloadRequest{
-		request: request, objectStorage: objectStorage, fileID: fileID,
-		input: input, outcome: pipelineOutcomeSuccess, startedAt: startedAt,
-	})
+	handler.presignScrubbed(w, workflowRequest, pipelineOutcomeSuccess)
 }
 
-func (handler *Handler) scrubSourceAvailable(
-	w http.ResponseWriter,
-	request *http.Request,
-	objectStorage storage.Storage,
-	fileID string,
-) bool {
+func (handler *Handler) scrubSourceAvailable(w http.ResponseWriter, request *http.Request, objectStorage storage.Storage, fileID string) bool {
 	sourceExists, err := objectStorage.SourceExists(request.Context(), fileID)
 	if err != nil {
 		handler.writeUnexpectedFailure(w, request, err, "could not check source file")
@@ -185,7 +174,7 @@ func (handler *Handler) scrubFileID(w http.ResponseWriter, request *http.Request
 	return "", false
 }
 
-type scrubMaterializeRequest struct {
+type scrubWorkflowRequest struct {
 	request       *http.Request
 	objectStorage storage.Storage
 	fileID        string
@@ -193,87 +182,66 @@ type scrubMaterializeRequest struct {
 	startedAt     time.Time
 }
 
-func (handler *Handler) materializeScrubbed(w http.ResponseWriter, materializeRequest scrubMaterializeRequest) bool {
-	cleanedBytes, err := handler.cleanSource(cleanWorkflowRequest{
-		request: materializeRequest.request, objectStorage: materializeRequest.objectStorage, fileID: materializeRequest.fileID,
-		storageKey: materializeRequest.input.StorageKey, startedAt: materializeRequest.startedAt, expectedETag: materializeRequest.input.ETag,
-	})
+func (handler *Handler) materializeScrubbed(w http.ResponseWriter, input scrubWorkflowRequest) bool {
+	cleanedBytes, err := handler.cleanSource(input)
 	if errors.Is(err, errAdmissionFailure) {
-		handler.writeAdmissionFailure(w, materializeRequest.request, err)
+		handler.writeAdmissionFailure(w, input.request, err)
 		return false
 	}
 	if err != nil {
 		failure := classifyPipelineFailure(err, "could not scrub PDF")
-		handler.logStage(pipelineLogEvent{ctx: materializeRequest.request.Context(), stage: pipelineStageScrubbed, storageKey: materializeRequest.input.StorageKey, outcome: failure.outcome, startedAt: materializeRequest.startedAt})
+		handler.logStage(pipelineLogEvent{ctx: input.request.Context(), stage: pipelineStageScrubbed, storageKey: input.input.StorageKey, outcome: failure.outcome, startedAt: input.startedAt})
 		if writeErr := httpx.WriteError(w, failure.status, failure.message); writeErr != nil {
-			handler.logger.ErrorContext(materializeRequest.request.Context(), "could not write JSON response", "error", writeErr)
+			handler.logger.ErrorContext(input.request.Context(), "could not write JSON response", "error", writeErr)
 		}
 		return false
 	}
-	handler.logStage(pipelineLogEvent{ctx: materializeRequest.request.Context(), stage: pipelineStageScrubbed, storageKey: materializeRequest.input.StorageKey, outcome: pipelineOutcomeSuccess, startedAt: materializeRequest.startedAt})
+	handler.logStage(pipelineLogEvent{ctx: input.request.Context(), stage: pipelineStageScrubbed, storageKey: input.input.StorageKey, outcome: pipelineOutcomeSuccess, startedAt: input.startedAt})
 
-	if err := materializeRequest.objectStorage.UploadSanitized(materializeRequest.request.Context(), materializeRequest.fileID, materializeRequest.input.ETag, cleanedBytes); err != nil {
-		handler.writeUnexpectedFailure(w, materializeRequest.request, err, "could not store scrubbed file")
+	if err := input.objectStorage.UploadSanitized(input.request.Context(), input.fileID, input.input.ETag, cleanedBytes); err != nil {
+		handler.writeUnexpectedFailure(w, input.request, err, "could not store scrubbed file")
 		return false
 	}
 	return true
 }
 
-type cleanWorkflowRequest struct {
-	request       *http.Request
-	objectStorage storage.Storage
-	fileID        string
-	storageKey    string
-	expectedETag  string
-	startedAt     time.Time
-}
-
-func (handler *Handler) cleanSource(input cleanWorkflowRequest) ([]byte, error) {
+func (handler *Handler) cleanSource(input scrubWorkflowRequest) ([]byte, error) {
 	release, err := handler.acquirePermit(input.request.Context())
 	if err != nil {
 		return nil, fmt.Errorf("%w: %w", errAdmissionFailure, err)
 	}
 	defer release()
 
-	source, err := input.objectStorage.DownloadSource(input.request.Context(), input.fileID, input.expectedETag)
+	source, err := input.objectStorage.DownloadSource(input.request.Context(), input.fileID, input.input.ETag)
 	if err != nil {
 		return nil, err
 	}
 	if !sniff.IsPDFCandidate(source.PDFBytes) {
-		handler.logStage(pipelineLogEvent{ctx: input.request.Context(), stage: pipelineStageSniffed, storageKey: input.storageKey, outcome: pipelineOutcomeRejected, startedAt: input.startedAt})
+		handler.logStage(pipelineLogEvent{ctx: input.request.Context(), stage: pipelineStageSniffed, storageKey: input.input.StorageKey, outcome: pipelineOutcomeRejected, startedAt: input.startedAt})
 		return nil, errNotPDF
 	}
-	handler.logStage(pipelineLogEvent{ctx: input.request.Context(), stage: pipelineStageSniffed, storageKey: input.storageKey, outcome: pipelineOutcomeAccepted, startedAt: input.startedAt})
+	handler.logStage(pipelineLogEvent{ctx: input.request.Context(), stage: pipelineStageSniffed, storageKey: input.input.StorageKey, outcome: pipelineOutcomeAccepted, startedAt: input.startedAt})
 
 	return handler.clean(source.PDFBytes)
 }
 
-type scrubDownloadRequest struct {
-	request       *http.Request
-	objectStorage storage.Storage
-	fileID        string
-	input         scrubRequest
-	outcome       pipelineOutcome
-	startedAt     time.Time
-}
-
-func (handler *Handler) presignScrubbed(w http.ResponseWriter, downloadRequest scrubDownloadRequest) {
-	grant, err := downloadRequest.objectStorage.PresignSanitizedDownload(
-		downloadRequest.request.Context(),
-		downloadRequest.fileID,
-		downloadRequest.input.ETag,
+func (handler *Handler) presignScrubbed(w http.ResponseWriter, input scrubWorkflowRequest, outcome pipelineOutcome) {
+	grant, err := input.objectStorage.PresignSanitizedDownload(
+		input.request.Context(),
+		input.fileID,
+		input.input.ETag,
 		downloadGrantExpiry,
 	)
 	if err != nil {
-		handler.writeUnexpectedFailure(w, downloadRequest.request, err, "could not create download")
+		handler.writeUnexpectedFailure(w, input.request, err, "could not create download")
 		return
 	}
 
-	handler.logStage(pipelineLogEvent{ctx: downloadRequest.request.Context(), stage: pipelineStagePresigned, storageKey: downloadRequest.input.StorageKey, outcome: downloadRequest.outcome, startedAt: downloadRequest.startedAt})
+	handler.logStage(pipelineLogEvent{ctx: input.request.Context(), stage: pipelineStagePresigned, storageKey: input.input.StorageKey, outcome: outcome, startedAt: input.startedAt})
 	if err := writeJSON(w, http.StatusOK, scrubResponse{
 		Status: "done",
 		Result: scrubResponseResult{DownloadURL: grant.URL},
 	}); err != nil {
-		handler.logger.ErrorContext(downloadRequest.request.Context(), "could not write JSON response", "error", err)
+		handler.logger.ErrorContext(input.request.Context(), "could not write JSON response", "error", err)
 	}
 }
