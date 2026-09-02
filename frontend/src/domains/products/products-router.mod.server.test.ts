@@ -2,7 +2,6 @@ import { TRPCError } from "@trpc/server";
 import ky from "ky";
 import { expect, test, vi } from "vitest";
 
-import { environmentSchema } from "#/shared/config/env/environment.mod.server";
 import {
   createCallerFactory,
   createTRPCRequestContext,
@@ -28,9 +27,6 @@ test("getMessage maps a rejected backend health request to BAD_GATEWAY", async (
   const request = new Request("https://frontend.test/");
 
   vi.mocked(getApplicationBindings).mockReturnValue({
-    env: environmentSchema.parse({
-      BACKEND_URL: "https://backend.test/",
-    }),
     httpClient: ky.create({
       baseUrl: new URL("https://backend.test/"),
       hooks: {
@@ -72,9 +68,6 @@ test("getMessage returns the reachable backend health status", async () => {
   const request = new Request("https://frontend.test/");
 
   vi.mocked(getApplicationBindings).mockReturnValue({
-    env: environmentSchema.parse({
-      BACKEND_URL: "https://backend.test/",
-    }),
     httpClient: ky.create({
       baseUrl: new URL("https://backend.test/"),
       hooks: {

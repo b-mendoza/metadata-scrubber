@@ -2,7 +2,6 @@ import { AsyncLocalStorage } from "node:async_hooks";
 
 import { createMiddleware, createServerOnlyFn } from "@tanstack/react-start";
 
-import type { Environment } from "#/shared/config/env/environment.mod.server";
 import { environmentSchema } from "#/shared/config/env/environment.mod.server";
 import type { HTTPClient } from "#/shared/libs/ky/http-client.mod.server";
 import { createHttpClient } from "#/shared/libs/ky/http-client.mod.server";
@@ -12,7 +11,6 @@ import { invariant } from "#/shared/utils/invariant/invariant.mod";
 
 interface ApplicationBindingsValue {
   // db: DrizzleDatabaseClient;
-  env: Environment;
   httpClient: HTTPClient;
   workflowHttpClient: WorkflowHTTPClient;
 }
@@ -36,7 +34,6 @@ export const applicationBindingsMiddleware = createMiddleware({
 
   return ApplicationBindingsStorage.run(
     {
-      env: safeEnvironmentVariables,
       httpClient,
       workflowHttpClient,
     },
