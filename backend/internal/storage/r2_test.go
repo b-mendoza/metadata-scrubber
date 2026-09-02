@@ -450,12 +450,11 @@ func TestR2DeleteFlowDeletesEveryListedPageAndVerifiesBothLocations(t *testing.T
 	}))
 
 	require.NoError(t, adapter.DeleteFlow(context.Background(), "file-1"))
-	close(requests)
 
-	observed := make([]observedStorageRequest, 0, 7)
-	for request := range requests {
-		require.NoError(t, request.err)
-		observed = append(observed, request)
+	observed := make([]observedStorageRequest, 7)
+	for index := range observed {
+		observed[index] = <-requests
+		require.NoError(t, observed[index].err)
 	}
 	require.Len(t, observed, 7)
 	require.Equal(t, http.MethodDelete, observed[0].method)
