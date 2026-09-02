@@ -45,9 +45,9 @@ The delete route removes the source and all sanitized revisions for one file. Th
 - `main.go` configures JSON slog logging. It validates the service configuration and the Cloudflare R2 connection configuration. It creates one long-lived R2 adapter from the validated configuration without contacting R2. It passes the adapter into server construction.
 - Server construction creates one handler and one buffered admission channel with a fixed capacity of two. It does not register the superseded multipart endpoint.
 - Server construction uses request bindings to inject the validated configuration and the provider-neutral `storage.Storage` interface before routing. Handlers do not construct provider clients or receive AWS SDK types.
-- Dry-run acquires the shared permit before source download. It holds the permit through offset-zero sniffing and PDF inspection.
+- Dry-run acquires the shared permit before source download. It holds the permit through the intake check and PDF inspection.
 - Scrub checks that the source exists before it checks the sanitized revision cache. A missing source returns `404 Not Found`. A source-check failure stops later storage and PDF work.
-- Scrub acquires the shared permit before source download on a cache miss. It holds the permit through offset-zero sniffing and PDF cleaning. It releases the permit before sanitized upload. An exact-revision cache hit does not acquire the permit or download the source.
+- Scrub acquires the shared permit before source download on a cache miss. It holds the permit through the intake check and PDF cleaning. It releases the permit before sanitized upload. An exact-revision cache hit does not acquire the permit or download the source.
 - If a request cannot acquire a permit within two seconds, the server returns `503 Service Unavailable`. Each rejection gets a new whole-second `Retry-After` value. The value uses a two-second base plus random jitter of zero, one, or two seconds. A random-source failure uses two seconds. The value has a one-second minimum.
 - If the client cancels while the request waits, the server returns `408 Request Timeout`.
 - Dry-run returns the source's canonical unquoted ETag. The ETag grammar is exactly 32 lower-case hexadecimal characters. Scrub binds the reviewed source revision to both the conditional source read and the immutable sanitized object key.
