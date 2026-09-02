@@ -98,9 +98,31 @@ func TestNewServerLogsRequests(t *testing.T) {
 	request := httptest.NewRequest(http.MethodGet, "/api/health", http.NoBody)
 	serveServer(server, request)
 
-	record := readServerCompletionLogRecord(t, logs.Bytes())
-	require.Equal(t, "/api/health", record.Path)
-	require.Equal(t, http.StatusOK, record.Status)
+	type serverLogRecord struct {
+		Message string `json:"msg"`
+		Path    string `json:"path"`
+		Status  int    `json:"status"`
+	}
+
+	var completionRecord serverLogRecord
+	foundCompletionRecord := false
+	scanner := bufio.NewScanner(bytes.NewReader(logs.Bytes()))
+	for scanner.Scan() {
+		var record serverLogRecord
+		require.NoError(t, json.Unmarshal(scanner.Bytes(), &record))
+		if record.Message == "request completed" {
+			completionRecord = record
+			foundCompletionRecord = true
+			break
+		}
+	}
+	require.NoError(t, scanner.Err())
+	if !foundCompletionRecord {
+		require.FailNow(t, "request completion log record not found")
+	}
+
+	require.Equal(t, "/api/health", completionRecord.Path)
+	require.Equal(t, http.StatusOK, completionRecord.Status)
 }
 
 func TestNewServerHandlesCORSPreflight(t *testing.T) {
@@ -371,27 +393,4 @@ func (observer *serverAdmissionStorage) peakDownloads() int {
 	observer.mu.Lock()
 	defer observer.mu.Unlock()
 	return observer.peak
-}
-
-type serverLogRecord struct {
-	Message string `json:"msg"`
-	Path    string `json:"path"`
-	Status  int    `json:"status"`
-}
-
-func readServerCompletionLogRecord(t *testing.T, data []byte) serverLogRecord {
-	t.Helper()
-
-	scanner := bufio.NewScanner(bytes.NewReader(data))
-	for scanner.Scan() {
-		var record serverLogRecord
-		require.NoError(t, json.Unmarshal(scanner.Bytes(), &record))
-		if record.Message == "request completed" {
-			return record
-		}
-	}
-	require.NoError(t, scanner.Err())
-	require.FailNow(t, "request completion log record not found")
-
-	panic("unreachable")
 }
