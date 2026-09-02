@@ -15,13 +15,13 @@ export const WORKFLOW_DRY_RUN_TIMEOUT_MS = 90_000;
 export const WORKFLOW_SCRUB_TIMEOUT_MS = 240_000;
 export const WORKFLOW_RETRY_LIMIT = 2;
 export const WORKFLOW_RETRY_MAX_RETRY_AFTER_MS = 4000;
-export const WORKFLOW_RETRY_ON_TIMEOUT = false;
+const WORKFLOW_RETRY_ON_TIMEOUT = false;
 
 const NO_RETRY_LIMIT = 0;
 const MINIMUM_RETRY_AFTER_SECONDS = 1;
 const POSITIVE_WHOLE_SECONDS_PATTERN = /^\d+$/;
 
-export const shouldRetryServerDirectedWorkflowRequest = ({
+const shouldRetryServerDirectedWorkflowRequest = ({
   error,
 }: ShouldRetryState): false | undefined => {
   if (!(error instanceof HTTPError)) {
