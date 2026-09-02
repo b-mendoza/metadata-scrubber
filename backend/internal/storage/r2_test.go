@@ -40,18 +40,42 @@ func TestR2PresignsOperationSpecificExactKeysAndExpiry(t *testing.T) {
 	t.Parallel()
 
 	adapter := newTestR2Server(t, http.NotFoundHandler())
-	presignMethods := capturePresignMethods(adapter)
+	presignMethods := make(chan string, 4)
+	options := adapter.client.Options()
+	options.APIOptions = append(options.APIOptions, func(stack *middleware.Stack) error {
+		return stack.Build.Add(middleware.BuildMiddlewareFunc(
+			"CapturePresignMethod",
+			func(
+				ctx context.Context,
+				input middleware.BuildInput,
+				next middleware.BuildHandler,
+			) (middleware.BuildOutput, middleware.Metadata, error) {
+				request, ok := input.Request.(*smithyhttp.Request)
+				if !ok {
+					presignMethods <- ""
+					return next.HandleBuild(ctx, input)
+				}
+				presignMethods <- request.Method
+				return next.HandleBuild(ctx, input)
+			},
+		), middleware.After)
+	})
+	adapter.presigner = s3.NewPresignClient(s3.New(options))
 
 	uploadExpiry := time.Minute
 	uploadSizeBytes := int64(1024)
 	upload, err := adapter.PresignSourceUpload(context.Background(), "file-1", uploadSizeBytes, uploadExpiry)
 	require.NoError(t, err)
 	require.Equal(t, http.MethodPut, <-presignMethods)
-	assertPresignedRequest(t, upload, "/"+testBucket+"/source/file-1", uploadExpiry)
+	uploadURL, err := url.Parse(upload.URL)
+	require.NoError(t, err)
+	require.Equal(t, "/"+testBucket+"/source/file-1", uploadURL.Path)
+	require.Equal(t, strconv.FormatInt(int64(uploadExpiry/time.Second), 10), uploadURL.Query().Get("X-Amz-Expires"))
+	require.Equal(t, testAccessKey, strings.Split(uploadURL.Query().Get("X-Amz-Credential"), "/")[0])
 	require.Equal(t, PDFContentType, upload.RequiredHeaders.Get("Content-Type"))
 	require.Equal(t, "1024", upload.RequiredHeaders.Get("Content-Length"))
 	require.Empty(t, upload.RequiredHeaders.Get("Host"))
-	signedHeaders := strings.Split(parsePresignedURL(t, upload.URL).Query().Get("X-Amz-SignedHeaders"), ";")
+	signedHeaders := strings.Split(uploadURL.Query().Get("X-Amz-SignedHeaders"), ";")
 	require.Contains(t, signedHeaders, "content-type")
 	require.Contains(t, signedHeaders, "content-length")
 
@@ -59,14 +83,18 @@ func TestR2PresignsOperationSpecificExactKeysAndExpiry(t *testing.T) {
 	download, err := adapter.PresignSanitizedDownload(
 		context.Background(),
 		"file-1",
-		"0123456789abcdef0123456789abcdef",
+		canonicalR2ETagOne,
 		downloadExpiry,
 	)
 	require.NoError(t, err)
-	revisionKey, err := SanitizedObjectKey("file-1", "0123456789abcdef0123456789abcdef")
+	revisionKey, err := SanitizedObjectKey("file-1", canonicalR2ETagOne)
 	require.NoError(t, err)
 	require.Equal(t, http.MethodGet, <-presignMethods)
-	assertPresignedRequest(t, download, "/"+testBucket+"/"+revisionKey, downloadExpiry)
+	downloadURL, err := url.Parse(download.URL)
+	require.NoError(t, err)
+	require.Equal(t, "/"+testBucket+"/"+revisionKey, downloadURL.Path)
+	require.Equal(t, strconv.FormatInt(int64(downloadExpiry/time.Second), 10), downloadURL.Query().Get("X-Amz-Expires"))
+	require.Equal(t, testAccessKey, strings.Split(downloadURL.Query().Get("X-Amz-Credential"), "/")[0])
 	require.Empty(t, download.RequiredHeaders)
 }
 
@@ -75,7 +103,7 @@ func TestR2SourceReadsReturnCopiedMetadataAndRoundTripIfMatch(t *testing.T) {
 
 	requests := make(chan observedStorageRequest, 2)
 	adapter := newTestR2Server(t, http.HandlerFunc(func(response http.ResponseWriter, request *http.Request) {
-		response.Header().Set("ETag", `"0123456789abcdef0123456789abcdef"`)
+		response.Header().Set("ETag", `"`+canonicalR2ETagOne+`"`)
 		response.Header().Set("X-Amz-Meta-Author", "synthetic-author")
 		response.Header().Set("X-Amz-Meta-Document-Type", "report")
 		_, writeErr := io.WriteString(response, "source-pdf")
@@ -90,7 +118,7 @@ func TestR2SourceReadsReturnCopiedMetadataAndRoundTripIfMatch(t *testing.T) {
 	dryRun, err := adapter.DownloadSource(context.Background(), "file-1", "")
 	require.NoError(t, err)
 	require.Equal(t, []byte("source-pdf"), dryRun.PDFBytes)
-	require.Equal(t, "0123456789abcdef0123456789abcdef", dryRun.ETag)
+	require.Equal(t, canonicalR2ETagOne, dryRun.ETag)
 	require.Equal(t, map[string]string{
 		"author":        "synthetic-author",
 		"document-type": "report",
@@ -107,7 +135,7 @@ func TestR2SourceReadsReturnCopiedMetadataAndRoundTripIfMatch(t *testing.T) {
 		require.Equal(t, "/"+testBucket+"/source/file-1", request.path)
 	}
 	require.Empty(t, dryRunRequest.ifMatch)
-	require.Equal(t, `"0123456789abcdef0123456789abcdef"`, matchedRequest.ifMatch)
+	require.Equal(t, `"`+canonicalR2ETagOne+`"`, matchedRequest.ifMatch)
 }
 
 func TestR2EnforcesTheSourceObjectMemoryBoundary(t *testing.T) {
@@ -130,7 +158,7 @@ func TestR2EnforcesTheSourceObjectMemoryBoundary(t *testing.T) {
 						ProtoMajor: 1,
 						ProtoMinor: 1,
 						Header: http.Header{
-							"Etag":              []string{`"0123456789abcdef0123456789abcdef"`},
+							"Etag":              []string{`"` + canonicalR2ETagOne + `"`},
 							"X-Amz-Meta-Author": []string{"synthetic-author"},
 						},
 						Body:          body,
@@ -154,7 +182,7 @@ func TestR2EnforcesTheSourceObjectMemoryBoundary(t *testing.T) {
 
 			require.NoError(t, err)
 			require.Len(t, source.PDFBytes, MaxSourceObjectBytes)
-			require.Equal(t, "0123456789abcdef0123456789abcdef", source.ETag)
+			require.Equal(t, canonicalR2ETagOne, source.ETag)
 			require.Equal(t, "synthetic-author", source.Metadata["author"])
 		})
 	}
@@ -165,7 +193,7 @@ func TestR2MapsOnlyConditionalSourcePreconditionFailureToConflict(t *testing.T) 
 
 	adapter := newTestR2StatusServer(t, http.StatusPreconditionFailed)
 
-	_, err := adapter.DownloadSource(context.Background(), "file-1", "0123456789abcdef0123456789abcdef")
+	_, err := adapter.DownloadSource(context.Background(), "file-1", canonicalR2ETagOne)
 	require.ErrorIs(t, err, ErrSourceRevisionConflict)
 	require.NotErrorIs(t, err, ErrDependency)
 
@@ -180,7 +208,7 @@ func TestR2KeepsOrdinarySourceFailuresDistinctFromRevisionConflict(t *testing.T)
 
 	adapter := newTestR2StatusServer(t, http.StatusForbidden)
 
-	_, err := adapter.DownloadSource(context.Background(), "file-1", "0123456789abcdef0123456789abcdef")
+	_, err := adapter.DownloadSource(context.Background(), "file-1", canonicalR2ETagOne)
 
 	require.ErrorIs(t, err, ErrDependency)
 	require.NotErrorIs(t, err, ErrSourceRevisionConflict)
@@ -190,7 +218,7 @@ func TestR2KeepsOrdinarySourceFailuresDistinctFromRevisionConflict(t *testing.T)
 func TestR2TreatsMalformedProviderETagsAsOrdinaryFailures(t *testing.T) {
 	t.Parallel()
 
-	for _, providerETag := range []string{"", "0123456789abcdef0123456789abcdef"} {
+	for _, providerETag := range []string{"", canonicalR2ETagOne} {
 		t.Run(providerETag, func(t *testing.T) {
 			adapter := newTestR2Server(t, http.HandlerFunc(func(response http.ResponseWriter, _ *http.Request) {
 				if providerETag != "" {
@@ -218,7 +246,7 @@ func TestR2ReportsAMissingSourceAsSourceNotFound(t *testing.T) {
 	require.NotErrorIs(t, err, ErrDependency)
 	assertSafeStorageError(t, err)
 
-	_, err = adapter.DownloadSource(context.Background(), "file-identifier-sentinel", "0123456789abcdef0123456789abcdef")
+	_, err = adapter.DownloadSource(context.Background(), "file-identifier-sentinel", canonicalR2ETagOne)
 	require.ErrorIs(t, err, ErrSourceNotFound)
 	require.NotErrorIs(t, err, ErrSourceRevisionConflict)
 }
@@ -258,9 +286,9 @@ func TestR2SourceExistenceMapsOnlyNotFoundToAbsence(t *testing.T) {
 func TestR2SanitizedExistenceUsesOnlyTheExactRevisionKey(t *testing.T) {
 	t.Parallel()
 
-	revisionOneKey, err := SanitizedObjectKey("file-1", "0123456789abcdef0123456789abcdef")
+	revisionOneKey, err := SanitizedObjectKey("file-1", canonicalR2ETagOne)
 	require.NoError(t, err)
-	revisionTwoKey, err := SanitizedObjectKey("file-1", "fedcba9876543210fedcba9876543210")
+	revisionTwoKey, err := SanitizedObjectKey("file-1", canonicalR2ETagTwo)
 	require.NoError(t, err)
 
 	requests := make(chan observedStorageRequest, 2)
@@ -277,11 +305,11 @@ func TestR2SanitizedExistenceUsesOnlyTheExactRevisionKey(t *testing.T) {
 		requests <- observedStorageRequest{method: request.Method, path: request.URL.Path}
 	}))
 
-	exists, err := adapter.SanitizedExists(context.Background(), "file-1", "0123456789abcdef0123456789abcdef")
+	exists, err := adapter.SanitizedExists(context.Background(), "file-1", canonicalR2ETagOne)
 	require.NoError(t, err)
 	require.True(t, exists)
 
-	exists, err = adapter.SanitizedExists(context.Background(), "file-1", "fedcba9876543210fedcba9876543210")
+	exists, err = adapter.SanitizedExists(context.Background(), "file-1", canonicalR2ETagTwo)
 	require.NoError(t, err)
 	require.False(t, exists)
 
@@ -300,7 +328,7 @@ func TestR2SanitizedExistenceMapsOnlyNotFoundToAbsence(t *testing.T) {
 		response.WriteHeader(http.StatusForbidden)
 	}))
 
-	exists, err := adapter.SanitizedExists(context.Background(), "file-1", "0123456789abcdef0123456789abcdef")
+	exists, err := adapter.SanitizedExists(context.Background(), "file-1", canonicalR2ETagOne)
 
 	require.False(t, exists)
 	require.ErrorIs(t, err, ErrDependency)
@@ -310,7 +338,7 @@ func TestR2SanitizedExistenceMapsOnlyNotFoundToAbsence(t *testing.T) {
 func TestR2SanitizedUploadPinsPDFContentTypeAndPerformsNoFollowUp(t *testing.T) {
 	t.Parallel()
 
-	revisionKey, err := SanitizedObjectKey("file-1", "0123456789abcdef0123456789abcdef")
+	revisionKey, err := SanitizedObjectKey("file-1", canonicalR2ETagOne)
 	require.NoError(t, err)
 	oversizedPDF := []byte(strings.Repeat("x", scrub.MaxInputBytes+1))
 	var requestCount atomic.Int64
@@ -330,7 +358,7 @@ func TestR2SanitizedUploadPinsPDFContentTypeAndPerformsNoFollowUp(t *testing.T) 
 		response.WriteHeader(http.StatusOK)
 	}))
 
-	err = adapter.UploadSanitized(context.Background(), "file-1", "0123456789abcdef0123456789abcdef", oversizedPDF)
+	err = adapter.UploadSanitized(context.Background(), "file-1", canonicalR2ETagOne, oversizedPDF)
 
 	require.NoError(t, err)
 	request := <-requests
@@ -356,7 +384,7 @@ func TestR2SanitizedUploadReturnsASanitizedDependencyError(t *testing.T) {
 	err := adapter.UploadSanitized(
 		context.Background(),
 		"file-identifier-sentinel",
-		"0123456789abcdef0123456789abcdef",
+		canonicalR2ETagOne,
 		[]byte("pdf"),
 	)
 
@@ -623,7 +651,7 @@ func TestR2RejectsInvalidInputsBeforeStorageRequests(t *testing.T) {
 	require.ErrorIs(t, err, ErrInvalidFileID)
 	_, err = adapter.PresignSourceUpload(context.Background(), "folder/file", 1024, time.Minute)
 	require.ErrorIs(t, err, ErrInvalidFileID)
-	_, err = adapter.PresignSanitizedDownload(context.Background(), "file-1", `"0123456789abcdef0123456789abcdef"`, time.Minute)
+	_, err = adapter.PresignSanitizedDownload(context.Background(), "file-1", `"`+canonicalR2ETagOne+`"`, time.Minute)
 	require.ErrorIs(t, err, ErrInvalidETag)
 	_, err = adapter.PresignSourceUpload(context.Background(), "file-1", 1024, 0)
 	require.ErrorIs(t, err, ErrInvalidPresignExpiry)
@@ -631,11 +659,11 @@ func TestR2RejectsInvalidInputsBeforeStorageRequests(t *testing.T) {
 	require.ErrorIs(t, err, ErrInvalidSourceSize)
 	_, err = adapter.PresignSourceUpload(context.Background(), "file-1", MaxSourceObjectBytes+1, time.Minute)
 	require.ErrorIs(t, err, ErrSourceObjectTooLarge)
-	_, err = adapter.DownloadSource(context.Background(), "file-1", `"0123456789abcdef0123456789abcdef"`)
+	_, err = adapter.DownloadSource(context.Background(), "file-1", `"`+canonicalR2ETagOne+`"`)
 	require.ErrorIs(t, err, ErrInvalidETag)
 	_, err = adapter.SanitizedExists(context.Background(), "file-1", "")
 	require.ErrorIs(t, err, ErrInvalidETag)
-	err = adapter.UploadSanitized(context.Background(), "../file", "0123456789abcdef0123456789abcdef", []byte("pdf"))
+	err = adapter.UploadSanitized(context.Background(), "../file", canonicalR2ETagOne, []byte("pdf"))
 	require.ErrorIs(t, err, ErrInvalidFileID)
 	require.Zero(t, requestCount.Load())
 }
@@ -698,18 +726,18 @@ func TestR2PropagatesContextAndSanitizesProviderFailures(t *testing.T) {
 	require.ErrorIs(t, err, context.Canceled)
 	_, err = adapter.PresignSourceUpload(ctx, "file-1", 1024, time.Minute)
 	require.ErrorIs(t, err, context.Canceled)
-	_, err = adapter.PresignSanitizedDownload(ctx, "file-1", "0123456789abcdef0123456789abcdef", time.Minute)
+	_, err = adapter.PresignSanitizedDownload(ctx, "file-1", canonicalR2ETagOne, time.Minute)
 	require.ErrorIs(t, err, context.Canceled)
 	_, err = adapter.DownloadSource(ctx, "file-1", "")
 	require.ErrorIs(t, err, context.Canceled)
-	_, err = adapter.SanitizedExists(ctx, "file-1", "0123456789abcdef0123456789abcdef")
+	_, err = adapter.SanitizedExists(ctx, "file-1", canonicalR2ETagOne)
 	require.ErrorIs(t, err, context.Canceled)
-	err = adapter.UploadSanitized(ctx, "file-1", "0123456789abcdef0123456789abcdef", []byte("pdf"))
+	err = adapter.UploadSanitized(ctx, "file-1", canonicalR2ETagOne, []byte("pdf"))
 	require.ErrorIs(t, err, context.Canceled)
 
 	deadlineCtx, deadlineCancel := context.WithDeadline(context.Background(), time.Now().Add(-time.Second))
 	defer deadlineCancel()
-	_, err = adapter.SanitizedExists(deadlineCtx, "file-1", "0123456789abcdef0123456789abcdef")
+	_, err = adapter.SanitizedExists(deadlineCtx, "file-1", canonicalR2ETagOne)
 	require.ErrorIs(t, err, context.DeadlineExceeded)
 
 	adapter = newTestR2FailingTransport(errors.New("transport-provider-body-sentinel"))
@@ -763,53 +791,6 @@ func newTestR2(endpoint string, httpClient *http.Client) *R2 {
 	})
 }
 
-func assertPresignedRequest(
-	t *testing.T,
-	request PresignedRequest,
-	path string,
-	expiry time.Duration,
-) {
-	t.Helper()
-
-	parsed := parsePresignedURL(t, request.URL)
-	require.Equal(t, path, parsed.Path)
-	require.Equal(t, strconv.FormatInt(int64(expiry/time.Second), 10), parsed.Query().Get("X-Amz-Expires"))
-	require.Equal(t, testAccessKey, strings.Split(parsed.Query().Get("X-Amz-Credential"), "/")[0])
-}
-
-func capturePresignMethods(adapter *R2) <-chan string {
-	methods := make(chan string, 4)
-	options := adapter.client.Options()
-	options.APIOptions = append(options.APIOptions, func(stack *middleware.Stack) error {
-		return stack.Build.Add(middleware.BuildMiddlewareFunc(
-			"CapturePresignMethod",
-			func(
-				ctx context.Context,
-				input middleware.BuildInput,
-				next middleware.BuildHandler,
-			) (middleware.BuildOutput, middleware.Metadata, error) {
-				request, ok := input.Request.(*smithyhttp.Request)
-				if !ok {
-					methods <- ""
-					return next.HandleBuild(ctx, input)
-				}
-				methods <- request.Method
-				return next.HandleBuild(ctx, input)
-			},
-		), middleware.After)
-	})
-	adapter.presigner = s3.NewPresignClient(s3.New(options))
-	return methods
-}
-
-func parsePresignedURL(t *testing.T, rawURL string) *url.URL {
-	t.Helper()
-
-	parsed, err := url.Parse(rawURL)
-	require.NoError(t, err)
-	return parsed
-}
-
 func listObjectsResponse(objectKey string, truncated bool, nextToken string) string {
 	contents := ""
 	keyCount := 0
@@ -840,7 +821,7 @@ func assertSafeStorageError(t *testing.T, err error) {
 		"endpoint-sentinel",
 		testBucket,
 		"file-identifier-sentinel",
-		"0123456789abcdef0123456789abcdef",
+		canonicalR2ETagOne,
 		"synthetic-author",
 		"provider-body-sentinel",
 		"request-id-sentinel",
