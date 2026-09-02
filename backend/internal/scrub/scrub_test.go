@@ -133,7 +133,8 @@ func TestInspectPDFAppliesPreviewByteCeilingDeterministically(t *testing.T) {
 			require.Len(t, fields, 1)
 			require.Equal(t, testCase.expectedPreview, fields[0].Preview)
 			require.Equal(t, len(testCase.value), fields[0].OriginalByteSize)
-			requireValidUTF8Preview(t, fields[0])
+			require.True(t, utf8.ValidString(fields[0].Preview), "invalid UTF-8 preview %q", fields[0].Preview)
+			require.LessOrEqual(t, len(fields[0].Preview), maxFieldPreviewBytes)
 
 			repeatedFields, err := InspectPDF(pdfBytes, PublicInput)
 			require.NoError(t, err)
@@ -307,7 +308,11 @@ func TestInspectionSummaryLimitsStayAtApprovedValues(t *testing.T) {
 func TestFieldExposesOnlyApprovedInspectionProperties(t *testing.T) {
 	fieldType := reflect.TypeFor[Field]()
 	require.Equal(t, 5, fieldType.NumField())
-	require.Equal(t, []string{"Name", "Label", "Preview", "OriginalByteSize", "Action"}, structFieldNames(fieldType))
+	fieldNames := make([]string, fieldType.NumField())
+	for index := range fieldType.NumField() {
+		fieldNames[index] = fieldType.Field(index).Name
+	}
+	require.Equal(t, []string{"Name", "Label", "Preview", "OriginalByteSize", "Action"}, fieldNames)
 }
 
 func TestInspectPDFBoundsIdentitiesDerivedFromLongCustomKeys(t *testing.T) {
@@ -405,7 +410,7 @@ func TestInspectPDFTreatsNeutralTrioAccordingToOrigin(t *testing.T) {
 
 	publicFields, err := InspectPDF(pdfBytes, PublicInput)
 	require.NoError(t, err)
-	require.Equal(t, neutralTrioFieldNames(), fieldNames(publicFields))
+	require.Equal(t, []string{"info.creation_date", "info.mod_date", "info.producer"}, fieldNames(publicFields))
 	requireExpectedActions(t, publicFields)
 
 	verificationFields, err := InspectPDF(pdfBytes, PostWriteVerification)
@@ -423,13 +428,13 @@ func TestInspectPDFKeepsEveryNeutralTrioNearMissVisible(t *testing.T) {
 		expectedNames []string
 	}{
 		{name: "partial trio", entries: map[string]string{"Producer": neutralEntries["Producer"], "CreationDate": neutralEntries["CreationDate"]}, expectedNames: []string{"info.creation_date", "info.producer"}},
-		{name: "mismatched dates", entries: mergeInfoEntries(neutralEntries, map[string]string{"ModDate": pdfString("D:20260102030406+00'00'")}), expectedNames: neutralTrioFieldNames()},
-		{name: "invalid dates", entries: mergeInfoEntries(neutralEntries, map[string]string{"CreationDate": pdfString("invalid"), "ModDate": pdfString("invalid")}), expectedNames: neutralTrioFieldNames()},
-		{name: "different producer", entries: mergeInfoEntries(neutralEntries, map[string]string{"Producer": pdfString("another producer")}), expectedNames: neutralTrioFieldNames()},
+		{name: "mismatched dates", entries: mergeInfoEntries(neutralEntries, map[string]string{"ModDate": pdfString("D:20260102030406+00'00'")}), expectedNames: []string{"info.creation_date", "info.mod_date", "info.producer"}},
+		{name: "invalid dates", entries: mergeInfoEntries(neutralEntries, map[string]string{"CreationDate": pdfString("invalid"), "ModDate": pdfString("invalid")}), expectedNames: []string{"info.creation_date", "info.mod_date", "info.producer"}},
+		{name: "different producer", entries: mergeInfoEntries(neutralEntries, map[string]string{"Producer": pdfString("another producer")}), expectedNames: []string{"info.creation_date", "info.mod_date", "info.producer"}},
 		{name: "extra custom Info", entries: mergeInfoEntries(neutralEntries, map[string]string{"Custom": pdfString("still-user-metadata")}), expectedNames: []string{"info.creation_date", "info.custom.001", "info.mod_date", "info.producer"}},
-		{name: "catalog metadata", entries: neutralEntries, metadata: catalogMetadata, expectedNames: append(neutralTrioFieldNames(), "metadata.catalog")},
-		{name: "page metadata", entries: neutralEntries, metadata: pageMetadata, expectedNames: append(neutralTrioFieldNames(), "metadata.page.0001")},
-		{name: "nested metadata", entries: neutralEntries, metadata: nestedMetadata, expectedNames: append(neutralTrioFieldNames(), "metadata.object.000001.001")},
+		{name: "catalog metadata", entries: neutralEntries, metadata: catalogMetadata, expectedNames: []string{"info.creation_date", "info.mod_date", "info.producer", "metadata.catalog"}},
+		{name: "page metadata", entries: neutralEntries, metadata: pageMetadata, expectedNames: []string{"info.creation_date", "info.mod_date", "info.producer", "metadata.page.0001"}},
+		{name: "nested metadata", entries: neutralEntries, metadata: nestedMetadata, expectedNames: []string{"info.creation_date", "info.mod_date", "info.producer", "metadata.object.000001.001"}},
 	}
 	for _, testCase := range testCases {
 		t.Run(testCase.name, func(t *testing.T) {
@@ -446,7 +451,8 @@ func TestInspectPDFKeepsEveryNeutralTrioNearMissVisible(t *testing.T) {
 
 func TestCleanPDFRemovesEveryInspectedTargetAndVerifiesOutput(t *testing.T) {
 	inputBytes, metadata := buildMetadataRichPDF(t)
-	inputContext := assertValidPDF(t, inputBytes)
+	inputContext, err := api.ReadValidateAndOptimize(bytes.NewReader(inputBytes), boundedPDFConfiguration())
+	require.NoError(t, err)
 	require.Equal(t, 2, inputContext.PageCount)
 
 	inputFields, err := InspectPDF(inputBytes, PublicInput)
@@ -457,7 +463,8 @@ func TestCleanPDFRemovesEveryInspectedTargetAndVerifiesOutput(t *testing.T) {
 	require.NoError(t, err)
 	require.NotEqual(t, inputBytes, outputBytes)
 
-	outputContext := assertValidPDF(t, outputBytes)
+	outputContext, err := api.ReadValidateAndOptimize(bytes.NewReader(outputBytes), boundedPDFConfiguration())
+	require.NoError(t, err)
 	require.Equal(t, inputContext.PageCount, outputContext.PageCount)
 	verificationFields, err := InspectPDF(outputBytes, PostWriteVerification)
 	require.NoError(t, err)
@@ -465,10 +472,10 @@ func TestCleanPDFRemovesEveryInspectedTargetAndVerifiesOutput(t *testing.T) {
 
 	publicOutputFields, err := InspectPDF(outputBytes, PublicInput)
 	require.NoError(t, err)
-	require.Equal(t, neutralTrioFieldNames(), fieldNames(publicOutputFields))
+	require.Equal(t, []string{"info.creation_date", "info.mod_date", "info.producer"}, fieldNames(publicOutputFields))
 	requireExpectedActions(t, publicOutputFields)
 
-	requireNoOriginalMarkers(t, outputBytes,
+	for _, marker := range []string{
 		metadata.title,
 		metadata.author,
 		metadata.producer,
@@ -476,8 +483,17 @@ func TestCleanPDFRemovesEveryInspectedTargetAndVerifiesOutput(t *testing.T) {
 		"catalog-xmp-marker",
 		"page-xmp-marker",
 		"nested-xmp-marker",
-	)
-	contentByPage := extractedPageContent(t, outputContext)
+	} {
+		require.NotContains(t, string(outputBytes), marker)
+	}
+	contentByPage := make(map[int]string, outputContext.PageCount)
+	for pageNumber := 1; pageNumber <= outputContext.PageCount; pageNumber++ {
+		contentReader, err := pdfcpu.ExtractPageContent(outputContext, pageNumber)
+		require.NoError(t, err)
+		contentBytes, err := io.ReadAll(contentReader)
+		require.NoError(t, err)
+		contentByPage[pageNumber] = string(contentBytes)
+	}
 	require.Contains(t, contentByPage[1], "Synthetic readable content page one")
 	require.Contains(t, contentByPage[2], "Synthetic readable content page two")
 }
@@ -1072,30 +1088,6 @@ func metadataStreamObject(content string) string {
 	return fmt.Sprintf("<< /Type /Metadata /Subtype /XML /Length %d >>\nstream\n%s\nendstream", len(content), content)
 }
 
-func assertValidPDF(t *testing.T, pdfBytes []byte) *model.Context {
-	t.Helper()
-
-	pdfContext, err := api.ReadValidateAndOptimize(bytes.NewReader(pdfBytes), boundedPDFConfiguration())
-	require.NoError(t, err)
-
-	return pdfContext
-}
-
-func extractedPageContent(t *testing.T, pdfContext *model.Context) map[int]string {
-	t.Helper()
-
-	contentByPage := make(map[int]string, pdfContext.PageCount)
-	for pageNumber := 1; pageNumber <= pdfContext.PageCount; pageNumber++ {
-		contentReader, err := pdfcpu.ExtractPageContent(pdfContext, pageNumber)
-		require.NoError(t, err)
-		contentBytes, err := io.ReadAll(contentReader)
-		require.NoError(t, err)
-		contentByPage[pageNumber] = string(contentBytes)
-	}
-
-	return contentByPage
-}
-
 type observedPDFWork struct {
 	mutations     int
 	writes        int
@@ -1134,14 +1126,6 @@ func (work *observedPDFWork) clean(inputBytes []byte) ([]byte, error) {
 	})
 }
 
-func structFieldNames(structType reflect.Type) []string {
-	names := make([]string, structType.NumField())
-	for index := range structType.NumField() {
-		names[index] = structType.Field(index).Name
-	}
-	return names
-}
-
 func mergeInfoEntries(baseEntries map[string]string, replacements map[string]string) map[string]string {
 	mergedEntries := maps.Clone(baseEntries)
 	maps.Copy(mergedEntries, replacements)
@@ -1154,10 +1138,6 @@ func customInfoEntries(count int, value string) map[string]string {
 		entries[fmt.Sprintf("Custom%03d", index)] = pdfString(value)
 	}
 	return entries
-}
-
-func neutralTrioFieldNames() []string {
-	return []string{"info.creation_date", "info.mod_date", "info.producer"}
 }
 
 func neutralTrioInfoEntries() map[string]string {
@@ -1186,21 +1166,6 @@ func fieldNames(fields []Field) []string {
 		names[index] = field.Name
 	}
 	return names
-}
-
-func requireNoOriginalMarkers(t *testing.T, outputBytes []byte, markers ...string) {
-	t.Helper()
-
-	for _, marker := range markers {
-		require.NotContains(t, string(outputBytes), marker)
-	}
-}
-
-func requireValidUTF8Preview(t *testing.T, field Field) {
-	t.Helper()
-
-	require.True(t, utf8.ValidString(field.Preview), "invalid UTF-8 preview %q", field.Preview)
-	require.LessOrEqual(t, len(field.Preview), maxFieldPreviewBytes)
 }
 
 func requireNoPDFWork(t *testing.T, work *observedPDFWork) {
