@@ -256,13 +256,12 @@ func TestFakeDeleteFlowRemovesOnlyTheSelectedFileAndIsIdempotent(t *testing.T) {
 	}
 
 	require.NoError(t, fake.DeleteFlow(context.Background(), "file-1"))
-	firstCalls := fake.Calls()
 	require.Equal(t, []storage.FakeCall{{
 		Operation:    storage.FakeDeleteFlow,
 		FileID:       "file-1",
 		ObjectKey:    "source/file-1",
 		ObjectPrefix: "sanitized/file-1/",
-	}}, firstCalls)
+	}}, fake.Calls())
 
 	exists, err := fake.SourceExists(context.Background(), "file-1")
 	require.NoError(t, err)
