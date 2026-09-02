@@ -1032,7 +1032,6 @@ func TestDownloadGrantFailuresStopAtFailedStorageOperation(t *testing.T) {
 	}
 }
 
-
 func TestConfirmedDeleteCallsOneFlowOperationAndReturnsFixedSuccess(t *testing.T) {
 	fake := storage.NewFake()
 	seedCandidateSources(t, fake, fileIDOne)
@@ -1954,19 +1953,6 @@ func callOperationsFor(calls []storage.FakeCall, fileID string) []storage.FakeOp
 	return operations
 }
 
-func canonicalETagForFileID(fileID string) string {
-	switch fileID {
-	case fileIDOne:
-		return canonicalETagOne
-	case fileIDTwo:
-		return canonicalETagTwo
-	case fileIDThree:
-		return canonicalETagThree
-	default:
-		return canonicalETagOne
-	}
-}
-
 func seedCandidateSources(t *testing.T, fake *storage.Fake, fileIDs ...string) {
 	t.Helper()
 	for _, fileID := range fileIDs {
@@ -1974,6 +1960,17 @@ func seedCandidateSources(t *testing.T, fake *storage.Fake, fileIDs ...string) {
 			PDFBytes: []byte("%PDF-" + fileID),
 			ETag:     canonicalETagForFileID(fileID),
 		}))
+	}
+}
+
+func canonicalETagForFileID(fileID string) string {
+	switch fileID {
+	case fileIDTwo:
+		return canonicalETagTwo
+	case fileIDThree:
+		return canonicalETagThree
+	default:
+		return canonicalETagOne
 	}
 }
 

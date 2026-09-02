@@ -136,7 +136,6 @@ func (handler *Handler) writeAdmissionFailure(w http.ResponseWriter, request *ht
 	handler.writeUnexpectedFailure(w, request, err, "could not start PDF processing")
 }
 
-
 func (handler *Handler) admissionRetryAfter(ctx context.Context) string {
 	jitter, err := handler.admissionJitter()
 	if err != nil {
