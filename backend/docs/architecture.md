@@ -12,7 +12,7 @@
 | `httpx` | `httpx` provides HTTP helpers that handlers share. The helpers handle CORS and safe request logging. The helpers return error responses. The `httpx/header` and `httpx/mediatype` subpackages handle headers and media types. |
 | `bindings` | `bindings` provides middleware that attaches configuration and storage dependencies to each request context. |
 | `config` | `config` reads service and Cloudflare R2 connection configuration from the environment. It validates the configuration before startup. |
-| `storage` | `storage` defines provider-neutral upload, workflow, and lifecycle ports. It includes a synchronized in-memory fake and a Cloudflare R2 adapter. Source objects are private. Sanitized objects use immutable revision keys. The R2 adapter checks exact source existence and performs verified full-flow deletion. |
+| `storage` | `storage` defines provider-neutral upload, workflow, and lifecycle ports. It includes a synchronized in-memory fake and a Cloudflare R2 adapter. Source objects are private. The R2 adapter checks exact source existence. |
 
 ## Tooling layout
 
