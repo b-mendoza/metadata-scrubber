@@ -194,12 +194,17 @@ func decodeJSONRequest[T uploadRequest | dryRunRequest | scrubRequest | download
 	request.Body = http.MaxBytesReader(w, request.Body, maxJSONBodyBytes)
 	decoder := json.NewDecoder(request.Body)
 	decoder.DisallowUnknownFields()
-	stage := jsonDecodeStage{logger: logger, writer: w, request: request, decoder: decoder}
 	var input T
-	if !decodeJSONBody(stage, &input) {
+	if err := decoder.Decode(&input); err != nil {
+		if writeErr := httpx.WriteError(w, http.StatusBadRequest, "invalid JSON request"); writeErr != nil {
+			logger.ErrorContext(request.Context(), "could not write JSON response", "error", writeErr)
+		}
 		return zero, false
 	}
-	if !requestHasSingleJSONValue(logger, w, request, decoder) {
+	if err := decoder.Decode(&struct{}{}); !errors.Is(err, io.EOF) {
+		if writeErr := httpx.WriteError(w, http.StatusBadRequest, "invalid JSON request"); writeErr != nil {
+			logger.ErrorContext(request.Context(), "could not write JSON response", "error", writeErr)
+		}
 		return zero, false
 	}
 	return input, true
@@ -211,38 +216,6 @@ func requestHasJSONMediaType(logger *slog.Logger, w http.ResponseWriter, request
 		return true
 	}
 	if writeErr := httpx.WriteError(w, http.StatusUnsupportedMediaType, "Content-Type must be application/json"); writeErr != nil {
-		logger.ErrorContext(request.Context(), "could not write JSON response", "error", writeErr)
-	}
-	return false
-}
-
-type jsonDecodeStage struct {
-	logger  *slog.Logger
-	writer  http.ResponseWriter
-	request *http.Request
-	decoder *json.Decoder
-}
-
-func decodeJSONBody[T uploadRequest | dryRunRequest | scrubRequest | downloadGrantRequest | deleteRequest](stage jsonDecodeStage, destination *T) bool {
-	if err := stage.decoder.Decode(destination); err == nil {
-		return true
-	}
-	if writeErr := httpx.WriteError(stage.writer, http.StatusBadRequest, "invalid JSON request"); writeErr != nil {
-		stage.logger.ErrorContext(stage.request.Context(), "could not write JSON response", "error", writeErr)
-	}
-	return false
-}
-
-func requestHasSingleJSONValue(
-	logger *slog.Logger,
-	w http.ResponseWriter,
-	request *http.Request,
-	decoder *json.Decoder,
-) bool {
-	if err := decoder.Decode(&struct{}{}); errors.Is(err, io.EOF) {
-		return true
-	}
-	if writeErr := httpx.WriteError(w, http.StatusBadRequest, "invalid JSON request"); writeErr != nil {
 		logger.ErrorContext(request.Context(), "could not write JSON response", "error", writeErr)
 	}
 	return false
