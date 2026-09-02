@@ -9,7 +9,7 @@ import {
   NOT_FOUND_STATUS_CODE,
 } from "#/shared/constants/http/status-codes/status-codes.mod";
 import { createWorkflowHttpClient } from "#/shared/libs/ky/workflow-http-client.mod.server";
-import { caller as createApplicationCaller } from "#/shared/libs/trpc/routers/routers.mod.server";
+import { appRouter } from "#/shared/libs/trpc/routers/routers.mod.server";
 import {
   createCallerFactory,
   createTRPCRequestContext,
@@ -251,7 +251,7 @@ test("confirmDelete sends one typed request and returns confirmed deletion", asy
   expect(JSON.stringify(input)).not.toContain("fileBytes");
 });
 
-test("the root application caller registers the wizard router", async () => {
+test("the root application router registers the wizard router", async () => {
   const response: WorkflowConfig = {
     maxFileSizeBytes: WORKFLOW_MAX_FILE_SIZE_BYTES,
   };
@@ -261,9 +261,12 @@ test("the root application caller registers the wizard router", async () => {
   vi.stubGlobal("fetch", fetchMock);
   setApplicationBindings();
   const request = new Request(FRONTEND_URL);
+  const createApplicationCaller = createCallerFactory(appRouter);
 
-  const result =
-    await createApplicationCaller(request).wizard.getWorkflowConfig();
+  const result = await createApplicationCaller(
+    createTRPCRequestContext(request),
+    { signal: request.signal },
+  ).wizard.getWorkflowConfig();
 
   expect(result).toEqual(response);
   expect(fetchMock).toHaveBeenCalledOnce();
