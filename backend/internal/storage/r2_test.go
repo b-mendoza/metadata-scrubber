@@ -505,74 +505,63 @@ func TestR2DeleteFlowRejectsListedObjectOutsideTheRequestedPrefix(t *testing.T) 
 	require.Zero(t, deleteObjectsRequestCount.Load())
 }
 
-func TestR2DeleteFlowSucceedsWhenVerificationIsEmptyAfterAPartialProviderResult(t *testing.T) {
+func TestR2DeleteFlowVerifiesAfterAPartialProviderResult(t *testing.T) {
 	t.Parallel()
 
 	objectKey, err := SanitizedObjectKey("file-identifier-sentinel", canonicalR2ETagOne)
 	require.NoError(t, err)
-	var requestCount atomic.Int64
-	adapter := newTestR2Server(t, http.HandlerFunc(func(response http.ResponseWriter, _ *http.Request) {
-		switch requestCount.Add(1) {
-		case 1:
-			response.WriteHeader(http.StatusNoContent)
-		case 2:
-			response.Header().Set("Content-Type", "application/xml")
-			_, writeErr := io.WriteString(response, listObjectsResponse(objectKey, false, ""))
-			assert.NoError(t, writeErr)
-		case 3:
-			response.Header().Set("Content-Type", "application/xml")
-			_, writeErr := io.WriteString(response, `<DeleteResult xmlns="http://s3.amazonaws.com/doc/2006-03-01/"><Error><Key>`+objectKey+`</Key><Code>AccessDenied</Code><Message>provider-body-sentinel</Message></Error></DeleteResult>`)
-			assert.NoError(t, writeErr)
-		case 4:
-			response.WriteHeader(http.StatusNotFound)
-		case 5:
-			response.Header().Set("Content-Type", "application/xml")
-			_, writeErr := io.WriteString(response, listObjectsResponse("", false, ""))
-			assert.NoError(t, writeErr)
-		default:
-			response.WriteHeader(http.StatusInternalServerError)
-		}
-	}))
+	for _, testCase := range []struct {
+		name          string
+		finalListKey  string
+		assertOutcome func(*testing.T, error)
+	}{
+		{
+			name: "verification is empty",
+			assertOutcome: func(t *testing.T, err error) {
+				require.NoError(t, err)
+			},
+		},
+		{
+			name:         "object remains",
+			finalListKey: objectKey,
+			assertOutcome: func(t *testing.T, err error) {
+				require.ErrorIs(t, err, ErrFlowObjectsRemain)
+				require.NotErrorIs(t, err, ErrDependency)
+				assertSafeStorageError(t, err)
+			},
+		},
+	} {
+		t.Run(testCase.name, func(t *testing.T) {
+			var requestCount atomic.Int64
+			adapter := newTestR2Server(t, http.HandlerFunc(func(response http.ResponseWriter, _ *http.Request) {
+				switch requestCount.Add(1) {
+				case 1:
+					response.WriteHeader(http.StatusNoContent)
+				case 2:
+					response.Header().Set("Content-Type", "application/xml")
+					_, writeErr := io.WriteString(response, listObjectsResponse(objectKey, false, ""))
+					assert.NoError(t, writeErr)
+				case 3:
+					response.Header().Set("Content-Type", "application/xml")
+					_, writeErr := io.WriteString(response, `<DeleteResult xmlns="http://s3.amazonaws.com/doc/2006-03-01/"><Error><Key>`+objectKey+`</Key><Code>AccessDenied</Code><Message>provider-body-sentinel</Message></Error></DeleteResult>`)
+					assert.NoError(t, writeErr)
+				case 4:
+					response.WriteHeader(http.StatusNotFound)
+				case 5:
+					response.Header().Set("Content-Type", "application/xml")
+					_, writeErr := io.WriteString(response, listObjectsResponse(testCase.finalListKey, false, ""))
+					assert.NoError(t, writeErr)
+				default:
+					response.WriteHeader(http.StatusInternalServerError)
+				}
+			}))
 
-	require.NoError(t, adapter.DeleteFlow(context.Background(), "file-identifier-sentinel"))
-	require.Equal(t, int64(5), requestCount.Load())
-}
+			err = adapter.DeleteFlow(context.Background(), "file-identifier-sentinel")
 
-func TestR2DeleteFlowReportsRemainingObjectAfterAPartialProviderResult(t *testing.T) {
-	t.Parallel()
-
-	objectKey, err := SanitizedObjectKey("file-identifier-sentinel", canonicalR2ETagOne)
-	require.NoError(t, err)
-	var requestCount atomic.Int64
-	adapter := newTestR2Server(t, http.HandlerFunc(func(response http.ResponseWriter, _ *http.Request) {
-		switch requestCount.Add(1) {
-		case 1:
-			response.WriteHeader(http.StatusNoContent)
-		case 2:
-			response.Header().Set("Content-Type", "application/xml")
-			_, writeErr := io.WriteString(response, listObjectsResponse(objectKey, false, ""))
-			assert.NoError(t, writeErr)
-		case 3:
-			response.Header().Set("Content-Type", "application/xml")
-			_, writeErr := io.WriteString(response, `<DeleteResult xmlns="http://s3.amazonaws.com/doc/2006-03-01/"><Error><Key>`+objectKey+`</Key><Code>AccessDenied</Code><Message>provider-body-sentinel</Message></Error></DeleteResult>`)
-			assert.NoError(t, writeErr)
-		case 4:
-			response.WriteHeader(http.StatusNotFound)
-		case 5:
-			response.Header().Set("Content-Type", "application/xml")
-			_, writeErr := io.WriteString(response, listObjectsResponse(objectKey, false, ""))
-			assert.NoError(t, writeErr)
-		default:
-			response.WriteHeader(http.StatusInternalServerError)
-		}
-	}))
-
-	err = adapter.DeleteFlow(context.Background(), "file-identifier-sentinel")
-
-	require.ErrorIs(t, err, ErrFlowObjectsRemain)
-	require.NotErrorIs(t, err, ErrDependency)
-	assertSafeStorageError(t, err)
-	require.Equal(t, int64(5), requestCount.Load())
+			testCase.assertOutcome(t, err)
+			require.Equal(t, int64(5), requestCount.Load())
+		})
+	}
 }
 
 func TestR2DeleteFlowReturnsTypedFailureWhenFinalVerificationFindsAnObject(t *testing.T) {
