@@ -34,7 +34,7 @@ The server registers these routes:
 - `POST /api/files/download-grant`
 - `POST /api/files/delete`
 
-The config route returns the backend-owned maximum file size of `10_485_760` bytes. The workflow POST routes accept small JSON contracts. They do not accept file bytes.
+The config route returns the backend-owned maximum file size of `10_485_760` bytes. The workflow POST routes accept small JSON contracts, not file bytes.
 
 The download-grant route checks one exact sanitized revision. It returns a fresh 15-minute grant and a UTC RFC 3339 whole-second expiry. It does not download the source or process PDF bytes.
 
