@@ -16,11 +16,13 @@ import {
 
 import {
   createWorkflowHttpClient,
+  WORKFLOW_CONFIG_TIMEOUT_MS,
   WORKFLOW_DRY_RUN_TIMEOUT_MS,
   WORKFLOW_NO_RETRY_OPTIONS,
   WORKFLOW_ONE_SHOT_TIMEOUT_MS,
   WORKFLOW_RETRY_LIMIT,
   WORKFLOW_RETRY_MAX_RETRY_AFTER_MS,
+  WORKFLOW_SCRUB_TIMEOUT_MS,
   WORKFLOW_SERVER_DIRECTED_RETRY_OPTIONS,
 } from "./workflow-http-client.mod.server";
 
@@ -277,6 +279,43 @@ test("workflow retries reject a network failure after one attempt", async () => 
   expect(fetchMock).toHaveBeenCalledOnce();
 });
 
+test.each([
+  ["config", WORKFLOW_CONFIG_TIMEOUT_MS],
+  ["one-shot", WORKFLOW_ONE_SHOT_TIMEOUT_MS],
+  ["dry run", WORKFLOW_DRY_RUN_TIMEOUT_MS],
+  ["scrub", WORKFLOW_SCRUB_TIMEOUT_MS],
+])(
+  "a hung %s request times out after %i ms without a retry",
+  async (_name, timeout) => {
+    vi.useFakeTimers();
+    const fetchMock = vi
+      .fn<typeof fetch>()
+      .mockReturnValue(Promise.race<Response>([]));
+    vi.stubGlobal("fetch", fetchMock);
+    const client = createWorkflowHttpClient(BACKEND_BASE_URL);
+
+    let didSettle = false;
+    const responsePromise = client
+      .post(WORKFLOW_PATH, {
+        retry: WORKFLOW_SERVER_DIRECTED_RETRY_OPTIONS,
+        timeout,
+        totalTimeout: timeout,
+      })
+      .catch((error: unknown) => {
+        didSettle = true;
+        return error;
+      });
+
+    await vi.advanceTimersByTimeAsync(timeout - ONE_MILLISECOND_MS);
+    expect(didSettle).toBe(false);
+
+    await vi.advanceTimersByTimeAsync(ONE_MILLISECOND_MS);
+    const error = await responsePromise;
+    expect(error).toBeInstanceOf(TimeoutError);
+    expect(fetchMock).toHaveBeenCalledOnce();
+  },
+);
+
 test("a one-shot request does not retry any upstream failure", async () => {
   vi.useFakeTimers();
   const fetchMock = vi
@@ -320,4 +359,3 @@ test("the total operation budget stops a retry during the server delay", async (
   expect(error).toBeInstanceOf(TimeoutError);
   expect(fetchMock).toHaveBeenCalledOnce();
 });
-
