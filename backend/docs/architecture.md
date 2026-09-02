@@ -38,7 +38,7 @@ The config route returns the backend-owned maximum file size of `10_485_760` byt
 
 The download-grant route checks one exact sanitized revision. It returns a fresh 15-minute grant and a UTC RFC 3339 whole-second expiry. It does not download the source or process PDF bytes.
 
-The delete route removes the source and all sanitized revisions for one file. The R2 adapter lists every sanitized-prefix page and deletes each page as one batch. It checks partial provider delete results. It then verifies that the source and sanitized prefix are empty. The operation is idempotent. A verified remaining object produces a safe `409 Conflict` response. Only verified deletion returns `{ "status": "deleted" }`.
+The delete route removes the source and all sanitized revisions for one file. The R2 adapter lists every sanitized-prefix page and deletes each page as one batch. It checks the provider delete result for each page. It then verifies that the source and sanitized prefix are empty. The operation is idempotent. A verified remaining object produces a `409 Conflict` response. Only verified deletion returns `{ "status": "deleted" }`.
 
 ## Runtime
 
