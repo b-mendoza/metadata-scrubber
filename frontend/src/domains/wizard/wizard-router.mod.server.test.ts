@@ -4,7 +4,6 @@ import { TRPCError } from "@trpc/server";
 import ky from "ky";
 import { afterEach, expect, test, vi } from "vitest";
 
-import { environmentSchema } from "#/shared/config/env/environment.mod.server";
 import {
   CONFLICT_STATUS_CODE,
   NOT_FOUND_STATUS_CODE,
@@ -59,22 +58,16 @@ const FETCH_INPUT_ARGUMENT_INDEX = 0;
 const TWO_FETCH_ATTEMPTS = 2;
 const MINIMUM_FILE_SIZE_BYTES = 1;
 
-const testEnvironment = environmentSchema.parse({
-  BACKEND_URL: BACKEND_BASE_URL.href,
-});
 const createWizardCaller = createCallerFactory(wizardRouter);
-
-type WizardCaller = ReturnType<typeof createWizardCaller>;
 
 const setApplicationBindings = () => {
   vi.mocked(getApplicationBindings).mockReturnValue({
-    env: testEnvironment,
     httpClient: ky.create({ baseUrl: BACKEND_BASE_URL }),
     workflowHttpClient: createWorkflowHttpClient(BACKEND_BASE_URL),
   });
 };
 
-const callerForRequest = (request: Request): WizardCaller => {
+const callerForRequest = (request: Request) => {
   setApplicationBindings();
   return createWizardCaller(createTRPCRequestContext(request), {
     signal: request.signal,

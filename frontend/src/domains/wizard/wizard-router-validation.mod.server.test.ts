@@ -2,7 +2,6 @@ import { TRPCError } from "@trpc/server";
 import ky from "ky";
 import { afterEach, expect, test, vi } from "vitest";
 
-import { environmentSchema } from "#/shared/config/env/environment.mod.server";
 import {
   BAD_REQUEST_STATUS_CODE,
   CONFLICT_STATUS_CODE,
@@ -51,20 +50,13 @@ const BACKEND_BASE_URL = new URL("https://backend.test/");
 const FRONTEND_URL = "https://frontend.test/";
 const STORAGE_KEY = "uploads/00000000-0000-4000-8000-000000000001";
 const CANONICAL_ETAG = "0123456789abcdef0123456789abcdef";
-const ALTERNATE_CANONICAL_ETAG = "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa";
 const DOWNLOAD_URL = "https://downloads.test/sanitized.pdf";
 const ONE_BYTE = 1;
 
-const testEnvironment = environmentSchema.parse({
-  BACKEND_URL: BACKEND_BASE_URL.href,
-});
 const createWizardCaller = createCallerFactory(wizardRouter);
 
-type WizardCaller = ReturnType<typeof createWizardCaller>;
-
-const callerForRequest = (request: Request): WizardCaller => {
+const callerForRequest = (request: Request) => {
   vi.mocked(getApplicationBindings).mockReturnValue({
-    env: testEnvironment,
     httpClient: ky.create({ baseUrl: BACKEND_BASE_URL }),
     workflowHttpClient: createWorkflowHttpClient(BACKEND_BASE_URL),
   });
@@ -93,7 +85,7 @@ afterEach(() => {
 
 test.each([
   ["lower-case mixed hex", CANONICAL_ETAG, true],
-  ["lower-case repeated hex", ALTERNATE_CANONICAL_ETAG, true],
+  ["lower-case repeated hex", "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa", true],
   ["empty", "", false],
   ["weak", `W/"${CANONICAL_ETAG}"`, false],
   ["quoted", `"${CANONICAL_ETAG}"`, false],

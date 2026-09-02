@@ -32,8 +32,7 @@ Developers build the frontend with [TanStack Start](https://tanstack.com/start) 
 ## Application bindings
 
 - Developers implement request-scoped dependency injection with `AsyncLocalStorage` in `src/shared/middlewares/application-bindings/application-bindings.mod.ts`.
-- Server code calls `getApplicationBindings()`. The function returns `{ env, httpClient, workflowHttpClient }`.
-- The `env` binding contains the environment that the middleware validated.
+- Server code calls `getApplicationBindings()`. The function returns `{ httpClient, workflowHttpClient }`.
 - The `httpClient` binding is the request-scoped health-check Ky client.
 - The `workflowHttpClient` binding is the request-scoped file-workflow Ky client.
 - Both clients use the validated `BACKEND_URL` as `baseUrl`.
