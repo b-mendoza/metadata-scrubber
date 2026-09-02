@@ -1,7 +1,18 @@
 import { HTTPError, TimeoutError } from "ky";
 import { afterEach, expect, test, vi } from "vitest";
 
-import { SERVICE_UNAVAILABLE_STATUS_CODE } from "#/shared/constants/http/status-codes/status-codes.mod";
+import {
+  BAD_GATEWAY_STATUS_CODE,
+  BAD_REQUEST_STATUS_CODE,
+  CONFLICT_STATUS_CODE,
+  NOT_FOUND_STATUS_CODE,
+  PAYLOAD_TOO_LARGE_STATUS_CODE,
+  REQUEST_TIMEOUT_STATUS_CODE,
+  SERVICE_UNAVAILABLE_STATUS_CODE,
+  TOO_MANY_REQUESTS_STATUS_CODE,
+  UNPROCESSABLE_ENTITY_STATUS_CODE,
+  UNSUPPORTED_MEDIA_TYPE_STATUS_CODE,
+} from "#/shared/constants/http/status-codes/status-codes.mod";
 
 import {
   createWorkflowHttpClient,
@@ -208,6 +219,43 @@ test.each([
   expect(fetchMock).toHaveBeenCalledOnce();
 });
 
+test.each([
+  BAD_REQUEST_STATUS_CODE,
+  NOT_FOUND_STATUS_CODE,
+  REQUEST_TIMEOUT_STATUS_CODE,
+  CONFLICT_STATUS_CODE,
+  PAYLOAD_TOO_LARGE_STATUS_CODE,
+  UNSUPPORTED_MEDIA_TYPE_STATUS_CODE,
+  UNPROCESSABLE_ENTITY_STATUS_CODE,
+  TOO_MANY_REQUESTS_STATUS_CODE,
+  BAD_GATEWAY_STATUS_CODE,
+])(
+  "workflow retries reject an ineligible HTTP %i response after one attempt",
+  async (status) => {
+    vi.useFakeTimers();
+    const fetchMock = vi
+      .fn<typeof fetch>()
+      .mockResolvedValue(
+        Response.json({ error: "safe backend error" }, { status }),
+      );
+    vi.stubGlobal("fetch", fetchMock);
+    const client = createWorkflowHttpClient(BACKEND_BASE_URL);
+
+    const failurePromise = captureFailure(
+      client.post(WORKFLOW_PATH, {
+        retry: WORKFLOW_SERVER_DIRECTED_RETRY_OPTIONS,
+        timeout: WORKFLOW_DRY_RUN_TIMEOUT_MS,
+        totalTimeout: WORKFLOW_DRY_RUN_TIMEOUT_MS,
+      }),
+    );
+    await vi.runAllTimersAsync();
+
+    const error = await failurePromise;
+    expect(error).toBeInstanceOf(HTTPError);
+    expect(fetchMock).toHaveBeenCalledOnce();
+  },
+);
+
 test("a one-shot request does not retry any upstream failure", async () => {
   vi.useFakeTimers();
   const fetchMock = vi
@@ -251,3 +299,4 @@ test("the total operation budget stops a retry during the server delay", async (
   expect(error).toBeInstanceOf(TimeoutError);
   expect(fetchMock).toHaveBeenCalledOnce();
 });
+
