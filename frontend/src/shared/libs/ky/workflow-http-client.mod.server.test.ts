@@ -1,3 +1,5 @@
+import { once } from "node:events";
+
 import { HTTPError, TimeoutError } from "ky";
 import { afterEach, expect, test, vi } from "vitest";
 
@@ -357,5 +359,31 @@ test("the total operation budget stops a retry during the server delay", async (
 
   const error = await failurePromise;
   expect(error).toBeInstanceOf(TimeoutError);
+  expect(fetchMock).toHaveBeenCalledOnce();
+});
+
+test("an aborted caller signal stops the request without another fetch", async () => {
+  const fetchMock = vi.fn<typeof fetch>(async (input): Promise<Response> => {
+    const request = input instanceof Request ? input : new Request(input);
+    await once(request.signal, "abort");
+    throw new DOMException("aborted", "AbortError");
+  });
+  vi.stubGlobal("fetch", fetchMock);
+  const client = createWorkflowHttpClient(BACKEND_BASE_URL);
+  const controller = new AbortController();
+
+  const failurePromise = captureFailure(
+    client.post(WORKFLOW_PATH, {
+      retry: WORKFLOW_SERVER_DIRECTED_RETRY_OPTIONS,
+      signal: controller.signal,
+      timeout: WORKFLOW_DRY_RUN_TIMEOUT_MS,
+      totalTimeout: WORKFLOW_DRY_RUN_TIMEOUT_MS,
+    }),
+  );
+  await resolveAfterMicrotasks();
+  controller.abort();
+
+  const error = await failurePromise;
+  expect(error).toMatchObject({ name: "AbortError" });
   expect(fetchMock).toHaveBeenCalledOnce();
 });
