@@ -28,10 +28,11 @@ func (handler *Handler) DryRun(w http.ResponseWriter, request *http.Request) {
 		return
 	}
 
-	etag, inspectedFields, err := handler.inspectSource(inspectWorkflowRequest{
+	workflowRequest := inspectWorkflowRequest{
 		request: request, objectStorage: objectStorage, fileID: fileID,
 		storageKey: input.StorageKey, startedAt: startedAt,
-	})
+	}
+	etag, inspectedFields, err := handler.inspectSource(workflowRequest)
 	var fields []publicField
 	if err == nil {
 		fields, err = convertPublicFields(inspectedFields)
@@ -41,12 +42,7 @@ func (handler *Handler) DryRun(w http.ResponseWriter, request *http.Request) {
 		return
 	}
 	if err != nil {
-		handler.writeDryRunFailure(w, dryRunFailureResponse{
-			request:   request,
-			input:     input,
-			startedAt: startedAt,
-			err:       err,
-		})
+		handler.writeDryRunFailure(w, workflowRequest, err)
 		return
 	}
 
@@ -67,18 +63,11 @@ func (handler *Handler) dryRunFileID(w http.ResponseWriter, request *http.Reques
 	return "", false
 }
 
-type dryRunFailureResponse struct {
-	request   *http.Request
-	input     dryRunRequest
-	startedAt time.Time
-	err       error
-}
-
-func (handler *Handler) writeDryRunFailure(w http.ResponseWriter, response dryRunFailureResponse) {
-	failure := classifyPipelineFailure(response.err, "could not inspect PDF")
-	handler.logStage(pipelineLogEvent{ctx: response.request.Context(), stage: pipelineStageDryRun, storageKey: response.input.StorageKey, outcome: failure.outcome, startedAt: response.startedAt})
+func (handler *Handler) writeDryRunFailure(w http.ResponseWriter, input inspectWorkflowRequest, err error) {
+	failure := classifyPipelineFailure(err, "could not inspect PDF")
+	handler.logStage(pipelineLogEvent{ctx: input.request.Context(), stage: pipelineStageDryRun, storageKey: input.storageKey, outcome: failure.outcome, startedAt: input.startedAt})
 	if writeErr := httpx.WriteError(w, failure.status, failure.message); writeErr != nil {
-		handler.logger.ErrorContext(response.request.Context(), "could not write JSON response", "error", writeErr)
+		handler.logger.ErrorContext(input.request.Context(), "could not write JSON response", "error", writeErr)
 	}
 }
 
