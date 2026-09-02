@@ -45,25 +45,17 @@ func (handler *Handler) DownloadGrant(w http.ResponseWriter, request *http.Reque
 		return
 	}
 
-	handler.writeDownloadGrantResponse(w, request, downloadGrantResponse{
+	if err := writeJSON(w, http.StatusOK, downloadGrantResponse{
 		DownloadURL: grant.URL,
 		ExpiresAt:   operationTime.Add(downloadGrantExpiry).Format(time.RFC3339),
-	})
+	}); err != nil {
+		handler.logger.ErrorContext(request.Context(), "could not write JSON response", "error", err)
+	}
 }
 
 func (handler *Handler) writeDownloadGrantNotFound(w http.ResponseWriter, request *http.Request) {
 	if writeErr := httpx.WriteError(w, http.StatusNotFound, "scrubbed file not found"); writeErr != nil {
 		handler.logger.ErrorContext(request.Context(), "could not write JSON response", "error", writeErr)
-	}
-}
-
-func (handler *Handler) writeDownloadGrantResponse(
-	w http.ResponseWriter,
-	request *http.Request,
-	response downloadGrantResponse,
-) {
-	if err := writeJSON(w, http.StatusOK, response); err != nil {
-		handler.logger.ErrorContext(request.Context(), "could not write JSON response", "error", err)
 	}
 }
 
