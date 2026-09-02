@@ -211,7 +211,7 @@ func TestJSONEndpointsValidateEveryBoundaryBeforeWork(t *testing.T) {
 			configureAccepted: func(t *testing.T, fake *storage.Fake) {
 				require.NoError(t, fake.SetSource(fileIDOne, storage.SourceObject{
 					PDFBytes: []byte("%PDF-source"),
-					ETag:     canonicalETagOne,
+					ETag:     "0123456789abcdef0123456789abcdef",
 				}))
 			},
 			wantAcceptedOperations: []storage.FakeOperation{storage.FakeDownloadSource},
@@ -222,8 +222,8 @@ func TestJSONEndpointsValidateEveryBoundaryBeforeWork(t *testing.T) {
 			method:                scrubMethod,
 			wrongTypeBody:         `{"storageKey":"` + formatStorageKey(fileIDOne) + `","etag":1}`,
 			missingFieldBody:      `{"storageKey":"` + formatStorageKey(fileIDOne) + `"}`,
-			oversizedBody:         `{"storageKey":"` + strings.Repeat("x", maxJSONBodyBytes) + `","etag":"0123456789abcdef0123456789abcdef"}`,
-			acceptedParameterBody: `{"storageKey":"` + formatStorageKey(fileIDOne) + `","etag":"0123456789abcdef0123456789abcdef"}` + " \n\t",
+			oversizedBody:         `{"storageKey":"` + strings.Repeat("x", maxJSONBodyBytes) + `","etag":"` + canonicalETagOne + `"}`,
+			acceptedParameterBody: `{"storageKey":"` + formatStorageKey(fileIDOne) + `","etag":"` + canonicalETagOne + `"}` + " \n\t",
 			configureAccepted: func(t *testing.T, fake *storage.Fake) {
 				require.NoError(t, fake.SetSource(fileIDOne, storage.SourceObject{
 					PDFBytes: []byte("%PDF-source"),
@@ -513,7 +513,7 @@ func TestPublicStorageKeysAndETagsAreValidatedBeforeStorage(t *testing.T) {
 
 func TestDryRunReturnsReviewedRevisionAndBackendOwnedFields(t *testing.T) {
 	fake := storage.NewFake()
-	require.NoError(t, fake.SetSource(fileIDOne, storage.SourceObject{PDFBytes: []byte("%PDF-synthetic"), ETag: canonicalETagOne}))
+	require.NoError(t, fake.SetSource(fileIDOne, storage.SourceObject{PDFBytes: []byte("%PDF-synthetic"), ETag: "0123456789abcdef0123456789abcdef"}))
 	inspectCalls := 0
 	handler := newTestHandler(t, func(input []byte, origin scrub.InspectionOrigin) ([]scrub.Field, error) {
 		inspectCalls++
@@ -545,7 +545,7 @@ func TestDryRunReturnsReviewedRevisionAndBackendOwnedFields(t *testing.T) {
 
 func TestDryRunReportsServerFailureForUnknownInspectedFieldAction(t *testing.T) {
 	fake := storage.NewFake()
-	require.NoError(t, fake.SetSource(fileIDOne, storage.SourceObject{PDFBytes: []byte("%PDF-synthetic"), ETag: canonicalETagOne}))
+	require.NoError(t, fake.SetSource(fileIDOne, storage.SourceObject{PDFBytes: []byte("%PDF-synthetic"), ETag: "0123456789abcdef0123456789abcdef"}))
 	handler := newTestHandler(t, func([]byte, scrub.InspectionOrigin) ([]scrub.Field, error) {
 		return []scrub.Field{{Name: "field", Label: "Field", Action: scrub.FieldAction("unknown")}}, nil
 	}, nil, nil)
@@ -560,7 +560,7 @@ func TestDryRunReportsServerFailureForUnknownInspectedFieldAction(t *testing.T) 
 
 func TestDryRunReturnsNonNullEmptyFieldsForCleanPDF(t *testing.T) {
 	fake := storage.NewFake()
-	require.NoError(t, fake.SetSource(fileIDOne, storage.SourceObject{PDFBytes: []byte("%PDF-clean"), ETag: canonicalETagOne}))
+	require.NoError(t, fake.SetSource(fileIDOne, storage.SourceObject{PDFBytes: []byte("%PDF-clean"), ETag: "0123456789abcdef0123456789abcdef"}))
 	handler := newTestHandler(t, nil, nil, nil)
 	body, err := json.Marshal(dryRunRequest{StorageKey: formatStorageKey(fileIDOne)})
 	require.NoError(t, err)
@@ -578,7 +578,7 @@ func TestDryRunIntegratesWithPublicPDFInspection(t *testing.T) {
 	pdfBytes, err := os.ReadFile("testdata/with-property.pdf")
 	require.NoError(t, err)
 	fake := storage.NewFake()
-	require.NoError(t, fake.SetSource(fileIDOne, storage.SourceObject{PDFBytes: pdfBytes, ETag: canonicalETagOne}))
+	require.NoError(t, fake.SetSource(fileIDOne, storage.SourceObject{PDFBytes: pdfBytes, ETag: "0123456789abcdef0123456789abcdef"}))
 	handler := newTestHandler(t, scrub.InspectPDF, nil, nil)
 	body, err := json.Marshal(dryRunRequest{StorageKey: formatStorageKey(fileIDOne)})
 	require.NoError(t, err)
@@ -587,7 +587,7 @@ func TestDryRunIntegratesWithPublicPDFInspection(t *testing.T) {
 	require.Equal(t, http.StatusOK, recorder.Code, recorder.Body.String())
 	var response dryRunResponse
 	require.NoError(t, json.Unmarshal(recorder.Body.Bytes(), &response))
-	require.Equal(t, canonicalETagOne, response.ETag)
+	require.Equal(t, "0123456789abcdef0123456789abcdef", response.ETag)
 	require.NotEmpty(t, response.Fields)
 }
 
@@ -595,7 +595,7 @@ func TestConstructedDryRunRejectsStructurallySignedPDFFixtureWithoutMutation(t *
 	pdfBytes, err := os.ReadFile("testdata/structurally-signed.pdf")
 	require.NoError(t, err)
 	fake := storage.NewFake()
-	require.NoError(t, fake.SetSource(fileIDOne, storage.SourceObject{PDFBytes: pdfBytes, ETag: canonicalETagOne}))
+	require.NoError(t, fake.SetSource(fileIDOne, storage.SourceObject{PDFBytes: pdfBytes, ETag: "0123456789abcdef0123456789abcdef"}))
 	workflow := New(slog.New(slog.NewTextHandler(io.Discard, nil)), make(chan struct{}, ProcessingPermitCount))
 	body, err := json.Marshal(dryRunRequest{StorageKey: formatStorageKey(fileIDOne)})
 	require.NoError(t, err)
@@ -604,7 +604,7 @@ func TestConstructedDryRunRejectsStructurallySignedPDFFixtureWithoutMutation(t *
 	require.Equal(t, http.StatusUnprocessableEntity, recorder.Code, recorder.Body.String())
 	require.Equal(t, "signed PDFs are not supported in v1", errorMessage(t, recorder))
 	require.Equal(t, []storage.FakeOperation{storage.FakeDownloadSource}, callOperations(fake.Calls()))
-	_, exists, err := fake.SanitizedBytes(fileIDOne, canonicalETagOne)
+	_, exists, err := fake.SanitizedBytes(fileIDOne, "0123456789abcdef0123456789abcdef")
 	require.NoError(t, err)
 	require.False(t, exists)
 	require.Empty(t, workflow.permits)
@@ -716,7 +716,7 @@ func TestScrubCacheHitBypassesAdmissionAndReusesExactRevision(t *testing.T) {
 		cleanCalls++
 		return nil, nil
 	}})
-	body, err := json.Marshal(scrubRequest{StorageKey: formatStorageKey(fileIDThree), ETag: canonicalETagThree})
+	body, err := json.Marshal(scrubRequest{StorageKey: formatStorageKey(fileIDThree), ETag: "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"})
 	require.NoError(t, err)
 	recorder := serveJSONRequest(t, jsonHandlerRequest{handler: handler, objectStorage: fake, method: scrubMethod, body: string(body)})
 
@@ -727,7 +727,7 @@ func TestScrubCacheHitBypassesAdmissionAndReusesExactRevision(t *testing.T) {
 	require.Zero(t, cleanCalls)
 	calls := fake.Calls()
 	require.Equal(t, []storage.FakeOperation{storage.FakeSourceExists, storage.FakeSanitizedExists, storage.FakePresignSanitizedDownload}, callOperations(calls))
-	stored, exists, err := fake.SanitizedBytes(fileIDThree, canonicalETagThree)
+	stored, exists, err := fake.SanitizedBytes(fileIDThree, "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa")
 	require.NoError(t, err)
 	require.True(t, exists)
 	require.Equal(t, []byte("already-clean"), stored)
@@ -735,7 +735,7 @@ func TestScrubCacheHitBypassesAdmissionAndReusesExactRevision(t *testing.T) {
 
 func TestScrubCacheMissBindsEveryOperationToReviewedRevision(t *testing.T) {
 	fake := storage.NewFake()
-	require.NoError(t, fake.SetSource(fileIDOne, storage.SourceObject{PDFBytes: []byte("%PDF-source"), ETag: canonicalETagOne}))
+	require.NoError(t, fake.SetSource(fileIDOne, storage.SourceObject{PDFBytes: []byte("%PDF-source"), ETag: "0123456789abcdef0123456789abcdef"}))
 	permits := make(chan struct{}, ProcessingPermitCount)
 	cleaned := []byte("%PDF-cleaned")
 	cleanCalls := 0
@@ -745,7 +745,7 @@ func TestScrubCacheMissBindsEveryOperationToReviewedRevision(t *testing.T) {
 		require.Equal(t, []byte("%PDF-source"), input)
 		return cleaned, nil
 	}})
-	body, err := json.Marshal(scrubRequest{StorageKey: formatStorageKey(fileIDOne), ETag: canonicalETagOne})
+	body, err := json.Marshal(scrubRequest{StorageKey: formatStorageKey(fileIDOne), ETag: "0123456789abcdef0123456789abcdef"})
 	require.NoError(t, err)
 	recorder := serveJSONRequest(t, jsonHandlerRequest{handler: handler, objectStorage: fake, method: scrubMethod, body: string(body)})
 
@@ -769,7 +769,7 @@ func TestScrubCacheMissBindsEveryOperationToReviewedRevision(t *testing.T) {
 			require.Equal(t, canonicalETagOne, call.SourceETag)
 		}
 	}
-	stored, exists, err := fake.SanitizedBytes(fileIDOne, canonicalETagOne)
+	stored, exists, err := fake.SanitizedBytes(fileIDOne, "0123456789abcdef0123456789abcdef")
 	require.NoError(t, err)
 	require.True(t, exists)
 	require.Equal(t, cleaned, stored)
@@ -779,14 +779,14 @@ func TestScrubIntegratesWithDeepPDFCleaning(t *testing.T) {
 	pdfBytes, err := os.ReadFile("testdata/with-property.pdf")
 	require.NoError(t, err)
 	fake := storage.NewFake()
-	require.NoError(t, fake.SetSource(fileIDOne, storage.SourceObject{PDFBytes: pdfBytes, ETag: canonicalETagOne}))
+	require.NoError(t, fake.SetSource(fileIDOne, storage.SourceObject{PDFBytes: pdfBytes, ETag: "0123456789abcdef0123456789abcdef"}))
 	handler := newTestHandler(t, scrub.InspectPDF, scrub.CleanPDF, nil)
-	body, err := json.Marshal(scrubRequest{StorageKey: formatStorageKey(fileIDOne), ETag: canonicalETagOne})
+	body, err := json.Marshal(scrubRequest{StorageKey: formatStorageKey(fileIDOne), ETag: "0123456789abcdef0123456789abcdef"})
 	require.NoError(t, err)
 	recorder := serveJSONRequest(t, jsonHandlerRequest{handler: handler, objectStorage: fake, method: scrubMethod, body: string(body)})
 
 	require.Equal(t, http.StatusOK, recorder.Code, recorder.Body.String())
-	stored, exists, err := fake.SanitizedBytes(fileIDOne, canonicalETagOne)
+	stored, exists, err := fake.SanitizedBytes(fileIDOne, "0123456789abcdef0123456789abcdef")
 	require.NoError(t, err)
 	require.True(t, exists)
 	fields, err := scrub.InspectPDF(stored, scrub.PostWriteVerification)
@@ -888,7 +888,7 @@ func TestScrubFailuresStopAtTheFailedStage(t *testing.T) {
 func runScrubFailureTest(t *testing.T, testCase scrubFailureTestCase) {
 	t.Helper()
 	fake := storage.NewFake()
-	require.NoError(t, fake.SetSource(fileIDOne, storage.SourceObject{PDFBytes: testCase.pdfBytes, ETag: canonicalETagOne}))
+	require.NoError(t, fake.SetSource(fileIDOne, storage.SourceObject{PDFBytes: testCase.pdfBytes, ETag: "0123456789abcdef0123456789abcdef"}))
 	if testCase.failureOp != "" {
 		fake.SetFailure(testCase.failureOp, errors.New("provider-secret"))
 	}
@@ -900,7 +900,7 @@ func runScrubFailureTest(t *testing.T, testCase scrubFailureTestCase) {
 		}
 		return bytes.Clone(input), nil
 	}, nil)
-	body, err := json.Marshal(scrubRequest{StorageKey: formatStorageKey(fileIDOne), ETag: canonicalETagOne})
+	body, err := json.Marshal(scrubRequest{StorageKey: formatStorageKey(fileIDOne), ETag: "0123456789abcdef0123456789abcdef"})
 	require.NoError(t, err)
 	recorder := serveJSONRequest(t, jsonHandlerRequest{
 		handler: handler, objectStorage: fake, method: scrubMethod,
@@ -1321,7 +1321,7 @@ func TestExactRevisionCacheHitSucceedsWhileBothPermitsAreHeld(t *testing.T) {
 		{method: dryRunMethod, fileID: fileIDTwo},
 	})
 
-	body, err := json.Marshal(scrubRequest{StorageKey: formatStorageKey(fileIDThree), ETag: canonicalETagThree})
+	body, err := json.Marshal(scrubRequest{StorageKey: formatStorageKey(fileIDThree), ETag: "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"})
 	require.NoError(t, err)
 	recorder := serveRequest(t, handlerRequest{ctx: context.Background(), handler: handler, objectStorage: observer, method: scrubMethod, contentType: mediatype.JSON, body: string(body)})
 
@@ -1562,7 +1562,7 @@ func TestPipelineLogsShortCircuitFailuresAndDescribeCacheHitsTruthfully(t *testi
 	require.NoError(t, err)
 	presignFailureBody, err := json.Marshal(scrubRequest{StorageKey: formatStorageKey(fileIDOne), ETag: canonicalETagOne})
 	require.NoError(t, err)
-	cacheHitBody, err := json.Marshal(scrubRequest{StorageKey: formatStorageKey(fileIDOne), ETag: canonicalETagOne})
+	cacheHitBody, err := json.Marshal(scrubRequest{StorageKey: formatStorageKey(fileIDOne), ETag: "0123456789abcdef0123456789abcdef"})
 	require.NoError(t, err)
 
 	tests := []struct {
@@ -1588,7 +1588,7 @@ func TestPipelineLogsShortCircuitFailuresAndDescribeCacheHitsTruthfully(t *testi
 			name:   "sniff rejection records terminal outcomes without later success",
 			method: dryRunMethod,
 			configure: func(t *testing.T, fake *storage.Fake) {
-				require.NoError(t, fake.SetSource(fileIDOne, storage.SourceObject{PDFBytes: []byte("not-pdf"), ETag: canonicalETagOne}))
+				require.NoError(t, fake.SetSource(fileIDOne, storage.SourceObject{PDFBytes: []byte("not-pdf"), ETag: "0123456789abcdef0123456789abcdef"}))
 			},
 			body:       string(sniffRejectionBody),
 			wantStatus: http.StatusUnsupportedMediaType,
