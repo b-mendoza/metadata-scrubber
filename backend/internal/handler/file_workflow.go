@@ -28,11 +28,11 @@ func (handler *Handler) DryRun(w http.ResponseWriter, request *http.Request) {
 		return
 	}
 
-	workflowRequest := inspectWorkflowRequest{
+	inspectWorkflow := inspectWorkflowRequest{
 		request: request, objectStorage: objectStorage, fileID: fileID,
 		storageKey: input.StorageKey, startedAt: startedAt,
 	}
-	etag, inspectedFields, err := handler.inspectSource(workflowRequest)
+	etag, inspectedFields, err := handler.inspectSource(inspectWorkflow)
 	var fields []publicField
 	if err == nil {
 		fields, err = convertPublicFields(inspectedFields)
@@ -42,7 +42,7 @@ func (handler *Handler) DryRun(w http.ResponseWriter, request *http.Request) {
 		return
 	}
 	if err != nil {
-		handler.writeDryRunFailure(w, workflowRequest, err)
+		handler.writeDryRunFailure(w, inspectWorkflow, err)
 		return
 	}
 
@@ -63,11 +63,11 @@ func (handler *Handler) dryRunFileID(w http.ResponseWriter, request *http.Reques
 	return "", false
 }
 
-func (handler *Handler) writeDryRunFailure(w http.ResponseWriter, input inspectWorkflowRequest, err error) {
+func (handler *Handler) writeDryRunFailure(w http.ResponseWriter, inspectWorkflow inspectWorkflowRequest, err error) {
 	failure := classifyPipelineFailure(err, "could not inspect PDF")
-	handler.logStage(pipelineLogEvent{ctx: input.request.Context(), stage: pipelineStageDryRun, storageKey: input.storageKey, outcome: failure.outcome, startedAt: input.startedAt})
+	handler.logStage(pipelineLogEvent{ctx: inspectWorkflow.request.Context(), stage: pipelineStageDryRun, storageKey: inspectWorkflow.storageKey, outcome: failure.outcome, startedAt: inspectWorkflow.startedAt})
 	if writeErr := httpx.WriteError(w, failure.status, failure.message); writeErr != nil {
-		handler.logger.ErrorContext(input.request.Context(), "could not write JSON response", "error", writeErr)
+		handler.logger.ErrorContext(inspectWorkflow.request.Context(), "could not write JSON response", "error", writeErr)
 	}
 }
 
@@ -79,22 +79,22 @@ type inspectWorkflowRequest struct {
 	startedAt     time.Time
 }
 
-func (handler *Handler) inspectSource(input inspectWorkflowRequest) (string, []scrub.Field, error) {
-	release, err := handler.acquirePermit(input.request.Context())
+func (handler *Handler) inspectSource(inspectWorkflow inspectWorkflowRequest) (string, []scrub.Field, error) {
+	release, err := handler.acquirePermit(inspectWorkflow.request.Context())
 	if err != nil {
 		return "", nil, fmt.Errorf("%w: %w", errAdmissionFailure, err)
 	}
 	defer release()
 
-	source, err := input.objectStorage.DownloadSource(input.request.Context(), input.fileID, "")
+	source, err := inspectWorkflow.objectStorage.DownloadSource(inspectWorkflow.request.Context(), inspectWorkflow.fileID, "")
 	if err != nil {
 		return "", nil, err
 	}
 	if !sniff.IsPDFCandidate(source.PDFBytes) {
-		handler.logStage(pipelineLogEvent{ctx: input.request.Context(), stage: pipelineStageSniffed, storageKey: input.storageKey, outcome: pipelineOutcomeRejected, startedAt: input.startedAt})
+		handler.logStage(pipelineLogEvent{ctx: inspectWorkflow.request.Context(), stage: pipelineStageSniffed, storageKey: inspectWorkflow.storageKey, outcome: pipelineOutcomeRejected, startedAt: inspectWorkflow.startedAt})
 		return "", nil, errNotPDF
 	}
-	handler.logStage(pipelineLogEvent{ctx: input.request.Context(), stage: pipelineStageSniffed, storageKey: input.storageKey, outcome: pipelineOutcomeAccepted, startedAt: input.startedAt})
+	handler.logStage(pipelineLogEvent{ctx: inspectWorkflow.request.Context(), stage: pipelineStageSniffed, storageKey: inspectWorkflow.storageKey, outcome: pipelineOutcomeAccepted, startedAt: inspectWorkflow.startedAt})
 
 	fields, err := handler.inspect(source.PDFBytes, scrub.PublicInput)
 	if err != nil {
