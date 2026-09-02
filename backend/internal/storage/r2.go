@@ -7,6 +7,7 @@ import (
 	"io"
 	"maps"
 	"net/http"
+	"strings"
 	"time"
 
 	"github.com/aws/aws-sdk-go-v2/aws"
@@ -337,7 +338,7 @@ func (r2 *R2) deleteSanitizedRevisions(ctx context.Context, sanitizedPrefix stri
 		if err != nil {
 			return r2OperationError(ctx, operationDeleteFlow)
 		}
-		pageHasPartialResult, err := r2.deleteSanitizedPage(ctx, page.Contents)
+		pageHasPartialResult, err := r2.deleteSanitizedPage(ctx, page.Contents, sanitizedPrefix)
 		if err != nil {
 			return err
 		}
@@ -349,11 +350,15 @@ func (r2 *R2) deleteSanitizedRevisions(ctx context.Context, sanitizedPrefix stri
 	return nil
 }
 
-func (r2 *R2) deleteSanitizedPage(ctx context.Context, contents []s3types.Object) (bool, error) {
+func (r2 *R2) deleteSanitizedPage(
+	ctx context.Context,
+	contents []s3types.Object,
+	sanitizedPrefix string,
+) (bool, error) {
 	if len(contents) == 0 {
 		return false, nil
 	}
-	objects, err := sanitizedObjectIdentifiers(contents)
+	objects, err := sanitizedObjectIdentifiers(contents, sanitizedPrefix)
 	if err != nil {
 		return false, err
 	}
@@ -370,10 +375,16 @@ func (r2 *R2) deleteSanitizedPage(ctx context.Context, contents []s3types.Object
 	return len(output.Errors) != 0, nil
 }
 
-func sanitizedObjectIdentifiers(contents []s3types.Object) ([]s3types.ObjectIdentifier, error) {
+func sanitizedObjectIdentifiers(
+	contents []s3types.Object,
+	sanitizedPrefix string,
+) ([]s3types.ObjectIdentifier, error) {
 	objects := make([]s3types.ObjectIdentifier, len(contents))
 	for index, object := range contents {
 		if object.Key == nil {
+			return nil, operationError(operationDeleteFlow, ErrDependency)
+		}
+		if !strings.HasPrefix(*object.Key, sanitizedPrefix) {
 			return nil, operationError(operationDeleteFlow, ErrDependency)
 		}
 		objects[index] = s3types.ObjectIdentifier{Key: object.Key}

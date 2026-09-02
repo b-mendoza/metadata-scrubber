@@ -447,6 +447,37 @@ func TestR2DeleteFlowDeletesEveryListedPageAndVerifiesBothLocations(t *testing.T
 	require.Contains(t, observed[6].rawQuery, "max-keys=1")
 }
 
+func TestR2DeleteFlowRejectsListedObjectOutsideTheRequestedPrefix(t *testing.T) {
+	t.Parallel()
+
+	foreignObjectKey, err := SanitizedObjectKey("other-file-identifier-sentinel", canonicalR2ETagOne)
+	require.NoError(t, err)
+	var requestCount atomic.Int64
+	var deleteObjectsRequestCount atomic.Int64
+	adapter := newTestR2Server(t, http.HandlerFunc(func(response http.ResponseWriter, request *http.Request) {
+		if request.Method == http.MethodPost {
+			deleteObjectsRequestCount.Add(1)
+		}
+		switch requestCount.Add(1) {
+		case 1:
+			response.WriteHeader(http.StatusNoContent)
+		case 2:
+			response.Header().Set("Content-Type", "application/xml")
+			_, writeErr := io.WriteString(response, listObjectsResponse(foreignObjectKey, false, ""))
+			assert.NoError(t, writeErr)
+		default:
+			response.WriteHeader(http.StatusInternalServerError)
+		}
+	}))
+
+	err = adapter.DeleteFlow(context.Background(), "file-identifier-sentinel")
+
+	require.ErrorIs(t, err, ErrDependency)
+	assertSafeStorageError(t, err)
+	require.Equal(t, int64(2), requestCount.Load())
+	require.Zero(t, deleteObjectsRequestCount.Load())
+}
+
 func TestR2DeleteFlowSucceedsWhenVerificationIsEmptyAfterAPartialProviderResult(t *testing.T) {
 	t.Parallel()
 
