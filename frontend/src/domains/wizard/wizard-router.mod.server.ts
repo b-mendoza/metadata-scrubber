@@ -46,6 +46,7 @@ export const CONFIRM_DELETE_FAILURE_MESSAGE =
 const MINIMUM_FILE_SIZE_BYTES = 1;
 const MINIMUM_TEXT_LENGTH = 1;
 const WHOLE_SECOND_PRECISION = 0;
+// Zod string length counts UTF-16 code units. The byte limit must use TextEncoder.
 const MAXIMUM_FILE_NAME_BYTES = 255;
 const HTTP_PROTOCOL = /^https?$/;
 const INVALID_FILE_NAME_CHARACTERS = new Set(["\\", "/", "\u{FFFD}"]);
