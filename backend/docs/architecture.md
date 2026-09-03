@@ -19,7 +19,7 @@
 | Package | Responsibility |
 | --- | --- |
 | `lint/nohiddentestsignal` | `lint/nohiddentestsignal` provides a golangci-lint module linter. The linter reports test skips and `time.Sleep` calls in Go test files. |
-| `lint/noemptyinterface` | `lint/noemptyinterface` provides a golangci-lint module linter. |
+| `lint/noemptyinterface` | `lint/noemptyinterface` provides a golangci-lint module linter. The linter reports `any`, literal empty interfaces, and named types or aliases that resolve to empty interfaces in application code. |
 | `lint/plugin` | `lint/plugin` registers both analyzers with the golangci-lint Module Plugin System. |
 
 ## HTTP API
