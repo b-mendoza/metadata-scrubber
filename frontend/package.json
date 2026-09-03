@@ -55,7 +55,7 @@
     "drizzle-orm": "1.0.0-rc.4",
     "isbot": "5.2.2",
     "ky": "2.1.0",
-    "lucide-react": "1.37.0",
+    "lucide-react": "1.38.0",
     "neverthrow": "8.2.0",
     "postgres": "3.4.9",
     "react": "19.2.8",
