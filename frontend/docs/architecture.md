@@ -73,6 +73,7 @@ The workflow schemas enforce these contracts:
 - The maximum source size is exactly `10_485_760` bytes.
 - A storage key contains an `uploads/` prefix and one lower-case UUIDv4 value.
 - A canonical ETag contains exactly 32 lower-case hexadecimal characters. It has no quotes or whitespace.
+- A file name cannot start or end with whitespace. The schema rejects whitespace instead of changing the file name.
 - A download-grant expiry is an RFC 3339 whole-second timestamp.
 - Backend success and error objects reject unknown properties.
 
