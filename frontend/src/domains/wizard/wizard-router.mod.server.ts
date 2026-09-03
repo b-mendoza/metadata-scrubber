@@ -52,6 +52,8 @@ const HTTP_PROTOCOL = /^https?$/;
 const INVALID_FILE_NAME_CHARACTERS = new Set(["\\", "/", "\u{FFFD}"]);
 const LAST_CONTROL_CHARACTER = "\u{001F}";
 const DELETE_CONTROL_CHARACTER = "\u{007F}";
+// This regex matches the backend wire grammar: uploads/ and a lowercase UUIDv4.
+// A separate z.uuid() check would accept UUID forms that the backend does not emit.
 const STORAGE_KEY_PATTERN =
   /^uploads\/[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/;
 const CANONICAL_ETAG_PATTERN = /^[0-9a-f]{32}$/;
