@@ -56,6 +56,7 @@ const DELETE_CONTROL_CHARACTER = "\u{007F}";
 // A separate z.uuid() check would accept UUID forms that the backend does not emit.
 const STORAGE_KEY_PATTERN =
   /^uploads\/[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/;
+// This token is 32 lowercase hexadecimal characters, not a general RFC 9110 entity tag.
 const CANONICAL_ETAG_PATTERN = /^[0-9a-f]{32}$/;
 
 const backendStatusCodes = new Map<number, TRPC_ERROR_CODE_KEY>([
