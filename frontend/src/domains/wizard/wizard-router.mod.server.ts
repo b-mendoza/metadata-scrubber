@@ -84,10 +84,16 @@ const fileNameContainsInvalidCharacter = (value: string): boolean => {
   return false;
 };
 
+// eslint-disable-next-line zod/prefer-string-schema-with-trim -- File names must reach the backend byte-for-byte, so this schema rejects padding instead of trimming.
 const fileNameSchema = z
   .string({ error: "The file name must be a string." })
-  .trim()
-  .min(MINIMUM_TEXT_LENGTH, { error: "The file name must not be empty." })
+  .refine((value) => value.trim().length >= MINIMUM_TEXT_LENGTH, {
+    abort: true,
+    error: "The file name must not be empty.",
+  })
+  .refine((value) => value === value.trim(), {
+    error: "The file name must not start or end with whitespace.",
+  })
   .refine(
     (value) =>
       new TextEncoder().encode(value).byteLength <= MAXIMUM_FILE_NAME_BYTES,
