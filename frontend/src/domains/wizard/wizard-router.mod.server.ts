@@ -70,6 +70,7 @@ const backendStatusCodes = new Map<number, TRPC_ERROR_CODE_KEY>([
   [SERVICE_UNAVAILABLE_STATUS_CODE, "SERVICE_UNAVAILABLE"],
 ]);
 
+// This loop replaces a control-character regex that no-control-regex forbids.
 const fileNameContainsInvalidCharacter = (value: string): boolean => {
   for (const character of value) {
     if (
