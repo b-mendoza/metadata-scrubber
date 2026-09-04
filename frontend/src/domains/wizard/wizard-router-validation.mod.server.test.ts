@@ -110,16 +110,21 @@ test.each([
   expect(canonicalETagSchema.safeParse(value).success).toBe(expectedSuccess);
 });
 
-test("createUpload rejects invalid input before fetch", async () => {
+test.each([
+  ["path traversal", "../report.pdf"],
+  ["leading white space", " report.pdf"],
+  ["trailing white space", "report.pdf "],
+])("createUpload rejects %s before fetch", async (_caseName, fileName) => {
+  const input: RouterInputs["wizard"]["createUpload"] = {
+    fileName,
+    fileSizeBytes: ONE_BYTE,
+  };
   const fetchMock = vi.fn<typeof fetch>();
   vi.stubGlobal("fetch", fetchMock);
   const request = new Request(FRONTEND_URL);
 
   const error = await requireTRPCError(
-    callerForRequest(request).createUpload({
-      fileName: "../report.pdf",
-      fileSizeBytes: WORKFLOW_MAX_FILE_SIZE_BYTES + ONE_BYTE,
-    }),
+    callerForRequest(request).createUpload(input),
   );
 
   expect(error.code).toBe("BAD_REQUEST");
@@ -146,40 +151,6 @@ test("createUpload reports only the empty-name error for whitespace", async () =
       expect.objectContaining({ message: "The file name must not be empty." }),
     ]);
   }
-  expect(fetchMock).not.toHaveBeenCalled();
-});
-
-test("createUpload rejects leading file-name whitespace before fetch", async () => {
-  const input: RouterInputs["wizard"]["createUpload"] = {
-    fileName: " report.pdf",
-    fileSizeBytes: ONE_BYTE,
-  };
-  const fetchMock = vi.fn<typeof fetch>();
-  vi.stubGlobal("fetch", fetchMock);
-  const request = new Request(FRONTEND_URL);
-
-  const error = await requireTRPCError(
-    callerForRequest(request).createUpload(input),
-  );
-
-  expect(error.code).toBe("BAD_REQUEST");
-  expect(fetchMock).not.toHaveBeenCalled();
-});
-
-test("createUpload rejects trailing file-name whitespace before fetch", async () => {
-  const input: RouterInputs["wizard"]["createUpload"] = {
-    fileName: "report.pdf ",
-    fileSizeBytes: ONE_BYTE,
-  };
-  const fetchMock = vi.fn<typeof fetch>();
-  vi.stubGlobal("fetch", fetchMock);
-  const request = new Request(FRONTEND_URL);
-
-  const error = await requireTRPCError(
-    callerForRequest(request).createUpload(input),
-  );
-
-  expect(error.code).toBe("BAD_REQUEST");
   expect(fetchMock).not.toHaveBeenCalled();
 });
 
