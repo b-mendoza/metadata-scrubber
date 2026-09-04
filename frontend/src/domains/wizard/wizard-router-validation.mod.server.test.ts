@@ -14,6 +14,7 @@ import {
   UNSUPPORTED_MEDIA_TYPE_STATUS_CODE,
 } from "#/shared/constants/http/status-codes/status-codes.mod";
 import { createWorkflowHttpClient } from "#/shared/libs/ky/workflow-http-client.mod.server";
+import type { RouterInputs } from "#/shared/libs/trpc/client/client.mod";
 import {
   createCallerFactory,
   createTRPCRequestContext,
@@ -22,7 +23,6 @@ import { getApplicationBindings } from "#/shared/middlewares/application-binding
 
 import type {
   ConfirmDeleteInput,
-  CreateUploadInput,
   DryRunInput,
   RefreshDownloadGrantInput,
   ScrubFileInput,
@@ -127,7 +127,7 @@ test("createUpload rejects invalid input before fetch", async () => {
 });
 
 test("createUpload reports only the empty-name error for whitespace", async () => {
-  const input: CreateUploadInput = {
+  const input: RouterInputs["wizard"]["createUpload"] = {
     fileName: " ",
     fileSizeBytes: ONE_BYTE,
   };
@@ -150,7 +150,7 @@ test("createUpload reports only the empty-name error for whitespace", async () =
 });
 
 test("createUpload rejects leading file-name whitespace before fetch", async () => {
-  const input: CreateUploadInput = {
+  const input: RouterInputs["wizard"]["createUpload"] = {
     fileName: " report.pdf",
     fileSizeBytes: ONE_BYTE,
   };
@@ -167,7 +167,7 @@ test("createUpload rejects leading file-name whitespace before fetch", async () 
 });
 
 test("createUpload rejects trailing file-name whitespace before fetch", async () => {
-  const input: CreateUploadInput = {
+  const input: RouterInputs["wizard"]["createUpload"] = {
     fileName: "report.pdf ",
     fileSizeBytes: ONE_BYTE,
   };
@@ -252,7 +252,7 @@ test("getWorkflowConfig rejects a wrong backend-owned byte limit", async () => {
 });
 
 test("createUpload rejects an invalid backend upload URL", async () => {
-  const input: CreateUploadInput = {
+  const input: RouterInputs["wizard"]["createUpload"] = {
     fileName: "report.pdf",
     fileSizeBytes: ONE_BYTE,
   };
