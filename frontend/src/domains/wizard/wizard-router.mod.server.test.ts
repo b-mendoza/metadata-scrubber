@@ -9,6 +9,10 @@ import {
   NOT_FOUND_STATUS_CODE,
 } from "#/shared/constants/http/status-codes/status-codes.mod";
 import { createWorkflowHttpClient } from "#/shared/libs/ky/workflow-http-client.mod.server";
+import type {
+  RouterInputs,
+  RouterOutputs,
+} from "#/shared/libs/trpc/client/client.mod";
 import { appRouter } from "#/shared/libs/trpc/routers/routers.mod.server";
 import {
   createCallerFactory,
@@ -19,8 +23,6 @@ import { getApplicationBindings } from "#/shared/middlewares/application-binding
 import type {
   ConfirmDeleteInput,
   ConfirmDeleteResponse,
-  CreateUploadInput,
-  CreateUploadResponse,
   DryRunInput,
   DryRunResponse,
   RefreshDownloadGrantInput,
@@ -122,11 +124,11 @@ test("getWorkflowConfig returns the exact backend-owned byte limit", async () =>
 });
 
 test("createUpload sends only its typed small-JSON contract", async () => {
-  const input: CreateUploadInput = {
+  const input: RouterInputs["wizard"]["createUpload"] = {
     fileName: "report.pdf",
     fileSizeBytes: WORKFLOW_MAX_FILE_SIZE_BYTES,
   };
-  const response: CreateUploadResponse = {
+  const response: RouterOutputs["wizard"]["createUpload"] = {
     storageKey: STORAGE_KEY,
     uploadUrl: "https://uploads.test/source.pdf",
   };
@@ -396,7 +398,7 @@ test("invalid backend error JSON maps to BAD_GATEWAY without public details", as
 });
 
 test("an unclassified transport failure maps to BAD_GATEWAY without public details", async () => {
-  const input: CreateUploadInput = {
+  const input: RouterInputs["wizard"]["createUpload"] = {
     fileName: "report.pdf",
     fileSizeBytes: MINIMUM_FILE_SIZE_BYTES,
   };
