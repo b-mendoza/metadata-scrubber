@@ -28,8 +28,6 @@ import {
 } from "#/shared/libs/trpc/utils/initializer/initializer.mod.server";
 import { getApplicationBindings } from "#/shared/middlewares/application-bindings/application-bindings.mod";
 
-export const WORKFLOW_MAX_FILE_SIZE_BYTES = 10_485_760;
-
 export const WORKFLOW_CONFIG_FAILURE_MESSAGE =
   "Could not load the file workflow configuration. Try again later.";
 export const CREATE_UPLOAD_FAILURE_MESSAGE =
