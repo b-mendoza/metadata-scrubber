@@ -321,13 +321,19 @@ func (handler *Handler) Upload(w http.ResponseWriter, request *http.Request) {
 }
 
 func (handler *Handler) validateUploadRequest(w http.ResponseWriter, request *http.Request, input uploadRequest) bool {
-	if validFileName(input.FileName) && input.FileSizeBytes > 0 && input.FileSizeBytes <= storage.MaxSourceObjectBytes {
-		return true
+	if !validFileName(input.FileName) || input.FileSizeBytes <= 0 {
+		if err := httpx.WriteError(w, http.StatusBadRequest, "invalid upload request"); err != nil {
+			handler.logger.ErrorContext(request.Context(), "could not write JSON response", "error", err)
+		}
+		return false
 	}
-	if err := httpx.WriteError(w, http.StatusBadRequest, "invalid upload request"); err != nil {
-		handler.logger.ErrorContext(request.Context(), "could not write JSON response", "error", err)
+	if input.FileSizeBytes > storage.MaxSourceObjectBytes {
+		if err := httpx.WriteError(w, http.StatusRequestEntityTooLarge, "source file exceeds 10 MiB limit"); err != nil {
+			handler.logger.ErrorContext(request.Context(), "could not write JSON response", "error", err)
+		}
+		return false
 	}
-	return false
+	return true
 }
 
 func (handler *Handler) generateUploadFileID(w http.ResponseWriter, request *http.Request) (string, bool) {
