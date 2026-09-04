@@ -56,6 +56,9 @@ importers:
       '@unpic/react':
         specifier: 1.0.2
         version: 1.0.2(react-dom@19.2.8(react@19.2.8))(react@19.2.8)
+      '@uppy/aws-s3':
+        specifier: 6.0.0
+        version: 6.0.0(@uppy/core@6.0.0)
       '@uppy/core':
         specifier: 6.0.0
         version: 6.0.0
@@ -2138,6 +2141,11 @@ packages:
     peerDependenciesMeta:
       next:
         optional: true
+
+  '@uppy/aws-s3@6.0.0':
+    resolution: {integrity: sha512-FnHZr50CgzQInmIfiJjPr7wLXHbTgX6QMkYRIR/Px5rzjwSlacbrnDa2+LrgaJgpFBKGruC++svu+AdotKyxIg==}
+    peerDependencies:
+      '@uppy/core': ^6.0.0
 
   '@uppy/components@2.0.0':
     resolution: {integrity: sha512-wviwX37ISeJQEaHh5ijyfSW7wDb5Ctvy10dnkRjuN9hddJo59N7lx+dKe985cP4OBBSr+wAzAkrvP6I8MmMvMg==}
@@ -6651,6 +6659,10 @@ snapshots:
       '@unpic/core': 1.0.3
       react: 19.2.8
       react-dom: 19.2.8(react@19.2.8)
+
+  '@uppy/aws-s3@6.0.0(@uppy/core@6.0.0)':
+    dependencies:
+      '@uppy/core': 6.0.0
 
   '@uppy/components@2.0.0(@uppy/core@6.0.0)(@uppy/google-drive-picker@2.0.0(@uppy/core@6.0.0))(@uppy/google-photos-picker@2.0.0(@uppy/core@6.0.0))':
     dependencies:
