@@ -19,7 +19,7 @@
 - The products tRPC router calls backend health.
 - The wizard tRPC router provides typed proxies for workflow configuration, upload grants, dry-run inspection, revision-bound scrubbing, download-grant refresh, and confirmed deletion.
 - The tRPC workflow sends only small JSON values. It does not send file bytes.
-- The backend owns the maximum source size of `10_485_760` bytes. The frontend workflow config schema requires the same value.
+- The Go backend owns the maximum source size. The frontend reads it at runtime through `getWorkflowConfig`.
 - The scrub workflow accepts PDF input only. The backend checks for `%PDF-` at offset zero and then parses the PDF structure.
 - The earlier frontend-local upload metadata route still accepts JPEG, PNG, WebP, and PDF values. It does not persist files and is not part of the typed backend workflow.
 - Source objects are private. The backend stores each sanitized result under an immutable source-revision key. The frontend uses the canonical source ETag to bind review, scrub, and download refresh to one revision.
