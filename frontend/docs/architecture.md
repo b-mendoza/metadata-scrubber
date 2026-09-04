@@ -87,12 +87,15 @@ The workflow schemas enforce these contracts:
 
 ## File uploads
 
-- The typed workflow requests an upload grant through `createUpload`.
-- The grant contract contains a storage key and a presigned upload URL. The tRPC call contains no file bytes.
-- The Go backend owns private storage, PDF inspection, metadata removal, sanitized revisions, download grants, and confirmed deletion.
-- `src/routes/api/upload.ts` still contains the earlier local form-data metadata handler. It does not persist a file. It is not part of the typed backend workflow.
-- The project includes S3 SDK dependencies and `@uppy/react`. No frontend storage adapter exists under `src/`.
-- Read the service-integration section of the root [architecture reference](../../docs/architecture.md) before you add storage code to the frontend.
+- The Uppy uploader accepts exactly one PDF file. It uses the runtime size limit from `getWorkflowConfig`.
+- The uploader calls `createUpload` with the file name and file size. It does not send file bytes in the tRPC call.
+- `createUpload` returns a private R2 `storageKey` and a presigned PUT URL.
+- The browser sends the PDF bytes directly to private R2 with the presigned URL.
+- Uppy stores the backend-generated `storageKey` in file metadata. Only `{ storageKey }` enters the wizard state after a successful upload.
+- No frontend route parses or proxies file bytes.
+- The Go backend owns R2 credentials and the file-size limit. The browser does not receive R2 credentials.
+- The Go backend also owns PDF inspection, metadata removal, sanitized revisions, download grants, and confirmed deletion.
+- Read the service-integration section of the root [architecture reference](../../docs/architecture.md) before you change storage code in the frontend.
 
 ## Testing status
 
@@ -100,6 +103,8 @@ The workflow schemas enforce these contracts:
 - Tests check exact backend methods, paths, and JSON bodies. They check that no contract contains file bytes.
 - Tests cover canonical ETag validation, invalid procedure inputs, invalid backend success bodies, safe status mapping, invalid backend error bodies, timeouts, and caller cancellation.
 - Router tests cover backend status `413` as the safe tRPC `PAYLOAD_TOO_LARGE` error.
+- Uploader tests cover runtime size restrictions, the PDF-only and one-file restrictions, non-multipart PUT signing, direct browser PUT requests, successful metadata handoff, grant failures, PUT failures, and manual retries.
+- Uploader tests use the real `@uppy/aws-s3` plugin and a test-local `XMLHttpRequest` fake. They do not call R2.
 - Workflow transport tests cover exact server-directed delays, the 4000 ms cap, the three-attempt limit, rejected retry conditions, operation timeouts, total-timeout expiry, no-retry operations, and caller abort.
 - Health transport tests keep the separate health retry and timeout contract under regression coverage.
 - `vitest.config.ts` requires test discovery. It does not permit a successful run with no tests.

@@ -1,76 +1,100 @@
+import AwsS3 from "@uppy/aws-s3";
 import Uppy from "@uppy/core";
 import { useUppyEvent } from "@uppy/react";
 import Dashboard from "@uppy/react/dashboard";
-import XHRUpload from "@uppy/xhr-upload";
 import { useEffect, useState } from "react";
 import * as z from "zod";
 
 import {
-  MAX_FILE_SIZE_BYTES,
-  MAX_FILE_SIZE_MB,
   UPLOADABLE_MIME_TYPES,
   WIZARD_UPLOAD_FILE_COUNT,
 } from "#/domains/wizard/constants/wizard.mod";
+import type {
+  RouterInputs,
+  RouterOutputs,
+} from "#/shared/libs/trpc/client/client.mod";
 
-const uploadedFileResponseBodySchema = z.object({
-  fileName: z.string().trim(),
-  fileSizeBytes: z.int(),
-  mimeType: z.enum(UPLOADABLE_MIME_TYPES),
-  storageKey: z.string().trim(),
-});
+const MINIMUM_STORAGE_KEY_LENGTH = 1;
+const BYTES_PER_MEBIBYTE = 1_048_576;
 
-export type UploadedFileResponseBody = z.output<
-  typeof uploadedFileResponseBodySchema
->;
-
-const uploadedFileResponseSchema = z.object({
-  response: z.object({
-    body: uploadedFileResponseBodySchema,
-  }),
-});
-
-const uploadedFilesSchema = z.array(uploadedFileResponseSchema);
-
-const uploadResultSchema = z.object({
-  successful: uploadedFilesSchema,
+const uploadedFileMetadataSchema = z.strictObject({
+  storageKey: z.string().trim().min(MINIMUM_STORAGE_KEY_LENGTH),
 });
 
 interface FileUploaderProps {
-  onFilesChange: (files: UploadedFileResponseBody[]) => void;
+  createUpload: (
+    input: RouterInputs["wizard"]["createUpload"],
+  ) => Promise<RouterOutputs["wizard"]["createUpload"]>;
+  maxFileSizeBytes: number;
+  onUploadComplete: (result: { storageKey: string }) => void;
 }
 
-const createUppy = () => {
-  return new Uppy({
+const createUppy = (
+  createUpload: FileUploaderProps["createUpload"],
+  maxFileSizeBytes: FileUploaderProps["maxFileSizeBytes"],
+) => {
+  const uppy = new Uppy({
     restrictions: {
-      allowedFileTypes: Object.values(UPLOADABLE_MIME_TYPES),
-      maxFileSize: MAX_FILE_SIZE_BYTES,
+      allowedFileTypes: [UPLOADABLE_MIME_TYPES.PDF],
+      maxFileSize: maxFileSizeBytes,
       maxNumberOfFiles: WIZARD_UPLOAD_FILE_COUNT,
       minNumberOfFiles: WIZARD_UPLOAD_FILE_COUNT,
     },
     autoProceed: false,
-  }).use(XHRUpload, {
-    endpoint: "/api/upload",
-    fieldName: "file",
   });
+
+  uppy.use(AwsS3, {
+    generateObjectKey: (file) => file.id,
+    shouldUseMultipart: false,
+    signRequest: async (request) => {
+      if (request.method !== "PUT") {
+        throw new Error("Only PUT upload requests are supported");
+      }
+
+      const file = uppy.getFile(request.key);
+      if (file.size == null) {
+        throw new Error("The upload file size is not available");
+      }
+
+      const { storageKey, uploadUrl } = await createUpload({
+        fileName: file.name,
+        fileSizeBytes: file.size,
+      });
+
+      uppy.setFileMeta(file.id, { storageKey });
+
+      return { url: uploadUrl };
+    },
+  });
+
+  return uppy;
+};
+
+const formatMebibytes = (fileSizeBytes: number) => {
+  return new Intl.NumberFormat("en-US", {
+    maximumFractionDigits: 2,
+  }).format(fileSizeBytes / BYTES_PER_MEBIBYTE);
 };
 
 export const FileUploader = (props: FileUploaderProps) => {
-  const { onFilesChange } = props;
+  const { createUpload, maxFileSizeBytes, onUploadComplete } = props;
 
-  // useState accepts an initializer function that only runs on mount. Without it,
-  // `createUppy()` would execute on every render, creating new Uppy instances
-  // with their own internal state (event listeners, plugins, upload progress).
-  const [uppy] = useState(() => createUppy());
+  // useState creates one Uppy instance for each mount, not each render.
+  // The instance captures fixed `createUpload` and `maxFileSizeBytes` values at mount.
+  // A caller must remount this component to apply a different value.
+  const [uppy] = useState(() => createUppy(createUpload, maxFileSizeBytes));
 
   useUppyEvent(uppy, "complete", (uploadResult) => {
-    const { successful: successfulFiles } =
-      uploadResultSchema.parse(uploadResult);
+    const [successfulFile] = uploadResult.successful ?? [];
+    if (successfulFile == null) {
+      return;
+    }
 
-    const normalizedSuccessfullyUploadedFiles = successfulFiles.map(
-      (file) => file.response.body,
-    );
+    const uploadedFileMetadata = uploadedFileMetadataSchema.parse({
+      storageKey: successfulFile.meta["storageKey"],
+    });
 
-    onFilesChange(normalizedSuccessfullyUploadedFiles);
+    onUploadComplete(uploadedFileMetadata);
   });
 
   useEffect(() => {
@@ -83,14 +107,8 @@ export const FileUploader = (props: FileUploaderProps) => {
     <Dashboard
       height={400}
       hideProgressAfterFinish
-      note={`Upload exactly ${WIZARD_UPLOAD_FILE_COUNT} files (images or PDFs, max ${MAX_FILE_SIZE_MB}MB each)`}
+      note={`Upload exactly one PDF file (max ${formatMebibytes(maxFileSizeBytes)} MiB)`}
       uppy={uppy}
-
-      // If a user removes a completed file, they would need to re-upload a
-      // replacement. We haven't built that flow yet (resetting upload state,
-      // re-triggering the `complete` event, etc.), so we keep the remove button
-      // and progress hidden after completion to avoid a broken state.
-      // showRemoveButtonAfterComplete
     />
   );
 };

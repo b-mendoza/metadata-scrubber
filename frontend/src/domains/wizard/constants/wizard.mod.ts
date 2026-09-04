@@ -14,5 +14,4 @@ export const UPLOADABLE_MIME_TYPES = {
 export type UploadableMimeType =
   (typeof UPLOADABLE_MIME_TYPES)[keyof typeof UPLOADABLE_MIME_TYPES];
 
-/** Number of files the wizard expects users to upload */
-export const WIZARD_UPLOAD_FILE_COUNT = 3;
+export const WIZARD_UPLOAD_FILE_COUNT = 1;
