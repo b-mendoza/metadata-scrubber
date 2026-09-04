@@ -223,6 +223,32 @@ test("createUpload rejects an invalid backend upload URL", async () => {
   expect(error.message).toBe(CREATE_UPLOAD_FAILURE_MESSAGE);
 });
 
+test("createUpload maps an oversize backend response to PAYLOAD_TOO_LARGE", async () => {
+  const input: RouterInputs["wizard"]["createUpload"] = {
+    fileName: "report.pdf",
+    fileSizeBytes: 10_485_761,
+  };
+  const response: { error: string } = {
+    error: "source file exceeds 10 MiB limit",
+  };
+  const fetchMock = vi
+    .fn<typeof fetch>()
+    .mockResolvedValue(
+      Response.json(response, { status: PAYLOAD_TOO_LARGE_STATUS_CODE }),
+    );
+  vi.stubGlobal("fetch", fetchMock);
+  const request = new Request(FRONTEND_URL);
+
+  const error = await requireTRPCError(
+    callerForRequest(request).createUpload(input),
+  );
+
+  expect(error.code).toBe("PAYLOAD_TOO_LARGE");
+  expect(error.message).toBe(CREATE_UPLOAD_FAILURE_MESSAGE);
+  expect(error.message).not.toContain(response.error);
+  expect(fetchMock).toHaveBeenCalledOnce();
+});
+
 test("dryRun rejects an invalid backend ETag", async () => {
   const input: DryRunInput = { storageKey: STORAGE_KEY };
   const fetchMock = vi

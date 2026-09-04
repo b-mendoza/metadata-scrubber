@@ -38,7 +38,6 @@ import {
   REFRESH_DOWNLOAD_GRANT_FAILURE_MESSAGE,
   SCRUB_FILE_FAILURE_MESSAGE,
   wizardRouter,
-  WORKFLOW_MAX_FILE_SIZE_BYTES,
 } from "./wizard-router.mod.server";
 
 vi.mock(
@@ -126,7 +125,7 @@ test("getWorkflowConfig returns the exact backend-owned byte limit", async () =>
 test("createUpload sends only its typed small-JSON contract", async () => {
   const input: RouterInputs["wizard"]["createUpload"] = {
     fileName: "report.pdf",
-    fileSizeBytes: WORKFLOW_MAX_FILE_SIZE_BYTES,
+    fileSizeBytes: 10_485_761,
   };
   const response: RouterOutputs["wizard"]["createUpload"] = {
     storageKey: STORAGE_KEY,
