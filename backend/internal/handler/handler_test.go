@@ -344,20 +344,21 @@ func TestJSONEndpointsValidateEveryBoundaryBeforeWork(t *testing.T) {
 
 func TestUploadValidatesIntakeAndCreatesOpaqueGrant(t *testing.T) {
 	tests := []struct {
-		name       string
-		fileName   string
-		size       int64
-		wantStatus int
+		name        string
+		fileName    string
+		size        int64
+		wantStatus  int
+		wantMessage string
 	}{
 		{name: "ordinary name", fileName: "report.pdf", size: 1, wantStatus: http.StatusOK},
 		{name: "unicode non PDF display name", fileName: "résumé.txt", size: storage.MaxSourceObjectBytes, wantStatus: http.StatusOK},
-		{name: "blank name", fileName: " \t", size: 1, wantStatus: http.StatusBadRequest},
-		{name: "path separator", fileName: "folder/report.pdf", size: 1, wantStatus: http.StatusBadRequest},
-		{name: "control character", fileName: "bad\nname.pdf", size: 1, wantStatus: http.StatusBadRequest},
-		{name: "too long", fileName: strings.Repeat("x", maxFileNameBytes+1), size: 1, wantStatus: http.StatusBadRequest},
-		{name: "zero bytes", fileName: "report.pdf", size: 0, wantStatus: http.StatusBadRequest},
-		{name: "negative bytes", fileName: "report.pdf", size: -1, wantStatus: http.StatusBadRequest},
-		{name: "over decimal limit", fileName: "report.pdf", size: storage.MaxSourceObjectBytes + 1, wantStatus: http.StatusBadRequest},
+		{name: "blank name", fileName: " \t", size: 1, wantStatus: http.StatusBadRequest, wantMessage: "invalid upload request"},
+		{name: "path separator", fileName: "folder/report.pdf", size: 1, wantStatus: http.StatusBadRequest, wantMessage: "invalid upload request"},
+		{name: "control character", fileName: "bad\nname.pdf", size: 1, wantStatus: http.StatusBadRequest, wantMessage: "invalid upload request"},
+		{name: "too long", fileName: strings.Repeat("x", maxFileNameBytes+1), size: 1, wantStatus: http.StatusBadRequest, wantMessage: "invalid upload request"},
+		{name: "zero bytes", fileName: "report.pdf", size: 0, wantStatus: http.StatusBadRequest, wantMessage: "invalid upload request"},
+		{name: "negative bytes", fileName: "report.pdf", size: -1, wantStatus: http.StatusBadRequest, wantMessage: "invalid upload request"},
+		{name: "over decimal limit", fileName: "report.pdf", size: storage.MaxSourceObjectBytes + 1, wantStatus: http.StatusRequestEntityTooLarge, wantMessage: "source file exceeds 10 MiB limit"},
 	}
 
 	for _, testCase := range tests {
@@ -370,6 +371,7 @@ func TestUploadValidatesIntakeAndCreatesOpaqueGrant(t *testing.T) {
 
 			require.Equal(t, testCase.wantStatus, recorder.Code, recorder.Body.String())
 			if testCase.wantStatus != http.StatusOK {
+				require.Equal(t, testCase.wantMessage, errorMessage(t, recorder))
 				require.Empty(t, fake.Calls())
 				return
 			}
