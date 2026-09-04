@@ -16,7 +16,7 @@ Developers build the frontend with [TanStack Start](https://tanstack.com/start) 
 
 ## Server boundaries
 
-- Use route server handlers and server functions for small operations. Keep each operation direct and single-purpose. See `src/routes/api/upload.ts`. Wrap server-only code with `createServerOnlyFn` from `@tanstack/react-start`.
+- Use route server handlers and server functions for small operations. Keep each operation direct and single-purpose. See `src/routes/api/trpc.$.ts`. Wrap server-only code with `createServerOnlyFn` from `@tanstack/react-start`.
 - Use tRPC procedures for database queries, business logic, and the small-JSON backend workflow.
 - The root tRPC router registers the `products` and `wizard` routers.
 - The wizard router provides these procedures:
