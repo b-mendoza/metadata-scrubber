@@ -113,7 +113,7 @@ export const canonicalETagSchema = z
   .trim();
 
 const workflowConfigResponseSchema = z.strictObject({
-  maxFileSizeBytes: z.literal(WORKFLOW_MAX_FILE_SIZE_BYTES),
+  maxFileSizeBytes: z.int().positive(),
 });
 
 const createUploadInputSchema = z.strictObject({

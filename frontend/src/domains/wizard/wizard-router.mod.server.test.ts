@@ -107,7 +107,7 @@ afterEach(() => {
 
 test("getWorkflowConfig returns the exact backend-owned byte limit", async () => {
   const response: WorkflowConfig = {
-    maxFileSizeBytes: WORKFLOW_MAX_FILE_SIZE_BYTES,
+    maxFileSizeBytes: 7_340_032,
   };
   const fetchMock = vi
     .fn<typeof fetch>()
@@ -251,7 +251,7 @@ test("confirmDelete sends one typed request and returns confirmed deletion", asy
 
 test("the root application router registers the wizard router", async () => {
   const response: WorkflowConfig = {
-    maxFileSizeBytes: WORKFLOW_MAX_FILE_SIZE_BYTES,
+    maxFileSizeBytes: 7_340_032,
   };
   const fetchMock = vi
     .fn<typeof fetch>()

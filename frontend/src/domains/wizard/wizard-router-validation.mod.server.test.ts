@@ -36,8 +36,6 @@ import {
   SCRUB_FILE_FAILURE_MESSAGE,
   scrubFileInputSchema,
   wizardRouter,
-  WORKFLOW_CONFIG_FAILURE_MESSAGE,
-  WORKFLOW_MAX_FILE_SIZE_BYTES,
 } from "./wizard-router.mod.server";
 
 vi.mock(
@@ -202,24 +200,6 @@ test("confirmDelete rejects an invalid storage key before fetch", async () => {
 
   expect(error.code).toBe("BAD_REQUEST");
   expect(fetchMock).not.toHaveBeenCalled();
-});
-
-test("getWorkflowConfig rejects a wrong backend-owned byte limit", async () => {
-  const fetchMock = vi.fn<typeof fetch>().mockResolvedValue(
-    Response.json({
-      maxFileSizeBytes: WORKFLOW_MAX_FILE_SIZE_BYTES - ONE_BYTE,
-    }),
-  );
-  vi.stubGlobal("fetch", fetchMock);
-  const request = new Request(FRONTEND_URL);
-
-  const error = await requireTRPCError(
-    callerForRequest(request).getWorkflowConfig(),
-  );
-
-  expect(error.code).toBe("BAD_GATEWAY");
-  expect(error.message).toBe(WORKFLOW_CONFIG_FAILURE_MESSAGE);
-  expect(fetchMock).toHaveBeenCalledOnce();
 });
 
 test("createUpload rejects an invalid backend upload URL", async () => {
