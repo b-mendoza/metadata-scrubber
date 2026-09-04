@@ -44,6 +44,7 @@
     "@trpc/server": "11.18.0",
     "@trpc/tanstack-react-query": "11.18.0",
     "@unpic/react": "1.0.2",
+    "@uppy/aws-s3": "6.0.0",
     "@uppy/core": "6.0.0",
     "@uppy/dashboard": "6.0.0",
     "@uppy/react": "6.0.0",
