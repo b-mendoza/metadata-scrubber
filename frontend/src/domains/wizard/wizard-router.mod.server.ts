@@ -118,10 +118,7 @@ const workflowConfigResponseSchema = z.strictObject({
 
 const createUploadInputSchema = z.strictObject({
   fileName: fileNameSchema,
-  fileSizeBytes: z
-    .int()
-    .min(MINIMUM_FILE_SIZE_BYTES)
-    .max(WORKFLOW_MAX_FILE_SIZE_BYTES),
+  fileSizeBytes: z.int().min(MINIMUM_FILE_SIZE_BYTES),
 });
 
 const createUploadResponseSchema = z.strictObject({

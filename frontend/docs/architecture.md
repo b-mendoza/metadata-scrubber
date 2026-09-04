@@ -99,6 +99,7 @@ The workflow schemas enforce these contracts:
 - Direct tRPC caller tests cover all six workflow procedures and root-router registration.
 - Tests check exact backend methods, paths, and JSON bodies. They check that no contract contains file bytes.
 - Tests cover canonical ETag validation, invalid procedure inputs, invalid backend success bodies, safe status mapping, invalid backend error bodies, timeouts, and caller cancellation.
+- Router tests cover backend status `413` as the safe tRPC `PAYLOAD_TOO_LARGE` error.
 - Workflow transport tests cover exact server-directed delays, the 4000 ms cap, the three-attempt limit, rejected retry conditions, operation timeouts, total-timeout expiry, no-retry operations, and caller abort.
 - Health transport tests keep the separate health retry and timeout contract under regression coverage.
 - `vitest.config.ts` requires test discovery. It does not permit a successful run with no tests.
