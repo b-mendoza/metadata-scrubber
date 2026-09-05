@@ -1935,12 +1935,14 @@ func seedCandidateSources(t *testing.T, fake *storage.Fake, fileIDs ...string) {
 
 func canonicalETagForFileID(fileID string) string {
 	switch fileID {
+	case fileIDOne:
+		return canonicalETagOne
 	case fileIDTwo:
 		return canonicalETagTwo
 	case fileIDThree:
 		return canonicalETagThree
 	default:
-		return canonicalETagOne
+		panic("unknown file ID: " + fileID)
 	}
 }
 
