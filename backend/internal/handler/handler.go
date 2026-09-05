@@ -97,23 +97,26 @@ type Handler struct {
 	beforeAcquireSelect func()
 }
 
-type handlerOperations struct {
-	inspect         inspectPDFOperation
-	clean           cleanPDFOperation
-	entropy         entropyOperation
-	admissionJitter admissionJitterOperation
-	now             clockOperation
-}
-
 // New constructs the JSON workflow handler around one server-owned admission gate.
 func New(logger *slog.Logger, permits chan struct{}) *Handler {
-	return newHandler(logger, permits, handlerOperations{
-		inspect:         scrub.InspectPDF,
-		clean:           scrub.CleanPDF,
-		entropy:         rand.Read,
-		admissionJitter: randomAdmissionJitter,
-		now:             time.Now,
-	})
+	if logger == nil {
+		logger = slog.Default()
+	}
+	if permits == nil || cap(permits) != ProcessingPermitCount {
+		panic("handler admission gate must have capacity 2")
+	}
+
+	return &Handler{
+		logger:              logger,
+		permits:             permits,
+		inspect:             scrub.InspectPDF,
+		clean:               scrub.CleanPDF,
+		entropy:             rand.Read,
+		admissionJitter:     randomAdmissionJitter,
+		now:                 time.Now,
+		admissionTimeout:    defaultAdmissionTimeout,
+		beforeAcquireSelect: func() {},
+	}
 }
 
 func randomAdmissionJitter() (int, error) {
@@ -122,33 +125,6 @@ func randomAdmissionJitter() (int, error) {
 		return 0, err
 	}
 	return int(value.Int64()), nil
-}
-
-func newHandler(logger *slog.Logger, permits chan struct{}, operations handlerOperations) *Handler {
-	if logger == nil {
-		logger = slog.Default()
-	}
-	if permits == nil || cap(permits) != ProcessingPermitCount {
-		panic("handler admission gate must have capacity 2")
-	}
-	if operations.admissionJitter == nil {
-		operations.admissionJitter = randomAdmissionJitter
-	}
-	if operations.now == nil {
-		operations.now = time.Now
-	}
-
-	return &Handler{
-		logger:              logger,
-		permits:             permits,
-		inspect:             operations.inspect,
-		clean:               operations.clean,
-		entropy:             operations.entropy,
-		admissionJitter:     operations.admissionJitter,
-		now:                 operations.now,
-		admissionTimeout:    defaultAdmissionTimeout,
-		beforeAcquireSelect: func() {},
-	}
 }
 
 // Reachability gives callers a cheap way to verify the backend HTTP API is reachable.

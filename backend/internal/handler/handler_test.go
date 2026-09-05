@@ -1850,13 +1850,13 @@ func newTestHandlerWithLogger(t *testing.T, options testHandlerOptions) *Handler
 	if options.now == nil {
 		options.now = time.Now
 	}
-	return newHandler(options.logger, options.permits, handlerOperations{
-		inspect:         options.inspect,
-		clean:           options.clean,
-		entropy:         options.entropy,
-		admissionJitter: options.admissionJitter,
-		now:             options.now,
-	})
+	handler := New(options.logger, options.permits)
+	handler.inspect = options.inspect
+	handler.clean = options.clean
+	handler.entropy = options.entropy
+	handler.admissionJitter = options.admissionJitter
+	handler.now = options.now
+	return handler
 }
 
 type handlerRequest struct {
