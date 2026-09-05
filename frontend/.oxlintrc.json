@@ -13,6 +13,7 @@
     "@eslint-community/eslint-plugin-eslint-comments",
     "@e18e/eslint-plugin",
     "eslint-plugin-sonarjs",
+    "./oxlint-plugin-metadata-scrubber/index.ts",
     "eslint-plugin-simple-import-sort"
   ],
   "categories": {
