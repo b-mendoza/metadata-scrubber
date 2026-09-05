@@ -21,6 +21,7 @@ import {
 import { getApplicationBindings } from "#/shared/middlewares/application-bindings/application-bindings.mod";
 
 import type {
+  BackendErrorResponse,
   ConfirmDeleteInput,
   DryRunInput,
   RefreshDownloadGrantInput,
@@ -121,7 +122,7 @@ test("createUpload maps an oversize backend response to PAYLOAD_TOO_LARGE", asyn
     fileName: "report.pdf",
     fileSizeBytes: 10_485_761,
   };
-  const response: { error: string } = {
+  const response: BackendErrorResponse = {
     error: "source file exceeds 10 MiB limit",
   };
   const fetchMock = vi
@@ -228,11 +229,12 @@ test.each([
   [SERVICE_UNAVAILABLE_STATUS_CODE, "SERVICE_UNAVAILABLE"],
 ] as const)("dryRun maps backend HTTP %i to %s", async (status, code) => {
   const input: DryRunInput = { storageKey: STORAGE_KEY };
+  const response: BackendErrorResponse = {
+    error: "safe backend error",
+  };
   const fetchMock = vi
     .fn<typeof fetch>()
-    .mockResolvedValue(
-      Response.json({ error: "safe backend error" }, { status }),
-    );
+    .mockResolvedValue(Response.json(response, { status }));
   vi.stubGlobal("fetch", fetchMock);
   const request = new Request(FRONTEND_URL);
 
