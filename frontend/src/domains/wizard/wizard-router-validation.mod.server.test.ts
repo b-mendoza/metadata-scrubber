@@ -36,6 +36,7 @@ import {
   SCRUB_FILE_FAILURE_MESSAGE,
   scrubFileInputSchema,
   wizardRouter,
+  WORKFLOW_CONFIG_FAILURE_MESSAGE,
 } from "./wizard-router.mod.server";
 
 vi.mock(
@@ -200,6 +201,22 @@ test("confirmDelete rejects an invalid storage key before fetch", async () => {
 
   expect(error.code).toBe("BAD_REQUEST");
   expect(fetchMock).not.toHaveBeenCalled();
+});
+
+
+test("getWorkflowConfig rejects a malformed backend config body", async () => {
+  const fetchMock = vi
+    .fn<typeof fetch>()
+    .mockResolvedValue(Response.json({ maxFileSizeBytes: "big" }));
+  vi.stubGlobal("fetch", fetchMock);
+  const request = new Request(FRONTEND_URL);
+
+  const error = await requireTRPCError(
+    callerForRequest(request).getWorkflowConfig(),
+  );
+
+  expect(error.code).toBe("BAD_GATEWAY");
+  expect(error.message).toBe(WORKFLOW_CONFIG_FAILURE_MESSAGE);
 });
 
 test("createUpload rejects an invalid backend upload URL", async () => {
