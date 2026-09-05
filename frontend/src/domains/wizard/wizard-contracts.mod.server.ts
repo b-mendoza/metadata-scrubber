@@ -1,7 +1,6 @@
 import * as z from "zod";
 
 const MINIMUM_FILE_SIZE_BYTES = 1;
-const MINIMUM_TEXT_LENGTH = 1;
 const WHOLE_SECOND_PRECISION = 0;
 // Zod string length counts UTF-16 code units. The byte limit must use TextEncoder.
 const MAXIMUM_FILE_NAME_BYTES = 255;
@@ -33,7 +32,7 @@ const fileNameContainsInvalidCharacter = (value: string): boolean => {
 // eslint-disable-next-line zod/prefer-string-schema-with-trim -- File names must reach the backend byte-for-byte, so this schema rejects padding instead of trimming.
 const fileNameSchema = z
   .string({ error: "The file name must be a string." })
-  .refine((value) => value.trim().length >= MINIMUM_TEXT_LENGTH, {
+  .refine((value) => value.trim() !== "", {
     abort: true,
     error: "The file name must not be empty.",
   })
@@ -120,7 +119,7 @@ export const confirmDeleteResponseSchema = z.strictObject({
 });
 
 export const backendErrorResponseSchema = z.strictObject({
-  error: z.string().trim().min(MINIMUM_TEXT_LENGTH),
+  error: z.string().trim().nonempty(),
 });
 
 export type WorkflowConfig = z.output<typeof workflowConfigResponseSchema>;
