@@ -5,11 +5,7 @@ import { vi } from "vitest";
 import type { renderComponent } from "#/tests/utils/renderers/renderers.mod";
 
 const BROWSE_FILES_BUTTON_NAME = /browse files/i;
-const DONE_READY_STATE = 4;
 const NO_HTTP_STATUS = 0;
-const NO_TIMEOUT_MILLISECONDS = 0;
-const OPENED_READY_STATE = 1;
-const UNSENT_READY_STATE = 0;
 
 type TestAwsS3Options = AwsS3Options<
   Record<string, unknown>,
@@ -36,14 +32,11 @@ export interface FakeXMLHttpResponse {
 export interface FakeXMLHttpRequest extends EventTarget {
   body: XMLHttpRequestBodyInit | null;
   method: string;
-  onerror: ((event: ProgressEvent) => void) | null;
   onload: ((event: ProgressEvent) => unknown) | null;
-  readyState: number;
   responseText: string;
   responseType: XMLHttpRequestResponseType;
   status: number;
   statusText: string;
-  timeout: number;
   upload: EventTarget & {
     onprogress: ((event: ProgressEvent) => void) | null;
   };
@@ -71,14 +64,11 @@ const createFakeXMLHttpRequest = (): FakeXMLHttpRequest => {
   const request = Object.assign(new EventTarget(), {
     body: null as XMLHttpRequestBodyInit | null,
     method: "",
-    onerror: null as ((event: ProgressEvent) => void) | null,
     onload: null as ((event: ProgressEvent) => unknown) | null,
-    readyState: UNSENT_READY_STATE,
     responseText: "",
     responseType,
     status: NO_HTTP_STATUS,
     statusText: "",
-    timeout: NO_TIMEOUT_MILLISECONDS,
     upload,
     url: "",
     withCredentials: false,
@@ -94,13 +84,11 @@ const createFakeXMLHttpRequest = (): FakeXMLHttpRequest => {
     open: (method: string, url: string | URL) => {
       request.method = method;
       request.url = url.toString();
-      request.readyState = OPENED_READY_STATE;
     },
     respond: async (response: FakeXMLHttpResponse) => {
       request.status = response.status;
       request.statusText = response.statusText ?? "";
       request.responseText = response.responseText ?? "";
-      request.readyState = DONE_READY_STATE;
       responseHeaders.clear();
 
       for (const [name, value] of Object.entries(response.headers ?? {})) {
