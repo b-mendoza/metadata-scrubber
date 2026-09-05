@@ -14,7 +14,10 @@ import {
   UNSUPPORTED_MEDIA_TYPE_STATUS_CODE,
 } from "#/shared/constants/http/status-codes/status-codes.mod";
 import { createWorkflowHttpClient } from "#/shared/libs/ky/workflow-http-client.mod.server";
-import type { RouterInputs } from "#/shared/libs/trpc/client/client.mod";
+import type {
+  RouterInputs,
+  RouterOutputs,
+} from "#/shared/libs/trpc/client/client.mod";
 import {
   createCallerFactory,
   createTRPCRequestContext,
@@ -203,7 +206,6 @@ test("confirmDelete rejects an invalid storage key before fetch", async () => {
   expect(fetchMock).not.toHaveBeenCalled();
 });
 
-
 test("getWorkflowConfig rejects a malformed backend config body", async () => {
   const fetchMock = vi
     .fn<typeof fetch>()
@@ -238,6 +240,30 @@ test("createUpload rejects an invalid backend upload URL", async () => {
 
   expect(error.code).toBe("BAD_GATEWAY");
   expect(error.message).toBe(CREATE_UPLOAD_FAILURE_MESSAGE);
+});
+
+test("createUpload rejects a backend success body with an unknown property", async () => {
+  const input: RouterInputs["wizard"]["createUpload"] = {
+    fileName: "report.pdf",
+    fileSizeBytes: ONE_BYTE,
+  };
+  const response: RouterOutputs["wizard"]["createUpload"] = {
+    storageKey: STORAGE_KEY,
+    uploadUrl: "https://uploads.test/report.pdf",
+  };
+  const fetchMock = vi
+    .fn<typeof fetch>()
+    .mockResolvedValue(Response.json({ ...response, unknown: true }));
+  vi.stubGlobal("fetch", fetchMock);
+  const request = new Request(FRONTEND_URL);
+
+  const error = await requireTRPCError(
+    callerForRequest(request).createUpload(input),
+  );
+
+  expect(error.code).toBe("BAD_GATEWAY");
+  expect(error.message).toBe(CREATE_UPLOAD_FAILURE_MESSAGE);
+  expect(fetchMock).toHaveBeenCalledOnce();
 });
 
 test("createUpload maps an oversize backend response to PAYLOAD_TOO_LARGE", async () => {
