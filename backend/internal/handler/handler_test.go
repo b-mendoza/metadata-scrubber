@@ -1928,22 +1928,15 @@ func seedCandidateSources(t *testing.T, fake *storage.Fake, fileIDs ...string) {
 	for _, fileID := range fileIDs {
 		require.NoError(t, fake.SetSource(fileID, storage.SourceObject{
 			PDFBytes: []byte("%PDF-" + fileID),
-			ETag:     canonicalETagForFileID(fileID),
+			ETag:     canonicalETagsByFileID[fileID],
 		}))
 	}
 }
 
-func canonicalETagForFileID(fileID string) string {
-	switch fileID {
-	case fileIDOne:
-		return canonicalETagOne
-	case fileIDTwo:
-		return canonicalETagTwo
-	case fileIDThree:
-		return canonicalETagThree
-	default:
-		panic("unknown file ID: " + fileID)
-	}
+var canonicalETagsByFileID = map[string]string{
+	fileIDOne:   canonicalETagOne,
+	fileIDTwo:   canonicalETagTwo,
+	fileIDThree: canonicalETagThree,
 }
 
 type blockingStorage struct {
@@ -2120,7 +2113,7 @@ func startGuardedRequests(
 		if request.method == scrubMethod {
 			body, err = json.Marshal(scrubRequest{
 				StorageKey: formatStorageKey(request.fileID),
-				ETag:       canonicalETagForFileID(request.fileID),
+				ETag:       canonicalETagsByFileID[request.fileID],
 			})
 		} else {
 			body, err = json.Marshal(dryRunRequest{StorageKey: formatStorageKey(request.fileID)})
