@@ -14,11 +14,10 @@ import type {
   RouterOutputs,
 } from "#/shared/libs/trpc/client/client.mod";
 
-const MINIMUM_STORAGE_KEY_LENGTH = 1;
 const BYTES_PER_MEBIBYTE = 1_048_576;
 
 const uploadedFileMetadataSchema = z.strictObject({
-  storageKey: z.string().trim().min(MINIMUM_STORAGE_KEY_LENGTH),
+  storageKey: z.string().trim().nonempty(),
 });
 
 interface FileUploaderProps {
