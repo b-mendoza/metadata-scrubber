@@ -2,7 +2,6 @@ import type { TRPC_ERROR_CODE_KEY } from "@trpc/server";
 import { TRPCError } from "@trpc/server";
 import { HTTPError, TimeoutError } from "ky";
 import { ResultAsync } from "neverthrow";
-import * as z from "zod";
 
 import {
   BAD_REQUEST_STATUS_CODE,
@@ -28,6 +27,8 @@ import {
 } from "#/shared/libs/trpc/utils/initializer/initializer.mod.server";
 import { getApplicationBindings } from "#/shared/middlewares/application-bindings/application-bindings.mod";
 
+import * as contracts from "./wizard-contracts.mod.server";
+
 export const WORKFLOW_CONFIG_FAILURE_MESSAGE =
   "Could not load the file workflow configuration. Try again later.";
 export const CREATE_UPLOAD_FAILURE_MESSAGE =
@@ -41,22 +42,6 @@ export const REFRESH_DOWNLOAD_GRANT_FAILURE_MESSAGE =
 export const CONFIRM_DELETE_FAILURE_MESSAGE =
   "Could not delete the file. Try again later.";
 
-const MINIMUM_FILE_SIZE_BYTES = 1;
-const MINIMUM_TEXT_LENGTH = 1;
-const WHOLE_SECOND_PRECISION = 0;
-// Zod string length counts UTF-16 code units. The byte limit must use TextEncoder.
-const MAXIMUM_FILE_NAME_BYTES = 255;
-const HTTP_PROTOCOL = /^https?$/;
-const INVALID_FILE_NAME_CHARACTERS = new Set(["\\", "/", "\u{FFFD}"]);
-const LAST_CONTROL_CHARACTER = "\u{001F}";
-const DELETE_CONTROL_CHARACTER = "\u{007F}";
-// This regex matches the backend wire grammar: uploads/ and a lowercase UUIDv4.
-// A separate z.uuid() check would accept UUID forms that the backend does not emit.
-const STORAGE_KEY_PATTERN =
-  /^uploads\/[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/;
-// This token is 32 lowercase hexadecimal characters, not a general RFC 9110 entity tag.
-const CANONICAL_ETAG_PATTERN = /^[0-9a-f]{32}$/;
-
 const backendStatusCodes = new Map<number, TRPC_ERROR_CODE_KEY>([
   [BAD_REQUEST_STATUS_CODE, "BAD_REQUEST"],
   [NOT_FOUND_STATUS_CODE, "NOT_FOUND"],
@@ -67,113 +52,6 @@ const backendStatusCodes = new Map<number, TRPC_ERROR_CODE_KEY>([
   [UNPROCESSABLE_ENTITY_STATUS_CODE, "UNPROCESSABLE_CONTENT"],
   [SERVICE_UNAVAILABLE_STATUS_CODE, "SERVICE_UNAVAILABLE"],
 ]);
-
-// This loop replaces a control-character regex that no-control-regex forbids.
-const fileNameContainsInvalidCharacter = (value: string): boolean => {
-  for (const character of value) {
-    if (
-      INVALID_FILE_NAME_CHARACTERS.has(character) ||
-      character <= LAST_CONTROL_CHARACTER ||
-      character === DELETE_CONTROL_CHARACTER
-    ) {
-      return true;
-    }
-  }
-  return false;
-};
-
-// eslint-disable-next-line zod/prefer-string-schema-with-trim -- File names must reach the backend byte-for-byte, so this schema rejects padding instead of trimming.
-const fileNameSchema = z
-  .string({ error: "The file name must be a string." })
-  .refine((value) => value.trim().length >= MINIMUM_TEXT_LENGTH, {
-    abort: true,
-    error: "The file name must not be empty.",
-  })
-  .refine((value) => value === value.trim(), {
-    error: "The file name must not start or end with whitespace.",
-  })
-  .refine(
-    (value) =>
-      new TextEncoder().encode(value).byteLength <= MAXIMUM_FILE_NAME_BYTES,
-    { error: "The file name is too long." },
-  )
-  .refine((value) => !fileNameContainsInvalidCharacter(value), {
-    error: "The file name contains a character that is not allowed.",
-  });
-
-const storageKeySchema = z
-  .string({ error: "The storage key must be a string." })
-  .regex(STORAGE_KEY_PATTERN, { error: "The storage key is invalid." })
-  .trim();
-export const canonicalETagSchema = z
-  .string({ error: "The ETag must be a string." })
-  .regex(CANONICAL_ETAG_PATTERN, { error: "The ETag is invalid." })
-  .trim();
-
-const workflowConfigResponseSchema = z.strictObject({
-  maxFileSizeBytes: z.int().positive(),
-});
-
-const createUploadInputSchema = z.strictObject({
-  fileName: fileNameSchema,
-  fileSizeBytes: z.int().min(MINIMUM_FILE_SIZE_BYTES),
-});
-
-const createUploadResponseSchema = z.strictObject({
-  storageKey: storageKeySchema,
-  uploadUrl: z.url({ protocol: HTTP_PROTOCOL }),
-});
-
-const dryRunInputSchema = z.strictObject({
-  storageKey: storageKeySchema,
-});
-
-const publicFieldSchema = z.strictObject({
-  action: z.enum(["remove", "replace"]),
-  label: z.string().trim(),
-  name: z.string().trim(),
-  originalByteSize: z.int().nonnegative(),
-  preview: z.string().trim(),
-});
-
-const dryRunResponseSchema = z.strictObject({
-  etag: canonicalETagSchema,
-  fields: z.array(publicFieldSchema),
-});
-
-export const scrubFileInputSchema = z.strictObject({
-  etag: canonicalETagSchema,
-  storageKey: storageKeySchema,
-});
-
-const scrubFileResponseSchema = z.strictObject({
-  result: z.strictObject({
-    downloadUrl: z.url({ protocol: HTTP_PROTOCOL }),
-  }),
-  status: z.literal("done"),
-});
-
-const refreshDownloadGrantInputSchema = z.strictObject({
-  etag: canonicalETagSchema,
-  storageKey: storageKeySchema,
-});
-
-const refreshDownloadGrantResponseSchema = z.strictObject({
-  downloadUrl: z.url({ protocol: HTTP_PROTOCOL }),
-  expiresAt: z.iso.datetime({ precision: WHOLE_SECOND_PRECISION }),
-});
-
-const confirmDeleteInputSchema = z.strictObject({
-  storageKey: storageKeySchema,
-});
-
-const confirmDeleteResponseSchema = z.strictObject({
-  status: z.literal("deleted"),
-});
-
-const backendErrorResponseSchema = z.strictObject({
-  error: z.string().trim().min(MINIMUM_TEXT_LENGTH),
-});
 
 type WorkflowFailureMessage =
   | typeof WORKFLOW_CONFIG_FAILURE_MESSAGE
@@ -198,7 +76,9 @@ const mapWorkflowRequestFailure = async (
     cause.response
       .clone()
       .json()
-      .then((body: unknown) => backendErrorResponseSchema.parse(body)),
+      .then((body: unknown) =>
+        contracts.backendErrorResponseSchema.parse(body),
+      ),
     () => null,
   );
   if (errorBodyResult.isErr()) {
@@ -208,24 +88,6 @@ const mapWorkflowRequestFailure = async (
   const code = backendStatusCodes.get(cause.response.status) ?? "BAD_GATEWAY";
   return new TRPCError({ cause, code, message });
 };
-
-export type WorkflowConfig = z.output<typeof workflowConfigResponseSchema>;
-export type CreateUploadInput = z.input<typeof createUploadInputSchema>;
-export type CreateUploadResponse = z.output<typeof createUploadResponseSchema>;
-export type DryRunInput = z.input<typeof dryRunInputSchema>;
-export type DryRunResponse = z.output<typeof dryRunResponseSchema>;
-export type ScrubFileInput = z.input<typeof scrubFileInputSchema>;
-export type ScrubFileResponse = z.output<typeof scrubFileResponseSchema>;
-export type RefreshDownloadGrantInput = z.input<
-  typeof refreshDownloadGrantInputSchema
->;
-export type RefreshDownloadGrantResponse = z.output<
-  typeof refreshDownloadGrantResponseSchema
->;
-export type ConfirmDeleteInput = z.input<typeof confirmDeleteInputSchema>;
-export type ConfirmDeleteResponse = z.output<
-  typeof confirmDeleteResponseSchema
->;
 
 export const wizardRouter = createTRPCRouter({
   getWorkflowConfig: publicProcedure.query(async ({ signal }) => {
@@ -238,7 +100,7 @@ export const wizardRouter = createTRPCRouter({
           timeout: WORKFLOW_CONFIG_TIMEOUT_MS,
           totalTimeout: WORKFLOW_CONFIG_TIMEOUT_MS,
         })
-        .json(workflowConfigResponseSchema),
+        .json(contracts.workflowConfigResponseSchema),
       (cause: unknown) => cause,
     );
     if (responseResult.isErr()) {
@@ -251,7 +113,7 @@ export const wizardRouter = createTRPCRouter({
   }),
 
   createUpload: publicProcedure
-    .input(createUploadInputSchema)
+    .input(contracts.createUploadInputSchema)
     .mutation(async ({ input, signal }) => {
       const { workflowHttpClient } = getApplicationBindings();
       const responseResult = await ResultAsync.fromPromise(
@@ -263,7 +125,7 @@ export const wizardRouter = createTRPCRouter({
             timeout: WORKFLOW_ONE_SHOT_TIMEOUT_MS,
             totalTimeout: WORKFLOW_ONE_SHOT_TIMEOUT_MS,
           })
-          .json(createUploadResponseSchema),
+          .json(contracts.createUploadResponseSchema),
         (cause: unknown) => cause,
       );
       if (responseResult.isErr()) {
@@ -276,7 +138,7 @@ export const wizardRouter = createTRPCRouter({
     }),
 
   dryRun: publicProcedure
-    .input(dryRunInputSchema)
+    .input(contracts.dryRunInputSchema)
     .mutation(async ({ input, signal }) => {
       const { workflowHttpClient } = getApplicationBindings();
       const responseResult = await ResultAsync.fromPromise(
@@ -288,7 +150,7 @@ export const wizardRouter = createTRPCRouter({
             timeout: WORKFLOW_DRY_RUN_TIMEOUT_MS,
             totalTimeout: WORKFLOW_DRY_RUN_TIMEOUT_MS,
           })
-          .json(dryRunResponseSchema),
+          .json(contracts.dryRunResponseSchema),
         (cause: unknown) => cause,
       );
       if (responseResult.isErr()) {
@@ -301,7 +163,7 @@ export const wizardRouter = createTRPCRouter({
     }),
 
   scrubFile: publicProcedure
-    .input(scrubFileInputSchema)
+    .input(contracts.scrubFileInputSchema)
     .mutation(async ({ input, signal }) => {
       const { workflowHttpClient } = getApplicationBindings();
       const responseResult = await ResultAsync.fromPromise(
@@ -313,7 +175,7 @@ export const wizardRouter = createTRPCRouter({
             timeout: WORKFLOW_SCRUB_TIMEOUT_MS,
             totalTimeout: WORKFLOW_SCRUB_TIMEOUT_MS,
           })
-          .json(scrubFileResponseSchema),
+          .json(contracts.scrubFileResponseSchema),
         (cause: unknown) => cause,
       );
       if (responseResult.isErr()) {
@@ -326,7 +188,7 @@ export const wizardRouter = createTRPCRouter({
     }),
 
   refreshDownloadGrant: publicProcedure
-    .input(refreshDownloadGrantInputSchema)
+    .input(contracts.refreshDownloadGrantInputSchema)
     .mutation(async ({ input, signal }) => {
       const { workflowHttpClient } = getApplicationBindings();
       const responseResult = await ResultAsync.fromPromise(
@@ -338,7 +200,7 @@ export const wizardRouter = createTRPCRouter({
             timeout: WORKFLOW_ONE_SHOT_TIMEOUT_MS,
             totalTimeout: WORKFLOW_ONE_SHOT_TIMEOUT_MS,
           })
-          .json(refreshDownloadGrantResponseSchema),
+          .json(contracts.refreshDownloadGrantResponseSchema),
         (cause: unknown) => cause,
       );
       if (responseResult.isErr()) {
@@ -351,7 +213,7 @@ export const wizardRouter = createTRPCRouter({
     }),
 
   confirmDelete: publicProcedure
-    .input(confirmDeleteInputSchema)
+    .input(contracts.confirmDeleteInputSchema)
     .mutation(async ({ input, signal }) => {
       const { workflowHttpClient } = getApplicationBindings();
       const responseResult = await ResultAsync.fromPromise(
@@ -363,7 +225,7 @@ export const wizardRouter = createTRPCRouter({
             timeout: WORKFLOW_ONE_SHOT_TIMEOUT_MS,
             totalTimeout: WORKFLOW_ONE_SHOT_TIMEOUT_MS,
           })
-          .json(confirmDeleteResponseSchema),
+          .json(contracts.confirmDeleteResponseSchema),
         (cause: unknown) => cause,
       );
       if (responseResult.isErr()) {

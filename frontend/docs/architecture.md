@@ -9,7 +9,7 @@ Developers build the frontend with [TanStack Start](https://tanstack.com/start) 
 ## Source layout
 
 - Developers group feature code by domain under `src/domains/<domain>/`. The current domains include `wizard` and `products`.
-- The wizard domain contains the typed file-workflow tRPC router and its tests.
+- The wizard domain contains the typed file-workflow tRPC router, its wire contracts, and its tests.
 - Developers keep cross-domain code under `src/shared/`. It contains `config`, `constants`, `database`, `libs` for tRPC and Ky, `middlewares`, and `utils`.
 - TanStack Router reads file-based routes from `src/routes/`. Developers keep API routes under `src/routes/api/`.
 - Developers keep test setup and shared render helpers under `src/tests/`. The render helpers are in `src/tests/utils/renderers/`.

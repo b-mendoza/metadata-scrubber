@@ -26,15 +26,17 @@ import type {
   DryRunInput,
   RefreshDownloadGrantInput,
   ScrubFileInput,
-} from "./wizard-router.mod.server";
+} from "./wizard-contracts.mod.server";
 import {
   canonicalETagSchema,
+  scrubFileInputSchema,
+} from "./wizard-contracts.mod.server";
+import {
   CONFIRM_DELETE_FAILURE_MESSAGE,
   CREATE_UPLOAD_FAILURE_MESSAGE,
   DRY_RUN_FAILURE_MESSAGE,
   REFRESH_DOWNLOAD_GRANT_FAILURE_MESSAGE,
   SCRUB_FILE_FAILURE_MESSAGE,
-  scrubFileInputSchema,
   wizardRouter,
   WORKFLOW_CONFIG_FAILURE_MESSAGE,
 } from "./wizard-router.mod.server";
