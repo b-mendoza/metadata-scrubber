@@ -30,7 +30,7 @@ import type {
   ScrubFileInput,
   ScrubFileResponse,
   WorkflowConfig,
-} from "./wizard-router.mod.server";
+} from "./wizard-contracts.mod.server";
 import {
   CONFIRM_DELETE_FAILURE_MESSAGE,
   CREATE_UPLOAD_FAILURE_MESSAGE,
