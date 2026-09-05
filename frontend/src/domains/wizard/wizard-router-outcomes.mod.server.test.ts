@@ -14,6 +14,7 @@ import {
 import { getApplicationBindings } from "#/shared/middlewares/application-bindings/application-bindings.mod";
 
 import type {
+  BackendErrorResponse,
   ConfirmDeleteInput,
   RefreshDownloadGrantInput,
   ScrubFileInput,
@@ -74,19 +75,19 @@ test("scrubFile keeps missing source and revision conflict results distinct", as
     etag: CANONICAL_ETAG,
     storageKey: STORAGE_KEY,
   };
+  const missingResponse: BackendErrorResponse = {
+    error: "source file not found",
+  };
+  const conflictResponse: BackendErrorResponse = {
+    error: "source file changed since review",
+  };
   const fetchMock = vi
     .fn<typeof fetch>()
     .mockResolvedValueOnce(
-      Response.json(
-        { error: "source file not found" },
-        { status: NOT_FOUND_STATUS_CODE },
-      ),
+      Response.json(missingResponse, { status: NOT_FOUND_STATUS_CODE }),
     )
     .mockResolvedValueOnce(
-      Response.json(
-        { error: "source file changed since review" },
-        { status: CONFLICT_STATUS_CODE },
-      ),
+      Response.json(conflictResponse, { status: CONFLICT_STATUS_CODE }),
     );
   vi.stubGlobal("fetch", fetchMock);
   const request = new Request(FRONTEND_URL);
@@ -133,13 +134,13 @@ test("refreshDownloadGrant maps a missing revision to NOT_FOUND", async () => {
     etag: CANONICAL_ETAG,
     storageKey: STORAGE_KEY,
   };
+  const response: BackendErrorResponse = {
+    error: "scrubbed file not found",
+  };
   const fetchMock = vi
     .fn<typeof fetch>()
     .mockResolvedValue(
-      Response.json(
-        { error: "scrubbed file not found" },
-        { status: NOT_FOUND_STATUS_CODE },
-      ),
+      Response.json(response, { status: NOT_FOUND_STATUS_CODE }),
     );
   vi.stubGlobal("fetch", fetchMock);
   const request = new Request(FRONTEND_URL);
@@ -155,13 +156,13 @@ test("refreshDownloadGrant maps a missing revision to NOT_FOUND", async () => {
 
 test("confirmDelete maps unconfirmed deletion to CONFLICT", async () => {
   const input: ConfirmDeleteInput = { storageKey: STORAGE_KEY };
+  const response: BackendErrorResponse = {
+    error: "file deletion could not be confirmed",
+  };
   const fetchMock = vi
     .fn<typeof fetch>()
     .mockResolvedValue(
-      Response.json(
-        { error: "file deletion could not be confirmed" },
-        { status: CONFLICT_STATUS_CODE },
-      ),
+      Response.json(response, { status: CONFLICT_STATUS_CODE }),
     );
   vi.stubGlobal("fetch", fetchMock);
   const request = new Request(FRONTEND_URL);
