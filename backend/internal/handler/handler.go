@@ -255,18 +255,6 @@ func newHandler(logger *slog.Logger, permits chan struct{}, operations handlerOp
 	if permits == nil || cap(permits) != ProcessingPermitCount {
 		panic("handler admission gate must have capacity 2")
 	}
-	for _, operation := range []struct {
-		name  string
-		isNil bool
-	}{
-		{name: "inspect", isNil: operations.inspect == nil},
-		{name: "clean", isNil: operations.clean == nil},
-		{name: "entropy", isNil: operations.entropy == nil},
-	} {
-		if operation.isNil {
-			panic("handler " + operation.name + " operation must not be nil")
-		}
-	}
 	if operations.admissionJitter == nil {
 		operations.admissionJitter = randomAdmissionJitter
 	}
