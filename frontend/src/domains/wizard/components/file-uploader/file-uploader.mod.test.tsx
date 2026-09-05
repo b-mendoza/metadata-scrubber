@@ -75,7 +75,7 @@ test("a PDF at the inclusive runtime limit gets a grant and uploads directly", a
     fileSizeBytes: TEST_MAX_FILE_SIZE_BYTES,
   };
   const response: RouterOutputs["wizard"]["createUpload"] = {
-    storageKey: "uploads/boundary-key",
+    storageKey: "uploads/00000000-0000-4000-8000-000000000010",
     uploadUrl: "https://uploads.test/boundary.pdf",
   };
   const createUpload = vi.fn<CreateUpload>().mockResolvedValue(response);
@@ -269,7 +269,7 @@ test("one valid PDF sends one typed grant request and one direct PUT", async () 
     fileSizeBytes: 3,
   };
   const response: RouterOutputs["wizard"]["createUpload"] = {
-    storageKey: "uploads/opaque-key",
+    storageKey: "uploads/00000000-0000-4000-8000-000000000011",
     uploadUrl: "https://uploads.test/opaque-key",
   };
   const createUpload = vi.fn<CreateUpload>().mockResolvedValue(response);
@@ -357,7 +357,7 @@ test("a grant failure does not send a PUT or advance the wizard", async () => {
 test("a final direct PUT failure does not advance the wizard", async () => {
   installXMLHttpRequestFake();
   const response: RouterOutputs["wizard"]["createUpload"] = {
-    storageKey: "uploads/failing-key",
+    storageKey: "uploads/00000000-0000-4000-8000-000000000012",
     uploadUrl: "https://uploads.test/failing-key",
   };
   const createUpload = vi.fn<CreateUpload>().mockResolvedValue(response);
@@ -414,11 +414,11 @@ test("a manual retry gets a fresh grant and gives the wizard only the newest key
     fileSizeBytes: 3,
   };
   const responseOne: RouterOutputs["wizard"]["createUpload"] = {
-    storageKey: "uploads/old-key",
+    storageKey: "uploads/00000000-0000-4000-8000-000000000013",
     uploadUrl: "https://uploads.test/old-key",
   };
   const responseTwo: RouterOutputs["wizard"]["createUpload"] = {
-    storageKey: "uploads/new-key",
+    storageKey: "uploads/00000000-0000-4000-8000-000000000014",
     uploadUrl: "https://uploads.test/new-key",
   };
   const createUpload = vi
