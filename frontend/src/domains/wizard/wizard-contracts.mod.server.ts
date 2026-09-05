@@ -139,3 +139,4 @@ export type ConfirmDeleteInput = z.input<typeof confirmDeleteInputSchema>;
 export type ConfirmDeleteResponse = z.output<
   typeof confirmDeleteResponseSchema
 >;
+export type BackendErrorResponse = z.output<typeof backendErrorResponseSchema>;
