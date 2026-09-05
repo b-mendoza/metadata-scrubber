@@ -69,18 +69,11 @@ const createUppy = (
   return uppy;
 };
 
-const formatMebibytes = (fileSizeBytes: number) => {
-  return new Intl.NumberFormat("en-US", {
-    maximumFractionDigits: 2,
-  }).format(fileSizeBytes / BYTES_PER_MEBIBYTE);
-};
-
 export const FileUploader = (props: FileUploaderProps) => {
   const { createUpload, maxFileSizeBytes, onUploadComplete } = props;
 
-  // useState creates one Uppy instance for each mount, not each render.
-  // The instance captures fixed `createUpload` and `maxFileSizeBytes` values at mount.
-  // A caller must remount this component to apply a different value.
+  // The Uppy instance captures the initial `createUpload` and `maxFileSizeBytes` values.
+  // A caller must remount this component to apply changed values.
   const [uppy] = useState(() => createUppy(createUpload, maxFileSizeBytes));
 
   useUppyEvent(uppy, "complete", (uploadResult) => {
@@ -102,11 +95,15 @@ export const FileUploader = (props: FileUploaderProps) => {
     };
   }, [uppy]);
 
+  const maxFileSizeMebibytes = new Intl.NumberFormat("en-US", {
+    maximumFractionDigits: 2,
+  }).format(maxFileSizeBytes / BYTES_PER_MEBIBYTE);
+
   return (
     <Dashboard
       height={400}
       hideProgressAfterFinish
-      note={`Upload exactly one PDF file (max ${formatMebibytes(maxFileSizeBytes)} MiB)`}
+      note={`Upload exactly one PDF file (max ${maxFileSizeMebibytes} MiB)`}
       uppy={uppy}
     />
   );
