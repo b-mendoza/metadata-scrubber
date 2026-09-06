@@ -203,3 +203,37 @@ func TestMixedWorkflowsPeakAtTwo(t *testing.T) {
 	require.Equal(t, 2, observer.peakDownloads())
 	require.Empty(t, handler.permits)
 }
+
+func TestScrubReleasesPermitBeforeUploadingSanitizedBytes(t *testing.T) {
+	fake := storage.NewFake()
+	require.NoError(t, fake.SetSource(fileIDOne, storage.SourceObject{PDFBytes: []byte("%PDF-one"), ETag: canonicalETagOne}))
+	require.NoError(t, fake.SetSource(fileIDTwo, storage.SourceObject{PDFBytes: []byte("%PDF-two"), ETag: canonicalETagTwo}))
+	require.NoError(t, fake.SetSource(fileIDThree, storage.SourceObject{PDFBytes: []byte("%PDF-three"), ETag: canonicalETagThree}))
+	observer := newBlockingStorage(fake, fileIDTwo, fileIDThree)
+	observer.blockUpload(fileIDOne)
+	handler := newTestHandler(t, nil, func(input []byte) ([]byte, error) {
+		return input, nil
+	}, nil)
+
+	firstResponse := make(chan *httptest.ResponseRecorder, 1)
+	body, err := json.Marshal(scrubRequest{StorageKey: formatStorageKey(fileIDOne), ETag: canonicalETagOne})
+	require.NoError(t, err)
+	go func() {
+		request := httptest.NewRequest(http.MethodPost, "/api/files/scrub", bytes.NewReader(body))
+		request.Header.Set(header.ContentType, mediatype.JSON)
+		recorder := httptest.NewRecorder()
+		bindings.Inject(bindings.Bindings{Storage: observer})(http.HandlerFunc(handler.Scrub)).ServeHTTP(recorder, request)
+		firstResponse <- recorder
+	}()
+	observer.waitForUpload(t, fileIDOne)
+
+	holderResponses := startGuardedRequests(t, handler, observer, []guardedRequest{
+		{scrub: false, fileID: fileIDTwo},
+		{scrub: false, fileID: fileIDThree},
+	})
+
+	observer.releaseUploads()
+	require.Equal(t, http.StatusOK, (<-firstResponse).Code)
+	observer.releaseDownloads()
+	requireResponsesSuccess(t, holderResponses, 2, "timed out waiting for holder response")
+}
