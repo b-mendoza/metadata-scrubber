@@ -1,14 +1,17 @@
 package handler
 
 import (
-	"context"
+	"bytes"
 	"encoding/json"
 	"net/http"
+	"net/http/httptest"
 	"strings"
 	"testing"
 
 	"github.com/stretchr/testify/require"
 
+	"metadata-scrubber/internal/bindings"
+	"metadata-scrubber/internal/httpx/header"
 	"metadata-scrubber/internal/httpx/mediatype"
 	"metadata-scrubber/internal/storage"
 )
@@ -24,7 +27,10 @@ func TestPublicStorageKeysAndETagsAreValidatedBeforeStorage(t *testing.T) {
 			handler := newTestHandler(t, nil, nil, nil)
 			body, err := json.Marshal(dryRunRequest{StorageKey: invalidKey})
 			require.NoError(t, err)
-			recorder := serveRequest(t, handlerRequest{ctx: context.Background(), contentType: mediatype.JSON, handler: handler, objectStorage: fake, method: dryRunMethod, body: string(body)})
+			request := httptest.NewRequest(http.MethodPost, "/api/files/dry-run", bytes.NewReader(body))
+			request.Header.Set(header.ContentType, mediatype.JSON)
+			recorder := httptest.NewRecorder()
+			bindings.Inject(bindings.Bindings{Storage: fake})(http.HandlerFunc(handler.DryRun)).ServeHTTP(recorder, request)
 			require.Equal(t, http.StatusBadRequest, recorder.Code)
 			require.Empty(t, fake.Calls())
 		})
@@ -64,10 +70,10 @@ func TestPublicStorageKeysAndETagsAreValidatedBeforeStorage(t *testing.T) {
 			})
 			require.NoError(t, err)
 
-			recorder := serveRequest(t, handlerRequest{
-				ctx: context.Background(), contentType: mediatype.JSON,
-				handler: handler, objectStorage: fake, method: scrubMethod, body: string(body),
-			})
+			request := httptest.NewRequest(http.MethodPost, "/api/files/scrub", bytes.NewReader(body))
+			request.Header.Set(header.ContentType, mediatype.JSON)
+			recorder := httptest.NewRecorder()
+			bindings.Inject(bindings.Bindings{Storage: fake})(http.HandlerFunc(handler.Scrub)).ServeHTTP(recorder, request)
 
 			require.Equal(t, http.StatusBadRequest, recorder.Code)
 			require.Empty(t, fake.Calls())
@@ -81,10 +87,10 @@ func TestPublicStorageKeysAndETagsAreValidatedBeforeStorage(t *testing.T) {
 			})
 			require.NoError(t, err)
 
-			recorder := serveRequest(t, handlerRequest{
-				ctx: context.Background(), contentType: mediatype.JSON,
-				handler: handler, objectStorage: fake, method: downloadGrantMethod, body: string(body),
-			})
+			request := httptest.NewRequest(http.MethodPost, "/api/files/download-grant", bytes.NewReader(body))
+			request.Header.Set(header.ContentType, mediatype.JSON)
+			recorder := httptest.NewRecorder()
+			bindings.Inject(bindings.Bindings{Storage: fake})(http.HandlerFunc(handler.DownloadGrant)).ServeHTTP(recorder, request)
 
 			require.Equal(t, http.StatusBadRequest, recorder.Code)
 			require.Empty(t, fake.Calls())
