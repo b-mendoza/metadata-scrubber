@@ -206,45 +206,41 @@ func TestLoadRejectsAbsentOrBlankR2Values(t *testing.T) {
 }
 
 func TestLoadDoesNotDiscloseConfigurationValuesInErrors(t *testing.T) {
+	const (
+		accountIDSentinel       = "account-id-sentinel-4387"
+		accessKeyIDSentinel     = "access-key-id-sentinel-9261"
+		secretAccessKeySentinel = "secret-access-key-sentinel-5704"
+		bucketSentinel          = "bucket-sentinel-1832"
+	)
+
 	for _, testCase := range []struct {
-		name                   string
-		configureFail          func(t *testing.T)
-		errorCategory          string
-		configuredFailureValue string
+		name                     string
+		port                     string
+		errorCategory            string
+		portStaysAbsentFromError bool
 	}{
-		{
-			name: "validation failure",
-			configureFail: func(t *testing.T) {
-				t.Helper()
-				t.Setenv(portEnvKey, "70000")
-			},
-			errorCategory:          "invalid configuration",
-			configuredFailureValue: "70000",
-		},
-		{
-			name: "parse failure",
-			configureFail: func(t *testing.T) {
-				t.Helper()
-				t.Setenv(portEnvKey, "not-a-port")
-			},
-			errorCategory: "reading environment",
-		},
+		{name: "validation failure", port: "70000", errorCategory: "invalid configuration", portStaysAbsentFromError: true},
+		// The env library repeats an unparsable value inside its parse error.
+		{name: "parse failure", port: "not-a-port", errorCategory: "reading environment"},
 	} {
 		t.Run(testCase.name, func(t *testing.T) {
-			setValidR2Environment(t)
-			testCase.configureFail(t)
+			t.Setenv(r2AccountIDEnvKey, accountIDSentinel)
+			t.Setenv(r2AccessKeyIDEnvKey, accessKeyIDSentinel)
+			t.Setenv(r2SecretAccessKeyEnvKey, secretAccessKeySentinel)
+			t.Setenv(r2BucketEnvKey, bucketSentinel)
+			t.Setenv(portEnvKey, testCase.port)
 
 			_, err := config.Load()
 
 			require.Error(t, err)
 			require.ErrorContains(t, err, testCase.errorCategory)
-			require.NotContains(t, err.Error(), validR2AccountID)
-			require.NotContains(t, err.Error(), validR2AccessKeyID)
-			require.NotContains(t, err.Error(), validR2SecretAccessKey)
-			require.NotContains(t, err.Error(), validR2Bucket)
-			if testCase.configuredFailureValue != "" {
-				require.NotContains(t, err.Error(), testCase.configuredFailureValue)
+			if testCase.portStaysAbsentFromError {
+				require.NotContains(t, err.Error(), testCase.port)
 			}
+			require.NotContains(t, err.Error(), accountIDSentinel)
+			require.NotContains(t, err.Error(), accessKeyIDSentinel)
+			require.NotContains(t, err.Error(), secretAccessKeySentinel)
+			require.NotContains(t, err.Error(), bucketSentinel)
 		})
 	}
 }
