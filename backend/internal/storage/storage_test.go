@@ -22,34 +22,36 @@ const (
 
 var _ storage.Storage = (*storage.Fake)(nil)
 
-func TestNormalizeProviderETagAcceptsOneQuotedStrongETag(t *testing.T) {
+func TestNormalizeProviderETagClassifiesProviderValues(t *testing.T) {
 	t.Parallel()
 
-	normalized, err := storage.NormalizeProviderETag(`"` + canonicalETagOne + `"`)
-
-	require.NoError(t, err)
-	require.Equal(t, canonicalETagOne, normalized)
-}
-
-func TestNormalizeProviderETagRejectsMalformedValues(t *testing.T) {
-	t.Parallel()
-
-	for _, providerETag := range []string{
-		"",
-		canonicalETagOne,
-		`W/"` + canonicalETagOne + `"`,
-		`""`,
-		`""` + canonicalETagOne + `""`,
-		` "` + canonicalETagOne + `"`,
-		`"` + canonicalETagOne + `" `,
-		`"0123456789abcdef0123456789abcde` + "\n" + `"`,
-		`"0123456789ABCDEF0123456789ABCDEF"`,
-		`"0123456789abcdef0123456789abcdef-2"`,
+	for _, testCase := range []struct {
+		name         string
+		providerETag string
+		want         string
+		wantErr      bool
+	}{
+		{name: "quoted strong ETag", providerETag: `"` + canonicalETagOne + `"`, want: canonicalETagOne},
+		{name: "empty value", providerETag: "", wantErr: true},
+		{name: "unquoted ETag", providerETag: canonicalETagOne, wantErr: true},
+		{name: "weak ETag", providerETag: `W/"` + canonicalETagOne + `"`, wantErr: true},
+		{name: "empty quoted value", providerETag: `""`, wantErr: true},
+		{name: "double-quoted ETag", providerETag: `""` + canonicalETagOne + `""`, wantErr: true},
+		{name: "leading space", providerETag: ` "` + canonicalETagOne + `"`, wantErr: true},
+		{name: "trailing space", providerETag: `"` + canonicalETagOne + `" `, wantErr: true},
+		{name: "embedded newline", providerETag: `"0123456789abcdef0123456789abcde` + "\n" + `"`, wantErr: true},
+		{name: "uppercase ETag", providerETag: `"0123456789ABCDEF0123456789ABCDEF"`, wantErr: true},
+		{name: "multipart ETag", providerETag: `"0123456789abcdef0123456789abcdef-2"`, wantErr: true},
 	} {
-		t.Run(providerETag, func(t *testing.T) {
-			_, err := storage.NormalizeProviderETag(providerETag)
+		t.Run(testCase.name, func(t *testing.T) {
+			normalized, err := storage.NormalizeProviderETag(testCase.providerETag)
+			if testCase.wantErr {
+				require.ErrorIs(t, err, storage.ErrInvalidETag)
+				return
+			}
 
-			require.ErrorIs(t, err, storage.ErrInvalidETag)
+			require.NoError(t, err)
+			require.Equal(t, testCase.want, normalized)
 		})
 	}
 }
