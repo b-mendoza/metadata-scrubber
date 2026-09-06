@@ -35,7 +35,10 @@ func TestLoadDefaultsPortWhenUnset(t *testing.T) {
 }
 
 func TestLoadDefaultsPortWhenEmpty(t *testing.T) {
-	cfg, err := loadConfigWithPort(t, "")
+	setValidR2Environment(t)
+	t.Setenv(portEnvKey, "")
+
+	cfg, err := config.Load()
 
 	require.NoError(t, err)
 	require.Equal(t, 8080, cfg.Port)
@@ -52,7 +55,10 @@ func TestLoadParsesExplicitPorts(t *testing.T) {
 		{name: "accepts maximum port", port: "65535", want: 65535},
 	} {
 		t.Run(testCase.name, func(t *testing.T) {
-			cfg, err := loadConfigWithPort(t, testCase.port)
+			setValidR2Environment(t)
+			t.Setenv(portEnvKey, testCase.port)
+
+			cfg, err := config.Load()
 
 			require.NoError(t, err)
 			require.Equal(t, testCase.want, cfg.Port)
@@ -69,7 +75,10 @@ func TestLoadRejectsUnparseablePort(t *testing.T) {
 		{name: "rejects whitespace-padded port", port: "  8080  "},
 	} {
 		t.Run(testCase.name, func(t *testing.T) {
-			_, err := loadConfigWithPort(t, testCase.port)
+			setValidR2Environment(t)
+			t.Setenv(portEnvKey, testCase.port)
+
+			_, err := config.Load()
 
 			require.Error(t, err)
 			require.ErrorContains(t, err, "reading environment")
@@ -88,7 +97,10 @@ func TestLoadRejectsOutOfRangePort(t *testing.T) {
 		{name: "rejects port above maximum", port: "70000"},
 	} {
 		t.Run(testCase.name, func(t *testing.T) {
-			_, err := loadConfigWithPort(t, testCase.port)
+			setValidR2Environment(t)
+			t.Setenv(portEnvKey, testCase.port)
+
+			_, err := config.Load()
 
 			require.Error(t, err)
 			require.ErrorContains(t, err, "invalid configuration")
@@ -243,15 +255,6 @@ func TestLoadDoesNotDiscloseConfigurationValuesInErrors(t *testing.T) {
 			require.NotContains(t, err.Error(), bucketSentinel)
 		})
 	}
-}
-
-func loadConfigWithPort(t *testing.T, port string) (config.Config, error) {
-	t.Helper()
-
-	setValidR2Environment(t)
-	t.Setenv(portEnvKey, port)
-
-	return config.Load()
 }
 
 func setValidR2Environment(t *testing.T) {
