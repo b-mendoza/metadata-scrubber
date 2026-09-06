@@ -59,9 +59,7 @@ func (observer *blockingStorage) DownloadSource(ctx context.Context, fileID stri
 	blocked := observer.blockedDownloads[fileID]
 	if blocked {
 		observer.active++
-		if observer.active > observer.peak {
-			observer.peak = observer.active
-		}
+		observer.peak = max(observer.peak, observer.active)
 	}
 	observer.mu.Unlock()
 
