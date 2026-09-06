@@ -101,6 +101,33 @@ func TestRequestLoggerLogsPanickedRequests(t *testing.T) {
 	require.NotContains(t, completed.rawJSON, "panic-value-sensitive-marker")
 }
 
+func TestRequestLoggerLogsPanickedRequestsAfterWritingHeader(t *testing.T) {
+	t.Parallel()
+
+	handler, readRecords := newLoggedHandler(t, func(w http.ResponseWriter, _ *http.Request) {
+		w.WriteHeader(http.StatusCreated)
+		panic("panic-value-sensitive-marker")
+	})
+
+	require.PanicsWithValue(t, "panic-value-sensitive-marker", func() {
+		handler.ServeHTTP(httptest.NewRecorder(), httptest.NewRequest(http.MethodGet, "/api/health", http.NoBody))
+	})
+
+	records := readRecords()
+	require.Len(t, records, 2)
+	for _, record := range records {
+		require.NotContains(t, record.rawJSON, "panic-value-sensitive-marker")
+	}
+
+	completed := records[1]
+	require.Equal(t, "request completed", completed.Msg)
+	require.Equal(t, "ERROR", completed.Level)
+	requireRequiredIntLogField(t, "status", http.StatusCreated, completed.Status)
+	require.NotNil(t, completed.Panicked, "missing panicked log field")
+	require.True(t, *completed.Panicked)
+	require.Nil(t, completed.Panic, "panic value must not be logged")
+}
+
 type logRecord struct {
 	rawJSON string
 
