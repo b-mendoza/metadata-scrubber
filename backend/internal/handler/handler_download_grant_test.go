@@ -1,17 +1,20 @@
 package handler
 
 import (
-	"context"
+	"bytes"
 	"encoding/json"
 	"errors"
 	"io"
 	"log/slog"
 	"net/http"
+	"net/http/httptest"
 	"testing"
 	"time"
 
 	"github.com/stretchr/testify/require"
 
+	"metadata-scrubber/internal/bindings"
+	"metadata-scrubber/internal/httpx/header"
 	"metadata-scrubber/internal/httpx/mediatype"
 	"metadata-scrubber/internal/scrub"
 	"metadata-scrubber/internal/storage"
@@ -41,10 +44,10 @@ func TestDownloadGrantRefreshesExactSanitizedRevisionFromOneOperationTime(t *tes
 	})
 	require.NoError(t, err)
 
-	recorder := serveRequest(t, handlerRequest{
-		ctx: context.Background(), contentType: mediatype.JSON,
-		handler: handler, objectStorage: fake, method: downloadGrantMethod, body: string(body),
-	})
+	request := httptest.NewRequest(http.MethodPost, "/api/files/download-grant", bytes.NewReader(body))
+	request.Header.Set(header.ContentType, mediatype.JSON)
+	recorder := httptest.NewRecorder()
+	bindings.Inject(bindings.Bindings{Storage: fake})(http.HandlerFunc(handler.DownloadGrant)).ServeHTTP(recorder, request)
 
 	require.Equal(t, http.StatusOK, recorder.Code, recorder.Body.String())
 	var response downloadGrantResponse
@@ -75,10 +78,10 @@ func TestDownloadGrantReturnsNotFoundWithoutPresignForMissingRevision(t *testing
 	})
 	require.NoError(t, err)
 
-	recorder := serveRequest(t, handlerRequest{
-		ctx: context.Background(), contentType: mediatype.JSON,
-		handler: handler, objectStorage: fake, method: downloadGrantMethod, body: string(body),
-	})
+	request := httptest.NewRequest(http.MethodPost, "/api/files/download-grant", bytes.NewReader(body))
+	request.Header.Set(header.ContentType, mediatype.JSON)
+	recorder := httptest.NewRecorder()
+	bindings.Inject(bindings.Bindings{Storage: fake})(http.HandlerFunc(handler.DownloadGrant)).ServeHTTP(recorder, request)
 
 	require.Equal(t, http.StatusNotFound, recorder.Code)
 	require.Equal(t, "scrubbed file not found", errorMessage(t, recorder))
@@ -121,10 +124,10 @@ func TestDownloadGrantFailuresStopAtFailedStorageOperation(t *testing.T) {
 			})
 			require.NoError(t, err)
 
-			recorder := serveRequest(t, handlerRequest{
-				ctx: context.Background(), contentType: mediatype.JSON,
-				handler: handler, objectStorage: fake, method: downloadGrantMethod, body: string(body),
-			})
+			request := httptest.NewRequest(http.MethodPost, "/api/files/download-grant", bytes.NewReader(body))
+			request.Header.Set(header.ContentType, mediatype.JSON)
+			recorder := httptest.NewRecorder()
+			bindings.Inject(bindings.Bindings{Storage: fake})(http.HandlerFunc(handler.DownloadGrant)).ServeHTTP(recorder, request)
 
 			require.Equal(t, http.StatusInternalServerError, recorder.Code)
 			require.Equal(t, testCase.wantMessage, errorMessage(t, recorder))
