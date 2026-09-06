@@ -188,19 +188,71 @@ func TestR2EnforcesTheSourceObjectMemoryBoundary(t *testing.T) {
 	}
 }
 
-func TestR2MapsOnlyConditionalSourcePreconditionFailureToConflict(t *testing.T) {
+func TestR2ClassifiesSourceDownloadStatuses(t *testing.T) {
 	t.Parallel()
 
-	adapter := newTestR2StatusServer(t, http.StatusPreconditionFailed)
+	for _, testCase := range []struct {
+		name         string
+		status       int
+		expectedETag string
+		wantErr      error
+		notErr       error
+		checkSafe    bool
+	}{
+		{
+			name:         "412 with expected ETag is revision conflict",
+			status:       http.StatusPreconditionFailed,
+			expectedETag: canonicalR2ETagOne,
+			wantErr:      ErrSourceRevisionConflict,
+			notErr:       ErrDependency,
+		},
+		{
+			name:      "412 without expected ETag is dependency failure",
+			status:    http.StatusPreconditionFailed,
+			wantErr:   ErrDependency,
+			notErr:    ErrSourceRevisionConflict,
+			checkSafe: true,
+		},
+		{
+			name:         "403 with expected ETag is dependency failure",
+			status:       http.StatusForbidden,
+			expectedETag: canonicalR2ETagOne,
+			wantErr:      ErrDependency,
+			notErr:       ErrSourceRevisionConflict,
+			checkSafe:    true,
+		},
+		{
+			name:         "404 with expected ETag is source not found",
+			status:       http.StatusNotFound,
+			expectedETag: canonicalR2ETagOne,
+			wantErr:      ErrSourceNotFound,
+			notErr:       ErrSourceRevisionConflict,
+		},
+		{
+			name:      "404 without expected ETag is source not found",
+			status:    http.StatusNotFound,
+			wantErr:   ErrSourceNotFound,
+			notErr:    ErrDependency,
+			checkSafe: true,
+		},
+	} {
+		t.Run(testCase.name, func(t *testing.T) {
+			adapter := newTestR2StatusServer(t, testCase.status)
 
-	_, err := adapter.DownloadSource(context.Background(), "file-1", canonicalR2ETagOne)
-	require.ErrorIs(t, err, ErrSourceRevisionConflict)
-	require.NotErrorIs(t, err, ErrDependency)
+			source, err := adapter.DownloadSource(
+				context.Background(),
+				"file-identifier-sentinel",
+				testCase.expectedETag,
+			)
 
-	_, err = adapter.DownloadSource(context.Background(), "file-1", "")
-	require.ErrorIs(t, err, ErrDependency)
-	require.NotErrorIs(t, err, ErrSourceRevisionConflict)
-	assertSafeStorageError(t, err)
+			require.Empty(t, source)
+			require.ErrorIs(t, err, testCase.wantErr)
+			require.NotErrorIs(t, err, testCase.notErr)
+			if testCase.checkSafe {
+				assertSafeStorageError(t, err)
+			}
+		})
+	}
 }
 
 func TestR2KeepsOrdinarySourceFailuresDistinctFromRevisionConflict(t *testing.T) {
