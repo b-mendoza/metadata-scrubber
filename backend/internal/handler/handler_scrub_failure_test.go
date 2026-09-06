@@ -2,14 +2,16 @@ package handler
 
 import (
 	"bytes"
-	"context"
 	"encoding/json"
 	"errors"
 	"net/http"
+	"net/http/httptest"
 	"testing"
 
 	"github.com/stretchr/testify/require"
 
+	"metadata-scrubber/internal/bindings"
+	"metadata-scrubber/internal/httpx/header"
 	"metadata-scrubber/internal/httpx/mediatype"
 	"metadata-scrubber/internal/scrub"
 	"metadata-scrubber/internal/storage"
@@ -83,14 +85,16 @@ func TestScrubFailuresStopAtTheFailedStage(t *testing.T) {
 	}
 
 	for _, testCase := range tests {
-		t.Run(testCase.name, func(t *testing.T) { runScrubFailureTest(t, testCase) })
+		t.Run(testCase.name, func(t *testing.T) {
+			testScrubFailureStopsAtFailedStage(t, testCase)
+		})
 	}
 }
 
-func runScrubFailureTest(t *testing.T, testCase scrubFailureTestCase) {
+func testScrubFailureStopsAtFailedStage(t *testing.T, testCase scrubFailureTestCase) {
 	t.Helper()
 	fake := storage.NewFake()
-	require.NoError(t, fake.SetSource(fileIDOne, storage.SourceObject{PDFBytes: testCase.pdfBytes, ETag: "0123456789abcdef0123456789abcdef"}))
+	require.NoError(t, fake.SetSource(fileIDOne, storage.SourceObject{PDFBytes: testCase.pdfBytes, ETag: canonicalETagOne}))
 	if testCase.failureOp != "" {
 		fake.SetFailure(testCase.failureOp, errors.New("provider-secret"))
 	}
@@ -102,13 +106,12 @@ func runScrubFailureTest(t *testing.T, testCase scrubFailureTestCase) {
 		}
 		return bytes.Clone(input), nil
 	}, nil)
-	body, err := json.Marshal(scrubRequest{StorageKey: formatStorageKey(fileIDOne), ETag: "0123456789abcdef0123456789abcdef"})
+	body, err := json.Marshal(scrubRequest{StorageKey: formatStorageKey(fileIDOne), ETag: canonicalETagOne})
 	require.NoError(t, err)
-	recorder := serveRequest(t, handlerRequest{
-		ctx: context.Background(), contentType: mediatype.JSON,
-		handler: handler, objectStorage: fake, method: scrubMethod,
-		body: string(body),
-	})
+	request := httptest.NewRequest(http.MethodPost, "/api/files/scrub", bytes.NewReader(body))
+	request.Header.Set(header.ContentType, mediatype.JSON)
+	recorder := httptest.NewRecorder()
+	bindings.Inject(bindings.Bindings{Storage: fake})(http.HandlerFunc(handler.Scrub)).ServeHTTP(recorder, request)
 
 	require.Equal(t, testCase.wantStatus, recorder.Code, recorder.Body.String())
 	require.Equal(t, testCase.wantMessage, errorMessage(t, recorder))
