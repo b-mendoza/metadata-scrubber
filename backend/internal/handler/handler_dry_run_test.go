@@ -2,19 +2,21 @@ package handler
 
 import (
 	"bytes"
-	"context"
 	"encoding/json"
 	"errors"
 	"io"
 	"log/slog"
 	"maps"
 	"net/http"
+	"net/http/httptest"
 	"os"
 	"slices"
 	"testing"
 
 	"github.com/stretchr/testify/require"
 
+	"metadata-scrubber/internal/bindings"
+	"metadata-scrubber/internal/httpx/header"
 	"metadata-scrubber/internal/httpx/mediatype"
 	"metadata-scrubber/internal/scrub"
 	"metadata-scrubber/internal/storage"
@@ -32,7 +34,10 @@ func TestDryRunReturnsReviewedRevisionAndBackendOwnedFields(t *testing.T) {
 	}, nil, nil)
 	body, err := json.Marshal(dryRunRequest{StorageKey: formatStorageKey(fileIDOne)})
 	require.NoError(t, err)
-	recorder := serveRequest(t, handlerRequest{ctx: context.Background(), contentType: mediatype.JSON, handler: handler, objectStorage: fake, method: dryRunMethod, body: string(body)})
+	request := httptest.NewRequest(http.MethodPost, "/api/files/dry-run", bytes.NewReader(body))
+	request.Header.Set(header.ContentType, mediatype.JSON)
+	recorder := httptest.NewRecorder()
+	bindings.Inject(bindings.Bindings{Storage: fake})(http.HandlerFunc(handler.DryRun)).ServeHTTP(recorder, request)
 
 	require.Equal(t, http.StatusOK, recorder.Code, recorder.Body.String())
 	var response map[string]json.RawMessage
@@ -61,7 +66,10 @@ func TestDryRunReportsServerFailureForUnknownInspectedFieldAction(t *testing.T) 
 	body, err := json.Marshal(dryRunRequest{StorageKey: formatStorageKey(fileIDOne)})
 	require.NoError(t, err)
 
-	recorder := serveRequest(t, handlerRequest{ctx: context.Background(), contentType: mediatype.JSON, handler: handler, objectStorage: fake, method: dryRunMethod, body: string(body)})
+	request := httptest.NewRequest(http.MethodPost, "/api/files/dry-run", bytes.NewReader(body))
+	request.Header.Set(header.ContentType, mediatype.JSON)
+	recorder := httptest.NewRecorder()
+	bindings.Inject(bindings.Bindings{Storage: fake})(http.HandlerFunc(handler.DryRun)).ServeHTTP(recorder, request)
 
 	require.Equal(t, http.StatusInternalServerError, recorder.Code, recorder.Body.String())
 	require.Equal(t, "could not inspect PDF", errorMessage(t, recorder))
@@ -73,7 +81,10 @@ func TestDryRunReturnsNonNullEmptyFieldsForCleanPDF(t *testing.T) {
 	handler := newTestHandler(t, nil, nil, nil)
 	body, err := json.Marshal(dryRunRequest{StorageKey: formatStorageKey(fileIDOne)})
 	require.NoError(t, err)
-	recorder := serveRequest(t, handlerRequest{ctx: context.Background(), contentType: mediatype.JSON, handler: handler, objectStorage: fake, method: dryRunMethod, body: string(body)})
+	request := httptest.NewRequest(http.MethodPost, "/api/files/dry-run", bytes.NewReader(body))
+	request.Header.Set(header.ContentType, mediatype.JSON)
+	recorder := httptest.NewRecorder()
+	bindings.Inject(bindings.Bindings{Storage: fake})(http.HandlerFunc(handler.DryRun)).ServeHTTP(recorder, request)
 
 	require.Equal(t, http.StatusOK, recorder.Code)
 	var response dryRunResponse
@@ -91,7 +102,10 @@ func TestDryRunIntegratesWithPublicPDFInspection(t *testing.T) {
 	handler := newTestHandler(t, scrub.InspectPDF, nil, nil)
 	body, err := json.Marshal(dryRunRequest{StorageKey: formatStorageKey(fileIDOne)})
 	require.NoError(t, err)
-	recorder := serveRequest(t, handlerRequest{ctx: context.Background(), contentType: mediatype.JSON, handler: handler, objectStorage: fake, method: dryRunMethod, body: string(body)})
+	request := httptest.NewRequest(http.MethodPost, "/api/files/dry-run", bytes.NewReader(body))
+	request.Header.Set(header.ContentType, mediatype.JSON)
+	recorder := httptest.NewRecorder()
+	bindings.Inject(bindings.Bindings{Storage: fake})(http.HandlerFunc(handler.DryRun)).ServeHTTP(recorder, request)
 
 	require.Equal(t, http.StatusOK, recorder.Code, recorder.Body.String())
 	var response dryRunResponse
@@ -108,7 +122,10 @@ func TestConstructedDryRunRejectsStructurallySignedPDFFixtureWithoutMutation(t *
 	workflow := New(slog.New(slog.NewTextHandler(io.Discard, nil)), make(chan struct{}, ProcessingPermitCount))
 	body, err := json.Marshal(dryRunRequest{StorageKey: formatStorageKey(fileIDOne)})
 	require.NoError(t, err)
-	recorder := serveRequest(t, handlerRequest{ctx: context.Background(), contentType: mediatype.JSON, handler: workflow, objectStorage: fake, method: dryRunMethod, body: string(body)})
+	request := httptest.NewRequest(http.MethodPost, "/api/files/dry-run", bytes.NewReader(body))
+	request.Header.Set(header.ContentType, mediatype.JSON)
+	recorder := httptest.NewRecorder()
+	bindings.Inject(bindings.Bindings{Storage: fake})(http.HandlerFunc(workflow.DryRun)).ServeHTTP(recorder, request)
 
 	require.Equal(t, http.StatusUnprocessableEntity, recorder.Code, recorder.Body.String())
 	require.Equal(t, "signed PDFs are not supported in v1", errorMessage(t, recorder))
@@ -152,7 +169,10 @@ func TestDryRunClassifiesContentAndDependencyFailuresWithoutLeakingDetails(t *te
 			}, nil, nil)
 			body, err := json.Marshal(dryRunRequest{StorageKey: formatStorageKey(fileIDOne)})
 			require.NoError(t, err)
-			recorder := serveRequest(t, handlerRequest{ctx: context.Background(), contentType: mediatype.JSON, handler: handler, objectStorage: fake, method: dryRunMethod, body: string(body)})
+			request := httptest.NewRequest(http.MethodPost, "/api/files/dry-run", bytes.NewReader(body))
+			request.Header.Set(header.ContentType, mediatype.JSON)
+			recorder := httptest.NewRecorder()
+			bindings.Inject(bindings.Bindings{Storage: fake})(http.HandlerFunc(handler.DryRun)).ServeHTTP(recorder, request)
 
 			require.Equal(t, testCase.wantStatus, recorder.Code, recorder.Body.String())
 			require.Equal(t, testCase.wantMessage, errorMessage(t, recorder))
