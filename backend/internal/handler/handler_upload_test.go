@@ -1,17 +1,20 @@
 package handler
 
 import (
-	"context"
+	"bytes"
 	"encoding/json"
 	"errors"
 	"maps"
 	"net/http"
+	"net/http/httptest"
 	"slices"
 	"strings"
 	"testing"
 
 	"github.com/stretchr/testify/require"
 
+	"metadata-scrubber/internal/bindings"
+	"metadata-scrubber/internal/httpx/header"
 	"metadata-scrubber/internal/httpx/mediatype"
 	"metadata-scrubber/internal/storage"
 )
@@ -41,7 +44,10 @@ func TestUploadValidatesIntakeAndCreatesOpaqueGrant(t *testing.T) {
 			handler := newTestHandler(t, nil, nil, nil)
 			body, err := json.Marshal(uploadRequest{FileName: testCase.fileName, FileSizeBytes: testCase.size})
 			require.NoError(t, err)
-			recorder := serveRequest(t, handlerRequest{ctx: context.Background(), handler: handler, objectStorage: fake, method: uploadMethod, contentType: mediatype.JSON + "; charset=utf-8", body: string(body)})
+			request := httptest.NewRequest(http.MethodPost, "/api/files/upload", bytes.NewReader(body))
+			request.Header.Set(header.ContentType, mediatype.JSON+"; charset=utf-8")
+			recorder := httptest.NewRecorder()
+			bindings.Inject(bindings.Bindings{Storage: fake})(http.HandlerFunc(handler.Upload)).ServeHTTP(recorder, request)
 
 			require.Equal(t, testCase.wantStatus, recorder.Code, recorder.Body.String())
 			if testCase.wantStatus != http.StatusOK {
@@ -76,7 +82,10 @@ func TestUploadRejectsInvalidUTF8FilenameBeforeStorage(t *testing.T) {
 	handler := newTestHandler(t, nil, nil, nil)
 	body := `{"fileName":"` + string([]byte{0xff}) + `","fileSizeBytes":1}`
 
-	recorder := serveRequest(t, handlerRequest{ctx: context.Background(), handler: handler, objectStorage: fake, method: uploadMethod, contentType: mediatype.JSON, body: body})
+	request := httptest.NewRequest(http.MethodPost, "/api/files/upload", strings.NewReader(body))
+	request.Header.Set(header.ContentType, mediatype.JSON)
+	recorder := httptest.NewRecorder()
+	bindings.Inject(bindings.Bindings{Storage: fake})(http.HandlerFunc(handler.Upload)).ServeHTTP(recorder, request)
 
 	require.Equal(t, http.StatusBadRequest, recorder.Code)
 	require.Empty(t, fake.Calls())
@@ -89,7 +98,10 @@ func TestUploadStopsBeforeStorageWhenEntropyFails(t *testing.T) {
 	})
 	body, err := json.Marshal(uploadRequest{FileName: "report.pdf", FileSizeBytes: 1})
 	require.NoError(t, err)
-	recorder := serveRequest(t, handlerRequest{ctx: context.Background(), contentType: mediatype.JSON, handler: handler, objectStorage: fake, method: uploadMethod, body: string(body)})
+	request := httptest.NewRequest(http.MethodPost, "/api/files/upload", bytes.NewReader(body))
+	request.Header.Set(header.ContentType, mediatype.JSON)
+	recorder := httptest.NewRecorder()
+	bindings.Inject(bindings.Bindings{Storage: fake})(http.HandlerFunc(handler.Upload)).ServeHTTP(recorder, request)
 
 	require.Equal(t, http.StatusInternalServerError, recorder.Code)
 	require.Equal(t, "could not create upload", errorMessage(t, recorder))
@@ -103,7 +115,10 @@ func TestUploadPresignFailureIsSanitized(t *testing.T) {
 	handler := newTestHandler(t, nil, nil, nil)
 	body, err := json.Marshal(uploadRequest{FileName: "report.pdf", FileSizeBytes: 1})
 	require.NoError(t, err)
-	recorder := serveRequest(t, handlerRequest{ctx: context.Background(), contentType: mediatype.JSON, handler: handler, objectStorage: fake, method: uploadMethod, body: string(body)})
+	request := httptest.NewRequest(http.MethodPost, "/api/files/upload", bytes.NewReader(body))
+	request.Header.Set(header.ContentType, mediatype.JSON)
+	recorder := httptest.NewRecorder()
+	bindings.Inject(bindings.Bindings{Storage: fake})(http.HandlerFunc(handler.Upload)).ServeHTTP(recorder, request)
 
 	require.Equal(t, http.StatusInternalServerError, recorder.Code)
 	require.Equal(t, "could not create upload", errorMessage(t, recorder))
