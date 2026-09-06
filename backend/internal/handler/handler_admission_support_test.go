@@ -1,6 +1,7 @@
 package handler
 
 import (
+	"bytes"
 	"context"
 	"encoding/json"
 	"net/http"
@@ -11,6 +12,8 @@ import (
 
 	"github.com/stretchr/testify/require"
 
+	"metadata-scrubber/internal/bindings"
+	"metadata-scrubber/internal/httpx/header"
 	"metadata-scrubber/internal/httpx/mediatype"
 	"metadata-scrubber/internal/storage"
 )
@@ -21,8 +24,6 @@ type blockingStorage struct {
 	mu                 sync.Mutex
 	blockedDownloads   map[string]bool
 	observedDownloads  map[string]bool
-	downloadErrors     map[string]error
-	downloadPanics     map[string]string
 	downloadStarted    chan string
 	downloadRelease    chan struct{}
 	downloadReleaseOne sync.Once
@@ -44,8 +45,6 @@ func newBlockingStorage(delegate storage.Storage, blockedFileIDs ...string) *blo
 		Storage:           delegate,
 		blockedDownloads:  blocked,
 		observedDownloads: make(map[string]bool),
-		downloadErrors:    make(map[string]error),
-		downloadPanics:    make(map[string]string),
 		downloadStarted:   make(chan string, 16),
 		downloadRelease:   make(chan struct{}),
 		blockedUploads:    make(map[string]bool),
@@ -81,16 +80,6 @@ func (observer *blockingStorage) DownloadSource(ctx context.Context, fileID stri
 		observer.mu.Unlock()
 	}
 
-	observer.mu.Lock()
-	downloadErr := observer.downloadErrors[fileID]
-	panicValue, shouldPanic := observer.downloadPanics[fileID]
-	observer.mu.Unlock()
-	if shouldPanic {
-		panic(panicValue)
-	}
-	if downloadErr != nil {
-		return storage.SourceObject{}, downloadErr
-	}
 	return observer.Storage.DownloadSource(ctx, fileID, expectedETag)
 }
 
@@ -107,18 +96,6 @@ func (observer *blockingStorage) UploadSanitized(ctx context.Context, fileID str
 		}
 	}
 	return observer.Storage.UploadSanitized(ctx, fileID, sourceETag, pdfBytes)
-}
-
-func (observer *blockingStorage) failDownload(fileID string, err error) {
-	observer.mu.Lock()
-	defer observer.mu.Unlock()
-	observer.downloadErrors[fileID] = err
-}
-
-func (observer *blockingStorage) panicDownload(fileID string, value string) {
-	observer.mu.Lock()
-	defer observer.mu.Unlock()
-	observer.downloadPanics[fileID] = value
 }
 
 func (observer *blockingStorage) blockUpload(fileID string) {
@@ -169,7 +146,7 @@ func (observer *blockingStorage) peakDownloads() int {
 }
 
 type guardedRequest struct {
-	method handlerMethod
+	scrub  bool
 	fileID string
 }
 
@@ -183,20 +160,31 @@ func startGuardedRequests(
 ) <-chan *httptest.ResponseRecorder {
 	t.Helper()
 	responses := make(chan *httptest.ResponseRecorder, len(requests))
-	for _, request := range requests {
-		var body []byte
-		var err error
-		if request.method == scrubMethod {
-			body, err = json.Marshal(scrubRequest{
-				StorageKey: formatStorageKey(request.fileID),
-				ETag:       canonicalETagsByFileID[request.fileID],
+	for _, input := range requests {
+		if input.scrub {
+			body, err := json.Marshal(scrubRequest{
+				StorageKey: formatStorageKey(input.fileID),
+				ETag:       canonicalETagsByFileID[input.fileID],
 			})
-		} else {
-			body, err = json.Marshal(dryRunRequest{StorageKey: formatStorageKey(request.fileID)})
+			require.NoError(t, err)
+			go func() {
+				request := httptest.NewRequest(http.MethodPost, "/api/files/scrub", bytes.NewReader(body))
+				request.Header.Set(header.ContentType, mediatype.JSON)
+				recorder := httptest.NewRecorder()
+				bindings.Inject(bindings.Bindings{Storage: observer})(http.HandlerFunc(handler.Scrub)).ServeHTTP(recorder, request)
+				responses <- recorder
+			}()
+			continue
 		}
+
+		body, err := json.Marshal(dryRunRequest{StorageKey: formatStorageKey(input.fileID)})
 		require.NoError(t, err)
 		go func() {
-			responses <- serveRequest(t, handlerRequest{ctx: context.Background(), handler: handler, objectStorage: observer, method: request.method, contentType: mediatype.JSON, body: string(body)})
+			request := httptest.NewRequest(http.MethodPost, "/api/files/dry-run", bytes.NewReader(body))
+			request.Header.Set(header.ContentType, mediatype.JSON)
+			recorder := httptest.NewRecorder()
+			bindings.Inject(bindings.Bindings{Storage: observer})(http.HandlerFunc(handler.DryRun)).ServeHTTP(recorder, request)
+			responses <- recorder
 		}()
 	}
 	observer.waitForDownloads(t, ProcessingPermitCount)

@@ -2,20 +2,15 @@ package handler
 
 import (
 	"bytes"
-	"context"
 	"encoding/json"
 	"io"
 	"log/slog"
-	"net/http"
 	"net/http/httptest"
-	"strings"
 	"testing"
 	"time"
 
 	"github.com/stretchr/testify/require"
 
-	"metadata-scrubber/internal/bindings"
-	"metadata-scrubber/internal/httpx/header"
 	"metadata-scrubber/internal/scrub"
 	"metadata-scrubber/internal/storage"
 )
@@ -32,49 +27,6 @@ const (
 	canonicalETagTwo          = "fedcba9876543210fedcba9876543210"
 	canonicalETagThree        = "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
 )
-
-type handlerMethod int
-
-const (
-	uploadMethod handlerMethod = iota
-	dryRunMethod
-	scrubMethod
-	downloadGrantMethod
-	deleteFlowMethod
-)
-
-func assertAcceptedResponse(t *testing.T, method handlerMethod, recorder *httptest.ResponseRecorder) {
-	t.Helper()
-
-	switch method {
-	case uploadMethod:
-		var response uploadResponse
-		require.NoError(t, json.Unmarshal(recorder.Body.Bytes(), &response))
-		require.Equal(t, formatStorageKey(generatedFileID), response.StorageKey)
-		require.NotEmpty(t, response.UploadURL)
-	case dryRunMethod:
-		var response dryRunResponse
-		require.NoError(t, json.Unmarshal(recorder.Body.Bytes(), &response))
-		require.Equal(t, canonicalETagOne, response.ETag)
-		require.Empty(t, response.Fields)
-	case scrubMethod:
-		var response scrubResponse
-		require.NoError(t, json.Unmarshal(recorder.Body.Bytes(), &response))
-		require.Equal(t, "done", response.Status)
-		require.NotEmpty(t, response.Result.DownloadURL)
-	case downloadGrantMethod:
-		var response downloadGrantResponse
-		require.NoError(t, json.Unmarshal(recorder.Body.Bytes(), &response))
-		require.NotEmpty(t, response.DownloadURL)
-		require.NotEmpty(t, response.ExpiresAt)
-	case deleteFlowMethod:
-		var response deleteResponse
-		require.NoError(t, json.Unmarshal(recorder.Body.Bytes(), &response))
-		require.Equal(t, "deleted", response.Status)
-	default:
-		t.Fatalf("unknown handler method %d", method)
-	}
-}
 
 func newTestHandler(
 	t *testing.T,
@@ -133,43 +85,6 @@ func newTestHandlerWithLogger(t *testing.T, options testHandlerOptions) *Handler
 	return handler
 }
 
-type handlerRequest struct {
-	ctx           context.Context
-	handler       *Handler
-	objectStorage storage.Storage
-	method        handlerMethod
-	contentType   string
-	body          string
-}
-
-func serveRequest(t *testing.T, input handlerRequest) *httptest.ResponseRecorder {
-	t.Helper()
-	request := httptest.NewRequest(http.MethodPost, "/", strings.NewReader(input.body)).WithContext(input.ctx)
-	if input.contentType != "" {
-		request.Header.Set(header.ContentType, input.contentType)
-	}
-	recorder := httptest.NewRecorder()
-
-	var endpoint http.HandlerFunc
-	switch input.method {
-	case uploadMethod:
-		endpoint = input.handler.Upload
-	case dryRunMethod:
-		endpoint = input.handler.DryRun
-	case scrubMethod:
-		endpoint = input.handler.Scrub
-	case downloadGrantMethod:
-		endpoint = input.handler.DownloadGrant
-	case deleteFlowMethod:
-		endpoint = input.handler.DeleteFlow
-	default:
-		t.Fatalf("unknown handler method %d", input.method)
-		return recorder
-	}
-	bindings.Inject(bindings.Bindings{Storage: input.objectStorage})(endpoint).ServeHTTP(recorder, request)
-	return recorder
-}
-
 func errorMessage(t *testing.T, recorder *httptest.ResponseRecorder) string {
 	t.Helper()
 	var body struct {
@@ -195,16 +110,6 @@ func callOperationsFor(calls []storage.FakeCall, fileID string) []storage.FakeOp
 		}
 	}
 	return operations
-}
-
-func seedCandidateSources(t *testing.T, fake *storage.Fake, fileIDs ...string) {
-	t.Helper()
-	for _, fileID := range fileIDs {
-		require.NoError(t, fake.SetSource(fileID, storage.SourceObject{
-			PDFBytes: []byte("%PDF-" + fileID),
-			ETag:     canonicalETagsByFileID[fileID],
-		}))
-	}
 }
 
 var canonicalETagsByFileID = map[string]string{

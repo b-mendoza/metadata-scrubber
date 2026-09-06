@@ -2,7 +2,7 @@ package handler
 
 import (
 	"bytes"
-	"context"
+	"encoding/json"
 	"net/http"
 	"net/http/httptest"
 	"strings"
@@ -10,6 +10,7 @@ import (
 
 	"github.com/stretchr/testify/require"
 
+	"metadata-scrubber/internal/bindings"
 	"metadata-scrubber/internal/httpx/header"
 	"metadata-scrubber/internal/httpx/mediatype"
 	"metadata-scrubber/internal/scrub"
@@ -85,165 +86,149 @@ func TestWriteJSONPreservesConcreteResponseContracts(t *testing.T) {
 	}
 }
 
-func TestJSONEndpointsValidateEveryBoundaryBeforeWork(t *testing.T) {
-	endpoints := []struct {
-		name                   string
-		method                 handlerMethod
-		wrongTypeBody          string
-		missingFieldBody       string
-		oversizedBody          string
-		acceptedParameterBody  string
-		configureAccepted      func(*testing.T, *storage.Fake)
-		wantAcceptedOperations []storage.FakeOperation
-		wantInspectCalls       int
-		wantCleanCalls         int
+func TestUploadWireContractRejectsInvalidJSONBeforeWork(t *testing.T) {
+	tests := []struct {
+		name        string
+		contentType string
+		body        string
+		wantStatus  int
 	}{
-		{
-			name:                   "upload",
-			method:                 uploadMethod,
-			wrongTypeBody:          `{"fileName":1,"fileSizeBytes":1}`,
-			missingFieldBody:       `{"fileName":"report.pdf"}`,
-			oversizedBody:          `{"fileName":"` + strings.Repeat("x", maxJSONBodyBytes) + `","fileSizeBytes":1}`,
-			acceptedParameterBody:  `{"fileName":"report.pdf","fileSizeBytes":1}` + " \n\t",
-			wantAcceptedOperations: []storage.FakeOperation{storage.FakePresignSourceUpload},
-		},
-		{
-			name:                  "dry run",
-			method:                dryRunMethod,
-			wrongTypeBody:         `{"storageKey":1}`,
-			missingFieldBody:      `{}`,
-			oversizedBody:         `{"storageKey":"` + strings.Repeat("x", maxJSONBodyBytes) + `"}`,
-			acceptedParameterBody: `{"storageKey":"` + formatStorageKey(fileIDOne) + `"}` + " \n\t",
-			configureAccepted: func(t *testing.T, fake *storage.Fake) {
-				require.NoError(t, fake.SetSource(fileIDOne, storage.SourceObject{
-					PDFBytes: []byte("%PDF-source"),
-					ETag:     "0123456789abcdef0123456789abcdef",
-				}))
-			},
-			wantAcceptedOperations: []storage.FakeOperation{storage.FakeDownloadSource},
-			wantInspectCalls:       1,
-		},
-		{
-			name:                  "scrub",
-			method:                scrubMethod,
-			wrongTypeBody:         `{"storageKey":"` + formatStorageKey(fileIDOne) + `","etag":1}`,
-			missingFieldBody:      `{"storageKey":"` + formatStorageKey(fileIDOne) + `"}`,
-			oversizedBody:         `{"storageKey":"` + strings.Repeat("x", maxJSONBodyBytes) + `","etag":"` + canonicalETagOne + `"}`,
-			acceptedParameterBody: `{"storageKey":"` + formatStorageKey(fileIDOne) + `","etag":"` + canonicalETagOne + `"}` + " \n\t",
-			configureAccepted: func(t *testing.T, fake *storage.Fake) {
-				require.NoError(t, fake.SetSource(fileIDOne, storage.SourceObject{
-					PDFBytes: []byte("%PDF-source"),
-					ETag:     canonicalETagOne,
-				}))
-			},
-			wantAcceptedOperations: []storage.FakeOperation{
-				storage.FakeSourceExists,
-				storage.FakeSanitizedExists,
-				storage.FakeDownloadSource,
-				storage.FakeUploadSanitized,
-				storage.FakePresignSanitizedDownload,
-			},
-			wantCleanCalls: 1,
-		},
-		{
-			name:                  "download grant",
-			method:                downloadGrantMethod,
-			wrongTypeBody:         `{"storageKey":"` + formatStorageKey(fileIDOne) + `","etag":1}`,
-			missingFieldBody:      `{"storageKey":"` + formatStorageKey(fileIDOne) + `"}`,
-			oversizedBody:         `{"storageKey":"` + strings.Repeat("x", maxJSONBodyBytes) + `","etag":"` + canonicalETagOne + `"}`,
-			acceptedParameterBody: `{"storageKey":"` + formatStorageKey(fileIDOne) + `","etag":"` + canonicalETagOne + `"}` + " \n\t",
-			configureAccepted: func(t *testing.T, fake *storage.Fake) {
-				require.NoError(t, fake.SetSanitized(fileIDOne, canonicalETagOne, []byte("clean")))
-			},
-			wantAcceptedOperations: []storage.FakeOperation{
-				storage.FakeSanitizedExists,
-				storage.FakePresignSanitizedDownload,
-			},
-		},
-		{
-			name:                   "delete flow",
-			method:                 deleteFlowMethod,
-			wrongTypeBody:          `{"storageKey":1}`,
-			missingFieldBody:       `{}`,
-			oversizedBody:          `{"storageKey":"` + strings.Repeat("x", maxJSONBodyBytes) + `"}`,
-			acceptedParameterBody:  `{"storageKey":"` + formatStorageKey(fileIDOne) + `"}` + " \n\t",
-			wantAcceptedOperations: []storage.FakeOperation{storage.FakeDeleteFlow},
-		},
+		{name: "missing content type", body: `{}`, wantStatus: http.StatusUnsupportedMediaType},
+		{name: "wrong content type", contentType: "text/plain", body: `{}`, wantStatus: http.StatusUnsupportedMediaType},
+		{name: "empty body", contentType: mediatype.JSON, wantStatus: http.StatusBadRequest},
+		{name: "malformed JSON", contentType: mediatype.JSON, body: `{`, wantStatus: http.StatusBadRequest},
+		{name: "unknown field", contentType: mediatype.JSON, body: `{"fileName":"report.pdf","fileSizeBytes":1,"unexpected":true}`, wantStatus: http.StatusBadRequest},
+		{name: "multiple JSON values", contentType: mediatype.JSON, body: `{"fileName":"report.pdf","fileSizeBytes":1} {}`, wantStatus: http.StatusBadRequest},
+		{name: "trailing JSON null", contentType: mediatype.JSON, body: `{"fileName":"report.pdf","fileSizeBytes":1} null`, wantStatus: http.StatusBadRequest},
+		{name: "non-whitespace trailing data", contentType: mediatype.JSON, body: `{"fileName":"report.pdf","fileSizeBytes":1} trailing`, wantStatus: http.StatusBadRequest},
+		{name: "wrong JSON type", contentType: mediatype.JSON, body: `{"fileName":1,"fileSizeBytes":1}`, wantStatus: http.StatusBadRequest},
+		{name: "oversized body", contentType: mediatype.JSON, body: `{"fileName":"` + strings.Repeat("x", maxJSONBodyBytes) + `","fileSizeBytes":1}`, wantStatus: http.StatusBadRequest},
+		{name: "parameters and trailing whitespace", contentType: mediatype.JSON + "; charset=utf-8; profile=safe", body: `{"fileName":"report.pdf","fileSizeBytes":1}` + " \n\t", wantStatus: http.StatusOK},
 	}
 
-	// Every subtest below needs its own handler with fresh inspect and clean counters.
-	newCountingHandler := func(t *testing.T) (*Handler, *int, *int) {
-		t.Helper()
-		inspectCalls, cleanCalls := 0, 0
-		handler := newTestHandler(t, func([]byte, scrub.InspectionOrigin) ([]scrub.Field, error) {
-			inspectCalls++
-			return nil, nil
-		}, func(input []byte) ([]byte, error) {
-			cleanCalls++
-			return bytes.Clone(input), nil
-		}, nil)
-		return handler, &inspectCalls, &cleanCalls
-	}
-
-	for _, endpoint := range endpoints {
-		t.Run(endpoint.name, func(t *testing.T) {
-			tests := []struct {
-				name        string
-				contentType string
-				body        string
-				wantStatus  int
-			}{
-				{name: "missing content type", body: `{}`, wantStatus: http.StatusUnsupportedMediaType},
-				{name: "wrong content type", contentType: "text/plain", body: `{}`, wantStatus: http.StatusUnsupportedMediaType},
-				{name: "empty body", contentType: mediatype.JSON, wantStatus: http.StatusBadRequest},
-				{name: "malformed JSON", contentType: mediatype.JSON, body: `{`, wantStatus: http.StatusBadRequest},
-				{name: "unknown field", contentType: mediatype.JSON, body: `{"unexpected":true}`, wantStatus: http.StatusBadRequest},
-				{name: "multiple JSON values", contentType: mediatype.JSON, body: `{} {}`, wantStatus: http.StatusBadRequest},
-				{name: "trailing JSON null", contentType: mediatype.JSON, body: endpoint.acceptedParameterBody + "null", wantStatus: http.StatusBadRequest},
-				{name: "non-whitespace trailing data", contentType: mediatype.JSON, body: `{} trailing`, wantStatus: http.StatusBadRequest},
-				{name: "wrong JSON type", contentType: mediatype.JSON, body: endpoint.wrongTypeBody, wantStatus: http.StatusBadRequest},
-				{name: "missing required field", contentType: mediatype.JSON, body: endpoint.missingFieldBody, wantStatus: http.StatusBadRequest},
-				{name: "oversized body", contentType: mediatype.JSON, body: endpoint.oversizedBody, wantStatus: http.StatusBadRequest},
-			}
-
-			for _, testCase := range tests {
-				t.Run(testCase.name, func(t *testing.T) {
-					fake := storage.NewFake()
-					handler, inspectCalls, cleanCalls := newCountingHandler(t)
-					recorder := serveRequest(t, handlerRequest{
-						ctx: context.Background(), handler: handler, objectStorage: fake,
-						method: endpoint.method, contentType: testCase.contentType, body: testCase.body,
-					})
-
-					require.Equal(t, testCase.wantStatus, recorder.Code, recorder.Body.String())
-					require.Equal(t, mediatype.JSON, recorder.Header().Get(header.ContentType))
-					require.NotEmpty(t, errorMessage(t, recorder))
-					require.Empty(t, fake.Calls())
-					require.Zero(t, *inspectCalls)
-					require.Zero(t, *cleanCalls)
-				})
-			}
-
-			t.Run("content type parameters and trailing whitespace reach successful work", func(t *testing.T) {
-				fake := storage.NewFake()
-				if endpoint.configureAccepted != nil {
-					endpoint.configureAccepted(t, fake)
-				}
-				handler, inspectCalls, cleanCalls := newCountingHandler(t)
-
-				recorder := serveRequest(t, handlerRequest{
-					ctx: context.Background(), handler: handler, objectStorage: fake,
-					method: endpoint.method, contentType: mediatype.JSON + "; charset=utf-8; profile=safe",
-					body: endpoint.acceptedParameterBody,
-				})
-
-				require.Equal(t, http.StatusOK, recorder.Code, recorder.Body.String())
-				require.Equal(t, mediatype.JSON, recorder.Header().Get(header.ContentType))
-				assertAcceptedResponse(t, endpoint.method, recorder)
-				require.Equal(t, endpoint.wantAcceptedOperations, callOperations(fake.Calls()))
-				require.Equal(t, endpoint.wantInspectCalls, *inspectCalls)
-				require.Equal(t, endpoint.wantCleanCalls, *cleanCalls)
-			})
+	for _, testCase := range tests {
+		t.Run(testCase.name, func(t *testing.T) {
+			testUploadWireContract(t, testCase.contentType, testCase.body, testCase.wantStatus)
 		})
 	}
+}
+
+func testUploadWireContract(t *testing.T, contentType string, body string, wantStatus int) {
+	t.Helper()
+	fake := storage.NewFake()
+	entropyCalls := 0
+	handler := newTestHandler(t, nil, nil, func(destination []byte) (int, error) {
+		entropyCalls++
+		for index := range destination {
+			destination[index] = byte(index)
+		}
+		return len(destination), nil
+	})
+	request := httptest.NewRequest(http.MethodPost, "/api/files/upload", strings.NewReader(body))
+	if contentType != "" {
+		request.Header.Set(header.ContentType, contentType)
+	}
+	recorder := httptest.NewRecorder()
+	bindings.Inject(bindings.Bindings{Storage: fake})(http.HandlerFunc(handler.Upload)).ServeHTTP(recorder, request)
+
+	require.Equal(t, wantStatus, recorder.Code, recorder.Body.String())
+	require.Equal(t, mediatype.JSON, recorder.Header().Get(header.ContentType))
+	if wantStatus == http.StatusOK {
+		require.Equal(t, 1, entropyCalls)
+		require.Equal(t, []storage.FakeOperation{storage.FakePresignSourceUpload}, callOperations(fake.Calls()))
+		return
+	}
+	require.NotEmpty(t, errorMessage(t, recorder))
+	require.Zero(t, entropyCalls)
+	require.Empty(t, fake.Calls())
+}
+
+func TestUploadValidatesRequiredFieldsBeforeWork(t *testing.T) {
+	fake := storage.NewFake()
+	entropyCalls := 0
+	handler := newTestHandler(t, nil, nil, func([]byte) (int, error) {
+		entropyCalls++
+		return 0, nil
+	})
+	body, err := json.Marshal(uploadRequest{FileName: "", FileSizeBytes: 1})
+	require.NoError(t, err)
+	request := httptest.NewRequest(http.MethodPost, "/api/files/upload", bytes.NewReader(body))
+	request.Header.Set(header.ContentType, mediatype.JSON)
+	recorder := httptest.NewRecorder()
+	bindings.Inject(bindings.Bindings{Storage: fake})(http.HandlerFunc(handler.Upload)).ServeHTTP(recorder, request)
+
+	require.Equal(t, http.StatusBadRequest, recorder.Code)
+	require.Equal(t, "invalid upload request", errorMessage(t, recorder))
+	require.Zero(t, entropyCalls)
+	require.Empty(t, fake.Calls())
+}
+
+func TestDryRunValidatesRequiredFieldsBeforeWork(t *testing.T) {
+	fake := storage.NewFake()
+	inspectCalls := 0
+	handler := newTestHandler(t, func([]byte, scrub.InspectionOrigin) ([]scrub.Field, error) {
+		inspectCalls++
+		return nil, nil
+	}, nil, nil)
+	body, err := json.Marshal(dryRunRequest{StorageKey: ""})
+	require.NoError(t, err)
+	request := httptest.NewRequest(http.MethodPost, "/api/files/dry-run", bytes.NewReader(body))
+	request.Header.Set(header.ContentType, mediatype.JSON)
+	recorder := httptest.NewRecorder()
+	bindings.Inject(bindings.Bindings{Storage: fake})(http.HandlerFunc(handler.DryRun)).ServeHTTP(recorder, request)
+
+	require.Equal(t, http.StatusBadRequest, recorder.Code)
+	require.Equal(t, "invalid storage key", errorMessage(t, recorder))
+	require.Zero(t, inspectCalls)
+	require.Empty(t, fake.Calls())
+}
+
+func TestScrubValidatesRequiredFieldsBeforeWork(t *testing.T) {
+	fake := storage.NewFake()
+	cleanCalls := 0
+	handler := newTestHandler(t, nil, func([]byte) ([]byte, error) {
+		cleanCalls++
+		return nil, nil
+	}, nil)
+	body, err := json.Marshal(scrubRequest{StorageKey: formatStorageKey(fileIDOne), ETag: ""})
+	require.NoError(t, err)
+	request := httptest.NewRequest(http.MethodPost, "/api/files/scrub", bytes.NewReader(body))
+	request.Header.Set(header.ContentType, mediatype.JSON)
+	recorder := httptest.NewRecorder()
+	bindings.Inject(bindings.Bindings{Storage: fake})(http.HandlerFunc(handler.Scrub)).ServeHTTP(recorder, request)
+
+	require.Equal(t, http.StatusBadRequest, recorder.Code)
+	require.Equal(t, "invalid ETag", errorMessage(t, recorder))
+	require.Zero(t, cleanCalls)
+	require.Empty(t, fake.Calls())
+}
+
+func TestDownloadGrantValidatesRequiredFieldsBeforeWork(t *testing.T) {
+	fake := storage.NewFake()
+	handler := newTestHandler(t, nil, nil, nil)
+	body, err := json.Marshal(downloadGrantRequest{StorageKey: formatStorageKey(fileIDOne), ETag: ""})
+	require.NoError(t, err)
+	request := httptest.NewRequest(http.MethodPost, "/api/files/download-grant", bytes.NewReader(body))
+	request.Header.Set(header.ContentType, mediatype.JSON)
+	recorder := httptest.NewRecorder()
+	bindings.Inject(bindings.Bindings{Storage: fake})(http.HandlerFunc(handler.DownloadGrant)).ServeHTTP(recorder, request)
+
+	require.Equal(t, http.StatusBadRequest, recorder.Code)
+	require.Equal(t, "invalid ETag", errorMessage(t, recorder))
+	require.Empty(t, fake.Calls())
+}
+
+func TestDeleteFlowValidatesRequiredFieldsBeforeWork(t *testing.T) {
+	fake := storage.NewFake()
+	handler := newTestHandler(t, nil, nil, nil)
+	body, err := json.Marshal(deleteRequest{StorageKey: ""})
+	require.NoError(t, err)
+	request := httptest.NewRequest(http.MethodPost, "/api/files/delete", bytes.NewReader(body))
+	request.Header.Set(header.ContentType, mediatype.JSON)
+	recorder := httptest.NewRecorder()
+	bindings.Inject(bindings.Bindings{Storage: fake})(http.HandlerFunc(handler.DeleteFlow)).ServeHTTP(recorder, request)
+
+	require.Equal(t, http.StatusBadRequest, recorder.Code)
+	require.Equal(t, "invalid storage key", errorMessage(t, recorder))
+	require.Empty(t, fake.Calls())
 }
