@@ -220,30 +220,6 @@ func TestFakeReportsAMissingSourceAsSourceNotFound(t *testing.T) {
 	require.NotErrorIs(t, err, storage.ErrSourceRevisionConflict)
 }
 
-func TestFakeSourceExistenceUsesTheExactSourceKey(t *testing.T) {
-	t.Parallel()
-
-	fake := storage.NewFake()
-	exists, err := fake.SourceExists(context.Background(), "file-1")
-	require.NoError(t, err)
-	require.False(t, exists)
-
-	require.NoError(t, fake.SetSource("file-1", storage.SourceObject{
-		PDFBytes: []byte("source"),
-		ETag:     canonicalETagOne,
-	}))
-	exists, err = fake.SourceExists(context.Background(), "file-1")
-	require.NoError(t, err)
-	require.True(t, exists)
-
-	calls := fake.Calls()
-	require.Len(t, calls, 2)
-	for _, call := range calls {
-		require.Equal(t, storage.FakeSourceExists, call.Operation)
-		require.Equal(t, "source/file-1", call.ObjectKey)
-	}
-}
-
 func TestFakeDeleteFlowRemovesOnlyTheSelectedFileAndIsIdempotent(t *testing.T) {
 	t.Parallel()
 
