@@ -756,37 +756,102 @@ func TestR2MapsProviderTimeoutsToDependencyFailures(t *testing.T) {
 	assertSafeStorageError(t, err)
 }
 
-func TestR2PropagatesContextAndSanitizesProviderFailures(t *testing.T) {
+func TestR2PropagatesCallerContextErrors(t *testing.T) {
 	t.Parallel()
 
-	ctx, cancel := context.WithCancel(context.Background())
-	cancel()
-	adapter := newTestR2FailingTransport(errors.New("transport-provider-body-sentinel"))
+	adapter := newTestR2Server(t, http.NotFoundHandler())
+	for _, testCase := range []struct {
+		name       string
+		contextErr error
+		invoke     func(context.Context, *R2) error
+	}{
+		{
+			name:       "presign source upload after cancellation",
+			contextErr: context.Canceled,
+			invoke: func(ctx context.Context, adapter *R2) error {
+				_, err := adapter.PresignSourceUpload(ctx, "file-1", 1024, time.Minute)
+				return err
+			},
+		},
+		{
+			name:       "presign sanitized download after cancellation",
+			contextErr: context.Canceled,
+			invoke: func(ctx context.Context, adapter *R2) error {
+				_, err := adapter.PresignSanitizedDownload(ctx, "file-1", canonicalR2ETagOne, time.Minute)
+				return err
+			},
+		},
+		{
+			name:       "check source object after cancellation",
+			contextErr: context.Canceled,
+			invoke: func(ctx context.Context, adapter *R2) error {
+				_, err := adapter.SourceExists(ctx, "file-1")
+				return err
+			},
+		},
+		{
+			name:       "download source object after cancellation",
+			contextErr: context.Canceled,
+			invoke: func(ctx context.Context, adapter *R2) error {
+				_, err := adapter.DownloadSource(ctx, "file-1", "")
+				return err
+			},
+		},
+		{
+			name:       "check sanitized object after expired deadline",
+			contextErr: context.DeadlineExceeded,
+			invoke: func(ctx context.Context, adapter *R2) error {
+				_, err := adapter.SanitizedExists(ctx, "file-1", canonicalR2ETagOne)
+				return err
+			},
+		},
+		{
+			name:       "upload sanitized object after cancellation",
+			contextErr: context.Canceled,
+			invoke: func(ctx context.Context, adapter *R2) error {
+				return adapter.UploadSanitized(ctx, "file-1", canonicalR2ETagOne, []byte("pdf"))
+			},
+		},
+		{
+			name:       "delete file flow after cancellation",
+			contextErr: context.Canceled,
+			invoke: func(ctx context.Context, adapter *R2) error {
+				return adapter.DeleteFlow(ctx, "file-1")
+			},
+		},
+	} {
+		t.Run(testCase.name, func(t *testing.T) {
+			var ctx context.Context
+			var cancel context.CancelFunc
+			if errors.Is(testCase.contextErr, context.DeadlineExceeded) {
+				ctx, cancel = context.WithDeadline(context.Background(), time.Now().Add(-time.Second))
+			} else {
+				ctx, cancel = context.WithCancel(context.Background())
+				cancel()
+			}
+			defer cancel()
 
-	_, err := adapter.SourceExists(ctx, "file-1")
-	require.ErrorIs(t, err, context.Canceled)
-	err = adapter.DeleteFlow(ctx, "file-1")
-	require.ErrorIs(t, err, context.Canceled)
-	_, err = adapter.PresignSourceUpload(ctx, "file-1", 1024, time.Minute)
-	require.ErrorIs(t, err, context.Canceled)
-	_, err = adapter.PresignSanitizedDownload(ctx, "file-1", canonicalR2ETagOne, time.Minute)
-	require.ErrorIs(t, err, context.Canceled)
-	_, err = adapter.DownloadSource(ctx, "file-1", "")
-	require.ErrorIs(t, err, context.Canceled)
-	_, err = adapter.SanitizedExists(ctx, "file-1", canonicalR2ETagOne)
-	require.ErrorIs(t, err, context.Canceled)
-	err = adapter.UploadSanitized(ctx, "file-1", canonicalR2ETagOne, []byte("pdf"))
-	require.ErrorIs(t, err, context.Canceled)
+			err := testCase.invoke(ctx, adapter)
 
-	deadlineCtx, deadlineCancel := context.WithDeadline(context.Background(), time.Now().Add(-time.Second))
-	defer deadlineCancel()
-	_, err = adapter.SanitizedExists(deadlineCtx, "file-1", canonicalR2ETagOne)
-	require.ErrorIs(t, err, context.DeadlineExceeded)
+			require.ErrorIs(t, err, testCase.contextErr)
+		})
+	}
+}
 
-	_, err = adapter.DownloadSource(context.Background(), "file-identifier-sentinel", "")
+func TestR2RedactsProviderTransportFailures(t *testing.T) {
+	t.Parallel()
+
+	transportErr := errors.New("transport-provider-body-sentinel")
+	adapter := newTestR2("https://endpoint-sentinel.invalid", &http.Client{Transport: roundTripFunc(
+		func(*http.Request) (*http.Response, error) {
+			return nil, transportErr
+		},
+	)})
+
+	_, err := adapter.DownloadSource(context.Background(), "file-identifier-sentinel", "")
+
 	require.ErrorIs(t, err, ErrDependency)
 	assertSafeStorageError(t, err)
-
 	var operationError *smithy.OperationError
 	require.NotErrorAs(t, err, &operationError)
 }
