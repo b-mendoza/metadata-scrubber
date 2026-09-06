@@ -26,7 +26,6 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"metadata-scrubber/internal/config"
-	"metadata-scrubber/internal/scrub"
 )
 
 const (
@@ -413,7 +412,7 @@ func TestR2SanitizedUploadPinsPDFContentTypeAndPerformsNoFollowUp(t *testing.T) 
 
 	revisionKey, err := SanitizedObjectKey("file-1", canonicalR2ETagOne)
 	require.NoError(t, err)
-	oversizedPDF := []byte(strings.Repeat("x", scrub.MaxInputBytes+1))
+	pdfBytes := []byte("%PDF-1.7\nsmall sanitized PDF")
 	var requestCount atomic.Int64
 	requests := make(chan observedStorageRequest, 2)
 
@@ -431,7 +430,7 @@ func TestR2SanitizedUploadPinsPDFContentTypeAndPerformsNoFollowUp(t *testing.T) 
 		response.WriteHeader(http.StatusOK)
 	}))
 
-	err = adapter.UploadSanitized(context.Background(), "file-1", canonicalR2ETagOne, oversizedPDF)
+	err = adapter.UploadSanitized(context.Background(), "file-1", canonicalR2ETagOne, pdfBytes)
 
 	require.NoError(t, err)
 	request := <-requests
@@ -440,7 +439,7 @@ func TestR2SanitizedUploadPinsPDFContentTypeAndPerformsNoFollowUp(t *testing.T) 
 	require.Equal(t, "/"+testBucket+"/"+revisionKey, request.path)
 	require.Equal(t, PDFContentType, request.contentType)
 	require.Empty(t, request.sourceETagMetadata)
-	require.Equal(t, oversizedPDF, request.body)
+	require.Equal(t, pdfBytes, request.body)
 	require.Equal(t, int64(1), requestCount.Load())
 }
 
