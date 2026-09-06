@@ -7,11 +7,14 @@ import (
 	"errors"
 	"log/slog"
 	"net/http"
+	"net/http/httptest"
 	"testing"
 	"time"
 
 	"github.com/stretchr/testify/require"
 
+	"metadata-scrubber/internal/bindings"
+	"metadata-scrubber/internal/httpx/header"
 	"metadata-scrubber/internal/httpx/mediatype"
 	"metadata-scrubber/internal/scrub"
 	"metadata-scrubber/internal/storage"
@@ -36,26 +39,23 @@ func TestPipelineLogsExcludeSeededSensitiveValues(t *testing.T) {
 
 	uploadBody, err := json.Marshal(uploadRequest{FileName: "request-name-secret.pdf", FileSizeBytes: 1})
 	require.NoError(t, err)
-	uploadRecorder := serveRequest(t, handlerRequest{
-		ctx: context.Background(), handler: handler, objectStorage: objectStorage,
-		method: uploadMethod, contentType: mediatype.JSON,
-		body: string(uploadBody),
-	})
+	uploadRequest := httptest.NewRequest(http.MethodPost, "/api/files/upload", bytes.NewReader(uploadBody))
+	uploadRequest.Header.Set(header.ContentType, mediatype.JSON)
+	uploadRecorder := httptest.NewRecorder()
+	bindings.Inject(bindings.Bindings{Storage: objectStorage})(http.HandlerFunc(handler.Upload)).ServeHTTP(uploadRecorder, uploadRequest)
 	dryRunBody, err := json.Marshal(dryRunRequest{StorageKey: formatStorageKey(fileIDOne)})
 	require.NoError(t, err)
-	dryRunRecorder := serveRequest(t, handlerRequest{
-		ctx: context.Background(), handler: handler, objectStorage: objectStorage,
-		method: dryRunMethod, contentType: mediatype.JSON,
-		body: string(dryRunBody),
-	})
+	dryRunHTTPRequest := httptest.NewRequest(http.MethodPost, "/api/files/dry-run", bytes.NewReader(dryRunBody))
+	dryRunHTTPRequest.Header.Set(header.ContentType, mediatype.JSON)
+	dryRunRecorder := httptest.NewRecorder()
+	bindings.Inject(bindings.Bindings{Storage: objectStorage})(http.HandlerFunc(handler.DryRun)).ServeHTTP(dryRunRecorder, dryRunHTTPRequest)
 	fake.SetFailure(storage.FakeDownloadSource, errors.New("dependency-error-sensitive-marker"))
 	dependencyFailureBody, err := json.Marshal(dryRunRequest{StorageKey: formatStorageKey(fileIDTwo)})
 	require.NoError(t, err)
-	dependencyFailureRecorder := serveRequest(t, handlerRequest{
-		ctx: context.Background(), handler: handler, objectStorage: objectStorage,
-		method: dryRunMethod, contentType: mediatype.JSON,
-		body: string(dependencyFailureBody),
-	})
+	dependencyFailureRequest := httptest.NewRequest(http.MethodPost, "/api/files/dry-run", bytes.NewReader(dependencyFailureBody))
+	dependencyFailureRequest.Header.Set(header.ContentType, mediatype.JSON)
+	dependencyFailureRecorder := httptest.NewRecorder()
+	bindings.Inject(bindings.Bindings{Storage: objectStorage})(http.HandlerFunc(handler.DryRun)).ServeHTTP(dependencyFailureRecorder, dependencyFailureRequest)
 
 	require.Equal(t, http.StatusOK, uploadRecorder.Code, uploadRecorder.Body.String())
 	require.Equal(t, http.StatusOK, dryRunRecorder.Code, dryRunRecorder.Body.String())
