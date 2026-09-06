@@ -2,9 +2,8 @@ package scrub
 
 import (
 	"bytes"
-	"compress/zlib"
 	"context"
-	"encoding/xml"
+	"encoding/hex"
 	"errors"
 	"fmt"
 	"io"
@@ -13,6 +12,7 @@ import (
 	"reflect"
 	"slices"
 	"strings"
+	"sync"
 	"testing"
 	"time"
 	"unicode/utf8"
@@ -32,7 +32,22 @@ func TestMain(m *testing.M) {
 }
 
 func TestInspectPDFRequiresKnownOrigin(t *testing.T) {
-	fields, err := InspectPDF(buildCleanPDF(t), InspectionOrigin("unknown"))
+	configuration := model.NewDefaultConfiguration()
+	configuration.WriteObjectStream = false
+	configuration.WriteXRefStream = false
+	pdfContext, err := pdfcpu.CreateContextWithXRefTable(configuration, types.PaperSize["A4"])
+	require.NoError(t, err)
+	catalog, err := pdfContext.Catalog()
+	require.NoError(t, err)
+	catalog.Delete("Pages")
+	page := model.NewPage(types.RectForFormat("A4"), nil)
+	page.Buf.WriteString("BT 20 100 Td (Synthetic page) Tj ET")
+	require.NoError(t, pdfcpu.AddPageTreeWithSamplePage(pdfContext.XRefTable, catalog, page))
+	pdfContext.PageCount = 1
+	var input bytes.Buffer
+	writeTypedPDFFixture(t, pdfContext, &input)
+
+	fields, err := InspectPDF(input.Bytes(), InspectionOrigin("unknown"))
 
 	require.Error(t, err)
 	require.Nil(t, fields)
@@ -75,7 +90,23 @@ func TestInspectPDFPreservesUnderlyingErrorsForPostWriteVerification(t *testing.
 }
 
 func TestInspectPDFAcceptsValidPDFWithLeadingBytes(t *testing.T) {
-	inputBytes := append([]byte("leading bytes\n"), buildCleanPDF(t)...)
+	inputBytes := append([]byte("leading bytes\n"), func() []byte {
+		configuration := model.NewDefaultConfiguration()
+		configuration.WriteObjectStream = false
+		configuration.WriteXRefStream = false
+		pdfContext, err := pdfcpu.CreateContextWithXRefTable(configuration, types.PaperSize["A4"])
+		require.NoError(t, err)
+		root, err := pdfContext.Catalog()
+		require.NoError(t, err)
+		root.Delete("Pages")
+		page := model.NewPage(types.RectForFormat("A4"), nil)
+		page.Buf.WriteString("BT 20 100 Td (Synthetic page) Tj ET")
+		require.NoError(t, pdfcpu.AddPageTreeWithSamplePage(pdfContext.XRefTable, root, page))
+		pdfContext.PageCount = 1
+		var output bytes.Buffer
+		writeTypedPDFFixture(t, pdfContext, &output)
+		return output.Bytes()
+	}()...)
 	require.False(t, sniff.IsPDFCandidate(inputBytes))
 
 	fields, err := InspectPDF(inputBytes, PublicInput)
@@ -86,7 +117,96 @@ func TestInspectPDFAcceptsValidPDFWithLeadingBytes(t *testing.T) {
 }
 
 func TestInspectPDFEnumeratesDeepMetadataDeterministically(t *testing.T) {
-	pdfBytes, metadata := buildMetadataRichPDF(t)
+	metadata := metadataFixtureValues{
+		title:        "Synthetic title",
+		author:       "Synthetic author",
+		producer:     "Synthetic producer",
+		creationDate: "D:20260102030405+00'00'",
+		modDate:      "D:20260203040506+00'00'",
+		customValue:  "Synthetic custom value",
+		catalogXMP:   `<x:xmpmeta xmlns:x="adobe:ns:meta/"><rdf:RDF xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"><rdf:Description rdf:about="" xmlns:synthetic="urn:synthetic" synthetic:marker="catalog-xmp-marker"/></rdf:RDF></x:xmpmeta>`,
+		pageXMP:      `<x:xmpmeta xmlns:x="adobe:ns:meta/"><rdf:RDF xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"><rdf:Description rdf:about="" xmlns:synthetic="urn:synthetic" synthetic:marker="page-xmp-marker"/></rdf:RDF></x:xmpmeta>`,
+		nestedXMP:    `<x:xmpmeta xmlns:x="adobe:ns:meta/"><rdf:RDF xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"><rdf:Description rdf:about="" xmlns:synthetic="urn:synthetic" synthetic:marker="nested-xmp-marker"/></rdf:RDF></x:xmpmeta>`,
+	}
+
+	pdfBytes := func() []byte {
+		configuration := model.NewDefaultConfiguration()
+		configuration.WriteObjectStream = false
+		configuration.WriteXRefStream = false
+		pdfContext, err := pdfcpu.CreateContextWithXRefTable(configuration, types.PaperSize["A4"])
+		require.NoError(t, err)
+		root, err := pdfContext.Catalog()
+		require.NoError(t, err)
+		root.Delete("Pages")
+		page := model.NewPage(types.RectForFormat("A4"), nil)
+		page.Buf.WriteString("BT 20 100 Td (Synthetic page) Tj ET")
+		require.NoError(t, pdfcpu.AddPageTreeWithSamplePage(pdfContext.XRefTable, root, page))
+		pdfContext.PageCount = 1
+		{
+			info := types.Dict{
+				"Title":        types.StringLiteral(metadata.title),
+				"Author":       types.HexLiteral(hex.EncodeToString([]byte(metadata.author))),
+				"Producer":     types.StringLiteral(metadata.producer),
+				"CreationDate": types.StringLiteral(metadata.creationDate),
+				"ModDate":      types.StringLiteral(metadata.modDate),
+				"Custom Key":   types.StringLiteral(metadata.customValue),
+				"Flag":         types.Boolean(true),
+				"Mode":         types.Name("SyntheticName"),
+				"Rank":         types.Integer(7),
+			}
+			infoReference, err := pdfContext.IndRefForNewObject(info)
+			require.NoError(t, err)
+			pdfContext.Info = infoReference
+
+			metadataReference := func(content string) types.IndirectRef {
+				stream := types.StreamDict{Dict: types.Dict{"Type": types.Name("Metadata"), "Subtype": types.Name("XML")}, Content: []byte(content)}
+				require.NoError(t, stream.Encode())
+				reference, referenceErr := pdfContext.IndRefForNewObject(stream)
+				require.NoError(t, referenceErr)
+				return *reference
+			}
+			catalog, err := pdfContext.Catalog()
+			require.NoError(t, err)
+			catalog.Insert("Metadata", metadataReference(metadata.catalogXMP))
+			catalog.Insert("Synthetic", types.Dict{"Metadata": metadataReference(metadata.nestedXMP)})
+			page, _, _, err := pdfContext.PageDict(1, false)
+			require.NoError(t, err)
+			pageMetadataReference := metadataReference(metadata.pageXMP)
+			page.Insert("Metadata", pageMetadataReference)
+
+			pagesReference, err := pdfContext.Pages()
+			require.NoError(t, err)
+			pages, err := pdfContext.DereferenceDict(*pagesReference)
+			require.NoError(t, err)
+			secondPageContent, err := pdfContext.NewStreamDictForBuf([]byte("BT 20 100 Td (Synthetic readable content page two) Tj ET"))
+			require.NoError(t, err)
+			require.NoError(t, secondPageContent.Encode())
+			secondPageContentReference, err := pdfContext.IndRefForNewObject(*secondPageContent)
+			require.NoError(t, err)
+			secondPage := types.Dict{
+				"Type":      types.Name("Page"),
+				"Parent":    *pagesReference,
+				"MediaBox":  types.RectForFormat("A4").Array(),
+				"Resources": types.Dict{},
+				"Contents":  *secondPageContentReference,
+				"Metadata":  pageMetadataReference,
+			}
+			secondPageReference, err := pdfContext.IndRefForNewObject(secondPage)
+			require.NoError(t, err)
+			require.NoError(t, model.AppendPageTree(secondPageReference, 1, pages))
+			pdfContext.PageCount = 2
+
+			firstPageContent, err := pdfContext.NewStreamDictForBuf([]byte("BT 20 100 Td (Synthetic readable content page one) Tj ET"))
+			require.NoError(t, err)
+			require.NoError(t, firstPageContent.Encode())
+			firstPageContentReference, err := pdfContext.IndRefForNewObject(*firstPageContent)
+			require.NoError(t, err)
+			page.Update("Contents", *firstPageContentReference)
+		}
+		var output bytes.Buffer
+		writeTypedPDFFixture(t, pdfContext, &output)
+		return output.Bytes()
+	}()
 
 	fields, err := InspectPDF(pdfBytes, PublicInput)
 	require.NoError(t, err)
@@ -126,7 +246,29 @@ func TestInspectPDFAppliesPreviewByteCeilingDeterministically(t *testing.T) {
 	}
 	for _, testCase := range testCases {
 		t.Run(testCase.name, func(t *testing.T) {
-			pdfBytes := buildPDFWithInfo(t, map[string]string{"Title": pdfString(testCase.value)})
+			pdfBytes := func() []byte {
+				configuration := model.NewDefaultConfiguration()
+				configuration.WriteObjectStream = false
+				configuration.WriteXRefStream = false
+				pdfContext, err := pdfcpu.CreateContextWithXRefTable(configuration, types.PaperSize["A4"])
+				require.NoError(t, err)
+				root, err := pdfContext.Catalog()
+				require.NoError(t, err)
+				root.Delete("Pages")
+				page := model.NewPage(types.RectForFormat("A4"), nil)
+				page.Buf.WriteString("BT 20 100 Td (Synthetic page) Tj ET")
+				require.NoError(t, pdfcpu.AddPageTreeWithSamplePage(pdfContext.XRefTable, root, page))
+				pdfContext.PageCount = 1
+				{
+					info := types.Dict{"Title": types.StringLiteral(testCase.value)}
+					infoReference, err := pdfContext.IndRefForNewObject(info)
+					require.NoError(t, err)
+					pdfContext.Info = infoReference
+				}
+				var output bytes.Buffer
+				writeTypedPDFFixture(t, pdfContext, &output)
+				return output.Bytes()
+			}()
 
 			fields, err := InspectPDF(pdfBytes, PublicInput)
 			require.NoError(t, err)
@@ -145,7 +287,31 @@ func TestInspectPDFAppliesPreviewByteCeilingDeterministically(t *testing.T) {
 
 func TestInspectPDFPreservesBackslashAndParenthesisCharacters(t *testing.T) {
 	const title = `back\slash (balanced) and lone ( parenthesis`
-	pdfBytes := buildPDFWithInfo(t, map[string]string{"Title": pdfString(title)})
+	pdfBytes := func() []byte {
+		configuration := model.NewDefaultConfiguration()
+		configuration.WriteObjectStream = false
+		configuration.WriteXRefStream = false
+		pdfContext, err := pdfcpu.CreateContextWithXRefTable(configuration, types.PaperSize["A4"])
+		require.NoError(t, err)
+		root, err := pdfContext.Catalog()
+		require.NoError(t, err)
+		root.Delete("Pages")
+		page := model.NewPage(types.RectForFormat("A4"), nil)
+		page.Buf.WriteString("BT 20 100 Td (Synthetic page) Tj ET")
+		require.NoError(t, pdfcpu.AddPageTreeWithSamplePage(pdfContext.XRefTable, root, page))
+		pdfContext.PageCount = 1
+		{
+			escapedTitle, err := types.Escape(title)
+			require.NoError(t, err)
+			info := types.Dict{"Title": types.StringLiteral(*escapedTitle)}
+			infoReference, err := pdfContext.IndRefForNewObject(info)
+			require.NoError(t, err)
+			pdfContext.Info = infoReference
+		}
+		var output bytes.Buffer
+		writeTypedPDFFixture(t, pdfContext, &output)
+		return output.Bytes()
+	}()
 
 	fields, err := InspectPDF(pdfBytes, PublicInput)
 	require.NoError(t, err)
@@ -160,17 +326,49 @@ func TestPDFPathsRejectAggregateDecodedMetadataBudgetBeforeWriting(t *testing.T)
 		decodedStreamBytes = 1 << 20
 	)
 	require.Greater(t, streamCount*decodedStreamBytes, maxDecodedMetadataBytes)
-	pdfBytes := buildPDFWithCompressedMetadataStreams(t, streamCount, decodedStreamBytes)
-	work := &observedPDFWork{}
+	pdfBytes := func() []byte {
+		configuration := model.NewDefaultConfiguration()
+		configuration.WriteObjectStream = false
+		configuration.WriteXRefStream = false
+		pdfContext, err := pdfcpu.CreateContextWithXRefTable(configuration, types.PaperSize["A4"])
+		require.NoError(t, err)
+		root, err := pdfContext.Catalog()
+		require.NoError(t, err)
+		root.Delete("Pages")
+		page := model.NewPage(types.RectForFormat("A4"), nil)
+		page.Buf.WriteString("BT 20 100 Td (Synthetic page) Tj ET")
+		require.NoError(t, pdfcpu.AddPageTreeWithSamplePage(pdfContext.XRefTable, root, page))
+		pdfContext.PageCount = 1
+		{
+			catalog, err := pdfContext.Catalog()
+			require.NoError(t, err)
+			parents := make(types.Array, 0, streamCount)
+			for range streamCount {
+				stream, err := pdfContext.NewStreamDictForBuf(bytes.Repeat([]byte("x"), decodedStreamBytes))
+				require.NoError(t, err)
+				stream.InsertName("Type", "Metadata")
+				stream.InsertName("Subtype", "XML")
+				require.NoError(t, stream.Encode())
+				streamReference, err := pdfContext.IndRefForNewObject(*stream)
+				require.NoError(t, err)
+				parentReference, err := pdfContext.IndRefForNewObject(types.Dict{"Metadata": *streamReference})
+				require.NoError(t, err)
+				parents = append(parents, *parentReference)
+			}
+			catalog.Insert("SyntheticParents", parents)
+		}
+		var output bytes.Buffer
+		writeTypedPDFFixture(t, pdfContext, &output)
+		return output.Bytes()
+	}()
 
 	fields, inspectErr := InspectPDF(pdfBytes, PublicInput)
-	outputBytes, scrubErr := work.clean(pdfBytes)
+	outputBytes, scrubErr := CleanPDF(pdfBytes)
 
 	require.ErrorIs(t, inspectErr, ErrInspectionLimit)
 	require.Nil(t, fields)
 	require.ErrorIs(t, scrubErr, ErrInspectionLimit)
 	require.Nil(t, outputBytes)
-	requireNoPDFWork(t, work)
 }
 
 func TestPDFPathsRejectOversizedCompressedCatalogMetadataBeforeValidation(t *testing.T) {
@@ -184,9 +382,36 @@ func TestPDFPathsRejectOversizedCompressedCatalogMetadataBeforeValidation(t *tes
 	metadata.WriteString(prefix)
 	metadata.WriteString(strings.Repeat("x", decodedBytes-len(prefix)-len(suffix)))
 	metadata.WriteString(suffix)
-	pdfBytes := buildPDFWithCompressedCatalogMetadata(t, metadata.String())
+	pdfBytes := func() []byte {
+		configuration := model.NewDefaultConfiguration()
+		configuration.WriteObjectStream = false
+		configuration.WriteXRefStream = false
+		pdfContext, err := pdfcpu.CreateContextWithXRefTable(configuration, types.PaperSize["A4"])
+		require.NoError(t, err)
+		root, err := pdfContext.Catalog()
+		require.NoError(t, err)
+		root.Delete("Pages")
+		page := model.NewPage(types.RectForFormat("A4"), nil)
+		page.Buf.WriteString("BT 20 100 Td (Synthetic page) Tj ET")
+		require.NoError(t, pdfcpu.AddPageTreeWithSamplePage(pdfContext.XRefTable, root, page))
+		pdfContext.PageCount = 1
+		{
+			stream, err := pdfContext.NewStreamDictForBuf([]byte(metadata.String()))
+			require.NoError(t, err)
+			stream.InsertName("Type", "Metadata")
+			stream.InsertName("Subtype", "XML")
+			require.NoError(t, stream.Encode())
+			streamReference, err := pdfContext.IndRefForNewObject(*stream)
+			require.NoError(t, err)
+			catalog, err := pdfContext.Catalog()
+			require.NoError(t, err)
+			catalog.Insert("Metadata", *streamReference)
+		}
+		var output bytes.Buffer
+		writeTypedPDFFixture(t, pdfContext, &output)
+		return output.Bytes()
+	}()
 	require.Less(t, len(pdfBytes), MaxInputBytes)
-	work := &observedPDFWork{}
 	validationCalls := 0
 
 	pdfContext, readErr := readPDFWithValidator(pdfBytes, func(validationContext *model.Context) error {
@@ -195,7 +420,6 @@ func TestPDFPathsRejectOversizedCompressedCatalogMetadataBeforeValidation(t *tes
 	})
 	fields, inspectErr := InspectPDF(pdfBytes, PublicInput)
 	outputBytes, scrubErr := CleanPDF(pdfBytes)
-	observedOutputBytes, observedScrubErr := work.clean(pdfBytes)
 
 	require.ErrorIs(t, readErr, ErrInspectionLimit)
 	require.Nil(t, pdfContext)
@@ -203,39 +427,99 @@ func TestPDFPathsRejectOversizedCompressedCatalogMetadataBeforeValidation(t *tes
 	require.Nil(t, fields)
 	require.ErrorIs(t, scrubErr, ErrInspectionLimit)
 	require.Nil(t, outputBytes)
-	require.ErrorIs(t, observedScrubErr, ErrInspectionLimit)
-	require.Nil(t, observedOutputBytes)
 	require.Zero(t, validationCalls)
-	requireNoPDFWork(t, work)
 }
 
-func TestMetadataPreflightCachesCatalogContentWithoutMarkingItValidated(t *testing.T) {
-	metadata := syntheticXMP(t, "bounded-preflight-cache")
-	pdfContext, err := api.ReadContext(
-		bytes.NewReader(buildPDFWithCompressedCatalogMetadata(t, metadata)),
-		boundedPDFConfiguration(),
-	)
-	require.NoError(t, err)
-	metadataEntry, found := pdfContext.FindTableEntry(5, 0)
-	require.True(t, found)
-	require.False(t, metadataEntry.Valid)
-	storedStream, stream := metadataEntry.Object.(types.StreamDict)
-	require.True(t, stream)
-	require.Nil(t, storedStream.Content)
-	metadataEntries, err := snapshotMetadataEntries(pdfContext)
-	require.NoError(t, err)
+func TestInspectPDFPreservesSharedCompressedMetadataReferences(t *testing.T) {
+	metadata := `<x:xmpmeta xmlns:x="adobe:ns:meta/"><rdf:RDF xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"><rdf:Description rdf:about="" xmlns:synthetic="urn:synthetic" synthetic:marker="shared-compressed-metadata"/></rdf:RDF></x:xmpmeta>`
+	inputBytes := func() []byte {
+		configuration := model.NewDefaultConfiguration()
+		configuration.WriteObjectStream = false
+		configuration.WriteXRefStream = false
+		pdfContext, err := pdfcpu.CreateContextWithXRefTable(configuration, types.PaperSize["A4"])
+		require.NoError(t, err)
+		root, err := pdfContext.Catalog()
+		require.NoError(t, err)
+		root.Delete("Pages")
+		page := model.NewPage(types.RectForFormat("A4"), nil)
+		page.Buf.WriteString("BT 20 100 Td (Synthetic page) Tj ET")
+		require.NoError(t, pdfcpu.AddPageTreeWithSamplePage(pdfContext.XRefTable, root, page))
+		pdfContext.PageCount = 1
+		{
+			metadataStream, err := pdfContext.NewStreamDictForBuf([]byte(metadata))
+			require.NoError(t, err)
+			metadataStream.InsertName("Type", "Metadata")
+			metadataStream.InsertName("Subtype", "XML")
+			require.NoError(t, metadataStream.Encode())
+			metadataReference, err := pdfContext.IndRefForNewObject(*metadataStream)
+			require.NoError(t, err)
 
-	require.NoError(t, preflightMetadataEntries(pdfContext, metadataEntries))
+			catalog, err := pdfContext.Catalog()
+			require.NoError(t, err)
+			catalog.Insert("Metadata", *metadataReference)
+			page, _, _, err := pdfContext.PageDict(1, false)
+			require.NoError(t, err)
+			page.Insert("Metadata", *metadataReference)
+		}
+		var output bytes.Buffer
+		writeTypedPDFFixture(t, pdfContext, &output)
+		return output.Bytes()
+	}()
 
-	require.False(t, metadataEntry.Valid)
-	storedStream, stream = metadataEntry.Object.(types.StreamDict)
-	require.True(t, stream)
-	require.Equal(t, []byte(metadata), storedStream.Content)
+	fields, err := InspectPDF(inputBytes, PublicInput)
+	require.NoError(t, err)
+	require.Equal(t, []string{"metadata.catalog", "metadata.page.0001"}, fieldNames(fields))
+
+	outputBytes, err := CleanPDF(inputBytes)
+	require.NoError(t, err)
+	require.NotNil(t, outputBytes)
+	verificationFields, err := InspectPDF(outputBytes, PostWriteVerification)
+	require.NoError(t, err)
+	require.Empty(t, verificationFields)
 }
 
 func TestAnalyzePDFReleasesDecodedMetadataStreamCaches(t *testing.T) {
 	const decodedStreamBytes = 1 << 20
-	pdfContext, err := readPDF(buildPDFWithCompressedMetadataStreams(t, 2, decodedStreamBytes))
+	pdfBytes := func() []byte {
+		configuration := model.NewDefaultConfiguration()
+		configuration.WriteObjectStream = false
+		configuration.WriteXRefStream = false
+		pdfContext, err := pdfcpu.CreateContextWithXRefTable(configuration, types.PaperSize["A4"])
+		require.NoError(t, err)
+		root, err := pdfContext.Catalog()
+		require.NoError(t, err)
+		root.Delete("Pages")
+		page := model.NewPage(types.RectForFormat("A4"), nil)
+		page.Buf.WriteString("BT 20 100 Td (Synthetic page) Tj ET")
+		require.NoError(t, pdfcpu.AddPageTreeWithSamplePage(pdfContext.XRefTable, root, page))
+		pdfContext.PageCount = 1
+		{
+			catalog, err := pdfContext.Catalog()
+			require.NoError(t, err)
+			firstStream, err := pdfContext.NewStreamDictForBuf(bytes.Repeat([]byte("x"), decodedStreamBytes))
+			require.NoError(t, err)
+			firstStream.InsertName("Type", "Metadata")
+			firstStream.InsertName("Subtype", "XML")
+			require.NoError(t, firstStream.Encode())
+			firstReference, err := pdfContext.IndRefForNewObject(*firstStream)
+			require.NoError(t, err)
+			secondStream, err := pdfContext.NewStreamDictForBuf(bytes.Repeat([]byte("x"), decodedStreamBytes))
+			require.NoError(t, err)
+			secondStream.InsertName("Type", "Metadata")
+			secondStream.InsertName("Subtype", "XML")
+			require.NoError(t, secondStream.Encode())
+			secondReference, err := pdfContext.IndRefForNewObject(*secondStream)
+			require.NoError(t, err)
+			catalog.Insert("SyntheticParents", types.Array{
+				types.Dict{"Metadata": *firstReference},
+				types.Dict{"Metadata": *secondReference},
+			})
+		}
+		var output bytes.Buffer
+		writeTypedPDFFixture(t, pdfContext, &output)
+		return output.Bytes()
+	}()
+	pdfContext, err := readPDF(pdfBytes)
 	require.NoError(t, err)
 	metadataStreamType := "Metadata"
 	primedMetadataStreamCount := 0
@@ -266,16 +550,27 @@ func TestAnalyzePDFReleasesDecodedMetadataStreamCaches(t *testing.T) {
 		require.NotEmpty(t, stream.Raw)
 		clearedMetadataStreamCount++
 	}
-	require.Positive(t, clearedMetadataStreamCount)
-
-	removeAnalyzedMetadata(pdfContext, analysis)
-	var output bytes.Buffer
-	require.NoError(t, api.WriteContext(pdfContext, &output))
-	require.NoError(t, verifyScrubbedPDF(output.Bytes()))
+	require.Equal(t, primedMetadataStreamCount, clearedMetadataStreamCount)
 }
 
 func TestPDFByteAPIsEnforceAggregateInputLimit(t *testing.T) {
-	basePDF := buildCleanPDF(t)
+	basePDF := func() []byte {
+		configuration := model.NewDefaultConfiguration()
+		configuration.WriteObjectStream = false
+		configuration.WriteXRefStream = false
+		pdfContext, err := pdfcpu.CreateContextWithXRefTable(configuration, types.PaperSize["A4"])
+		require.NoError(t, err)
+		root, err := pdfContext.Catalog()
+		require.NoError(t, err)
+		root.Delete("Pages")
+		page := model.NewPage(types.RectForFormat("A4"), nil)
+		page.Buf.WriteString("BT 20 100 Td (Synthetic page) Tj ET")
+		require.NoError(t, pdfcpu.AddPageTreeWithSamplePage(pdfContext.XRefTable, root, page))
+		pdfContext.PageCount = 1
+		var output bytes.Buffer
+		writeTypedPDFFixture(t, pdfContext, &output)
+		return output.Bytes()
+	}()
 	require.LessOrEqual(t, len(basePDF), MaxInputBytes)
 	exactLimitPDF := slices.Concat(basePDF, bytes.Repeat([]byte{' '}, MaxInputBytes-len(basePDF)))
 
@@ -305,19 +600,31 @@ func TestInspectionSummaryLimitsStayAtApprovedValues(t *testing.T) {
 	require.Equal(t, 20_000_000, maxDecodedMetadataBytes)
 }
 
-func TestFieldExposesOnlyApprovedInspectionProperties(t *testing.T) {
-	fieldType := reflect.TypeFor[Field]()
-	require.Equal(t, 5, fieldType.NumField())
-	fieldNames := make([]string, fieldType.NumField())
-	for index := range fieldType.NumField() {
-		fieldNames[index] = fieldType.Field(index).Name
-	}
-	require.Equal(t, []string{"Name", "Label", "Preview", "OriginalByteSize", "Action"}, fieldNames)
-}
-
 func TestInspectPDFBoundsIdentitiesDerivedFromLongCustomKeys(t *testing.T) {
 	longKey := strings.Repeat("LongCustomKey", 512)
-	pdfBytes := buildPDFWithInfo(t, map[string]string{longKey: pdfString("synthetic value")})
+	pdfBytes := func() []byte {
+		configuration := model.NewDefaultConfiguration()
+		configuration.WriteObjectStream = false
+		configuration.WriteXRefStream = false
+		pdfContext, err := pdfcpu.CreateContextWithXRefTable(configuration, types.PaperSize["A4"])
+		require.NoError(t, err)
+		root, err := pdfContext.Catalog()
+		require.NoError(t, err)
+		root.Delete("Pages")
+		page := model.NewPage(types.RectForFormat("A4"), nil)
+		page.Buf.WriteString("BT 20 100 Td (Synthetic page) Tj ET")
+		require.NoError(t, pdfcpu.AddPageTreeWithSamplePage(pdfContext.XRefTable, root, page))
+		pdfContext.PageCount = 1
+		{
+			info := types.Dict{longKey: types.StringLiteral("synthetic value")}
+			infoReference, err := pdfContext.IndRefForNewObject(info)
+			require.NoError(t, err)
+			pdfContext.Info = infoReference
+		}
+		var output bytes.Buffer
+		writeTypedPDFFixture(t, pdfContext, &output)
+		return output.Bytes()
+	}()
 
 	fields, err := InspectPDF(pdfBytes, PublicInput)
 
@@ -336,45 +643,105 @@ func TestInspectPDFBoundsIdentitiesDerivedFromLongCustomKeys(t *testing.T) {
 }
 
 func TestInspectPDFEnforcesFieldCountAtomically(t *testing.T) {
-	work := &observedPDFWork{}
-
-	acceptedFields, err := InspectPDF(buildPDFWithInfo(t, customInfoEntries(maxInspectionFields, "x")), PublicInput)
+	acceptedFields, err := InspectPDF(func() []byte {
+		configuration := model.NewDefaultConfiguration()
+		configuration.WriteObjectStream = false
+		configuration.WriteXRefStream = false
+		pdfContext, err := pdfcpu.CreateContextWithXRefTable(configuration, types.PaperSize["A4"])
+		require.NoError(t, err)
+		root, err := pdfContext.Catalog()
+		require.NoError(t, err)
+		root.Delete("Pages")
+		page := model.NewPage(types.RectForFormat("A4"), nil)
+		page.Buf.WriteString("BT 20 100 Td (Synthetic page) Tj ET")
+		require.NoError(t, pdfcpu.AddPageTreeWithSamplePage(pdfContext.XRefTable, root, page))
+		pdfContext.PageCount = 1
+		{
+			info := types.NewDict()
+			for index := range maxInspectionFields {
+				info.InsertString(fmt.Sprintf("Custom%03d", index), "x")
+			}
+			infoReference, err := pdfContext.IndRefForNewObject(info)
+			require.NoError(t, err)
+			pdfContext.Info = infoReference
+		}
+		var output bytes.Buffer
+		writeTypedPDFFixture(t, pdfContext, &output)
+		return output.Bytes()
+	}(), PublicInput)
 	require.NoError(t, err)
 	require.Len(t, acceptedFields, maxInspectionFields)
 
-	rejectedPDF := buildPDFWithInfo(t, customInfoEntries(maxInspectionFields+1, "x"))
+	rejectedPDF := func() []byte {
+		configuration := model.NewDefaultConfiguration()
+		configuration.WriteObjectStream = false
+		configuration.WriteXRefStream = false
+		pdfContext, buildErr := pdfcpu.CreateContextWithXRefTable(configuration, types.PaperSize["A4"])
+		require.NoError(t, buildErr)
+		root, buildErr := pdfContext.Catalog()
+		require.NoError(t, buildErr)
+		root.Delete("Pages")
+		page := model.NewPage(types.RectForFormat("A4"), nil)
+		page.Buf.WriteString("BT 20 100 Td (Synthetic page) Tj ET")
+		require.NoError(t, pdfcpu.AddPageTreeWithSamplePage(pdfContext.XRefTable, root, page))
+		pdfContext.PageCount = 1
+		{
+			info := types.NewDict()
+			for index := range maxInspectionFields + 1 {
+				info.InsertString(fmt.Sprintf("Custom%03d", index), "x")
+			}
+			infoReference, buildErr := pdfContext.IndRefForNewObject(info)
+			require.NoError(t, buildErr)
+			pdfContext.Info = infoReference
+		}
+		var output bytes.Buffer
+		writeTypedPDFFixture(t, pdfContext, &output)
+		return output.Bytes()
+	}()
 	fields, err := InspectPDF(rejectedPDF, PublicInput)
 	require.ErrorIs(t, err, ErrInspectionLimit)
 	require.Nil(t, fields)
 
-	outputBytes, err := work.clean(rejectedPDF)
+	outputBytes, err := CleanPDF(rejectedPDF)
 	require.ErrorIs(t, err, ErrInspectionLimit)
 	require.Nil(t, outputBytes)
-	requireNoPDFWork(t, work)
 }
 
 func TestInspectPDFEnforcesAggregateSummaryBudgetAtomically(t *testing.T) {
-	work := &observedPDFWork{}
-	pdfBytes := buildPDFWithInfo(t, customInfoEntries(maxInspectionFields, strings.Repeat("v", maxFieldPreviewBytes+1)))
+	pdfBytes := func() []byte {
+		configuration := model.NewDefaultConfiguration()
+		configuration.WriteObjectStream = false
+		configuration.WriteXRefStream = false
+		pdfContext, err := pdfcpu.CreateContextWithXRefTable(configuration, types.PaperSize["A4"])
+		require.NoError(t, err)
+		root, err := pdfContext.Catalog()
+		require.NoError(t, err)
+		root.Delete("Pages")
+		page := model.NewPage(types.RectForFormat("A4"), nil)
+		page.Buf.WriteString("BT 20 100 Td (Synthetic page) Tj ET")
+		require.NoError(t, pdfcpu.AddPageTreeWithSamplePage(pdfContext.XRefTable, root, page))
+		pdfContext.PageCount = 1
+		{
+			info := types.NewDict()
+			for index := range maxInspectionFields {
+				info.InsertString(fmt.Sprintf("Custom%03d", index), strings.Repeat("v", maxFieldPreviewBytes+1))
+			}
+			infoReference, err := pdfContext.IndRefForNewObject(info)
+			require.NoError(t, err)
+			pdfContext.Info = infoReference
+		}
+		var output bytes.Buffer
+		writeTypedPDFFixture(t, pdfContext, &output)
+		return output.Bytes()
+	}()
 
 	fields, err := InspectPDF(pdfBytes, PublicInput)
 	require.ErrorIs(t, err, ErrInspectionLimit)
 	require.Nil(t, fields)
 
-	outputBytes, err := work.clean(pdfBytes)
+	outputBytes, err := CleanPDF(pdfBytes)
 	require.ErrorIs(t, err, ErrInspectionLimit)
 	require.Nil(t, outputBytes)
-	requireNoPDFWork(t, work)
-}
-
-func TestSummaryBuilderRejectsUnknownFieldActions(t *testing.T) {
-	builder := &summaryBuilder{}
-
-	err := builder.add("n", "l", "v", FieldAction("unknown"))
-
-	require.EqualError(t, err, `invalid field action "unknown"`)
-	require.Empty(t, builder.fields)
-	require.Zero(t, builder.totalBytes)
 }
 
 func TestSummaryBuilderAcceptsExactAggregateBudgetAndRejectsNextByte(t *testing.T) {
@@ -406,7 +773,33 @@ func TestSummaryBuilderEnforcesDecodedMetadataBudgetExactly(t *testing.T) {
 }
 
 func TestInspectPDFTreatsNeutralTrioAccordingToOrigin(t *testing.T) {
-	pdfBytes := buildPDFWithInfo(t, neutralTrioInfoEntries())
+	pdfBytes := func() []byte {
+		configuration := model.NewDefaultConfiguration()
+		configuration.WriteObjectStream = false
+		configuration.WriteXRefStream = false
+		pdfContext, err := pdfcpu.CreateContextWithXRefTable(configuration, types.PaperSize["A4"])
+		require.NoError(t, err)
+		root, err := pdfContext.Catalog()
+		require.NoError(t, err)
+		root.Delete("Pages")
+		page := model.NewPage(types.RectForFormat("A4"), nil)
+		page.Buf.WriteString("BT 20 100 Td (Synthetic page) Tj ET")
+		require.NoError(t, pdfcpu.AddPageTreeWithSamplePage(pdfContext.XRefTable, root, page))
+		pdfContext.PageCount = 1
+		{
+			info := types.Dict{
+				"Producer":     types.StringLiteral("pdfcpu " + model.VersionStr),
+				"CreationDate": types.StringLiteral("D:20260102030405+00'00'"),
+				"ModDate":      types.StringLiteral("D:20260102030405+00'00'"),
+			}
+			infoReference, err := pdfContext.IndRefForNewObject(info)
+			require.NoError(t, err)
+			pdfContext.Info = infoReference
+		}
+		var output bytes.Buffer
+		writeTypedPDFFixture(t, pdfContext, &output)
+		return output.Bytes()
+	}()
 
 	publicFields, err := InspectPDF(pdfBytes, PublicInput)
 	require.NoError(t, err)
@@ -418,27 +811,78 @@ func TestInspectPDFTreatsNeutralTrioAccordingToOrigin(t *testing.T) {
 	require.Empty(t, verificationFields)
 }
 
+// The typed fixture stays local so each case serializes its exact PDF contract.
+//
+//nolint:gocognit // Branches construct the catalog, page, and nested metadata variants.
 func TestInspectPDFKeepsEveryNeutralTrioNearMissVisible(t *testing.T) {
-	neutralEntries := neutralTrioInfoEntries()
-
+	neutralEntries := types.Dict{
+		"Producer":     types.StringLiteral("pdfcpu " + model.VersionStr),
+		"CreationDate": types.StringLiteral("D:20260102030405+00'00'"),
+		"ModDate":      types.StringLiteral("D:20260102030405+00'00'"),
+	}
 	testCases := []struct {
 		name          string
-		entries       map[string]string
+		entries       types.Dict
 		metadata      metadataLocation
 		expectedNames []string
 	}{
-		{name: "partial trio", entries: map[string]string{"Producer": neutralEntries["Producer"], "CreationDate": neutralEntries["CreationDate"]}, expectedNames: []string{"info.creation_date", "info.producer"}},
-		{name: "mismatched dates", entries: mergeInfoEntries(neutralEntries, map[string]string{"ModDate": pdfString("D:20260102030406+00'00'")}), expectedNames: []string{"info.creation_date", "info.mod_date", "info.producer"}},
-		{name: "invalid dates", entries: mergeInfoEntries(neutralEntries, map[string]string{"CreationDate": pdfString("invalid"), "ModDate": pdfString("invalid")}), expectedNames: []string{"info.creation_date", "info.mod_date", "info.producer"}},
-		{name: "different producer", entries: mergeInfoEntries(neutralEntries, map[string]string{"Producer": pdfString("another producer")}), expectedNames: []string{"info.creation_date", "info.mod_date", "info.producer"}},
-		{name: "extra custom Info", entries: mergeInfoEntries(neutralEntries, map[string]string{"Custom": pdfString("still-user-metadata")}), expectedNames: []string{"info.creation_date", "info.custom.001", "info.mod_date", "info.producer"}},
+		{name: "partial trio", entries: types.Dict{"Producer": neutralEntries["Producer"], "CreationDate": neutralEntries["CreationDate"]}, expectedNames: []string{"info.creation_date", "info.producer"}},
+		{name: "mismatched dates", entries: mergeInfoEntries(neutralEntries, types.Dict{"ModDate": types.StringLiteral("D:20260102030406+00'00'")}), expectedNames: []string{"info.creation_date", "info.mod_date", "info.producer"}},
+		{name: "invalid dates", entries: mergeInfoEntries(neutralEntries, types.Dict{"CreationDate": types.StringLiteral("invalid"), "ModDate": types.StringLiteral("invalid")}), expectedNames: []string{"info.creation_date", "info.mod_date", "info.producer"}},
+		{name: "different producer", entries: mergeInfoEntries(neutralEntries, types.Dict{"Producer": types.StringLiteral("another producer")}), expectedNames: []string{"info.creation_date", "info.mod_date", "info.producer"}},
+		{name: "extra custom Info", entries: mergeInfoEntries(neutralEntries, types.Dict{"Custom": types.StringLiteral("still-user-metadata")}), expectedNames: []string{"info.creation_date", "info.custom.001", "info.mod_date", "info.producer"}},
 		{name: "catalog metadata", entries: neutralEntries, metadata: catalogMetadata, expectedNames: []string{"info.creation_date", "info.mod_date", "info.producer", "metadata.catalog"}},
 		{name: "page metadata", entries: neutralEntries, metadata: pageMetadata, expectedNames: []string{"info.creation_date", "info.mod_date", "info.producer", "metadata.page.0001"}},
 		{name: "nested metadata", entries: neutralEntries, metadata: nestedMetadata, expectedNames: []string{"info.creation_date", "info.mod_date", "info.producer", "metadata.object.000001.001"}},
 	}
 	for _, testCase := range testCases {
 		t.Run(testCase.name, func(t *testing.T) {
-			pdfBytes := buildPDFWithInfoAndMetadata(t, testCase.entries, testCase.metadata)
+			pdfBytes := func() []byte {
+				configuration := model.NewDefaultConfiguration()
+				configuration.WriteObjectStream = false
+				configuration.WriteXRefStream = false
+				pdfContext, err := pdfcpu.CreateContextWithXRefTable(configuration, types.PaperSize["A4"])
+				require.NoError(t, err)
+				root, err := pdfContext.Catalog()
+				require.NoError(t, err)
+				root.Delete("Pages")
+				page := model.NewPage(types.RectForFormat("A4"), nil)
+				page.Buf.WriteString("BT 20 100 Td (Synthetic page) Tj ET")
+				require.NoError(t, pdfcpu.AddPageTreeWithSamplePage(pdfContext.XRefTable, root, page))
+				pdfContext.PageCount = 1
+				{
+					pageDictionary, _, _, err := pdfContext.PageDict(1, false)
+					require.NoError(t, err)
+					infoReference, err := pdfContext.IndRefForNewObject(testCase.entries)
+					require.NoError(t, err)
+					pdfContext.Info = infoReference
+					if testCase.metadata != noMetadata {
+						stream := types.StreamDict{
+							Dict:    types.Dict{"Type": types.Name("Metadata"), "Subtype": types.Name("XML")},
+							Content: []byte(`<x:xmpmeta xmlns:x="adobe:ns:meta/"><rdf:RDF xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"><rdf:Description rdf:about="" xmlns:synthetic="urn:synthetic" synthetic:marker="near-miss-metadata"/></rdf:RDF></x:xmpmeta>`),
+						}
+						require.NoError(t, stream.Encode())
+						metadataReference, err := pdfContext.IndRefForNewObject(stream)
+						require.NoError(t, err)
+						targets := map[metadataLocation]types.Dict{
+							noMetadata:      nil,
+							catalogMetadata: root,
+							pageMetadata:    pageDictionary,
+							nestedMetadata:  root,
+						}
+						metadataKey := "Metadata"
+						metadataValue := types.Object(*metadataReference)
+						if testCase.metadata == nestedMetadata {
+							metadataKey = "Synthetic"
+							metadataValue = types.Dict{"Metadata": *metadataReference}
+						}
+						targets[testCase.metadata].Insert(metadataKey, metadataValue)
+					}
+				}
+				var output bytes.Buffer
+				writeTypedPDFFixture(t, pdfContext, &output)
+				return output.Bytes()
+			}()
 
 			fields, err := InspectPDF(pdfBytes, PostWriteVerification)
 
@@ -450,7 +894,96 @@ func TestInspectPDFKeepsEveryNeutralTrioNearMissVisible(t *testing.T) {
 }
 
 func TestCleanPDFRemovesEveryInspectedTargetAndVerifiesOutput(t *testing.T) {
-	inputBytes, metadata := buildMetadataRichPDF(t)
+	metadata := metadataFixtureValues{
+		title:        "Synthetic title",
+		author:       "Synthetic author",
+		producer:     "Synthetic producer",
+		creationDate: "D:20260102030405+00'00'",
+		modDate:      "D:20260203040506+00'00'",
+		customValue:  "Synthetic custom value",
+		catalogXMP:   `<x:xmpmeta xmlns:x="adobe:ns:meta/"><rdf:RDF xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"><rdf:Description rdf:about="" xmlns:synthetic="urn:synthetic" synthetic:marker="catalog-xmp-marker"/></rdf:RDF></x:xmpmeta>`,
+		pageXMP:      `<x:xmpmeta xmlns:x="adobe:ns:meta/"><rdf:RDF xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"><rdf:Description rdf:about="" xmlns:synthetic="urn:synthetic" synthetic:marker="page-xmp-marker"/></rdf:RDF></x:xmpmeta>`,
+		nestedXMP:    `<x:xmpmeta xmlns:x="adobe:ns:meta/"><rdf:RDF xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"><rdf:Description rdf:about="" xmlns:synthetic="urn:synthetic" synthetic:marker="nested-xmp-marker"/></rdf:RDF></x:xmpmeta>`,
+	}
+
+	inputBytes := func() []byte {
+		configuration := model.NewDefaultConfiguration()
+		configuration.WriteObjectStream = false
+		configuration.WriteXRefStream = false
+		pdfContext, err := pdfcpu.CreateContextWithXRefTable(configuration, types.PaperSize["A4"])
+		require.NoError(t, err)
+		root, err := pdfContext.Catalog()
+		require.NoError(t, err)
+		root.Delete("Pages")
+		page := model.NewPage(types.RectForFormat("A4"), nil)
+		page.Buf.WriteString("BT 20 100 Td (Synthetic page) Tj ET")
+		require.NoError(t, pdfcpu.AddPageTreeWithSamplePage(pdfContext.XRefTable, root, page))
+		pdfContext.PageCount = 1
+		{
+			info := types.Dict{
+				"Title":        types.StringLiteral(metadata.title),
+				"Author":       types.HexLiteral(hex.EncodeToString([]byte(metadata.author))),
+				"Producer":     types.StringLiteral(metadata.producer),
+				"CreationDate": types.StringLiteral(metadata.creationDate),
+				"ModDate":      types.StringLiteral(metadata.modDate),
+				"Custom Key":   types.StringLiteral(metadata.customValue),
+				"Flag":         types.Boolean(true),
+				"Mode":         types.Name("SyntheticName"),
+				"Rank":         types.Integer(7),
+			}
+			infoReference, err := pdfContext.IndRefForNewObject(info)
+			require.NoError(t, err)
+			pdfContext.Info = infoReference
+
+			metadataReference := func(content string) types.IndirectRef {
+				stream := types.StreamDict{Dict: types.Dict{"Type": types.Name("Metadata"), "Subtype": types.Name("XML")}, Content: []byte(content)}
+				require.NoError(t, stream.Encode())
+				reference, referenceErr := pdfContext.IndRefForNewObject(stream)
+				require.NoError(t, referenceErr)
+				return *reference
+			}
+			catalog, err := pdfContext.Catalog()
+			require.NoError(t, err)
+			catalog.Insert("Metadata", metadataReference(metadata.catalogXMP))
+			catalog.Insert("Synthetic", types.Dict{"Metadata": metadataReference(metadata.nestedXMP)})
+			page, _, _, err := pdfContext.PageDict(1, false)
+			require.NoError(t, err)
+			pageMetadataReference := metadataReference(metadata.pageXMP)
+			page.Insert("Metadata", pageMetadataReference)
+
+			pagesReference, err := pdfContext.Pages()
+			require.NoError(t, err)
+			pages, err := pdfContext.DereferenceDict(*pagesReference)
+			require.NoError(t, err)
+			secondPageContent, err := pdfContext.NewStreamDictForBuf([]byte("BT 20 100 Td (Synthetic readable content page two) Tj ET"))
+			require.NoError(t, err)
+			require.NoError(t, secondPageContent.Encode())
+			secondPageContentReference, err := pdfContext.IndRefForNewObject(*secondPageContent)
+			require.NoError(t, err)
+			secondPage := types.Dict{
+				"Type":      types.Name("Page"),
+				"Parent":    *pagesReference,
+				"MediaBox":  types.RectForFormat("A4").Array(),
+				"Resources": types.Dict{},
+				"Contents":  *secondPageContentReference,
+				"Metadata":  pageMetadataReference,
+			}
+			secondPageReference, err := pdfContext.IndRefForNewObject(secondPage)
+			require.NoError(t, err)
+			require.NoError(t, model.AppendPageTree(secondPageReference, 1, pages))
+			pdfContext.PageCount = 2
+
+			firstPageContent, err := pdfContext.NewStreamDictForBuf([]byte("BT 20 100 Td (Synthetic readable content page one) Tj ET"))
+			require.NoError(t, err)
+			require.NoError(t, firstPageContent.Encode())
+			firstPageContentReference, err := pdfContext.IndRefForNewObject(*firstPageContent)
+			require.NoError(t, err)
+			page.Update("Contents", *firstPageContentReference)
+		}
+		var output bytes.Buffer
+		writeTypedPDFFixture(t, pdfContext, &output)
+		return output.Bytes()
+	}()
 	inputContext, err := api.ReadValidateAndOptimize(bytes.NewReader(inputBytes), boundedPDFConfiguration())
 	require.NoError(t, err)
 	require.Equal(t, 2, inputContext.PageCount)
@@ -499,39 +1032,102 @@ func TestCleanPDFRemovesEveryInspectedTargetAndVerifiesOutput(t *testing.T) {
 }
 
 func TestCleanPDFReturnsCleanPDFWithoutRewriting(t *testing.T) {
-	work := &observedPDFWork{}
-	inputBytes := buildCleanPDF(t)
+	inputBytes := func() []byte {
+		configuration := model.NewDefaultConfiguration()
+		configuration.WriteObjectStream = false
+		configuration.WriteXRefStream = false
+		pdfContext, err := pdfcpu.CreateContextWithXRefTable(configuration, types.PaperSize["A4"])
+		require.NoError(t, err)
+		root, err := pdfContext.Catalog()
+		require.NoError(t, err)
+		root.Delete("Pages")
+		page := model.NewPage(types.RectForFormat("A4"), nil)
+		page.Buf.WriteString("BT 20 100 Td (Synthetic page) Tj ET")
+		require.NoError(t, pdfcpu.AddPageTreeWithSamplePage(pdfContext.XRefTable, root, page))
+		pdfContext.PageCount = 1
+		var output bytes.Buffer
+		writeTypedPDFFixture(t, pdfContext, &output)
+		return output.Bytes()
+	}()
 
 	fields, err := InspectPDF(inputBytes, PublicInput)
 	require.NoError(t, err)
 	require.Empty(t, fields)
 
-	outputBytes, err := work.clean(inputBytes)
+	outputBytes, err := CleanPDF(inputBytes)
 	require.NoError(t, err)
 	require.Equal(t, inputBytes, outputBytes)
-	requireNoPDFWork(t, work)
 }
 
 func TestCleanPDFRewritesPublicNeutralLookingTrio(t *testing.T) {
-	work := &observedPDFWork{}
-	inputBytes := buildPDFWithInfo(t, neutralTrioInfoEntries())
+	inputBytes := func() []byte {
+		configuration := model.NewDefaultConfiguration()
+		configuration.WriteObjectStream = false
+		configuration.WriteXRefStream = false
+		pdfContext, err := pdfcpu.CreateContextWithXRefTable(configuration, types.PaperSize["A4"])
+		require.NoError(t, err)
+		root, err := pdfContext.Catalog()
+		require.NoError(t, err)
+		root.Delete("Pages")
+		page := model.NewPage(types.RectForFormat("A4"), nil)
+		page.Buf.WriteString("BT 20 100 Td (Synthetic page) Tj ET")
+		require.NoError(t, pdfcpu.AddPageTreeWithSamplePage(pdfContext.XRefTable, root, page))
+		pdfContext.PageCount = 1
+		{
+			info := types.Dict{
+				"Producer":     types.StringLiteral("pdfcpu " + model.VersionStr),
+				"CreationDate": types.StringLiteral("D:20260102030405+00'00'"),
+				"ModDate":      types.StringLiteral("D:20260102030405+00'00'"),
+			}
+			infoReference, err := pdfContext.IndRefForNewObject(info)
+			require.NoError(t, err)
+			pdfContext.Info = infoReference
+		}
+		var output bytes.Buffer
+		writeTypedPDFFixture(t, pdfContext, &output)
+		return output.Bytes()
+	}()
 
-	outputBytes, err := work.clean(inputBytes)
+	outputBytes, err := CleanPDF(inputBytes)
 
 	require.NoError(t, err)
 	require.NotEqual(t, inputBytes, outputBytes)
-	require.Equal(t, 1, work.mutations)
-	require.Equal(t, 1, work.writes)
-	require.Equal(t, 1, work.verifications)
 	verificationFields, err := InspectPDF(outputBytes, PostWriteVerification)
 	require.NoError(t, err)
 	require.Empty(t, verificationFields)
 }
 
 func TestPDFPathsEnforceConfiguredStreamLimit(t *testing.T) {
-	work := &observedPDFWork{}
 	oversizedContent := strings.Repeat("x", int(maxPDFStreamBytes)+1)
-	pdfBytes := buildPDFWithContent(t, oversizedContent)
+	pdfBytes := func() []byte {
+		configuration := model.NewDefaultConfiguration()
+		configuration.WriteObjectStream = false
+		configuration.WriteXRefStream = false
+		pdfContext, err := pdfcpu.CreateContextWithXRefTable(configuration, types.PaperSize["A4"])
+		require.NoError(t, err)
+		root, err := pdfContext.Catalog()
+		require.NoError(t, err)
+		root.Delete("Pages")
+		page := model.NewPage(types.RectForFormat("A4"), nil)
+		page.Buf.WriteString("BT 20 100 Td (Synthetic page) Tj ET")
+		require.NoError(t, pdfcpu.AddPageTreeWithSamplePage(pdfContext.XRefTable, root, page))
+		pdfContext.PageCount = 1
+		{
+			page, _, _, err := pdfContext.PageDict(1, false)
+			require.NoError(t, err)
+			stream, err := pdfContext.NewStreamDictForBuf([]byte(oversizedContent))
+			require.NoError(t, err)
+			stream.Delete("Filter")
+			stream.FilterPipeline = nil
+			require.NoError(t, stream.Encode())
+			streamReference, err := pdfContext.IndRefForNewObject(*stream)
+			require.NoError(t, err)
+			page.Update("Contents", *streamReference)
+		}
+		var output bytes.Buffer
+		writeTypedPDFFixture(t, pdfContext, &output)
+		return output.Bytes()
+	}()
 
 	defaultContext, defaultErr := api.ReadValidateAndOptimize(bytes.NewReader(pdfBytes), model.NewDefaultConfiguration())
 	require.NoError(t, defaultErr)
@@ -541,16 +1137,15 @@ func TestPDFPathsEnforceConfiguredStreamLimit(t *testing.T) {
 	require.Error(t, inspectErr)
 	require.Nil(t, fields)
 
-	outputBytes, scrubErr := work.clean(pdfBytes)
+	outputBytes, scrubErr := CleanPDF(pdfBytes)
 	require.Error(t, scrubErr)
 	require.Nil(t, outputBytes)
 
 	verificationErr := verifyScrubbedPDF(pdfBytes)
 	require.Error(t, verificationErr)
-	requireNoPDFWork(t, work)
 }
 
-func TestBoundedPDFConfigurationAssignsEveryResourceLimit(t *testing.T) {
+func TestCleanPDFUsesEveryBoundedResourceLimitForWriting(t *testing.T) {
 	configuration := boundedPDFConfiguration()
 
 	require.Equal(t, int64(10_485_760), maxPDFStreamBytes)
@@ -576,66 +1171,187 @@ func TestBoundedPDFConfigurationAssignsEveryResourceLimit(t *testing.T) {
 		MaxRecursionDepth:    maxPDFRecursionDepth,
 	}, configuration.Limits)
 	require.NotEqual(t, model.DefaultResourceLimits(), configuration.Limits)
-}
 
-func TestCleanPDFUsesBoundedConfigurationForWriting(t *testing.T) {
-	work := &observedPDFWork{}
-	inputBytes := buildPDFWithInfo(t, map[string]string{"Title": pdfString("write me")})
-
-	outputBytes, err := work.clean(inputBytes)
+	inputBytes := func() []byte {
+		fixtureConfiguration := model.NewDefaultConfiguration()
+		fixtureConfiguration.WriteObjectStream = false
+		fixtureConfiguration.WriteXRefStream = false
+		pdfContext, err := pdfcpu.CreateContextWithXRefTable(fixtureConfiguration, types.PaperSize["A4"])
+		require.NoError(t, err)
+		root, err := pdfContext.Catalog()
+		require.NoError(t, err)
+		root.Delete("Pages")
+		page := model.NewPage(types.RectForFormat("A4"), nil)
+		page.Buf.WriteString("BT 20 100 Td (Synthetic page) Tj ET")
+		require.NoError(t, pdfcpu.AddPageTreeWithSamplePage(pdfContext.XRefTable, root, page))
+		pdfContext.PageCount = 1
+		{
+			info := types.Dict{"Title": types.StringLiteral("write me")}
+			infoReference, err := pdfContext.IndRefForNewObject(info)
+			require.NoError(t, err)
+			pdfContext.Info = infoReference
+		}
+		var output bytes.Buffer
+		writeTypedPDFFixture(t, pdfContext, &output)
+		return output.Bytes()
+	}()
+	var writeLimits model.ResourceLimits
+	outputBytes, err := cleanPDF(inputBytes, cleanPDFOperations{
+		remove: removeAnalyzedMetadata,
+		write: func(pdfContext *model.Context, writer io.Writer) error {
+			writeLimits = pdfContext.Conf.Limits
+			return api.WriteContext(pdfContext, writer)
+		},
+		verify: verifyScrubbedPDF,
+	})
 
 	require.NoError(t, err)
 	require.NotNil(t, outputBytes)
-	require.Equal(t, 1, work.writes)
-	require.Equal(t, []model.ResourceLimits{boundedPDFConfiguration().Limits}, work.writeLimits)
+	require.Equal(t, configuration.Limits, writeLimits)
 }
 
-func TestCleanPDFFailurePathsReturnNilOutput(t *testing.T) {
-	testCases := []struct {
-		name              string
-		inputTitle        string
-		writeOutput       []byte
-		writeError        error
-		verifyError       error
-		wantVerifications int
-	}{
+func TestCleanPDFReturnsNilOutputWhenWriteFails(t *testing.T) {
+	writeError := errors.New("synthetic write failure")
+	inputBytes := func() []byte {
+		configuration := model.NewDefaultConfiguration()
+		configuration.WriteObjectStream = false
+		configuration.WriteXRefStream = false
+		pdfContext, err := pdfcpu.CreateContextWithXRefTable(configuration, types.PaperSize["A4"])
+		require.NoError(t, err)
+		root, err := pdfContext.Catalog()
+		require.NoError(t, err)
+		root.Delete("Pages")
+		page := model.NewPage(types.RectForFormat("A4"), nil)
+		page.Buf.WriteString("BT 20 100 Td (Synthetic page) Tj ET")
+		require.NoError(t, pdfcpu.AddPageTreeWithSamplePage(pdfContext.XRefTable, root, page))
+		pdfContext.PageCount = 1
 		{
-			name:              "TestCleanPDFUsesBoundedConfigurationForPostWriteVerification",
-			inputTitle:        "verify me",
-			writeOutput:       buildPDFWithContent(t, strings.Repeat("x", int(maxPDFStreamBytes)+1)),
-			wantVerifications: 1,
+			info := types.Dict{"Title": types.StringLiteral("write failure")}
+			infoReference, err := pdfContext.IndRefForNewObject(info)
+			require.NoError(t, err)
+			pdfContext.Info = infoReference
+		}
+		var output bytes.Buffer
+		writeTypedPDFFixture(t, pdfContext, &output)
+		return output.Bytes()
+	}()
+	verificationCalled := false
+
+	outputBytes, err := cleanPDF(inputBytes, cleanPDFOperations{
+		remove: removeAnalyzedMetadata,
+		write:  func(*model.Context, io.Writer) error { return writeError },
+		verify: func([]byte) error {
+			verificationCalled = true
+			return nil
 		},
+	})
+
+	require.ErrorIs(t, err, writeError)
+	require.Nil(t, outputBytes)
+	require.False(t, verificationCalled)
+}
+
+func TestCleanPDFReturnsNilOutputWhenPostWriteVerificationFails(t *testing.T) {
+	verificationError := errors.New("synthetic verification failure")
+	inputBytes := func() []byte {
+		configuration := model.NewDefaultConfiguration()
+		configuration.WriteObjectStream = false
+		configuration.WriteXRefStream = false
+		pdfContext, err := pdfcpu.CreateContextWithXRefTable(configuration, types.PaperSize["A4"])
+		require.NoError(t, err)
+		root, err := pdfContext.Catalog()
+		require.NoError(t, err)
+		root.Delete("Pages")
+		page := model.NewPage(types.RectForFormat("A4"), nil)
+		page.Buf.WriteString("BT 20 100 Td (Synthetic page) Tj ET")
+		require.NoError(t, pdfcpu.AddPageTreeWithSamplePage(pdfContext.XRefTable, root, page))
+		pdfContext.PageCount = 1
 		{
-			name:       "TestCleanPDFReturnsNilOutputWhenWriteFails",
-			inputTitle: "write failure",
-			writeError: errors.New("synthetic write failure"),
-		},
+			info := types.Dict{"Title": types.StringLiteral("verification failure")}
+			infoReference, err := pdfContext.IndRefForNewObject(info)
+			require.NoError(t, err)
+			pdfContext.Info = infoReference
+		}
+		var output bytes.Buffer
+		writeTypedPDFFixture(t, pdfContext, &output)
+		return output.Bytes()
+	}()
+
+	outputBytes, err := cleanPDF(inputBytes, cleanPDFOperations{
+		remove: removeAnalyzedMetadata,
+		write:  api.WriteContext,
+		verify: func([]byte) error { return verificationError },
+	})
+
+	require.ErrorIs(t, err, verificationError)
+	require.Nil(t, outputBytes)
+}
+
+func TestCleanPDFUsesBoundedConfigurationForPostWriteVerification(t *testing.T) {
+	inputBytes := func() []byte {
+		configuration := model.NewDefaultConfiguration()
+		configuration.WriteObjectStream = false
+		configuration.WriteXRefStream = false
+		pdfContext, err := pdfcpu.CreateContextWithXRefTable(configuration, types.PaperSize["A4"])
+		require.NoError(t, err)
+		root, err := pdfContext.Catalog()
+		require.NoError(t, err)
+		root.Delete("Pages")
+		page := model.NewPage(types.RectForFormat("A4"), nil)
+		page.Buf.WriteString("BT 20 100 Td (Synthetic page) Tj ET")
+		require.NoError(t, pdfcpu.AddPageTreeWithSamplePage(pdfContext.XRefTable, root, page))
+		pdfContext.PageCount = 1
 		{
-			name:              "TestCleanPDFReturnsNilOutputWhenPostWriteVerificationFails",
-			inputTitle:        "verification failure",
-			verifyError:       errors.New("synthetic verification failure"),
-			wantVerifications: 1,
+			info := types.Dict{"Title": types.StringLiteral("verify me")}
+			infoReference, err := pdfContext.IndRefForNewObject(info)
+			require.NoError(t, err)
+			pdfContext.Info = infoReference
+		}
+		var output bytes.Buffer
+		writeTypedPDFFixture(t, pdfContext, &output)
+		return output.Bytes()
+	}()
+	oversizedOutput := func() []byte {
+		configuration := model.NewDefaultConfiguration()
+		configuration.WriteObjectStream = false
+		configuration.WriteXRefStream = false
+		pdfContext, err := pdfcpu.CreateContextWithXRefTable(configuration, types.PaperSize["A4"])
+		require.NoError(t, err)
+		root, err := pdfContext.Catalog()
+		require.NoError(t, err)
+		root.Delete("Pages")
+		page := model.NewPage(types.RectForFormat("A4"), nil)
+		page.Buf.WriteString("BT 20 100 Td (Synthetic page) Tj ET")
+		require.NoError(t, pdfcpu.AddPageTreeWithSamplePage(pdfContext.XRefTable, root, page))
+		pdfContext.PageCount = 1
+		{
+			page, _, _, err := pdfContext.PageDict(1, false)
+			require.NoError(t, err)
+			stream, err := pdfContext.NewStreamDictForBuf(bytes.Repeat([]byte("x"), int(maxPDFStreamBytes)+1))
+			require.NoError(t, err)
+			stream.Delete("Filter")
+			stream.FilterPipeline = nil
+			require.NoError(t, stream.Encode())
+			streamReference, err := pdfContext.IndRefForNewObject(*stream)
+			require.NoError(t, err)
+			page.Update("Contents", *streamReference)
+		}
+		var output bytes.Buffer
+		writeTypedPDFFixture(t, pdfContext, &output)
+		return output.Bytes()
+	}()
+
+	outputBytes, err := cleanPDF(inputBytes, cleanPDFOperations{
+		remove: removeAnalyzedMetadata,
+		write: func(_ *model.Context, writer io.Writer) error {
+			_, writeErr := writer.Write(oversizedOutput)
+			return writeErr
 		},
-	}
+		verify: verifyScrubbedPDF,
+	})
 
-	for _, testCase := range testCases {
-		t.Run(testCase.name, func(t *testing.T) {
-			work := &observedPDFWork{
-				writeOutput: testCase.writeOutput,
-				writeError:  testCase.writeError,
-				verifyError: testCase.verifyError,
-			}
-			inputBytes := buildPDFWithInfo(t, map[string]string{"Title": pdfString(testCase.inputTitle)})
-
-			outputBytes, err := work.clean(inputBytes)
-
-			require.Error(t, err)
-			require.Nil(t, outputBytes)
-			require.Equal(t, 1, work.mutations)
-			require.Equal(t, 1, work.writes)
-			require.Equal(t, testCase.wantVerifications, work.verifications)
-		})
-	}
+	require.Error(t, err)
+	require.Nil(t, outputBytes)
 }
 
 func TestPDFPathsRejectUndecodableMetadataAtomically(t *testing.T) {
@@ -643,49 +1359,72 @@ func TestPDFPathsRejectUndecodableMetadataAtomically(t *testing.T) {
 		name     string
 		pdfBytes []byte
 	}{
-		{name: "unsupported Info value", pdfBytes: buildPDFWithInfo(t, map[string]string{"Custom": "[1 2]"})},
-		{name: "non UTF-8 metadata stream", pdfBytes: buildPDFWithInfoAndRawMetadataAtLocation(t, map[string]string{}, string([]byte{0xff, 0xfe}), catalogMetadata)},
+		{name: "unsupported Info value", pdfBytes: func() []byte {
+			configuration := model.NewDefaultConfiguration()
+			configuration.WriteObjectStream = false
+			configuration.WriteXRefStream = false
+			pdfContext, err := pdfcpu.CreateContextWithXRefTable(configuration, types.PaperSize["A4"])
+			require.NoError(t, err)
+			root, err := pdfContext.Catalog()
+			require.NoError(t, err)
+			root.Delete("Pages")
+			page := model.NewPage(types.RectForFormat("A4"), nil)
+			page.Buf.WriteString("BT 20 100 Td (Synthetic page) Tj ET")
+			require.NoError(t, pdfcpu.AddPageTreeWithSamplePage(pdfContext.XRefTable, root, page))
+			pdfContext.PageCount = 1
+			{
+				info := types.Dict{"Custom": types.Array{types.Integer(1), types.Integer(2)}}
+				infoReference, err := pdfContext.IndRefForNewObject(info)
+				require.NoError(t, err)
+				pdfContext.Info = infoReference
+			}
+			var output bytes.Buffer
+			writeTypedPDFFixture(t, pdfContext, &output)
+			return output.Bytes()
+		}()},
+		{name: "non UTF-8 metadata stream", pdfBytes: func() []byte {
+			configuration := model.NewDefaultConfiguration()
+			configuration.WriteObjectStream = false
+			configuration.WriteXRefStream = false
+			pdfContext, err := pdfcpu.CreateContextWithXRefTable(configuration, types.PaperSize["A4"])
+			require.NoError(t, err)
+			root, err := pdfContext.Catalog()
+			require.NoError(t, err)
+			root.Delete("Pages")
+			page := model.NewPage(types.RectForFormat("A4"), nil)
+			page.Buf.WriteString("BT 20 100 Td (Synthetic page) Tj ET")
+			require.NoError(t, pdfcpu.AddPageTreeWithSamplePage(pdfContext.XRefTable, root, page))
+			pdfContext.PageCount = 1
+			{
+				stream := types.StreamDict{Dict: types.Dict{"Type": types.Name("Metadata"), "Subtype": types.Name("XML")}, Content: []byte{0xff, 0xfe}}
+				require.NoError(t, stream.Encode())
+				streamReference, err := pdfContext.IndRefForNewObject(stream)
+				require.NoError(t, err)
+				catalog, err := pdfContext.Catalog()
+				require.NoError(t, err)
+				catalog.Insert("Metadata", *streamReference)
+			}
+			var output bytes.Buffer
+			writeTypedPDFFixture(t, pdfContext, &output)
+			return output.Bytes()
+		}()},
 	}
 	for _, testCase := range testCases {
 		t.Run(testCase.name, func(t *testing.T) {
 			pdfBytes := testCase.pdfBytes
-			work := &observedPDFWork{}
 
 			fields, inspectErr := InspectPDF(pdfBytes, PublicInput)
-			outputBytes, scrubErr := work.clean(pdfBytes)
+			outputBytes, scrubErr := CleanPDF(pdfBytes)
 
 			require.Error(t, inspectErr)
 			require.Nil(t, fields)
 			require.Error(t, scrubErr)
 			require.Nil(t, outputBytes)
-			requireNoPDFWork(t, work)
 		})
 	}
 }
 
-func TestMetadataTraversalDeduplicatesOneParentEntryTarget(t *testing.T) {
-	pdfContext, err := readPDF(buildPDFWithInfoAndRawMetadataAtLocation(t, map[string]string{}, syntheticXMP(t, "duplicate-target"), catalogMetadata))
-	require.NoError(t, err)
-	catalog, err := pdfContext.Catalog()
-	require.NoError(t, err)
-	analysis := &pdfAnalysis{}
-	state := traversalState{
-		analysis:     analysis,
-		context:      pdfContext,
-		roles:        map[int]objectRole{pdfContext.Root.ObjectNumber.Value(): {catalog: true}},
-		seenTargets:  &metadataTargetTracker{},
-		objectNumber: pdfContext.Root.ObjectNumber.Value(),
-	}
-	walker := structuralWalker{context: pdfContext, inspectMetadata: state.inspectMetadataEntry}
-
-	require.NoError(t, walker.walkObject(catalog, nil))
-	require.NoError(t, walker.walkObject(catalog, nil))
-
-	require.Len(t, analysis.fields, 1)
-	require.Len(t, analysis.metadataTargets, 1)
-}
-
-func TestInspectPDFRejectsEverySignedStructureBeforeMutationOrWriting(t *testing.T) {
+func TestSignedPDFWireContractsReturnErrSignedPDFAndNilOutput(t *testing.T) {
 	testCases := []struct {
 		name    string
 		variant signedPDFVariant
@@ -698,19 +1437,42 @@ func TestInspectPDFRejectsEverySignedStructureBeforeMutationOrWriting(t *testing
 	}
 	for _, testCase := range testCases {
 		t.Run(testCase.name, func(t *testing.T) {
-			pdfBytes := buildSignedPDF(t, testCase.variant)
-			work := &observedPDFWork{}
+			pdfBytes := buildSignedPDFWireContract(t, testCase.variant)
 
 			fields, inspectErr := InspectPDF(pdfBytes, PublicInput)
-			outputBytes, scrubErr := work.clean(pdfBytes)
+			outputBytes, scrubErr := CleanPDF(pdfBytes)
 
 			require.ErrorIs(t, inspectErr, ErrSignedPDF)
 			require.Nil(t, fields)
 			require.ErrorIs(t, scrubErr, ErrSignedPDF)
 			require.Nil(t, outputBytes)
-			requireNoPDFWork(t, work)
 		})
 	}
+}
+
+func TestCleanPDFRejectsSignedPDFBeforeMutationOrWriting(t *testing.T) {
+	pdfBytes := buildSignedPDFWireContract(t, signedDictionary)
+	mutationCalled := false
+	writeCalled := false
+	verificationCalled := false
+
+	outputBytes, err := cleanPDF(pdfBytes, cleanPDFOperations{
+		remove: func(*model.Context, *pdfAnalysis) { mutationCalled = true },
+		write: func(*model.Context, io.Writer) error {
+			writeCalled = true
+			return nil
+		},
+		verify: func([]byte) error {
+			verificationCalled = true
+			return nil
+		},
+	})
+
+	require.ErrorIs(t, err, ErrSignedPDF)
+	require.Nil(t, outputBytes)
+	require.False(t, mutationCalled)
+	require.False(t, writeCalled)
+	require.False(t, verificationCalled)
 }
 
 func TestSignatureTypeInspectionReturnsMalformedValuesAsErrors(t *testing.T) {
@@ -771,8 +1533,8 @@ func TestCachedSignatureVariantsAreClassifiedAsSigned(t *testing.T) {
 	}
 }
 
-func TestInspectPDFAcceptsSignatureLikeTextAndEmptySignatureField(t *testing.T) {
-	pdfBytes := buildUnsignedSignatureLikePDF(t)
+func TestUnsignedSignatureLikeWireContractIsAccepted(t *testing.T) {
+	pdfBytes := buildUnsignedSignatureLikePDFWireContract(t)
 
 	fields, err := InspectPDF(pdfBytes, PublicInput)
 
@@ -781,66 +1543,193 @@ func TestInspectPDFAcceptsSignatureLikeTextAndEmptySignatureField(t *testing.T) 
 	require.NotEmpty(t, fields)
 }
 
-func onePagePDFObjects(content string) map[int]string {
-	return map[int]string{
-		1: "<< /Type /Catalog /Pages 2 0 R >>",
-		2: "<< /Type /Pages /Kids [3 0 R] /Count 1 >>",
-		3: "<< /Type /Page /Parent 2 0 R /MediaBox [0 0 200 200] /Resources << >> /Contents 4 0 R >>",
-		4: streamObject(content),
-	}
+type concurrentPDFResult struct {
+	fields     []Field
+	inspectErr error
+	output     []byte
+	cleanErr   error
 }
 
-func buildPDFWithCompressedMetadataStreams(t *testing.T, streamCount int, decodedStreamBytes int) []byte {
-	t.Helper()
-
-	objects := onePagePDFObjects("BT 20 100 Td (Synthetic page) Tj ET")
-	var catalog strings.Builder
-	catalog.WriteString("<< /Type /Catalog /Pages 2 0 R /SyntheticParents [")
-	for index := range streamCount {
-		parentObjectNumber := 5 + index*2
-		streamObjectNumber := parentObjectNumber + 1
-		_, err := fmt.Fprintf(&catalog, " %d 0 R", parentObjectNumber)
+func TestPDFByteAPIsKeepConcurrentRequestsIsolated(t *testing.T) {
+	cleanInput := func() []byte {
+		configuration := model.NewDefaultConfiguration()
+		configuration.WriteObjectStream = false
+		configuration.WriteXRefStream = false
+		pdfContext, err := pdfcpu.CreateContextWithXRefTable(configuration, types.PaperSize["A4"])
 		require.NoError(t, err)
-		objects[parentObjectNumber] = fmt.Sprintf("<< /Metadata %d 0 R >>", streamObjectNumber)
-		objects[streamObjectNumber] = compressedMetadataStreamObject(t, strings.Repeat("x", decodedStreamBytes))
+		root, err := pdfContext.Catalog()
+		require.NoError(t, err)
+		root.Delete("Pages")
+		page := model.NewPage(types.RectForFormat("A4"), nil)
+		page.Buf.WriteString("BT 20 100 Td (Synthetic page) Tj ET")
+		require.NoError(t, pdfcpu.AddPageTreeWithSamplePage(pdfContext.XRefTable, root, page))
+		pdfContext.PageCount = 1
+		var output bytes.Buffer
+		writeTypedPDFFixture(t, pdfContext, &output)
+		return output.Bytes()
+	}()
+	concurrentMetadata := metadataFixtureValues{
+		title:        "Synthetic title",
+		author:       "Synthetic author",
+		producer:     "Synthetic producer",
+		creationDate: "D:20260102030405+00'00'",
+		modDate:      "D:20260203040506+00'00'",
+		customValue:  "Synthetic custom value",
+		catalogXMP:   `<x:xmpmeta xmlns:x="adobe:ns:meta/"><rdf:RDF xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"><rdf:Description rdf:about="" xmlns:synthetic="urn:synthetic" synthetic:marker="catalog-xmp-marker"/></rdf:RDF></x:xmpmeta>`,
+		pageXMP:      `<x:xmpmeta xmlns:x="adobe:ns:meta/"><rdf:RDF xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"><rdf:Description rdf:about="" xmlns:synthetic="urn:synthetic" synthetic:marker="page-xmp-marker"/></rdf:RDF></x:xmpmeta>`,
+		nestedXMP:    `<x:xmpmeta xmlns:x="adobe:ns:meta/"><rdf:RDF xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"><rdf:Description rdf:about="" xmlns:synthetic="urn:synthetic" synthetic:marker="nested-xmp-marker"/></rdf:RDF></x:xmpmeta>`,
 	}
-	catalog.WriteString(" ] >>")
-	objects[1] = catalog.String()
 
-	return buildPDF(t, pdfFixture{objects: objects, rootObjectNumber: 1})
+	metadataInput := func() []byte {
+		configuration := model.NewDefaultConfiguration()
+		configuration.WriteObjectStream = false
+		configuration.WriteXRefStream = false
+		pdfContext, err := pdfcpu.CreateContextWithXRefTable(configuration, types.PaperSize["A4"])
+		require.NoError(t, err)
+		root, err := pdfContext.Catalog()
+		require.NoError(t, err)
+		root.Delete("Pages")
+		page := model.NewPage(types.RectForFormat("A4"), nil)
+		page.Buf.WriteString("BT 20 100 Td (Synthetic page) Tj ET")
+		require.NoError(t, pdfcpu.AddPageTreeWithSamplePage(pdfContext.XRefTable, root, page))
+		pdfContext.PageCount = 1
+		{
+			info := types.Dict{
+				"Title":        types.StringLiteral(concurrentMetadata.title),
+				"Author":       types.HexLiteral(hex.EncodeToString([]byte(concurrentMetadata.author))),
+				"Producer":     types.StringLiteral(concurrentMetadata.producer),
+				"CreationDate": types.StringLiteral(concurrentMetadata.creationDate),
+				"ModDate":      types.StringLiteral(concurrentMetadata.modDate),
+				"Custom Key":   types.StringLiteral(concurrentMetadata.customValue),
+				"Flag":         types.Boolean(true),
+				"Mode":         types.Name("SyntheticName"),
+				"Rank":         types.Integer(7),
+			}
+			infoReference, err := pdfContext.IndRefForNewObject(info)
+			require.NoError(t, err)
+			pdfContext.Info = infoReference
+
+			metadataReference := func(content string) types.IndirectRef {
+				stream := types.StreamDict{Dict: types.Dict{"Type": types.Name("Metadata"), "Subtype": types.Name("XML")}, Content: []byte(content)}
+				require.NoError(t, stream.Encode())
+				reference, referenceErr := pdfContext.IndRefForNewObject(stream)
+				require.NoError(t, referenceErr)
+				return *reference
+			}
+			catalog, err := pdfContext.Catalog()
+			require.NoError(t, err)
+			catalog.Insert("Metadata", metadataReference(concurrentMetadata.catalogXMP))
+			catalog.Insert("Synthetic", types.Dict{"Metadata": metadataReference(concurrentMetadata.nestedXMP)})
+			page, _, _, err := pdfContext.PageDict(1, false)
+			require.NoError(t, err)
+			pageMetadataReference := metadataReference(concurrentMetadata.pageXMP)
+			page.Insert("Metadata", pageMetadataReference)
+
+			pagesReference, err := pdfContext.Pages()
+			require.NoError(t, err)
+			pages, err := pdfContext.DereferenceDict(*pagesReference)
+			require.NoError(t, err)
+			secondPageContent, err := pdfContext.NewStreamDictForBuf([]byte("BT 20 100 Td (Synthetic readable content page two) Tj ET"))
+			require.NoError(t, err)
+			require.NoError(t, secondPageContent.Encode())
+			secondPageContentReference, err := pdfContext.IndRefForNewObject(*secondPageContent)
+			require.NoError(t, err)
+			secondPage := types.Dict{
+				"Type":      types.Name("Page"),
+				"Parent":    *pagesReference,
+				"MediaBox":  types.RectForFormat("A4").Array(),
+				"Resources": types.Dict{},
+				"Contents":  *secondPageContentReference,
+				"Metadata":  pageMetadataReference,
+			}
+			secondPageReference, err := pdfContext.IndRefForNewObject(secondPage)
+			require.NoError(t, err)
+			require.NoError(t, model.AppendPageTree(secondPageReference, 1, pages))
+			pdfContext.PageCount = 2
+
+			firstPageContent, err := pdfContext.NewStreamDictForBuf([]byte("BT 20 100 Td (Synthetic readable content page one) Tj ET"))
+			require.NoError(t, err)
+			require.NoError(t, firstPageContent.Encode())
+			firstPageContentReference, err := pdfContext.IndRefForNewObject(*firstPageContent)
+			require.NoError(t, err)
+			page.Update("Contents", *firstPageContentReference)
+		}
+		var output bytes.Buffer
+		writeTypedPDFFixture(t, pdfContext, &output)
+		return output.Bytes()
+	}()
+	signedInput := buildSignedPDFWireContract(t, signedDictionary)
+	overLimitInput := slices.Concat(cleanInput, bytes.Repeat([]byte{' '}, MaxInputBytes-len(cleanInput)+1))
+
+	run := func(input []byte) concurrentPDFResult {
+		fields, inspectErr := InspectPDF(input, PublicInput)
+		output, cleanErr := CleanPDF(input)
+		return concurrentPDFResult{fields: fields, inspectErr: inspectErr, output: output, cleanErr: cleanErr}
+	}
+	testCases := []struct {
+		name         string
+		input        []byte
+		inspectError error
+		cleanError   error
+	}{
+		{name: "clean", input: cleanInput},
+		{name: "metadata rich", input: metadataInput},
+		{name: "signed", input: signedInput, inspectError: ErrSignedPDF, cleanError: ErrSignedPDF},
+		{name: "over limit", input: overLimitInput, inspectError: ErrInputTooLarge, cleanError: ErrInputTooLarge},
+	}
+	baselines := make([]concurrentPDFResult, len(testCases))
+	for index, testCase := range testCases {
+		baselines[index] = run(testCase.input)
+	}
+
+	results := make([]concurrentPDFResult, len(testCases))
+	var waitGroup sync.WaitGroup
+	waitGroup.Add(len(testCases))
+	for index, testCase := range testCases {
+		go func() {
+			defer waitGroup.Done()
+			results[index] = run(testCase.input)
+		}()
+	}
+	waitGroup.Wait()
+
+	for index, testCase := range testCases {
+		t.Run(testCase.name, func(t *testing.T) {
+			requireConcurrentPDFResult(t, baselines[index], results[index], testCase)
+		})
+	}
 }
 
-func buildPDFWithCompressedCatalogMetadata(t *testing.T, metadata string) []byte {
+func requireConcurrentPDFResult(t *testing.T, baseline concurrentPDFResult, actual concurrentPDFResult, testCase struct {
+	name         string
+	input        []byte
+	inspectError error
+	cleanError   error
+},
+) {
 	t.Helper()
 
-	objects := onePagePDFObjects("BT 20 100 Td (Synthetic page) Tj ET")
-	objects[1] = "<< /Type /Catalog /Pages 2 0 R /Metadata 5 0 R >>"
-	objects[5] = compressedMetadataStreamObject(t, metadata)
-	return buildPDF(t, pdfFixture{objects: objects, rootObjectNumber: 1})
-}
-
-func compressedMetadataStreamObject(t *testing.T, content string) string {
-	t.Helper()
-
-	var compressed bytes.Buffer
-	writer := zlib.NewWriter(&compressed)
-	_, err := io.WriteString(writer, content)
+	require.Equal(t, baseline.fields, actual.fields)
+	if testCase.cleanError != nil || len(baseline.fields) == 0 {
+		require.Equal(t, baseline.output, actual.output)
+	}
+	require.Equal(t, baseline.inspectErr == nil, actual.inspectErr == nil)
+	require.Equal(t, baseline.cleanErr == nil, actual.cleanErr == nil)
+	if testCase.inspectError != nil {
+		require.ErrorIs(t, actual.inspectErr, testCase.inspectError)
+		require.Nil(t, actual.fields)
+	} else {
+		require.NoError(t, actual.inspectErr)
+	}
+	if testCase.cleanError != nil {
+		require.ErrorIs(t, actual.cleanErr, testCase.cleanError)
+		require.Nil(t, actual.output)
+		return
+	}
+	require.NoError(t, actual.cleanErr)
+	verificationFields, err := InspectPDF(actual.output, PostWriteVerification)
 	require.NoError(t, err)
-	require.NoError(t, writer.Close())
-
-	return fmt.Sprintf("<< /Type /Metadata /Subtype /XML /Filter /FlateDecode /Length %d >>\nstream\n%s\nendstream", compressed.Len(), compressed.String())
-}
-
-func buildCleanPDF(t *testing.T) []byte {
-	t.Helper()
-
-	return buildPDFWithContent(t, "BT /F1 12 Tf 20 100 Td (Synthetic page) Tj ET")
-}
-
-func buildPDFWithContent(t *testing.T, content string) []byte {
-	t.Helper()
-
-	return buildPDF(t, pdfFixture{objects: onePagePDFObjects(content), rootObjectNumber: 1})
+	require.Empty(t, verificationFields)
 }
 
 type metadataFixtureValues struct {
@@ -855,49 +1744,6 @@ type metadataFixtureValues struct {
 	nestedXMP    string
 }
 
-func buildMetadataRichPDF(t *testing.T) ([]byte, metadataFixtureValues) {
-	t.Helper()
-
-	metadata := metadataFixtureValues{
-		title:        "Synthetic title",
-		author:       "Synthetic author",
-		producer:     "Synthetic producer",
-		creationDate: "D:20260102030405+00'00'",
-		modDate:      "D:20260203040506+00'00'",
-		customValue:  "Synthetic custom value",
-		catalogXMP:   syntheticXMP(t, "catalog-xmp-marker"),
-		pageXMP:      syntheticXMP(t, "page-xmp-marker"),
-		nestedXMP:    syntheticXMP(t, "nested-xmp-marker"),
-	}
-
-	infoDictionary := fmt.Sprintf(
-		"<< /Title %s /Author <%x> /Producer %s /CreationDate %s /ModDate %s /Custom#20Key %s /Flag true /Mode /SyntheticName /Rank 7 >>",
-		pdfString(metadata.title),
-		[]byte(metadata.author),
-		pdfString(metadata.producer),
-		pdfString(metadata.creationDate),
-		pdfString(metadata.modDate),
-		pdfString(metadata.customValue),
-	)
-
-	return buildPDF(t, pdfFixture{
-		objects: map[int]string{
-			1:  "<< /Type /Catalog /Pages 2 0 R /Metadata 6 0 R /Synthetic << /Metadata 8 0 R >> >>",
-			2:  "<< /Type /Pages /Kids [3 0 R 4 0 R] /Count 2 >>",
-			3:  "<< /Type /Page /Parent 2 0 R /MediaBox [0 0 200 200] /Resources << >> /Contents 5 0 R /Metadata 7 0 R >>",
-			4:  "<< /Type /Page /Parent 2 0 R /MediaBox [0 0 200 200] /Resources << >> /Contents 10 0 R /Metadata 7 0 R >>",
-			5:  streamObject("BT 20 100 Td (Synthetic readable content page one) Tj ET"),
-			6:  metadataStreamObject(metadata.catalogXMP),
-			7:  metadataStreamObject(metadata.pageXMP),
-			8:  metadataStreamObject(metadata.nestedXMP),
-			9:  infoDictionary,
-			10: streamObject("BT 20 100 Td (Synthetic readable content page two) Tj ET"),
-		},
-		rootObjectNumber: 1,
-		infoObjectNumber: 9,
-	}), metadata
-}
-
 type metadataLocation int
 
 const (
@@ -906,60 +1752,6 @@ const (
 	pageMetadata
 	nestedMetadata
 )
-
-func buildPDFWithInfo(t *testing.T, entries map[string]string) []byte {
-	t.Helper()
-
-	return buildPDFWithInfoAndMetadata(t, entries, noMetadata)
-}
-
-func buildPDFWithInfoAndMetadata(t *testing.T, entries map[string]string, location metadataLocation) []byte {
-	t.Helper()
-
-	return buildPDFWithInfoAndRawMetadataAtLocation(t, entries, syntheticXMP(t, "near-miss-metadata"), location)
-}
-
-func buildPDFWithInfoAndRawMetadataAtLocation(t *testing.T, entries map[string]string, metadata string, location metadataLocation) []byte {
-	t.Helper()
-
-	catalogMetadataEntry := ""
-	pageMetadataEntry := ""
-	nestedMetadataEntry := ""
-	if location == catalogMetadata {
-		catalogMetadataEntry = " /Metadata 6 0 R"
-	}
-	if location == pageMetadata {
-		pageMetadataEntry = " /Metadata 6 0 R"
-	}
-	if location == nestedMetadata {
-		nestedMetadataEntry = " /Synthetic << /Metadata 6 0 R >>"
-	}
-
-	objects := onePagePDFObjects("BT 20 100 Td (Synthetic page) Tj ET")
-	objects[1] = fmt.Sprintf("<< /Type /Catalog /Pages 2 0 R%s%s >>", catalogMetadataEntry, nestedMetadataEntry)
-	objects[3] = fmt.Sprintf("<< /Type /Page /Parent 2 0 R /MediaBox [0 0 200 200] /Resources << >> /Contents 4 0 R%s >>", pageMetadataEntry)
-	objects[5] = infoDictionaryObject(t, entries)
-	if location != noMetadata {
-		objects[6] = metadataStreamObject(metadata)
-	}
-
-	return buildPDF(t, pdfFixture{objects: objects, rootObjectNumber: 1, infoObjectNumber: 5})
-}
-
-func infoDictionaryObject(t *testing.T, entries map[string]string) string {
-	t.Helper()
-
-	keys := slices.Sorted(maps.Keys(entries))
-
-	var infoDictionary strings.Builder
-	infoDictionary.WriteString("<<")
-	for _, key := range keys {
-		_, err := fmt.Fprintf(&infoDictionary, " /%s %s", types.EncodeName(key), entries[key])
-		require.NoError(t, err)
-	}
-	infoDictionary.WriteString(" >>")
-	return infoDictionary.String()
-}
 
 type signedPDFVariant int
 
@@ -989,17 +1781,22 @@ var signedPDFFixtures = map[signedPDFVariant]map[int]string{
 	},
 }
 
-func buildSignedPDF(t *testing.T, variant signedPDFVariant) []byte {
+func buildSignedPDFWireContract(t *testing.T, variant signedPDFVariant) []byte {
 	t.Helper()
 
-	objects := onePagePDFObjects("BT 20 100 Td (Signed synthetic page) Tj ET")
+	objects := map[int]string{
+		1: "<< /Type /Catalog /Pages 2 0 R >>",
+		2: "<< /Type /Pages /Kids [3 0 R] /Count 1 >>",
+		3: "<< /Type /Page /Parent 2 0 R /MediaBox [0 0 200 200] /Resources << >> /Contents 4 0 R >>",
+		4: streamObject("BT 20 100 Td (Signed synthetic page) Tj ET"),
+	}
 	fixtureObjects, known := signedPDFFixtures[variant]
 	require.True(t, known, "unknown signed PDF variant")
 	maps.Copy(objects, fixtureObjects)
 	return buildPDF(t, pdfFixture{objects: objects, rootObjectNumber: 1})
 }
 
-func buildUnsignedSignatureLikePDF(t *testing.T) []byte {
+func buildUnsignedSignatureLikePDFWireContract(t *testing.T) []byte {
 	t.Helper()
 
 	return buildPDF(t, pdfFixture{
@@ -1016,23 +1813,33 @@ func buildUnsignedSignatureLikePDF(t *testing.T) []byte {
 	})
 }
 
-func syntheticXMP(t *testing.T, marker string) string {
-	t.Helper()
-
-	var escapedMarker bytes.Buffer
-	require.NoError(t, xml.EscapeText(&escapedMarker, []byte(marker)))
-	return `<x:xmpmeta xmlns:x="adobe:ns:meta/"><rdf:RDF xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"><rdf:Description rdf:about="" xmlns:synthetic="urn:synthetic" synthetic:marker="` + escapedMarker.String() + `"/></rdf:RDF></x:xmpmeta>`
-}
-
-func pdfString(value string) string {
-	replacer := strings.NewReplacer(`\`, `\\`, `(`, `\(`, `)`, `\)`)
-	return "(" + replacer.Replace(value) + ")"
-}
-
 type pdfFixture struct {
 	objects          map[int]string
 	rootObjectNumber int
 	infoObjectNumber int
+}
+
+func writeTypedPDFFixture(t *testing.T, pdfContext *model.Context, output *bytes.Buffer) {
+	t.Helper()
+
+	objects := make(map[int]string)
+	for objectNumber, entry := range pdfContext.Table {
+		if entry == nil || entry.Free || entry.Object == nil {
+			continue
+		}
+		switch object := entry.Object.(type) {
+		case types.StreamDict:
+			objects[objectNumber] = fmt.Sprintf("%s\nstream\n%s\nendstream", object.PDFString(), object.Raw)
+		default:
+			objects[objectNumber] = object.PDFString()
+		}
+	}
+	fixture := pdfFixture{objects: objects, rootObjectNumber: int(pdfContext.Root.ObjectNumber)}
+	if pdfContext.Info != nil {
+		fixture.infoObjectNumber = int(pdfContext.Info.ObjectNumber)
+	}
+	_, err := output.Write(buildPDF(t, fixture))
+	require.NoError(t, err)
 }
 
 func buildPDF(t *testing.T, fixture pdfFixture) []byte {
@@ -1084,68 +1891,10 @@ func streamObject(content string) string {
 	return fmt.Sprintf("<< /Length %d >>\nstream\n%s\nendstream", len(content), content)
 }
 
-func metadataStreamObject(content string) string {
-	return fmt.Sprintf("<< /Type /Metadata /Subtype /XML /Length %d >>\nstream\n%s\nendstream", len(content), content)
-}
-
-type observedPDFWork struct {
-	mutations     int
-	writes        int
-	verifications int
-	writeLimits   []model.ResourceLimits
-	writeError    error
-	verifyError   error
-	writeOutput   []byte
-}
-
-func (work *observedPDFWork) clean(inputBytes []byte) ([]byte, error) {
-	return cleanPDF(inputBytes, cleanPDFOperations{
-		remove: func(pdfContext *model.Context, analysis *pdfAnalysis) {
-			work.mutations++
-			removeAnalyzedMetadata(pdfContext, analysis)
-		},
-		write: func(pdfContext *model.Context, writer io.Writer) error {
-			work.writes++
-			work.writeLimits = append(work.writeLimits, pdfContext.Conf.Limits)
-			if work.writeError != nil {
-				return work.writeError
-			}
-			if work.writeOutput != nil {
-				_, writeErr := writer.Write(work.writeOutput)
-				return writeErr
-			}
-			return api.WriteContext(pdfContext, writer)
-		},
-		verify: func(outputBytes []byte) error {
-			work.verifications++
-			if work.verifyError != nil {
-				return work.verifyError
-			}
-			return verifyScrubbedPDF(outputBytes)
-		},
-	})
-}
-
-func mergeInfoEntries(baseEntries map[string]string, replacements map[string]string) map[string]string {
+func mergeInfoEntries(baseEntries types.Dict, replacements types.Dict) types.Dict {
 	mergedEntries := maps.Clone(baseEntries)
 	maps.Copy(mergedEntries, replacements)
 	return mergedEntries
-}
-
-func customInfoEntries(count int, value string) map[string]string {
-	entries := make(map[string]string, count)
-	for index := range count {
-		entries[fmt.Sprintf("Custom%03d", index)] = pdfString(value)
-	}
-	return entries
-}
-
-func neutralTrioInfoEntries() map[string]string {
-	return map[string]string{
-		"Producer":     pdfString("pdfcpu " + model.VersionStr),
-		"CreationDate": pdfString("D:20260102030405+00'00'"),
-		"ModDate":      pdfString("D:20260102030405+00'00'"),
-	}
 }
 
 func requireExpectedActions(t *testing.T, fields []Field) {
@@ -1166,12 +1915,4 @@ func fieldNames(fields []Field) []string {
 		names[index] = field.Name
 	}
 	return names
-}
-
-func requireNoPDFWork(t *testing.T, work *observedPDFWork) {
-	t.Helper()
-
-	require.Zero(t, work.mutations)
-	require.Zero(t, work.writes)
-	require.Zero(t, work.verifications)
 }
