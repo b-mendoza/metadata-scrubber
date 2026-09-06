@@ -747,7 +747,12 @@ func TestR2ProductionRequestsHaveABoundedOverallDuration(t *testing.T) {
 func TestR2MapsProviderTimeoutsToDependencyFailures(t *testing.T) {
 	t.Parallel()
 
-	adapter := newTestR2FailingTransport(fmt.Errorf("transport stall: %w", context.DeadlineExceeded))
+	transportErr := fmt.Errorf("transport stall: %w", context.DeadlineExceeded)
+	adapter := newTestR2("https://endpoint-sentinel.invalid", &http.Client{Transport: roundTripFunc(
+		func(*http.Request) (*http.Response, error) {
+			return nil, transportErr
+		},
+	)})
 
 	_, err := adapter.DownloadSource(context.Background(), "file-identifier-sentinel", "")
 
@@ -872,14 +877,6 @@ func newTestR2StatusServer(t *testing.T, status int) *R2 {
 		_, err := io.WriteString(response, "provider-body-sentinel")
 		assert.NoError(t, err)
 	}))
-}
-
-func newTestR2FailingTransport(transportErr error) *R2 {
-	return newTestR2("https://endpoint-sentinel.invalid", &http.Client{Transport: roundTripFunc(
-		func(*http.Request) (*http.Response, error) {
-			return nil, transportErr
-		},
-	)})
 }
 
 func newTestR2(endpoint string, httpClient *http.Client) *R2 {
