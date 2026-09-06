@@ -13,6 +13,7 @@ import (
 	"strings"
 	"sync/atomic"
 	"testing"
+	"testing/iotest"
 	"time"
 
 	"github.com/aws/aws-sdk-go-v2/aws"
@@ -255,16 +256,51 @@ func TestR2ClassifiesSourceDownloadStatuses(t *testing.T) {
 	}
 }
 
-func TestR2KeepsOrdinarySourceFailuresDistinctFromRevisionConflict(t *testing.T) {
+func TestR2ClassifiesSourceBodyReadAndCloseFailures(t *testing.T) {
 	t.Parallel()
 
-	adapter := newTestR2StatusServer(t, http.StatusForbidden)
+	for _, testCase := range []struct {
+		name     string
+		reader   io.Reader
+		closeErr error
+	}{
+		{
+			name:   "response body read failure",
+			reader: iotest.ErrReader(errors.New("provider-body-sentinel")),
+		},
+		{
+			name:     "response body close failure",
+			reader:   strings.NewReader("source-pdf"),
+			closeErr: errors.New("provider-body-sentinel"),
+		},
+	} {
+		t.Run(testCase.name, func(t *testing.T) {
+			body := &observedReadCloser{Reader: testCase.reader, closeErr: testCase.closeErr}
+			adapter := newTestR2("https://endpoint-sentinel.invalid", &http.Client{Transport: roundTripFunc(
+				func(request *http.Request) (*http.Response, error) {
+					return &http.Response{
+						Status:     "200 OK",
+						StatusCode: http.StatusOK,
+						Proto:      "HTTP/1.1",
+						ProtoMajor: 1,
+						ProtoMinor: 1,
+						Header: http.Header{
+							"Etag": []string{`"` + canonicalR2ETagOne + `"`},
+						},
+						Body:    body,
+						Request: request,
+					}, nil
+				},
+			)})
 
-	_, err := adapter.DownloadSource(context.Background(), "file-1", canonicalR2ETagOne)
+			source, err := adapter.DownloadSource(context.Background(), "file-identifier-sentinel", "")
 
-	require.ErrorIs(t, err, ErrDependency)
-	require.NotErrorIs(t, err, ErrSourceRevisionConflict)
-	assertSafeStorageError(t, err)
+			require.True(t, body.closed.Load())
+			require.ErrorIs(t, err, ErrDependency)
+			assertSafeStorageError(t, err)
+			require.Empty(t, source)
+		})
+	}
 }
 
 func TestR2TreatsMalformedProviderETagsAsOrdinaryFailures(t *testing.T) {
@@ -874,10 +910,11 @@ func (roundTrip roundTripFunc) RoundTrip(request *http.Request) (*http.Response,
 
 type observedReadCloser struct {
 	io.Reader
-	closed atomic.Bool
+	closed   atomic.Bool
+	closeErr error
 }
 
 func (body *observedReadCloser) Close() error {
 	body.closed.Store(true)
-	return nil
+	return body.closeErr
 }
