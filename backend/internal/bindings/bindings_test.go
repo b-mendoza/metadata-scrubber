@@ -14,20 +14,16 @@ import (
 	"metadata-scrubber/internal/storage"
 )
 
-func testBindings() bindings.Bindings {
-	return bindings.Bindings{
-		Env:     config.Config{Port: 3000},
-		Storage: storage.NewFake(),
-	}
-}
-
-func TestInjectPreservesRequestContextValues(t *testing.T) {
+func TestInjectProvidesExactBindingsToNextHandlerAndPreservesContextValues(t *testing.T) {
 	t.Parallel()
 
 	type contextKey struct{}
 	key := contextKey{}
 	const wantValue = "request-id"
-	wantBindings := testBindings()
+	wantBindings := bindings.Bindings{
+		Env:     config.Config{Port: 3000},
+		Storage: storage.NewFake(),
+	}
 
 	request := httptest.NewRequest(http.MethodGet, "/", http.NoBody)
 	request = request.WithContext(context.WithValue(request.Context(), key, wantValue))
