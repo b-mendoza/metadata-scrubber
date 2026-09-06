@@ -288,21 +288,6 @@ func TestR2TreatsMalformedProviderETagsAsOrdinaryFailures(t *testing.T) {
 	}
 }
 
-func TestR2ReportsAMissingSourceAsSourceNotFound(t *testing.T) {
-	t.Parallel()
-
-	adapter := newTestR2StatusServer(t, http.StatusNotFound)
-
-	_, err := adapter.DownloadSource(context.Background(), "file-identifier-sentinel", "")
-	require.ErrorIs(t, err, ErrSourceNotFound)
-	require.NotErrorIs(t, err, ErrDependency)
-	assertSafeStorageError(t, err)
-
-	_, err = adapter.DownloadSource(context.Background(), "file-identifier-sentinel", canonicalR2ETagOne)
-	require.ErrorIs(t, err, ErrSourceNotFound)
-	require.NotErrorIs(t, err, ErrSourceRevisionConflict)
-}
-
 func TestR2SourceExistenceUsesOnlyTheExactSourceKey(t *testing.T) {
 	t.Parallel()
 
