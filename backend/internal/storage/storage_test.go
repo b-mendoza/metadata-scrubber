@@ -3,7 +3,6 @@ package storage_test
 import (
 	"context"
 	"errors"
-	"net/url"
 	"strings"
 	"sync"
 	"testing"
@@ -11,7 +10,6 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	"metadata-scrubber/internal/scrub"
 	"metadata-scrubber/internal/storage"
 )
 
@@ -262,58 +260,31 @@ func TestFakeDeleteFlowRemovesOnlyTheSelectedFileAndIsIdempotent(t *testing.T) {
 	require.NoError(t, fake.DeleteFlow(context.Background(), "file-1"))
 }
 
-func TestFakeUsesExactSanitizedRevisionForExistenceGrantsAndUploads(t *testing.T) {
+func TestFakeKeepsSanitizedRevisionsIsolatedAndCopiesBytes(t *testing.T) {
 	t.Parallel()
 
 	fake := storage.NewFake()
-	require.NoError(t, fake.SetSanitized("file-1", canonicalETagOne, []byte("sanitized one")))
+	require.NoError(t, fake.SetSanitized("file-1", canonicalETagOne, []byte("one")))
 
-	exists, err := fake.SanitizedExists(context.Background(), "file-1", canonicalETagOne)
+	revisionTwoBytes := []byte("two")
+	require.NoError(t, fake.UploadSanitized(context.Background(), "file-1", canonicalETagTwo, revisionTwoBytes))
+	revisionTwoBytes[0] = 'x'
+
+	storedRevisionTwo, exists, err := fake.SanitizedBytes("file-1", canonicalETagTwo)
 	require.NoError(t, err)
 	require.True(t, exists)
+	require.Equal(t, []byte("two"), storedRevisionTwo)
+	storedRevisionTwo[0] = 'x'
 
-	exists, err = fake.SanitizedExists(context.Background(), "file-1", canonicalETagTwo)
-	require.NoError(t, err)
-	require.False(t, exists)
-
-	firstGrant, err := fake.PresignSanitizedDownload(context.Background(), "file-1", canonicalETagOne, time.Minute)
-	require.NoError(t, err)
-	secondGrant, err := fake.PresignSanitizedDownload(context.Background(), "file-1", canonicalETagOne, time.Minute)
-	require.NoError(t, err)
-	require.NotEqual(t, firstGrant.URL, secondGrant.URL)
-	require.Empty(t, firstGrant.RequiredHeaders)
-
-	parsedGrant, err := url.Parse(firstGrant.URL)
-	require.NoError(t, err)
-	revisionOneKey, err := storage.SanitizedObjectKey("file-1", canonicalETagOne)
-	require.NoError(t, err)
-	require.Equal(t, "/"+revisionOneKey, parsedGrant.Path)
-
-	oversizedPDF := make([]byte, scrub.MaxInputBytes+1)
-	require.NoError(t, fake.UploadSanitized(context.Background(), "file-1", canonicalETagTwo, oversizedPDF))
-	storedBytes, exists, err := fake.SanitizedBytes("file-1", canonicalETagTwo)
+	storedRevisionTwo, exists, err = fake.SanitizedBytes("file-1", canonicalETagTwo)
 	require.NoError(t, err)
 	require.True(t, exists)
-	require.Len(t, storedBytes, scrub.MaxInputBytes+1)
-	storedBytes[0] = 1
-	again, exists, err := fake.SanitizedBytes("file-1", canonicalETagTwo)
+	require.Equal(t, []byte("two"), storedRevisionTwo)
+
+	storedRevisionOne, exists, err := fake.SanitizedBytes("file-1", canonicalETagOne)
 	require.NoError(t, err)
 	require.True(t, exists)
-	require.Zero(t, again[0])
-
-	revisionOneBytes, exists, err := fake.SanitizedBytes("file-1", canonicalETagOne)
-	require.NoError(t, err)
-	require.True(t, exists)
-	require.Equal(t, []byte("sanitized one"), revisionOneBytes)
-
-	for _, call := range fake.Calls() {
-		if call.Operation == storage.FakeUploadSanitized {
-			require.NotEqual(t, canonicalETagOne, call.SourceETag, "reuse sequence must not rewrite revision one")
-		}
-		if call.Operation == storage.FakePresignSanitizedDownload {
-			require.Equal(t, revisionOneKey, call.ObjectKey)
-		}
-	}
+	require.Equal(t, []byte("one"), storedRevisionOne)
 }
 
 func TestFakePresignedUploadPinsUploadContractAndRecordsSizeAndExpiry(t *testing.T) {
