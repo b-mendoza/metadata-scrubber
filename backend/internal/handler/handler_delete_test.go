@@ -1,14 +1,17 @@
 package handler
 
 import (
+	"bytes"
 	"context"
 	"encoding/json"
 	"errors"
 	"net/http"
+	"net/http/httptest"
 	"testing"
 
 	"github.com/stretchr/testify/require"
 
+	"metadata-scrubber/internal/bindings"
 	"metadata-scrubber/internal/httpx/header"
 	"metadata-scrubber/internal/httpx/mediatype"
 	"metadata-scrubber/internal/storage"
@@ -16,17 +19,17 @@ import (
 
 func TestConfirmedDeleteCallsOneFlowOperationAndReturnsFixedSuccess(t *testing.T) {
 	fake := storage.NewFake()
-	seedCandidateSources(t, fake, fileIDOne)
+	require.NoError(t, fake.SetSource(fileIDOne, storage.SourceObject{PDFBytes: []byte("%PDF-one"), ETag: canonicalETagOne}))
 	require.NoError(t, fake.SetSanitized(fileIDOne, canonicalETagOne, []byte("clean-one")))
 	require.NoError(t, fake.SetSanitized(fileIDOne, canonicalETagTwo, []byte("clean-two")))
 	handler := newTestHandler(t, nil, nil, nil)
 	body, err := json.Marshal(deleteRequest{StorageKey: formatStorageKey(fileIDOne)})
 	require.NoError(t, err)
 
-	recorder := serveRequest(t, handlerRequest{
-		ctx: context.Background(), contentType: mediatype.JSON,
-		handler: handler, objectStorage: fake, method: deleteFlowMethod, body: string(body),
-	})
+	request := httptest.NewRequest(http.MethodPost, "/api/files/delete", bytes.NewReader(body))
+	request.Header.Set(header.ContentType, mediatype.JSON)
+	recorder := httptest.NewRecorder()
+	bindings.Inject(bindings.Bindings{Storage: fake})(http.HandlerFunc(handler.DeleteFlow)).ServeHTTP(recorder, request)
 
 	require.Equal(t, http.StatusOK, recorder.Code, recorder.Body.String())
 	var response deleteResponse
@@ -47,10 +50,10 @@ func TestConfirmedDeleteTreatsAlreadyEmptyFlowAsSuccess(t *testing.T) {
 	body, err := json.Marshal(deleteRequest{StorageKey: formatStorageKey(fileIDOne)})
 	require.NoError(t, err)
 
-	recorder := serveRequest(t, handlerRequest{
-		ctx: context.Background(), contentType: mediatype.JSON,
-		handler: handler, objectStorage: fake, method: deleteFlowMethod, body: string(body),
-	})
+	request := httptest.NewRequest(http.MethodPost, "/api/files/delete", bytes.NewReader(body))
+	request.Header.Set(header.ContentType, mediatype.JSON)
+	recorder := httptest.NewRecorder()
+	bindings.Inject(bindings.Bindings{Storage: fake})(http.HandlerFunc(handler.DeleteFlow)).ServeHTTP(recorder, request)
 
 	require.Equal(t, http.StatusOK, recorder.Code, recorder.Body.String())
 	var response deleteResponse
@@ -88,10 +91,10 @@ func TestConfirmedDeleteMapsRemainingAndDependencyFailuresSafely(t *testing.T) {
 			body, err := json.Marshal(deleteRequest{StorageKey: formatStorageKey(fileIDOne)})
 			require.NoError(t, err)
 
-			recorder := serveRequest(t, handlerRequest{
-				ctx: context.Background(), contentType: mediatype.JSON,
-				handler: handler, objectStorage: fake, method: deleteFlowMethod, body: string(body),
-			})
+			request := httptest.NewRequest(http.MethodPost, "/api/files/delete", bytes.NewReader(body))
+			request.Header.Set(header.ContentType, mediatype.JSON)
+			recorder := httptest.NewRecorder()
+			bindings.Inject(bindings.Bindings{Storage: fake})(http.HandlerFunc(handler.DeleteFlow)).ServeHTTP(recorder, request)
 
 			require.Equal(t, testCase.wantStatus, recorder.Code)
 			require.Equal(t, testCase.wantMessage, errorMessage(t, recorder))
@@ -109,10 +112,10 @@ func TestConfirmedDeleteMapsCancellationWithoutRetrySignal(t *testing.T) {
 	ctx, cancel := context.WithCancel(context.Background())
 	cancel()
 
-	recorder := serveRequest(t, handlerRequest{
-		ctx: ctx, handler: handler, objectStorage: fake,
-		method: deleteFlowMethod, contentType: mediatype.JSON, body: string(body),
-	})
+	request := httptest.NewRequest(http.MethodPost, "/api/files/delete", bytes.NewReader(body)).WithContext(ctx)
+	request.Header.Set(header.ContentType, mediatype.JSON)
+	recorder := httptest.NewRecorder()
+	bindings.Inject(bindings.Bindings{Storage: fake})(http.HandlerFunc(handler.DeleteFlow)).ServeHTTP(recorder, request)
 
 	require.Equal(t, http.StatusRequestTimeout, recorder.Code)
 	require.Equal(t, cancellationMessage, errorMessage(t, recorder))
