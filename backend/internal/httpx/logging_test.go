@@ -51,7 +51,6 @@ func TestRequestLoggerLogsRequestLifecycle(t *testing.T) {
 	completed := records[1]
 
 	require.Equal(t, "request started", started.Msg)
-	require.NotEmpty(t, request.RemoteAddr)
 	require.Equal(t, request.RemoteAddr, started.RemoteAddr)
 	require.Equal(t, "metadata-scrubber-test", started.UserAgent)
 
