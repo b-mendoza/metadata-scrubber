@@ -812,8 +812,6 @@ func TestInspectPDFTreatsNeutralTrioAccordingToOrigin(t *testing.T) {
 }
 
 // The typed fixture stays local so each case serializes its exact PDF contract.
-//
-//nolint:gocognit // Branches construct the catalog, page, and nested metadata variants.
 func TestInspectPDFKeepsEveryNeutralTrioNearMissVisible(t *testing.T) {
 	neutralEntries := types.Dict{
 		"Producer":     types.StringLiteral("pdfcpu " + model.VersionStr),
@@ -837,52 +835,48 @@ func TestInspectPDFKeepsEveryNeutralTrioNearMissVisible(t *testing.T) {
 	}
 	for _, testCase := range testCases {
 		t.Run(testCase.name, func(t *testing.T) {
-			pdfBytes := func() []byte {
-				configuration := model.NewDefaultConfiguration()
-				configuration.WriteObjectStream = false
-				configuration.WriteXRefStream = false
-				pdfContext, err := pdfcpu.CreateContextWithXRefTable(configuration, types.PaperSize["A4"])
-				require.NoError(t, err)
-				root, err := pdfContext.Catalog()
-				require.NoError(t, err)
-				root.Delete("Pages")
-				page := model.NewPage(types.RectForFormat("A4"), nil)
-				page.Buf.WriteString("BT 20 100 Td (Synthetic page) Tj ET")
-				require.NoError(t, pdfcpu.AddPageTreeWithSamplePage(pdfContext.XRefTable, root, page))
-				pdfContext.PageCount = 1
-				{
-					pageDictionary, _, _, err := pdfContext.PageDict(1, false)
-					require.NoError(t, err)
-					infoReference, err := pdfContext.IndRefForNewObject(testCase.entries)
-					require.NoError(t, err)
-					pdfContext.Info = infoReference
-					if testCase.metadata != noMetadata {
-						stream := types.StreamDict{
-							Dict:    types.Dict{"Type": types.Name("Metadata"), "Subtype": types.Name("XML")},
-							Content: []byte(`<x:xmpmeta xmlns:x="adobe:ns:meta/"><rdf:RDF xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"><rdf:Description rdf:about="" xmlns:synthetic="urn:synthetic" synthetic:marker="near-miss-metadata"/></rdf:RDF></x:xmpmeta>`),
-						}
-						require.NoError(t, stream.Encode())
-						metadataReference, err := pdfContext.IndRefForNewObject(stream)
-						require.NoError(t, err)
-						targets := map[metadataLocation]types.Dict{
-							noMetadata:      nil,
-							catalogMetadata: root,
-							pageMetadata:    pageDictionary,
-							nestedMetadata:  root,
-						}
-						metadataKey := "Metadata"
-						metadataValue := types.Object(*metadataReference)
-						if testCase.metadata == nestedMetadata {
-							metadataKey = "Synthetic"
-							metadataValue = types.Dict{"Metadata": *metadataReference}
-						}
-						targets[testCase.metadata].Insert(metadataKey, metadataValue)
-					}
+			configuration := model.NewDefaultConfiguration()
+			configuration.WriteObjectStream = false
+			configuration.WriteXRefStream = false
+			pdfContext, err := pdfcpu.CreateContextWithXRefTable(configuration, types.PaperSize["A4"])
+			require.NoError(t, err)
+			root, err := pdfContext.Catalog()
+			require.NoError(t, err)
+			root.Delete("Pages")
+			page := model.NewPage(types.RectForFormat("A4"), nil)
+			page.Buf.WriteString("BT 20 100 Td (Synthetic page) Tj ET")
+			require.NoError(t, pdfcpu.AddPageTreeWithSamplePage(pdfContext.XRefTable, root, page))
+			pdfContext.PageCount = 1
+			pageDictionary, _, _, err := pdfContext.PageDict(1, false)
+			require.NoError(t, err)
+			infoReference, err := pdfContext.IndRefForNewObject(testCase.entries)
+			require.NoError(t, err)
+			pdfContext.Info = infoReference
+			if testCase.metadata != noMetadata {
+				stream := types.StreamDict{
+					Dict:    types.Dict{"Type": types.Name("Metadata"), "Subtype": types.Name("XML")},
+					Content: []byte(`<x:xmpmeta xmlns:x="adobe:ns:meta/"><rdf:RDF xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"><rdf:Description rdf:about="" xmlns:synthetic="urn:synthetic" synthetic:marker="near-miss-metadata"/></rdf:RDF></x:xmpmeta>`),
 				}
-				var output bytes.Buffer
-				writeTypedPDFFixture(t, pdfContext, &output)
-				return output.Bytes()
-			}()
+				require.NoError(t, stream.Encode())
+				metadataReference, metadataErr := pdfContext.IndRefForNewObject(stream)
+				require.NoError(t, metadataErr)
+				targets := map[metadataLocation]types.Dict{
+					noMetadata:      nil,
+					catalogMetadata: root,
+					pageMetadata:    pageDictionary,
+					nestedMetadata:  root,
+				}
+				metadataKey := "Metadata"
+				metadataValue := types.Object(*metadataReference)
+				if testCase.metadata == nestedMetadata {
+					metadataKey = "Synthetic"
+					metadataValue = types.Dict{"Metadata": *metadataReference}
+				}
+				targets[testCase.metadata].Insert(metadataKey, metadataValue)
+			}
+			var output bytes.Buffer
+			writeTypedPDFFixture(t, pdfContext, &output)
+			pdfBytes := output.Bytes()
 
 			fields, err := InspectPDF(pdfBytes, PostWriteVerification)
 
