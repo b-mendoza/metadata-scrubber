@@ -20,12 +20,14 @@ func TestRequestLoggerLogsRequestLifecycle(t *testing.T) {
 
 	responseBody := "created-response-secret"
 
-	handler, readRecords := newLoggedHandler(t, func(w http.ResponseWriter, _ *http.Request) {
+	var logs bytes.Buffer
+	logger := slog.New(slog.NewJSONHandler(&logs, nil))
+	handler := httpx.RequestLogger(logger)(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
 		w.Header().Set("X-Scrubbed", "true")
 		w.WriteHeader(http.StatusCreated)
 		_, err := w.Write([]byte(responseBody))
 		assert.NoError(t, err)
-	})
+	}))
 
 	request := httptest.NewRequest(http.MethodPost, "/api/scrub?token=query-secret", bytes.NewBufferString("request-body-secret"))
 	request.Header.Set("User-Agent", "metadata-scrubber-test")
@@ -36,7 +38,7 @@ func TestRequestLoggerLogsRequestLifecycle(t *testing.T) {
 	require.Equal(t, responseBody, recorder.Body.String())
 	require.Equal(t, "true", recorder.Header().Get("X-Scrubbed"))
 
-	records := readRecords()
+	records := readJSONLogRecords(t, logs.Bytes())
 	require.Len(t, records, 2)
 	for _, record := range records {
 		require.Equal(t, http.MethodPost, record.Method)
