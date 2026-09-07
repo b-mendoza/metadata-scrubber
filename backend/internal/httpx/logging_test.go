@@ -68,14 +68,16 @@ func TestRequestLoggerLogsRequestLifecycle(t *testing.T) {
 func TestRequestLoggerDefaultsStatusToOKWhenHandlerOnlyWritesBody(t *testing.T) {
 	t.Parallel()
 
-	handler, readRecords := newLoggedHandler(t, func(w http.ResponseWriter, _ *http.Request) {
+	var logs bytes.Buffer
+	logger := slog.New(slog.NewJSONHandler(&logs, nil))
+	handler := httpx.RequestLogger(logger)(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
 		_, err := w.Write([]byte("ok"))
 		assert.NoError(t, err)
-	})
+	}))
 
 	handler.ServeHTTP(httptest.NewRecorder(), httptest.NewRequest(http.MethodGet, "/api/health", http.NoBody))
 
-	records := readRecords()
+	records := readJSONLogRecords(t, logs.Bytes())
 	require.Len(t, records, 2)
 	completed := records[1]
 	requireRequiredIntLogField(t, "status", http.StatusOK, completed.Status)
