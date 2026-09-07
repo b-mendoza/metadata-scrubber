@@ -39,10 +39,19 @@ func TestSaturatedEndpointUsesFreshWholeSecondJitter(t *testing.T) {
 	})
 	handler.admissionTimeout = time.Millisecond
 
-	holderResponses := startGuardedRequests(t, handler, observer, []guardedRequest{
-		{scrub: false, fileID: fileIDOne},
-		{scrub: false, fileID: fileIDTwo},
-	})
+	holderResponses := make(chan *httptest.ResponseRecorder, 2)
+	for _, fileID := range []string{fileIDOne, fileIDTwo} {
+		body, err := json.Marshal(dryRunRequest{StorageKey: formatStorageKey(fileID)})
+		require.NoError(t, err)
+		go func() {
+			request := httptest.NewRequest(http.MethodPost, "/api/files/dry-run", bytes.NewReader(body))
+			request.Header.Set(header.ContentType, mediatype.JSON)
+			recorder := httptest.NewRecorder()
+			bindings.Inject(bindings.Bindings{Storage: observer})(http.HandlerFunc(handler.DryRun)).ServeHTTP(recorder, request)
+			holderResponses <- recorder
+		}()
+	}
+	observer.waitForDownloads(t)
 	for index, wantHeader := range []string{"2", "4"} {
 		body, err := json.Marshal(dryRunRequest{StorageKey: formatStorageKey(fileIDThree)})
 		require.NoError(t, err)
