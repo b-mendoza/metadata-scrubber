@@ -85,14 +85,11 @@ func TestScrubFailuresStopAtTheFailedStage(t *testing.T) {
 	}
 
 	for _, testCase := range tests {
-		t.Run(testCase.name, func(t *testing.T) {
-			testScrubFailureStopsAtFailedStage(t, testCase)
-		})
+		t.Run(testCase.name, testCase.testFailureStopsAtFailedStage)
 	}
 }
 
-func testScrubFailureStopsAtFailedStage(t *testing.T, testCase scrubFailureTestCase) {
-	t.Helper()
+func (testCase scrubFailureTestCase) testFailureStopsAtFailedStage(t *testing.T) {
 	fake := storage.NewFake()
 	require.NoError(t, fake.SetSource(fileIDOne, storage.SourceObject{PDFBytes: testCase.pdfBytes, ETag: canonicalETagOne}))
 	if testCase.failureOp != "" {
