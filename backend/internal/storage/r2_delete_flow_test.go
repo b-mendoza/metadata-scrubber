@@ -174,7 +174,7 @@ func TestR2DeleteFlowVerifiesAfterAPartialProviderResult(t *testing.T) {
 				}
 			}))
 
-			err = adapter.DeleteFlow(context.Background(), "file-identifier-sentinel")
+			err := adapter.DeleteFlow(context.Background(), "file-identifier-sentinel")
 
 			testCase.assertOutcome(t, err)
 			require.Equal(t, int64(5), requestCount.Load())
