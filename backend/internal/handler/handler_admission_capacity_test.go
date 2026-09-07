@@ -83,60 +83,97 @@ func TestCancellationWhileWaitingReturnsSanitizedResponseWithoutStorageWork(t *t
 		}
 		return bytes.Clone(input), nil
 	}, nil)
-	holderResponses := startGuardedRequests(t, handler, observer, []guardedRequest{
-		{scrub: false, fileID: fileIDOne},
-		{scrub: false, fileID: fileIDTwo},
-	})
-
-	enteredWait := make(chan struct{})
-	// sync.OnceFunc keeps the later follow-up requests from closing enteredWait twice.
-	handler.beforeAcquireSelect = sync.OnceFunc(func() { close(enteredWait) })
-
-	ctx, cancel := context.WithCancel(context.Background())
-	response := make(chan *httptest.ResponseRecorder, 1)
-	go func() {
-		body, err := json.Marshal(dryRunRequest{StorageKey: formatStorageKey(fileIDThree)})
-		if err != nil {
-			panic(err)
-		}
-		request := httptest.NewRequest(http.MethodPost, "/api/files/dry-run", bytes.NewReader(body)).WithContext(ctx)
-		request.Header.Set(header.ContentType, mediatype.JSON)
-		recorder := httptest.NewRecorder()
-		bindings.Inject(bindings.Bindings{Storage: observer})(http.HandlerFunc(handler.DryRun)).ServeHTTP(recorder, request)
-		response <- recorder
-	}()
-
-	select {
-	case <-enteredWait:
-	case <-time.After(time.Second):
-		require.FailNow(t, "timed out waiting for request to reach the acquisition select")
-	}
-	cancel()
-
-	var recorder *httptest.ResponseRecorder
-	select {
-	case recorder = <-response:
-	case <-time.After(time.Second):
-		require.FailNow(t, "canceled admission wait did not complete promptly")
-	}
-
-	require.Equal(t, http.StatusRequestTimeout, recorder.Code)
-	require.Equal(t, cancellationMessage, errorMessage(t, recorder))
-	require.Empty(t, recorder.Header().Get(header.RetryAfter))
-	require.False(t, observer.downloadObserved(fileIDThree))
-	require.Empty(t, callOperationsFor(fake.Calls(), fileIDThree))
-	require.Zero(t, canceledInspectCalls.Load())
-	require.Zero(t, canceledCleanCalls.Load())
-
-	observer.releaseDownloads()
-	requireResponsesSuccess(t, holderResponses, 2, "timed out waiting for holder response")
-
 	t.Run("releases permits for follow-up capacity", func(t *testing.T) {
+		holderResponses := make(chan *httptest.ResponseRecorder, 2)
+		{
+			body, err := json.Marshal(dryRunRequest{StorageKey: formatStorageKey(fileIDOne)})
+			require.NoError(t, err)
+			go func() {
+				request := httptest.NewRequest(http.MethodPost, "/api/files/dry-run", bytes.NewReader(body))
+				request.Header.Set(header.ContentType, mediatype.JSON)
+				recorder := httptest.NewRecorder()
+				bindings.Inject(bindings.Bindings{Storage: observer})(http.HandlerFunc(handler.DryRun)).ServeHTTP(recorder, request)
+				holderResponses <- recorder
+			}()
+		}
+		{
+			body, err := json.Marshal(dryRunRequest{StorageKey: formatStorageKey(fileIDTwo)})
+			require.NoError(t, err)
+			go func() {
+				request := httptest.NewRequest(http.MethodPost, "/api/files/dry-run", bytes.NewReader(body))
+				request.Header.Set(header.ContentType, mediatype.JSON)
+				recorder := httptest.NewRecorder()
+				bindings.Inject(bindings.Bindings{Storage: observer})(http.HandlerFunc(handler.DryRun)).ServeHTTP(recorder, request)
+				holderResponses <- recorder
+			}()
+		}
+		observer.waitForDownloads(t)
+
+		enteredWait, response := make(chan struct{}), make(chan *httptest.ResponseRecorder, 1)
+		// sync.OnceFunc keeps the later follow-up requests from closing enteredWait twice.
+		handler.beforeAcquireSelect = sync.OnceFunc(func() { close(enteredWait) })
+
+		ctx, cancel := context.WithCancel(context.Background())
+		body, err := json.Marshal(dryRunRequest{StorageKey: formatStorageKey(fileIDThree)})
+		require.NoError(t, err)
+		go func() {
+			request := httptest.NewRequest(http.MethodPost, "/api/files/dry-run", bytes.NewReader(body)).WithContext(ctx)
+			request.Header.Set(header.ContentType, mediatype.JSON)
+			recorder := httptest.NewRecorder()
+			bindings.Inject(bindings.Bindings{Storage: observer})(http.HandlerFunc(handler.DryRun)).ServeHTTP(recorder, request)
+			response <- recorder
+		}()
+
+		select {
+		case <-enteredWait:
+		case <-time.After(time.Second):
+			require.FailNow(t, "timed out waiting for request to reach the acquisition select")
+		}
+		cancel()
+
+		var recorder *httptest.ResponseRecorder
+		select {
+		case recorder = <-response:
+		case <-time.After(time.Second):
+			require.FailNow(t, "canceled admission wait did not complete promptly")
+		}
+
+		require.Equal(t, http.StatusRequestTimeout, recorder.Code)
+		require.Equal(t, cancellationMessage, errorMessage(t, recorder))
+		require.Empty(t, recorder.Header().Get(header.RetryAfter))
+		require.False(t, observer.downloadObserved(fileIDThree))
+		require.Empty(t, callOperationsFor(fake.Calls(), fileIDThree))
+		require.Zero(t, canceledInspectCalls.Load())
+		require.Zero(t, canceledCleanCalls.Load())
+
+		observer.releaseDownloads()
+		requireResponsesSuccess(t, holderResponses, 2, "timed out waiting for holder response")
+
 		followUpObserver := newBlockingStorage(fake, fileIDOne, fileIDTwo)
-		followUpResponses := startGuardedRequests(t, handler, followUpObserver, []guardedRequest{
-			{scrub: false, fileID: fileIDOne},
-			{scrub: false, fileID: fileIDTwo},
-		})
+		followUpResponses := make(chan *httptest.ResponseRecorder, 2)
+		{
+			body, err := json.Marshal(dryRunRequest{StorageKey: formatStorageKey(fileIDOne)})
+			require.NoError(t, err)
+			go func() {
+				request := httptest.NewRequest(http.MethodPost, "/api/files/dry-run", bytes.NewReader(body))
+				request.Header.Set(header.ContentType, mediatype.JSON)
+				recorder := httptest.NewRecorder()
+				bindings.Inject(bindings.Bindings{Storage: followUpObserver})(http.HandlerFunc(handler.DryRun)).ServeHTTP(recorder, request)
+				followUpResponses <- recorder
+			}()
+		}
+		{
+			body, err := json.Marshal(dryRunRequest{StorageKey: formatStorageKey(fileIDTwo)})
+			require.NoError(t, err)
+			go func() {
+				request := httptest.NewRequest(http.MethodPost, "/api/files/dry-run", bytes.NewReader(body))
+				request.Header.Set(header.ContentType, mediatype.JSON)
+				recorder := httptest.NewRecorder()
+				bindings.Inject(bindings.Bindings{Storage: followUpObserver})(http.HandlerFunc(handler.DryRun)).ServeHTTP(recorder, request)
+				followUpResponses <- recorder
+			}()
+		}
+		followUpObserver.waitForDownloads(t)
 		require.Len(t, handler.permits, ProcessingPermitCount)
 		followUpObserver.releaseDownloads()
 		requireResponsesSuccess(t, followUpResponses, 2, "timed out waiting for holder response")
