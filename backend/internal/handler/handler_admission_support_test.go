@@ -1,9 +1,7 @@
 package handler
 
 import (
-	"bytes"
 	"context"
-	"encoding/json"
 	"net/http"
 	"net/http/httptest"
 	"sync"
@@ -12,9 +10,6 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	"metadata-scrubber/internal/bindings"
-	"metadata-scrubber/internal/httpx/header"
-	"metadata-scrubber/internal/httpx/mediatype"
 	"metadata-scrubber/internal/storage"
 )
 
@@ -141,52 +136,6 @@ func (observer *blockingStorage) peakDownloads() int {
 	observer.mu.Lock()
 	defer observer.mu.Unlock()
 	return observer.peak
-}
-
-type guardedRequest struct {
-	scrub  bool
-	fileID string
-}
-
-// startGuardedRequests serves every request in its own goroutine. It waits until
-// the shared admission gate starts both allowed downloads.
-func startGuardedRequests(
-	t *testing.T,
-	handler *Handler,
-	observer *blockingStorage,
-	requests []guardedRequest,
-) <-chan *httptest.ResponseRecorder {
-	t.Helper()
-	responses := make(chan *httptest.ResponseRecorder, len(requests))
-	for _, input := range requests {
-		if input.scrub {
-			body, err := json.Marshal(scrubRequest{
-				StorageKey: formatStorageKey(input.fileID),
-				ETag:       canonicalETagsByFileID[input.fileID],
-			})
-			require.NoError(t, err)
-			go func() {
-				request := httptest.NewRequest(http.MethodPost, "/api/files/scrub", bytes.NewReader(body))
-				request.Header.Set(header.ContentType, mediatype.JSON)
-				recorder := httptest.NewRecorder()
-				bindings.Inject(bindings.Bindings{Storage: observer})(http.HandlerFunc(handler.Scrub)).ServeHTTP(recorder, request)
-				responses <- recorder
-			}()
-			continue
-		}
-
-		body, err := json.Marshal(dryRunRequest{StorageKey: formatStorageKey(input.fileID)})
-		require.NoError(t, err)
-		go func() {
-			request := httptest.NewRequest(http.MethodPost, "/api/files/dry-run", bytes.NewReader(body))
-			request.Header.Set(header.ContentType, mediatype.JSON)
-			recorder := httptest.NewRecorder()
-			bindings.Inject(bindings.Bindings{Storage: observer})(http.HandlerFunc(handler.DryRun)).ServeHTTP(recorder, request)
-			responses <- recorder
-		}()
-	}
-	observer.waitForDownloads(t)
-	return responses
 }
 
 func requireResponsesSuccess(
