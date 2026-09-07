@@ -23,7 +23,10 @@ const (
 )
 
 func TestLoadDefaultsPortWhenUnset(t *testing.T) {
-	setValidR2Environment(t)
+	t.Setenv(r2AccountIDEnvKey, validR2AccountID)
+	t.Setenv(r2AccessKeyIDEnvKey, validR2AccessKeyID)
+	t.Setenv(r2SecretAccessKeyEnvKey, validR2SecretAccessKey)
+	t.Setenv(r2BucketEnvKey, validR2Bucket)
 	unsetEnvironmentValue(t, portEnvKey)
 
 	cfg, err := config.Load()
@@ -33,7 +36,10 @@ func TestLoadDefaultsPortWhenUnset(t *testing.T) {
 }
 
 func TestLoadDefaultsPortWhenEmpty(t *testing.T) {
-	setValidR2Environment(t)
+	t.Setenv(r2AccountIDEnvKey, validR2AccountID)
+	t.Setenv(r2AccessKeyIDEnvKey, validR2AccessKeyID)
+	t.Setenv(r2SecretAccessKeyEnvKey, validR2SecretAccessKey)
+	t.Setenv(r2BucketEnvKey, validR2Bucket)
 	t.Setenv(portEnvKey, "")
 
 	cfg, err := config.Load()
@@ -53,7 +59,10 @@ func TestLoadParsesExplicitPorts(t *testing.T) {
 		{name: "accepts maximum port", port: "65535", want: 65535},
 	} {
 		t.Run(testCase.name, func(t *testing.T) {
-			setValidR2Environment(t)
+			t.Setenv(r2AccountIDEnvKey, validR2AccountID)
+			t.Setenv(r2AccessKeyIDEnvKey, validR2AccessKeyID)
+			t.Setenv(r2SecretAccessKeyEnvKey, validR2SecretAccessKey)
+			t.Setenv(r2BucketEnvKey, validR2Bucket)
 			t.Setenv(portEnvKey, testCase.port)
 
 			cfg, err := config.Load()
@@ -73,7 +82,10 @@ func TestLoadRejectsUnparseablePort(t *testing.T) {
 		{name: "rejects whitespace-padded port", port: "  8080  "},
 	} {
 		t.Run(testCase.name, func(t *testing.T) {
-			setValidR2Environment(t)
+			t.Setenv(r2AccountIDEnvKey, validR2AccountID)
+			t.Setenv(r2AccessKeyIDEnvKey, validR2AccessKeyID)
+			t.Setenv(r2SecretAccessKeyEnvKey, validR2SecretAccessKey)
+			t.Setenv(r2BucketEnvKey, validR2Bucket)
 			t.Setenv(portEnvKey, testCase.port)
 
 			_, err := config.Load()
@@ -95,7 +107,10 @@ func TestLoadRejectsOutOfRangePort(t *testing.T) {
 		{name: "rejects port above maximum", port: "70000"},
 	} {
 		t.Run(testCase.name, func(t *testing.T) {
-			setValidR2Environment(t)
+			t.Setenv(r2AccountIDEnvKey, validR2AccountID)
+			t.Setenv(r2AccessKeyIDEnvKey, validR2AccessKeyID)
+			t.Setenv(r2SecretAccessKeyEnvKey, validR2SecretAccessKey)
+			t.Setenv(r2BucketEnvKey, validR2Bucket)
 			t.Setenv(portEnvKey, testCase.port)
 
 			_, err := config.Load()
@@ -108,7 +123,10 @@ func TestLoadRejectsOutOfRangePort(t *testing.T) {
 }
 
 func TestLoadReturnsCompleteR2ConfigurationUnchanged(t *testing.T) {
-	setValidR2Environment(t)
+	t.Setenv(r2AccountIDEnvKey, validR2AccountID)
+	t.Setenv(r2AccessKeyIDEnvKey, validR2AccessKeyID)
+	t.Setenv(r2SecretAccessKeyEnvKey, validR2SecretAccessKey)
+	t.Setenv(r2BucketEnvKey, validR2Bucket)
 	t.Setenv(portEnvKey, "3000")
 
 	cfg, err := config.Load()
@@ -124,7 +142,10 @@ func TestLoadReturnsCompleteR2ConfigurationUnchanged(t *testing.T) {
 func TestLoadAcceptsAnyNonblankBucketName(t *testing.T) {
 	for _, bucket := range []string{"my_bucket", "My.Bucket", "ab"} {
 		t.Run(bucket, func(t *testing.T) {
-			setValidR2Environment(t)
+			t.Setenv(r2AccountIDEnvKey, validR2AccountID)
+			t.Setenv(r2AccessKeyIDEnvKey, validR2AccessKeyID)
+			t.Setenv(r2SecretAccessKeyEnvKey, validR2SecretAccessKey)
+			t.Setenv(r2BucketEnvKey, validR2Bucket)
 			t.Setenv(r2BucketEnvKey, bucket)
 
 			_, err := config.Load()
@@ -155,7 +176,10 @@ func TestLoadRejectsAbsentOrBlankR2Values(t *testing.T) {
 			{name: "Unicode whitespace only", value: "  "},
 		} {
 			t.Run(setting.fieldName+"/"+input.name, func(t *testing.T) {
-				setValidR2Environment(t)
+				t.Setenv(r2AccountIDEnvKey, validR2AccountID)
+				t.Setenv(r2AccessKeyIDEnvKey, validR2AccessKeyID)
+				t.Setenv(r2SecretAccessKeyEnvKey, validR2SecretAccessKey)
+				t.Setenv(r2BucketEnvKey, validR2Bucket)
 				if input.unset {
 					unsetEnvironmentValue(t, setting.environmentKey)
 				} else {
@@ -211,15 +235,6 @@ func TestLoadDoesNotDiscloseConfigurationValuesInErrors(t *testing.T) {
 			require.NotContains(t, err.Error(), bucketSentinel)
 		})
 	}
-}
-
-func setValidR2Environment(t *testing.T) {
-	t.Helper()
-
-	t.Setenv(r2AccountIDEnvKey, validR2AccountID)
-	t.Setenv(r2AccessKeyIDEnvKey, validR2AccessKeyID)
-	t.Setenv(r2SecretAccessKeyEnvKey, validR2SecretAccessKey)
-	t.Setenv(r2BucketEnvKey, validR2Bucket)
 }
 
 func unsetEnvironmentValue(t *testing.T, key string) {
