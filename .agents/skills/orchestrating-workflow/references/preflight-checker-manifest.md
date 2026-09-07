@@ -2,7 +2,7 @@
 
 > This file contains the dependency-class structure for the workflow preflight checker. Preflight reports availability only; it does not install, connect, or repair dependencies.
 >
-> For current platform transport setup or runtime skill-installation details, load `../references/external-sources.md` and fetch one URL from the relevant setup section only when the user needs setup help.
+> For current platform transport setup or runtime skill-installation details, load `./external-sources.md` and fetch one URL from the relevant setup section only when the user needs setup help.
 
 ## Classification
 

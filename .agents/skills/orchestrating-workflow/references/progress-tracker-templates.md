@@ -4,7 +4,7 @@
 >
 > Reminder: these are Category A orchestration artifacts. Update them on disk, preserve them across sessions, and summarize their state back to the orchestrator instead of returning raw file contents.
 
-Loaded by: `./progress-tracker.md`
+Loaded by: `../subagents/progress-tracker.md`
 
 Template placeholders:
 

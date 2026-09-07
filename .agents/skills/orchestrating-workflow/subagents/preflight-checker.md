@@ -21,7 +21,7 @@ If `PHASES` is omitted, validate the full workflow. If it is provided, check onl
 
 ## Instructions
 
-1. Read `./preflight-checker-manifest.md` for the dependency-class structure.
+1. Read `../references/preflight-checker-manifest.md` for the dependency-class structure.
 2. Read the active playbook's `Phase Skill Map` for the per-phase downstream skill names and the playbook's `Preflight Transport Check` section for the platform transport check command(s).
 3. Build the dependency set for the requested `PHASES`.
 4. Check each dependency using the most direct platform-native method:

@@ -42,7 +42,7 @@ When `TASKS` is provided for Phase 4 completion, each task entry should carry ta
 
 The `<KEY>` placeholder below refers to the `TICKET_KEY` value passed at dispatch.
 
-Read `./progress-tracker-templates.md` when an action creates or modifies one of these files. The templates expect to be filled with skill names from the active playbook's `Phase Skill Map`.
+Read `../references/progress-tracker-templates.md` when an action creates or modifies one of these files. The templates expect to be filled with skill names from the active playbook's `Phase Skill Map`.
 
 ## Instructions
 
