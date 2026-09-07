@@ -157,6 +157,12 @@
       "skillPath": "skills/spec-driven-development/SKILL.md",
       "computedHash": "aca026683acdae1cd8a58f335fb26e60fb5db11ae81461a6896b0bf561aacb75"
     },
+    "stop-slop": {
+      "source": "hardikpandya/stop-slop",
+      "sourceType": "github",
+      "skillPath": "SKILL.md",
+      "computedHash": "617bf97d33162a6bd0da4f40a97aac589de58e5a6c9cf011ed6108992210e7cb"
+    },
     "subagent-driven-development": {
       "source": "obra/superpowers",
       "sourceType": "github",
