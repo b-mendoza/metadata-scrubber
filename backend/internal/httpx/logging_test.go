@@ -89,15 +89,17 @@ func TestRequestLoggerDefaultsStatusToOKWhenHandlerOnlyWritesBody(t *testing.T) 
 func TestRequestLoggerLogsPanickedRequests(t *testing.T) {
 	t.Parallel()
 
-	handler, readRecords := newLoggedHandler(t, func(_ http.ResponseWriter, _ *http.Request) {
+	var logs bytes.Buffer
+	logger := slog.New(slog.NewJSONHandler(&logs, nil))
+	handler := httpx.RequestLogger(logger)(http.HandlerFunc(func(_ http.ResponseWriter, _ *http.Request) {
 		panic("panic-value-sensitive-marker")
-	})
+	}))
 
 	require.PanicsWithValue(t, "panic-value-sensitive-marker", func() {
 		handler.ServeHTTP(httptest.NewRecorder(), httptest.NewRequest(http.MethodGet, "/api/health", http.NoBody))
 	})
 
-	records := readRecords()
+	records := readJSONLogRecords(t, logs.Bytes())
 	require.Len(t, records, 2)
 	completed := records[1]
 	require.Equal(t, "request completed", completed.Msg)
