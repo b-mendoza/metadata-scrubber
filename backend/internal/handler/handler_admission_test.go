@@ -187,10 +187,19 @@ func TestDryRunReleasesPermitAfterPanic(t *testing.T) {
 	})
 
 	handler.inspect = func([]byte, scrub.InspectionOrigin) ([]scrub.Field, error) { return nil, nil }
-	followUpResponses := startGuardedRequests(t, handler, observer, []guardedRequest{
-		{scrub: false, fileID: fileIDTwo},
-		{scrub: false, fileID: fileIDThree},
-	})
+	followUpResponses := make(chan *httptest.ResponseRecorder, 2)
+	for _, fileID := range []string{fileIDTwo, fileIDThree} {
+		body, err := json.Marshal(dryRunRequest{StorageKey: formatStorageKey(fileID)})
+		require.NoError(t, err)
+		go func() {
+			request := httptest.NewRequest(http.MethodPost, "/api/files/dry-run", bytes.NewReader(body))
+			request.Header.Set(header.ContentType, mediatype.JSON)
+			recorder := httptest.NewRecorder()
+			bindings.Inject(bindings.Bindings{Storage: observer})(http.HandlerFunc(handler.DryRun)).ServeHTTP(recorder, request)
+			followUpResponses <- recorder
+		}()
+	}
+	observer.waitForDownloads(t)
 	observer.releaseDownloads()
 	requireResponsesSuccess(t, followUpResponses, 2, "timed out waiting for follow-up response")
 }
