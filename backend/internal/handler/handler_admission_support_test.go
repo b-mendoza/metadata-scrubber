@@ -102,9 +102,9 @@ func (observer *blockingStorage) blockUpload(fileID string) {
 	observer.blockedUploads[fileID] = true
 }
 
-func (observer *blockingStorage) waitForDownloads(t *testing.T, count int) {
+func (observer *blockingStorage) waitForDownloads(t *testing.T) {
 	t.Helper()
-	for range count {
+	for range ProcessingPermitCount {
 		select {
 		case <-observer.downloadStarted:
 		case <-time.After(time.Second):
@@ -185,7 +185,7 @@ func startGuardedRequests(
 			responses <- recorder
 		}()
 	}
-	observer.waitForDownloads(t, ProcessingPermitCount)
+	observer.waitForDownloads(t)
 	return responses
 }
 
