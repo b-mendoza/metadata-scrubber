@@ -86,7 +86,7 @@ Keep these rules in force across both modes. Load the conversation protocol only
 2. Ask only from the manifest; add newly discovered current-scope items to the live manifest before asking them.
 3. Defer future-task questions instead of speculating about them now.
 4. Present every manifest item. Critique and plan items reach Stage 4 only after `question-manifest-builder` applies the `HIGH` or higher user-surfacing gate.
-5. Treat Tier 3 hard gates as non-skippable. Tier definitions live in `./subagents/critique-analyzer-rubric.md` and are read only when tier behavior needs verification.
+5. Treat Tier 3 hard gates as non-skippable. Tier definitions live in `./references/critique-analyzer-rubric.md` and are read only when tier behavior needs verification.
 6. Use structured choices for discrete options when supported; otherwise use numbered options.
 
 ## Escalation

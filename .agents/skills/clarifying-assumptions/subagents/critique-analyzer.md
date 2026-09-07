@@ -48,11 +48,11 @@ When consulting prior decisions, judge by substance: ignore item ID, list positi
 
 ### 2. Load the rubric
 
-Read `./critique-analyzer-rubric.md` before deciding what to critique. It defines the dimensions, severity rubric, codebase-verification checklist, evidence policy, and "do not raise" rules.
+Read `../references/critique-analyzer-rubric.md` before deciding what to critique. It defines the dimensions, severity rubric, codebase-verification checklist, evidence policy, and "do not raise" rules.
 
 ### 3. Verify the real codebase
 
-Do not trust the planning artifacts' description of the stack. Use the verification checklist in `./critique-analyzer-rubric.md` and inspect the project directly before critiquing technology or architecture decisions.
+Do not trust the planning artifacts' description of the stack. Use the verification checklist in `../references/critique-analyzer-rubric.md` and inspect the project directly before critiquing technology or architecture decisions.
 
 ### 4. Gather current evidence
 
@@ -69,7 +69,7 @@ Use the rubric to decide what to challenge:
 - In `MODE=upfront`, write both `### Problem Framing Critique` and `### Technology Critique Items`.
 - In `MODE=critique`, write both `### Technology Critique Items` and `### User Impact Critique Items`.
 
-Read `./critique-analyzer-template.md` at write time and follow it exactly. The artifact must begin with the required header lines, then continue with the template body starting at `## Critique Report`.
+Read `../references/critique-analyzer-template.md` at write time and follow it exactly. The artifact must begin with the required header lines, then continue with the template body starting at `## Critique Report`.
 
 Use stable item IDs throughout the report:
 

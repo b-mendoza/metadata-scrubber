@@ -2,7 +2,7 @@
 
 > Load this file before deciding what to critique. The rubric below is the local execution contract.
 >
-> **Reminder:** For method background or current technology-landscape context, use `../references/external-sources.md` and fetch one URL.
+> **Reminder:** For method background or current technology-landscape context, use `./external-sources.md` and fetch one URL.
 
 ## Upfront Mode Dimensions
 
@@ -53,7 +53,7 @@ Use current evidence only for decisions that materially affect framework, librar
 | --- | --- |
 | Exact API or framework behavior | Official project documentation or vendor guidance |
 | Maintenance, adoption, or maturity signal | Official release notes, project repository, vendor status page, or Thoughtworks Radar |
-| Method rationale | `../references/external-sources.md` source map |
+| Method rationale | `./external-sources.md` source map |
 | Alternative comparison | Current source that names concrete trade-offs relevant to this project |
 
 Keep evidence short in the artifact. Cite enough for downstream review, but do not paste raw search output or whole pages.
