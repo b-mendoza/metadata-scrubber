@@ -277,10 +277,22 @@ func TestScrubReleasesPermitAfterPanic(t *testing.T) {
 	})
 
 	handler.clean = func(input []byte) ([]byte, error) { return bytes.Clone(input), nil }
-	followUpResponses := startGuardedRequests(t, handler, observer, []guardedRequest{
-		{scrub: true, fileID: fileIDTwo},
-		{scrub: true, fileID: fileIDThree},
-	})
+	followUpResponses := make(chan *httptest.ResponseRecorder, 2)
+	for _, fileID := range []string{fileIDTwo, fileIDThree} {
+		body, err := json.Marshal(scrubRequest{
+			StorageKey: formatStorageKey(fileID),
+			ETag:       canonicalETagsByFileID[fileID],
+		})
+		require.NoError(t, err)
+		go func() {
+			request := httptest.NewRequest(http.MethodPost, "/api/files/scrub", bytes.NewReader(body))
+			request.Header.Set(header.ContentType, mediatype.JSON)
+			recorder := httptest.NewRecorder()
+			bindings.Inject(bindings.Bindings{Storage: observer})(http.HandlerFunc(handler.Scrub)).ServeHTTP(recorder, request)
+			followUpResponses <- recorder
+		}()
+	}
+	observer.waitForDownloads(t)
 	observer.releaseDownloads()
 	requireResponsesSuccess(t, followUpResponses, 2, "timed out waiting for follow-up response")
 }
