@@ -115,16 +115,18 @@ func TestRequestLoggerLogsPanickedRequests(t *testing.T) {
 func TestRequestLoggerLogsPanickedRequestsAfterWritingHeader(t *testing.T) {
 	t.Parallel()
 
-	handler, readRecords := newLoggedHandler(t, func(w http.ResponseWriter, _ *http.Request) {
+	var logs bytes.Buffer
+	logger := slog.New(slog.NewJSONHandler(&logs, nil))
+	handler := httpx.RequestLogger(logger)(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
 		w.WriteHeader(http.StatusCreated)
 		panic("panic-value-sensitive-marker")
-	})
+	}))
 
 	require.PanicsWithValue(t, "panic-value-sensitive-marker", func() {
 		handler.ServeHTTP(httptest.NewRecorder(), httptest.NewRequest(http.MethodGet, "/api/health", http.NoBody))
 	})
 
-	records := readRecords()
+	records := readJSONLogRecords(t, logs.Bytes())
 	require.Len(t, records, 2)
 	for _, record := range records {
 		require.NotContains(t, record.rawJSON, "panic-value-sensitive-marker")
@@ -153,20 +155,6 @@ type logRecord struct {
 	DurationMilliseconds *int64  `json:"duration_ms"`
 	Panicked             *bool   `json:"panicked"`
 	Panic                *string `json:"panic"`
-}
-
-func newLoggedHandler(t *testing.T, next http.HandlerFunc) (loggedHandler http.Handler, readRecords func() []logRecord) {
-	t.Helper()
-
-	var logs bytes.Buffer
-	logger := slog.New(slog.NewJSONHandler(&logs, nil))
-	loggedHandler = httpx.RequestLogger(logger)(next)
-
-	return loggedHandler, func() []logRecord {
-		t.Helper()
-
-		return readJSONLogRecords(t, logs.Bytes())
-	}
 }
 
 func requireRequiredIntLogField(t *testing.T, name string, expected int, actual *int) {
