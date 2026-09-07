@@ -80,8 +80,10 @@ func TestRequestLoggerDefaultsStatusToOKWhenHandlerOnlyWritesBody(t *testing.T) 
 	records := readJSONLogRecords(t, logs.Bytes())
 	require.Len(t, records, 2)
 	completed := records[1]
-	requireRequiredIntLogField(t, "status", http.StatusOK, completed.Status)
-	requireRequiredIntLogField(t, "bytes", len("ok"), completed.Bytes)
+	require.NotNil(t, completed.Status, "missing status log field")
+	require.Equal(t, http.StatusOK, *completed.Status)
+	require.NotNil(t, completed.Bytes, "missing bytes log field")
+	require.Equal(t, len("ok"), *completed.Bytes)
 }
 
 func TestRequestLoggerLogsPanickedRequests(t *testing.T) {
