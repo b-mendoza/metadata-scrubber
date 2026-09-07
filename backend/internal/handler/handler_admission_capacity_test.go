@@ -314,10 +314,19 @@ func TestScrubReleasesPermitBeforeUploadingSanitizedBytes(t *testing.T) {
 	}()
 	observer.waitForUpload(t, fileIDOne)
 
-	holderResponses := startGuardedRequests(t, handler, observer, []guardedRequest{
-		{scrub: false, fileID: fileIDTwo},
-		{scrub: false, fileID: fileIDThree},
-	})
+	holderResponses := make(chan *httptest.ResponseRecorder, 2)
+	for _, fileID := range []string{fileIDTwo, fileIDThree} {
+		body, err := json.Marshal(dryRunRequest{StorageKey: formatStorageKey(fileID)})
+		require.NoError(t, err)
+		go func() {
+			request := httptest.NewRequest(http.MethodPost, "/api/files/dry-run", bytes.NewReader(body))
+			request.Header.Set(header.ContentType, mediatype.JSON)
+			recorder := httptest.NewRecorder()
+			bindings.Inject(bindings.Bindings{Storage: observer})(http.HandlerFunc(handler.DryRun)).ServeHTTP(recorder, request)
+			holderResponses <- recorder
+		}()
+	}
+	observer.waitForDownloads(t)
 
 	observer.releaseUploads()
 	require.Equal(t, http.StatusOK, (<-firstResponse).Code)
