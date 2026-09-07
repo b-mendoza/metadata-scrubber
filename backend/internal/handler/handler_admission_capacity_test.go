@@ -240,12 +240,44 @@ func TestMixedWorkflowsPeakAtTwo(t *testing.T) {
 	require.NoError(t, fake.SetSource(fileIDThree, storage.SourceObject{PDFBytes: []byte("%PDF-three"), ETag: canonicalETagThree}))
 	handler := newTestHandler(t, nil, nil, nil)
 
-	requests := []guardedRequest{
-		{scrub: false, fileID: fileIDOne},
-		{scrub: true, fileID: fileIDTwo},
-		{scrub: false, fileID: fileIDThree},
+	responses := make(chan *httptest.ResponseRecorder, 3)
+	{
+		body, err := json.Marshal(dryRunRequest{StorageKey: formatStorageKey(fileIDOne)})
+		require.NoError(t, err)
+		go func() {
+			request := httptest.NewRequest(http.MethodPost, "/api/files/dry-run", bytes.NewReader(body))
+			request.Header.Set(header.ContentType, mediatype.JSON)
+			recorder := httptest.NewRecorder()
+			bindings.Inject(bindings.Bindings{Storage: observer})(http.HandlerFunc(handler.DryRun)).ServeHTTP(recorder, request)
+			responses <- recorder
+		}()
 	}
-	responses := startGuardedRequests(t, handler, observer, requests)
+	{
+		body, err := json.Marshal(scrubRequest{
+			StorageKey: formatStorageKey(fileIDTwo),
+			ETag:       canonicalETagsByFileID[fileIDTwo],
+		})
+		require.NoError(t, err)
+		go func() {
+			request := httptest.NewRequest(http.MethodPost, "/api/files/scrub", bytes.NewReader(body))
+			request.Header.Set(header.ContentType, mediatype.JSON)
+			recorder := httptest.NewRecorder()
+			bindings.Inject(bindings.Bindings{Storage: observer})(http.HandlerFunc(handler.Scrub)).ServeHTTP(recorder, request)
+			responses <- recorder
+		}()
+	}
+	{
+		body, err := json.Marshal(dryRunRequest{StorageKey: formatStorageKey(fileIDThree)})
+		require.NoError(t, err)
+		go func() {
+			request := httptest.NewRequest(http.MethodPost, "/api/files/dry-run", bytes.NewReader(body))
+			request.Header.Set(header.ContentType, mediatype.JSON)
+			recorder := httptest.NewRecorder()
+			bindings.Inject(bindings.Bindings{Storage: observer})(http.HandlerFunc(handler.DryRun)).ServeHTTP(recorder, request)
+			responses <- recorder
+		}()
+	}
+	observer.waitForDownloads(t)
 	require.Equal(t, 2, observer.peakDownloads())
 	select {
 	case fileID := <-observer.downloadStarted:
@@ -254,7 +286,7 @@ func TestMixedWorkflowsPeakAtTwo(t *testing.T) {
 	}
 
 	observer.releaseDownloads()
-	requireResponsesSuccess(t, responses, len(requests), "timed out waiting for mixed guarded workflow")
+	requireResponsesSuccess(t, responses, 3, "timed out waiting for mixed guarded workflow")
 	require.Equal(t, 2, observer.peakDownloads())
 	require.Empty(t, handler.permits)
 }
