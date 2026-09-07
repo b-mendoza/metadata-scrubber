@@ -104,7 +104,8 @@ func TestRequestLoggerLogsPanickedRequests(t *testing.T) {
 	completed := records[1]
 	require.Equal(t, "request completed", completed.Msg)
 	require.Equal(t, "ERROR", completed.Level)
-	requireRequiredIntLogField(t, "status", http.StatusInternalServerError, completed.Status)
+	require.NotNil(t, completed.Status, "missing status log field")
+	require.Equal(t, http.StatusInternalServerError, *completed.Status)
 	require.NotNil(t, completed.Panicked, "missing panicked log field")
 	require.True(t, *completed.Panicked)
 	require.Nil(t, completed.Panic, "panic value must not be logged")
