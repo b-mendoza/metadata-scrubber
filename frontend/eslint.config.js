@@ -10,6 +10,7 @@ import eslintReact from "@eslint-react/eslint-plugin";
 import vitest from "@vitest/eslint-plugin";
 import { defineConfig, globalIgnores } from "eslint/config";
 import love from "eslint-config-love";
+import { importX } from "eslint-plugin-import-x";
 import jsxA11yX from "eslint-plugin-jsx-a11y-x";
 import oxlint from "eslint-plugin-oxlint";
 import reactHooks from "eslint-plugin-react-hooks";
@@ -75,6 +76,32 @@ export default defineConfig(
   // This is a known issue with plugins using TSESLint.FlatConfig types.
   // See: https://github.com/typescript-eslint/typescript-eslint/issues/11543
   love,
+  // ===========================================================================
+  // This block replaces rules removed in Love v155.
+  // Reconsider it only when published Love provides equivalent rules,
+  // supported peers, and the same rule ownership.
+  // ===========================================================================
+  {
+    plugins: {
+      "import-x": importX,
+    },
+    rules: {
+      "import-x/export": ERROR,
+      "import-x/first": ERROR,
+      "import-x/no-absolute-path": [
+        ERROR,
+        {
+          amd: false,
+          commonjs: true,
+          esmodule: true,
+        },
+      ],
+      "import-x/no-duplicates": ERROR,
+      "import-x/no-named-default": ERROR,
+      "import-x/no-webpack-loader-syntax": ERROR,
+    },
+  },
+  // ===========================================================================
   unicorn.configs.recommended,
   e18e.configs.recommended,
   sonarjs.configs?.["recommended"],
