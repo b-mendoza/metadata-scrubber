@@ -129,10 +129,7 @@ const oxlintJsonOutputSchema = z.union([
 type OxlintJsonMessage = z.infer<typeof oxlintJsonMessageSchema>;
 type OxlintJsonOutput = z.infer<typeof oxlintJsonOutputSchema>;
 
-const messageMatchesRule = (
-  message: OxlintJsonMessage,
-  ruleId: string,
-): boolean => {
+const isRuleMessage = (message: OxlintJsonMessage, ruleId: string): boolean => {
   const target = ruleName(ruleId);
   return (
     message.ruleId === target ||
@@ -268,7 +265,7 @@ const getDiagnosticMessages = (
     runFixtureLint(fixturePath),
   );
   return parseMessages(parsed)
-    .filter((message) => messageMatchesRule(message, ruleId))
+    .filter((message) => isRuleMessage(message, ruleId))
     .map((message) => message.message);
 };
 
