@@ -51,7 +51,9 @@ export interface FakeXMLHttpRequest extends EventTarget {
   setRequestHeader: (name: string, value: string) => void;
 }
 
-let automaticResponse: FakeXMLHttpResponse | null = null;
+const automaticResponse: { current: FakeXMLHttpResponse | null } = {
+  current: null,
+};
 const requests: FakeXMLHttpRequest[] = [];
 
 const createFakeXMLHttpRequest = (): FakeXMLHttpRequest => {
@@ -101,8 +103,8 @@ const createFakeXMLHttpRequest = (): FakeXMLHttpRequest => {
       request.body = body;
       requests.push(request);
 
-      if (automaticResponse != null) {
-        void request.respond(automaticResponse);
+      if (automaticResponse.current != null) {
+        void request.respond(automaticResponse.current);
       }
     },
     setRequestHeader: (name: string, value: string) => {
@@ -122,11 +124,11 @@ const fakeXMLHttpRequestConstructor = vi.fn(
 export const FakeXMLHttpRequest = Object.assign(fakeXMLHttpRequestConstructor, {
   requests,
   reset: () => {
-    automaticResponse = null;
+    automaticResponse.current = null;
     requests.length = NO_HTTP_STATUS;
   },
   respondAutomaticallyWith: (response: FakeXMLHttpResponse) => {
-    automaticResponse = response;
+    automaticResponse.current = response;
   },
 });
 
