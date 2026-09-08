@@ -7,11 +7,11 @@ export const Route = createFileRoute("/")({
   loader({ context }) {
     const { queryClient, trpc } = context;
 
-    queryClient
+    void queryClient
       .query(trpc.products.getMessage.queryOptions())
       .catch(() => null);
 
-    queryClient
+    void queryClient
       .query(trpc.products.getProducts.queryOptions())
       .catch(() => null);
   },
