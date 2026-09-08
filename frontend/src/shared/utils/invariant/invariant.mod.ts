@@ -1,8 +1,8 @@
 export function invariant(
-  condition: boolean,
+  isSatisfied: boolean,
   message: string | (() => string),
-): asserts condition {
-  if (!condition) {
+): asserts isSatisfied {
+  if (!isSatisfied) {
     throw new Error(typeof message === "function" ? message() : message);
   }
 }
