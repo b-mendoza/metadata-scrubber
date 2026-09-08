@@ -30,34 +30,21 @@ test("a hung fetch rejects as a Ky timeout at 3000 ms and fetch runs once", asyn
   const httpClient = createHttpClient(backendBaseUrl);
   const healthPath = "/api/health";
 
-  let didSettle = false;
-  const requestPromise = httpClient.get(healthPath).then(
-    () => {
-      didSettle = true;
-      expect.fail("the hung fetch must reject");
-    },
-    (error: unknown) => {
-      didSettle = true;
-      return error;
-    },
-  );
+  const requestPromise = httpClient.get(healthPath);
+  const onSettle = vi.fn();
+  void requestPromise.then(onSettle, onSettle);
 
   await vi.advanceTimersByTimeAsync(
     HTTP_CLIENT_ATTEMPT_TIMEOUT_MS - ONE_MILLISECOND_MS,
   );
 
-  expect(didSettle).toBe(false);
+  expect(onSettle).not.toHaveBeenCalled();
 
   await vi.advanceTimersByTimeAsync(ONE_MILLISECOND_MS);
 
-  expect(didSettle).toBe(true);
+  expect(onSettle).toHaveBeenCalledOnce();
 
-  const error = await requestPromise;
-  expect(error).toBeInstanceOf(TimeoutError);
-  if (!(error instanceof TimeoutError)) {
-    expect.fail("the hung fetch must reject with a TimeoutError");
-  }
-
+  await expect(requestPromise).rejects.toBeInstanceOf(TimeoutError);
   expect(fetchMock).toHaveBeenCalledOnce();
 });
 
