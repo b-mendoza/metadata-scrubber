@@ -22,7 +22,7 @@ const getFirstTemplateText = (
   return quasi.value.cooked ?? quasi.value.raw;
 };
 
-const templateStartsWithStaticHost = (
+const hasStaticHostPrefix = (
   node: ESTree.TemplateLiteral,
   firstTemplateText: string,
 ): boolean =>
@@ -192,7 +192,7 @@ export default defineRule({
         const firstTemplateText = getFirstTemplateText(node);
         const url =
           firstTemplateText != null &&
-          templateStartsWithStaticHost(node, firstTemplateText)
+          hasStaticHostPrefix(node, firstTemplateText)
             ? firstTemplateText
             : getInterpolatedProtocolUrl(node, context.sourceCode);
         if (url == null) return;
