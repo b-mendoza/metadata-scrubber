@@ -300,11 +300,12 @@ for (const [ruleId, fixtureFile, expectedNegativeMessages] of cases) {
   }
   for (const [index, expectedMessage] of expectedNegativeMessages.entries()) {
     const actualMessage = negativeMessages[index];
-    if (actualMessage === expectedMessage) continue;
-    console.error(
-      `${ruleId} negative ${fixtureFile} message ${String(index)}: expected ${JSON.stringify(expectedMessage)}, got ${JSON.stringify(actualMessage)}`,
-    );
-    hasFailure = true;
+    if (actualMessage !== expectedMessage) {
+      console.error(
+        `${ruleId} negative ${fixtureFile} message ${String(index)}: expected ${JSON.stringify(expectedMessage)}, got ${JSON.stringify(actualMessage)}`,
+      );
+      hasFailure = true;
+    }
   }
 }
 
