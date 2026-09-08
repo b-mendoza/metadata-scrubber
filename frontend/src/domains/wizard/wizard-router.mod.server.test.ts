@@ -228,12 +228,11 @@ test("the root application router registers the wizard router", async () => {
   vi.stubGlobal("fetch", fetchMock);
   setAppBindings();
   const request = new Request(FRONTEND_URL);
-  const createApplicationCaller = createCallerFactory(appRouter);
+  const createAppCaller = createCallerFactory(appRouter);
 
-  const result = await createApplicationCaller(
-    createTRPCRequestContext(request),
-    { signal: request.signal },
-  ).wizard.getWorkflowConfig();
+  const result = await createAppCaller(createTRPCRequestContext(request), {
+    signal: request.signal,
+  }).wizard.getWorkflowConfig();
 
   expect(result).toEqual(response);
   expect(fetchMock).toHaveBeenCalledOnce();
