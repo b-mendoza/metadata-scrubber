@@ -65,7 +65,7 @@ export const getBaseTRPCURL = createIsomorphicFn()
 
     return new URL(TRPC_PATH, requestURL.origin);
   })
-  .client(() => new URL(TRPC_PATH, globalThis.window.location.origin));
+  .client(() => new URL(TRPC_PATH, location.origin));
 
 export const initializeTRPCClient = (trpcURL: URL) => {
   return createTRPCClient<AppRouter>({
