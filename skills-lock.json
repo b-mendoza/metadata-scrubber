@@ -167,7 +167,7 @@
       "source": "addyosmani/agent-skills",
       "sourceType": "github",
       "skillPath": "skills/spec-driven-development/SKILL.md",
-      "computedHash": "aca026683acdae1cd8a58f335fb26e60fb5db11ae81461a6896b0bf561aacb75"
+      "computedHash": "a6cdfed42f757f84d3d6968fbea5b257b28c08ff9aa52de6f12fe78a5fb1393b"
     },
     "stop-slop": {
       "source": "hardikpandya/stop-slop",
