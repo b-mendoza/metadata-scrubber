@@ -352,6 +352,7 @@
     "unicorn/error-message": "error",
     "unicorn/escape-case": "error",
     "unicorn/explicit-length-check": "error",
+    "unicorn/explicit-timer-delay": "error",
     "unicorn/filename-case": "error",
     "unicorn/import-style": "error",
     "unicorn/new-for-builtins": "error",
