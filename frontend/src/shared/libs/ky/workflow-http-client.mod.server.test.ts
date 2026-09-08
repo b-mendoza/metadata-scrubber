@@ -291,24 +291,21 @@ test.each([
     vi.stubGlobal("fetch", fetchMock);
     const client = createWorkflowHttpClient(BACKEND_BASE_URL);
 
-    let didSettle = false;
-    const responsePromise = client
-      .post(WORKFLOW_PATH, {
-        retry: WORKFLOW_SERVER_DIRECTED_RETRY_OPTIONS,
-        timeout,
-        totalTimeout: timeout,
-      })
-      .catch((error: unknown) => {
-        didSettle = true;
-        return error;
-      });
+    const responsePromise = client.post(WORKFLOW_PATH, {
+      retry: WORKFLOW_SERVER_DIRECTED_RETRY_OPTIONS,
+      timeout,
+      totalTimeout: timeout,
+    });
+    const onSettle = vi.fn();
+    void responsePromise.then(onSettle, onSettle);
 
     await vi.advanceTimersByTimeAsync(timeout - ONE_MILLISECOND_MS);
-    expect(didSettle).toBe(false);
+    expect(onSettle).not.toHaveBeenCalled();
 
     await vi.advanceTimersByTimeAsync(ONE_MILLISECOND_MS);
-    const error = await responsePromise;
-    expect(error).toBeInstanceOf(TimeoutError);
+    expect(onSettle).toHaveBeenCalledOnce();
+
+    await expect(responsePromise).rejects.toBeInstanceOf(TimeoutError);
     expect(fetchMock).toHaveBeenCalledOnce();
   },
 );
