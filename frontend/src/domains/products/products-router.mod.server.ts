@@ -9,7 +9,7 @@ import {
   createTRPCRouter,
   publicProcedure,
 } from "#/shared/libs/trpc/utils/initializer/initializer.mod.server";
-import { getAppBindings } from "#/shared/middlewares/application-bindings/application-bindings.mod";
+import { getAppBindings } from "#/shared/middlewares/app-bindings/app-bindings.mod";
 
 export const PRODUCTS_RESPONSE_DELAY_MS = 5000;
 const SEED_PRODUCT_NAMES = ["Metadata Scrubber", "Privacy Audit Tool"];

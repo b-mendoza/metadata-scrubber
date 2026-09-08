@@ -6,19 +6,16 @@ import {
   createCallerFactory,
   createTRPCRequestContext,
 } from "#/shared/libs/trpc/utils/initializer/initializer.mod.server";
-import { getAppBindings } from "#/shared/middlewares/application-bindings/application-bindings.mod";
+import { getAppBindings } from "#/shared/middlewares/app-bindings/app-bindings.mod";
 
 import {
   BACKEND_HEALTH_CHECK_FAILURE_MESSAGE,
   productsRouter,
 } from "./products-router.mod.server";
 
-vi.mock(
-  import("#/shared/middlewares/application-bindings/application-bindings.mod"),
-  () => ({
-    getAppBindings: vi.fn(),
-  }),
-);
+vi.mock(import("#/shared/middlewares/app-bindings/app-bindings.mod"), () => ({
+  getAppBindings: vi.fn(),
+}));
 
 const createProductsCaller = createCallerFactory(productsRouter);
 

@@ -10,7 +10,7 @@ import {
   createCallerFactory,
   createTRPCRequestContext,
 } from "#/shared/libs/trpc/utils/initializer/initializer.mod.server";
-import { getAppBindings } from "#/shared/middlewares/application-bindings/application-bindings.mod";
+import { getAppBindings } from "#/shared/middlewares/app-bindings/app-bindings.mod";
 
 import type {
   DryRunInput,
@@ -23,12 +23,9 @@ import {
   wizardRouter,
 } from "./wizard-router.mod.server";
 
-vi.mock(
-  import("#/shared/middlewares/application-bindings/application-bindings.mod"),
-  () => ({
-    getAppBindings: vi.fn(),
-  }),
-);
+vi.mock(import("#/shared/middlewares/app-bindings/app-bindings.mod"), () => ({
+  getAppBindings: vi.fn(),
+}));
 
 const BACKEND_BASE_URL = new URL("https://backend.test/");
 const FRONTEND_URL = "https://frontend.test/";

@@ -25,7 +25,7 @@ import {
   createTRPCRouter,
   publicProcedure,
 } from "#/shared/libs/trpc/utils/initializer/initializer.mod.server";
-import { getAppBindings } from "#/shared/middlewares/application-bindings/application-bindings.mod";
+import { getAppBindings } from "#/shared/middlewares/app-bindings/app-bindings.mod";
 
 import * as contracts from "./wizard-contracts.mod.server";
 
