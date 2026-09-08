@@ -169,10 +169,10 @@ export default defineRule({
     },
   },
   create(context) {
-    const exempt =
+    const isExempt =
       isTestFile(context.filename) ||
       toProjectPath(context.filename, context.cwd) === ENVIRONMENT_MODULE;
-    if (exempt) return {};
+    if (isExempt) return {};
 
     return {
       Literal(node) {
