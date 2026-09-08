@@ -36,7 +36,7 @@ const createQueryClient = () => {
   });
 };
 
-let browserQueryClient: QueryClient | null = null;
+const browserQueryClient: { current: QueryClient | null } = { current: null };
 
 const initializeQueryClient = createIsomorphicFn()
   .server(
@@ -49,9 +49,9 @@ const initializeQueryClient = createIsomorphicFn()
     // suspends during the initial render. This may not be needed if we
     // have a suspense boundary BELOW the creation of the query client
     () => {
-      browserQueryClient ??= createQueryClient();
+      browserQueryClient.current ??= createQueryClient();
 
-      return browserQueryClient;
+      return browserQueryClient.current;
     },
   );
 
