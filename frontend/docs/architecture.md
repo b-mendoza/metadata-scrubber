@@ -29,15 +29,15 @@ Developers build the frontend with [TanStack Start](https://tanstack.com/start) 
 - Each procedure has an explicit Zod input schema when it accepts input. Each procedure validates its backend success body with Zod.
 - The tRPC workflow sends storage keys, canonical ETags, file names, and file sizes. It never sends file bytes.
 
-## Application bindings
+## App bindings
 
 - Developers implement request-scoped dependency injection with `AsyncLocalStorage` in `src/shared/middlewares/application-bindings/application-bindings.mod.ts`.
-- Server code calls `getApplicationBindings()`. The function returns `{ httpClient, workflowHttpClient }`.
+- Server code calls `getAppBindings()`. The function returns `{ httpClient, workflowHttpClient }`.
 - The `httpClient` binding is the request-scoped health-check Ky client.
 - The `workflowHttpClient` binding is the request-scoped file-workflow Ky client.
 - Both clients use the validated `BACKEND_URL` as `baseUrl`.
 - Developers added the `db` binding code but commented it out. Keep the code commented out until the application connects the database client.
-- On each request, the middleware calls `environmentSchema.parse(process.env)`. A validation error rejects the middleware request. The middleware provides the validated bindings to downstream code through `getApplicationBindings()`.
+- On each request, the middleware calls `environmentSchema.parse(process.env)`. A validation error rejects the middleware request. The middleware provides the validated bindings to downstream code through `getAppBindings()`.
 
 ## Backend HTTP
 
@@ -83,7 +83,7 @@ The workflow schemas enforce these contracts:
 
 - Developers use PostgreSQL through Drizzle ORM. They keep Drizzle config in `drizzle.config.ts`. See the migration commands in the [commands reference](./commands.md).
 - Developers define the schema in `src/shared/database/database.schema.server.ts`. The current schema defines one `users` table.
-- Application bindings do not contain the database client.
+- App bindings do not contain the database client.
 
 ## File uploads
 

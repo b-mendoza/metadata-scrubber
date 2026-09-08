@@ -11,7 +11,7 @@ import {
   createCallerFactory,
   createTRPCRequestContext,
 } from "#/shared/libs/trpc/utils/initializer/initializer.mod.server";
-import { getApplicationBindings } from "#/shared/middlewares/application-bindings/application-bindings.mod";
+import { getAppBindings } from "#/shared/middlewares/application-bindings/application-bindings.mod";
 
 import type {
   BackendErrorResponse,
@@ -30,7 +30,7 @@ import {
 vi.mock(
   import("#/shared/middlewares/application-bindings/application-bindings.mod"),
   () => ({
-    getApplicationBindings: vi.fn(),
+    getAppBindings: vi.fn(),
   }),
 );
 
@@ -43,7 +43,7 @@ const TWO_FETCH_ATTEMPTS = 2;
 const createWizardCaller = createCallerFactory(wizardRouter);
 
 const callerForRequest = (request: Request) => {
-  vi.mocked(getApplicationBindings).mockReturnValue({
+  vi.mocked(getAppBindings).mockReturnValue({
     httpClient: ky.create({ baseUrl: BACKEND_BASE_URL }),
     workflowHttpClient: createWorkflowHttpClient(BACKEND_BASE_URL),
   });

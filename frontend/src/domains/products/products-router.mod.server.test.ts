@@ -6,7 +6,7 @@ import {
   createCallerFactory,
   createTRPCRequestContext,
 } from "#/shared/libs/trpc/utils/initializer/initializer.mod.server";
-import { getApplicationBindings } from "#/shared/middlewares/application-bindings/application-bindings.mod";
+import { getAppBindings } from "#/shared/middlewares/application-bindings/application-bindings.mod";
 
 import {
   BACKEND_HEALTH_CHECK_FAILURE_MESSAGE,
@@ -16,7 +16,7 @@ import {
 vi.mock(
   import("#/shared/middlewares/application-bindings/application-bindings.mod"),
   () => ({
-    getApplicationBindings: vi.fn(),
+    getAppBindings: vi.fn(),
   }),
 );
 
@@ -26,7 +26,7 @@ test("getMessage maps a rejected backend health request to BAD_GATEWAY", async (
   const backendHealthFailure = new Error("backend health request failed");
   const request = new Request("https://frontend.test/");
 
-  vi.mocked(getApplicationBindings).mockReturnValue({
+  vi.mocked(getAppBindings).mockReturnValue({
     httpClient: ky.create({
       baseUrl: new URL("https://backend.test/"),
       hooks: {
@@ -67,7 +67,7 @@ test("getMessage returns the reachable backend health status", async () => {
   } as const;
   const request = new Request("https://frontend.test/");
 
-  vi.mocked(getApplicationBindings).mockReturnValue({
+  vi.mocked(getAppBindings).mockReturnValue({
     httpClient: ky.create({
       baseUrl: new URL("https://backend.test/"),
       hooks: {

@@ -10,7 +10,7 @@ export default defineRule({
     },
     messages: {
       mutableModuleState:
-        "Concurrent server requests share the module-scope `{{ declarationKind }}` state in `{{ bindings }}`. Move request-local mutation into request scope. Put request dependencies in `applicationBindingsMiddleware` and read them with `getApplicationBindings()`. Use `const` only when no request changes the value or its contents. Do not move the mutation into a module-scope object or array.",
+        "Concurrent server requests share the module-scope `{{ declarationKind }}` state in `{{ bindings }}`. Move request-local mutation into request scope. Put request dependencies in `appBindingsMiddleware` and read them with `getAppBindings()`. Use `const` only when no request changes the value or its contents. Do not move the mutation into a module-scope object or array.",
     },
   },
   create(context) {

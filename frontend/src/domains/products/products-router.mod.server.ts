@@ -9,7 +9,7 @@ import {
   createTRPCRouter,
   publicProcedure,
 } from "#/shared/libs/trpc/utils/initializer/initializer.mod.server";
-import { getApplicationBindings } from "#/shared/middlewares/application-bindings/application-bindings.mod";
+import { getAppBindings } from "#/shared/middlewares/application-bindings/application-bindings.mod";
 
 export const PRODUCTS_RESPONSE_DELAY_MS = 5000;
 const SEED_PRODUCT_NAMES = ["Metadata Scrubber", "Privacy Audit Tool"];
@@ -33,7 +33,7 @@ const BACKEND_HEALTH_STATUS_ENDPOINT = "/api/health";
 
 export const productsRouter = createTRPCRouter({
   getMessage: publicProcedure.query(async ({ signal }) => {
-    const { httpClient } = getApplicationBindings();
+    const { httpClient } = getAppBindings();
 
     const backendHealthStatusResult = await ResultAsync.fromPromise(
       httpClient

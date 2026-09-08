@@ -11,7 +11,7 @@ import {
   createCallerFactory,
   createTRPCRequestContext,
 } from "#/shared/libs/trpc/utils/initializer/initializer.mod.server";
-import { getApplicationBindings } from "#/shared/middlewares/application-bindings/application-bindings.mod";
+import { getAppBindings } from "#/shared/middlewares/application-bindings/application-bindings.mod";
 
 import type {
   ConfirmDeleteInput,
@@ -29,7 +29,7 @@ import { wizardRouter } from "./wizard-router.mod.server";
 vi.mock(
   import("#/shared/middlewares/application-bindings/application-bindings.mod"),
   () => ({
-    getApplicationBindings: vi.fn(),
+    getAppBindings: vi.fn(),
   }),
 );
 
@@ -41,15 +41,15 @@ const DOWNLOAD_URL = "https://downloads.test/sanitized.pdf";
 
 const createWizardCaller = createCallerFactory(wizardRouter);
 
-const setApplicationBindings = () => {
-  vi.mocked(getApplicationBindings).mockReturnValue({
+const setAppBindings = () => {
+  vi.mocked(getAppBindings).mockReturnValue({
     httpClient: ky.create({ baseUrl: BACKEND_BASE_URL }),
     workflowHttpClient: createWorkflowHttpClient(BACKEND_BASE_URL),
   });
 };
 
 const callerForRequest = (request: Request) => {
-  setApplicationBindings();
+  setAppBindings();
   return createWizardCaller(createTRPCRequestContext(request), {
     signal: request.signal,
   });
@@ -226,7 +226,7 @@ test("the root application router registers the wizard router", async () => {
     .fn<typeof fetch>()
     .mockResolvedValue(Response.json(response));
   vi.stubGlobal("fetch", fetchMock);
-  setApplicationBindings();
+  setAppBindings();
   const request = new Request(FRONTEND_URL);
   const createApplicationCaller = createCallerFactory(appRouter);
 

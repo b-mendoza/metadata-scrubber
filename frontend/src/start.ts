@@ -1,7 +1,7 @@
 import { createStart } from "@tanstack/react-start";
 
-import { applicationBindingsMiddleware } from "#/shared/middlewares/application-bindings/application-bindings.mod";
+import { appBindingsMiddleware } from "#/shared/middlewares/application-bindings/application-bindings.mod";
 
 export const startInstance = createStart(() => ({
-  requestMiddleware: [applicationBindingsMiddleware],
+  requestMiddleware: [appBindingsMiddleware],
 }));

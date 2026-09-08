@@ -25,7 +25,7 @@ import {
   createTRPCRouter,
   publicProcedure,
 } from "#/shared/libs/trpc/utils/initializer/initializer.mod.server";
-import { getApplicationBindings } from "#/shared/middlewares/application-bindings/application-bindings.mod";
+import { getAppBindings } from "#/shared/middlewares/application-bindings/application-bindings.mod";
 
 import * as contracts from "./wizard-contracts.mod.server";
 
@@ -91,7 +91,7 @@ const mapWorkflowRequestFailure = async (
 
 export const wizardRouter = createTRPCRouter({
   getWorkflowConfig: publicProcedure.query(async ({ signal }) => {
-    const { workflowHttpClient } = getApplicationBindings();
+    const { workflowHttpClient } = getAppBindings();
     const responseResult = await ResultAsync.fromPromise(
       workflowHttpClient
         .get("/api/files/config", {
@@ -115,7 +115,7 @@ export const wizardRouter = createTRPCRouter({
   createUpload: publicProcedure
     .input(contracts.createUploadInputSchema)
     .mutation(async ({ input, signal }) => {
-      const { workflowHttpClient } = getApplicationBindings();
+      const { workflowHttpClient } = getAppBindings();
       const responseResult = await ResultAsync.fromPromise(
         workflowHttpClient
           .post("/api/uploads", {
@@ -140,7 +140,7 @@ export const wizardRouter = createTRPCRouter({
   dryRun: publicProcedure
     .input(contracts.dryRunInputSchema)
     .mutation(async ({ input, signal }) => {
-      const { workflowHttpClient } = getApplicationBindings();
+      const { workflowHttpClient } = getAppBindings();
       const responseResult = await ResultAsync.fromPromise(
         workflowHttpClient
           .post("/api/files/dry-run", {
@@ -165,7 +165,7 @@ export const wizardRouter = createTRPCRouter({
   scrubFile: publicProcedure
     .input(contracts.scrubFileInputSchema)
     .mutation(async ({ input, signal }) => {
-      const { workflowHttpClient } = getApplicationBindings();
+      const { workflowHttpClient } = getAppBindings();
       const responseResult = await ResultAsync.fromPromise(
         workflowHttpClient
           .post("/api/files/scrub", {
@@ -190,7 +190,7 @@ export const wizardRouter = createTRPCRouter({
   refreshDownloadGrant: publicProcedure
     .input(contracts.refreshDownloadGrantInputSchema)
     .mutation(async ({ input, signal }) => {
-      const { workflowHttpClient } = getApplicationBindings();
+      const { workflowHttpClient } = getAppBindings();
       const responseResult = await ResultAsync.fromPromise(
         workflowHttpClient
           .post("/api/files/download-grant", {
@@ -215,7 +215,7 @@ export const wizardRouter = createTRPCRouter({
   confirmDelete: publicProcedure
     .input(contracts.confirmDeleteInputSchema)
     .mutation(async ({ input, signal }) => {
-      const { workflowHttpClient } = getApplicationBindings();
+      const { workflowHttpClient } = getAppBindings();
       const responseResult = await ResultAsync.fromPromise(
         workflowHttpClient
           .post("/api/files/delete", {

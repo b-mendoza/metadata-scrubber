@@ -9,16 +9,15 @@ import type { WorkflowHTTPClient } from "#/shared/libs/ky/workflow-http-client.m
 import { createWorkflowHttpClient } from "#/shared/libs/ky/workflow-http-client.mod.server";
 import { invariant } from "#/shared/utils/invariant/invariant.mod";
 
-interface ApplicationBindingsValue {
+interface AppBindingsValue {
   // db: DrizzleDatabaseClient;
   httpClient: HTTPClient;
   workflowHttpClient: WorkflowHTTPClient;
 }
 
-const ApplicationBindingsStorage =
-  new AsyncLocalStorage<ApplicationBindingsValue>();
+const AppBindingsStore = new AsyncLocalStorage<AppBindingsValue>();
 
-export const applicationBindingsMiddleware = createMiddleware({
+export const appBindingsMiddleware = createMiddleware({
   type: "request",
 }).server(async (options) => {
   const safeEnvironmentVariables = environmentSchema.parse(process.env);
@@ -32,7 +31,7 @@ export const applicationBindingsMiddleware = createMiddleware({
     safeEnvironmentVariables.BACKEND_URL,
   );
 
-  return ApplicationBindingsStorage.run(
+  return AppBindingsStore.run(
     {
       httpClient,
       workflowHttpClient,
@@ -41,13 +40,10 @@ export const applicationBindingsMiddleware = createMiddleware({
   );
 });
 
-export const getApplicationBindings = createServerOnlyFn(() => {
-  const store = ApplicationBindingsStorage.getStore();
+export const getAppBindings = createServerOnlyFn(() => {
+  const store = AppBindingsStore.getStore();
 
-  invariant(
-    store != null,
-    "Failed to retrieve application bindings storage store",
-  );
+  invariant(store != null, "Failed to retrieve app bindings store");
 
   return store;
 });
