@@ -64,16 +64,14 @@ test("a 502 response rejects as an HTTP error and fetch runs twice", async () =>
   const httpClient = createHttpClient(backendBaseUrl);
   const healthPath = "/api/health";
 
-  const requestPromise = httpClient.get(healthPath).then(
-    () => {
-      expect.fail("the 502 response must reject");
-    },
-    (error: unknown) => error,
-  );
+  const requestPromise = httpClient.get(healthPath);
+  const onReject = vi.fn((error: unknown) => error);
+  void requestPromise.catch(onReject);
   await vi.runAllTimersAsync();
 
-  const error = await requestPromise;
-  expect(error).toBeInstanceOf(HTTPError);
+  await expect(requestPromise).rejects.toBeInstanceOf(HTTPError);
+
+  const [error] = onReject.mock.lastCall ?? [];
   if (!(error instanceof HTTPError)) {
     expect.fail("the 502 response must reject with an HTTPError");
   }
