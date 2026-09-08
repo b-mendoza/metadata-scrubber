@@ -22,7 +22,7 @@ export default defineRule({
           node.parent.type === "Program" ||
           (node.parent.type === "ExportNamedDeclaration" &&
             node.parent.parent.type === "Program");
-        if ((node.kind !== "let" && node.kind !== "var") || !isTopLevel) return;
+        if (!isTopLevel || (node.kind !== "let" && node.kind !== "var")) return;
         const bindings = node.declarations
           .map((declaration) => context.sourceCode.getText(declaration.id))
           .join(", ");
