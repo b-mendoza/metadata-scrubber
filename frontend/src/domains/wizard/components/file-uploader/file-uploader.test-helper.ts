@@ -93,7 +93,9 @@ const createFakeXMLHttpRequest = (): FakeXMLHttpRequest => {
       request.responseText = response.responseText ?? "";
       responseHeaders.clear();
 
-      for (const [name, value] of Object.entries(response.headers ?? {})) {
+      const responseHeaderEntries = Object.entries(response.headers ?? {});
+
+      for (const [name, value] of responseHeaderEntries) {
         responseHeaders.set(name.toLowerCase(), value);
       }
 
