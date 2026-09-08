@@ -16,7 +16,7 @@ const STORAGE_KEY_PATTERN =
 const CANONICAL_ETAG_PATTERN = /^[0-9a-f]{32}$/;
 
 // This loop replaces a control-character regex that no-control-regex forbids.
-const fileNameContainsInvalidCharacter = (value: string): boolean => {
+const hasInvalidFileNameCharacter = (value: string): boolean => {
   for (const character of value) {
     if (
       INVALID_FILE_NAME_CHARACTERS.has(character) ||
@@ -44,7 +44,7 @@ const fileNameSchema = z
       new TextEncoder().encode(value).byteLength <= MAXIMUM_FILE_NAME_BYTES,
     { error: "The file name is too long." },
   )
-  .refine((value) => !fileNameContainsInvalidCharacter(value), {
+  .refine((value) => !hasInvalidFileNameCharacter(value), {
     error: "The file name contains a character that is not allowed.",
   });
 
