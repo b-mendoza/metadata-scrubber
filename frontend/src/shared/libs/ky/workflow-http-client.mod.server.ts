@@ -16,7 +16,7 @@ export const WORKFLOW_DRY_RUN_TIMEOUT_MS = 90_000;
 export const WORKFLOW_SCRUB_TIMEOUT_MS = 240_000;
 export const WORKFLOW_RETRY_LIMIT = 2;
 export const WORKFLOW_RETRY_MAX_RETRY_AFTER_MS = 4000;
-const WORKFLOW_RETRY_ON_TIMEOUT = false;
+const WILL_WORKFLOW_RETRY_ON_TIMEOUT = false;
 
 const NO_RETRY_LIMIT = 0;
 const MINIMUM_RETRY_AFTER_SECONDS = 1;
@@ -62,7 +62,7 @@ const shouldRetryServerDirectedWorkflowRequest = ({
 
 export const WORKFLOW_NO_RETRY_OPTIONS = {
   limit: NO_RETRY_LIMIT,
-  retryOnTimeout: WORKFLOW_RETRY_ON_TIMEOUT,
+  retryOnTimeout: WILL_WORKFLOW_RETRY_ON_TIMEOUT,
 } satisfies RetryOptions;
 
 export const WORKFLOW_SERVER_DIRECTED_RETRY_OPTIONS = {
@@ -70,7 +70,7 @@ export const WORKFLOW_SERVER_DIRECTED_RETRY_OPTIONS = {
   limit: WORKFLOW_RETRY_LIMIT,
   maxRetryAfter: WORKFLOW_RETRY_MAX_RETRY_AFTER_MS,
   methods: ["post"],
-  retryOnTimeout: WORKFLOW_RETRY_ON_TIMEOUT,
+  retryOnTimeout: WILL_WORKFLOW_RETRY_ON_TIMEOUT,
   shouldRetry: shouldRetryServerDirectedWorkflowRequest,
   statusCodes: [SERVICE_UNAVAILABLE_STATUS_CODE],
 } satisfies RetryOptions;
