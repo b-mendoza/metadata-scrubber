@@ -264,7 +264,7 @@ export default defineConfig(
        * mod comes from the *.mod.ts file-name convention.
        * props and Props come from React.
        */
-      "unicorn/prevent-abbreviations": [
+      "unicorn/name-replacements": [
         ERROR,
         {
           allowList: {
