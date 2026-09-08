@@ -113,7 +113,7 @@ export const wizardRouter = createTRPCRouter({
   }),
 
   createUpload: publicProcedure
-    .input(contracts.createUploadInputSchema)
+    .input(contracts.uploadInputSchema)
     .mutation(async ({ input, signal }) => {
       const { workflowHttpClient } = getAppBindings();
       const responseResult = await ResultAsync.fromPromise(
@@ -125,7 +125,7 @@ export const wizardRouter = createTRPCRouter({
             timeout: WORKFLOW_ONE_SHOT_TIMEOUT_MS,
             totalTimeout: WORKFLOW_ONE_SHOT_TIMEOUT_MS,
           })
-          .json(contracts.createUploadResponseSchema),
+          .json(contracts.uploadResponseSchema),
         (cause: unknown) => cause,
       );
       if (responseResult.isErr()) {

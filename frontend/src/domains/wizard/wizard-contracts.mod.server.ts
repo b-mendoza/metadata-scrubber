@@ -61,12 +61,12 @@ export const workflowConfigResponseSchema = z.strictObject({
   maxFileSizeBytes: z.int().positive(),
 });
 
-export const createUploadInputSchema = z.strictObject({
+export const uploadInputSchema = z.strictObject({
   fileName: fileNameSchema,
   fileSizeBytes: z.int().min(MINIMUM_FILE_SIZE_BYTES),
 });
 
-export const createUploadResponseSchema = z.strictObject({
+export const uploadResponseSchema = z.strictObject({
   storageKey: storageKeySchema,
   uploadUrl: z.url({ protocol: HTTP_PROTOCOL }),
 });
@@ -123,8 +123,8 @@ export const backendErrorResponseSchema = z.strictObject({
 });
 
 export type WorkflowConfig = z.output<typeof workflowConfigResponseSchema>;
-export type CreateUploadInput = z.input<typeof createUploadInputSchema>;
-export type CreateUploadResponse = z.output<typeof createUploadResponseSchema>;
+export type CreateUploadInput = z.input<typeof uploadInputSchema>;
+export type CreateUploadResponse = z.output<typeof uploadResponseSchema>;
 export type DryRunInput = z.input<typeof dryRunInputSchema>;
 export type DryRunResponse = z.output<typeof dryRunResponseSchema>;
 export type ScrubFileInput = z.input<typeof scrubFileInputSchema>;
