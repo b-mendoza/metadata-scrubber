@@ -4,7 +4,9 @@
  * @see {@link https://en.wikipedia.org/wiki/List_of_HTTP_status_codes}
  */
 
-/* 100 - Informational */
+/*
+100 - Informational
+*/
 
 /**
  * The server has received the request headers and the client should proceed to
@@ -33,7 +35,9 @@ export const SWITCHING_PROTOCOLS_STATUS_CODE = 101;
  */
 export const PROCESSING_STATUS_CODE = 102;
 
-/* 200 - Success */
+/*
+200 - Success
+*/
 
 /**
  * Standard response for successful HTTP requests. The actual response will
@@ -44,7 +48,9 @@ export const PROCESSING_STATUS_CODE = 102;
  */
 export const OK_STATUS_CODE = 200;
 
-/** The request has been fulfilled, resulting in the creation of a new resource. */
+/**
+The request has been fulfilled, resulting in the creation of a new resource.
+*/
 export const CREATED_STATUS_CODE = 201;
 
 /**
@@ -100,7 +106,9 @@ export const ALREADY_REPORTED_STATUS_CODE = 208;
  */
 export const IM_USED_STATUS_CODE = 226;
 
-/* 300 - Redirection */
+/*
+300 - Redirection
+*/
 
 /**
  * Indicates multiple options for the resource from which the client may choose
@@ -110,7 +118,9 @@ export const IM_USED_STATUS_CODE = 226;
  */
 export const MULTIPLE_CHOICES_STATUS_CODE = 300;
 
-/** This and all future requests should be directed to the given URI. */
+/**
+This and all future requests should be directed to the given URI.
+*/
 export const MOVED_PERMANENTLY_STATUS_CODE = 301;
 
 /**
@@ -171,7 +181,9 @@ export const TEMPORARY_REDIRECT_STATUS_CODE = 307;
  */
 export const PERMANENT_REDIRECT_STATUS_CODE = 308;
 
-/* 400 - Client Error */
+/*
+400 - Client Error
+*/
 
 /**
  * The server cannot or will not process the request due to an apparent client
@@ -224,7 +236,9 @@ export const METHOD_NOT_ALLOWED_STATUS_CODE = 405;
  */
 export const NOT_ACCEPTABLE_STATUS_CODE = 406;
 
-/** The client must first authenticate itself with the proxy. */
+/**
+The client must first authenticate itself with the proxy.
+*/
 export const PROXY_AUTHENTICATION_REQUIRED_STATUS_CODE = 407;
 
 /**
@@ -293,7 +307,9 @@ export const UNSUPPORTED_MEDIA_TYPE_STATUS_CODE = 415;
  */
 export const RANGE_NOT_SATISFIABLE_STATUS_CODE = 416;
 
-/** The server cannot meet the requirements of the Expect request-header field. */
+/**
+The server cannot meet the requirements of the Expect request-header field.
+*/
 export const EXPECTATION_FAILED_STATUS_CODE = 417;
 
 /**
@@ -317,10 +333,14 @@ export const MISDIRECTED_REQUEST_STATUS_CODE = 421;
  */
 export const UNPROCESSABLE_ENTITY_STATUS_CODE = 422;
 
-/** The resource that is being accessed is locked. */
+/**
+The resource that is being accessed is locked.
+*/
 export const LOCKED_STATUS_CODE = 423;
 
-/** The request failed due to failure of a previous request (e.g., a PROPPATCH). */
+/**
+The request failed due to failure of a previous request (e.g., a PROPPATCH).
+*/
 export const FAILED_DEPENDENCY_STATUS_CODE = 424;
 
 /**
@@ -356,7 +376,9 @@ export const REQUEST_HEADER_FIELDS_TOO_LARGE_STATUS_CODE = 431;
  */
 export const UNAVAILABLE_FOR_LEGAL_REASONS_STATUS_CODE = 451;
 
-/* 500 - Server Error */
+/*
+500 - Server Error
+*/
 
 /**
  * A generic error message, given when an unexpected condition was encountered
@@ -389,7 +411,9 @@ export const SERVICE_UNAVAILABLE_STATUS_CODE = 503;
  */
 export const GATEWAY_TIMEOUT_STATUS_CODE = 504;
 
-/** The server does not support the HTTP protocol version used in the request */
+/**
+The server does not support the HTTP protocol version used in the request
+*/
 export const HTTP_VERSION_NOT_SUPPORTED_STATUS_CODE = 505;
 
 /**
@@ -404,10 +428,14 @@ export const VARIANT_ALSO_NEGOTIATES_STATUS_CODE = 506;
  */
 export const INSUFFICIENT_STORAGE_STATUS_CODE = 507;
 
-/** The server detected an infinite loop while processing the request. */
+/**
+The server detected an infinite loop while processing the request.
+*/
 export const LOOP_DETECTED_STATUS_CODE = 508;
 
-/** Further extensions to the request are required for the server to fulfill it. */
+/**
+Further extensions to the request are required for the server to fulfill it.
+*/
 export const NOT_EXTENDED_STATUS_CODE = 510;
 
 /**
