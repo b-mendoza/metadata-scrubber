@@ -22,7 +22,7 @@ const PRODUCTS = SEED_PRODUCT_NAMES.map((name) => ({
   name,
 }));
 
-const getMessageResponseSchema = z.object({
+const messageResponseSchema = z.object({
   status: z.literal("reachable", {
     error:
       'The backend health response status value must be "reachable". Return a JSON object whose status field is exactly "reachable".',
@@ -40,7 +40,7 @@ export const productsRouter = createTRPCRouter({
         .get(BACKEND_HEALTH_STATUS_ENDPOINT, {
           signal: signal ?? null,
         })
-        .json(getMessageResponseSchema),
+        .json(messageResponseSchema),
       (cause: unknown) =>
         new TRPCError({
           cause,
