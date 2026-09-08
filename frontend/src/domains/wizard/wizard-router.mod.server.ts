@@ -61,6 +61,11 @@ type WorkflowFailureMessage =
   | typeof REFRESH_DOWNLOAD_GRANT_FAILURE_MESSAGE
   | typeof CONFIRM_DELETE_FAILURE_MESSAGE;
 
+const parseBackendErrorBody = async (
+  response: Response,
+): Promise<contracts.BackendErrorResponse> =>
+  contracts.backendErrorResponseSchema.parse(await response.clone().json());
+
 const mapWorkflowRequestFailure = async (
   cause: unknown,
   message: WorkflowFailureMessage,
@@ -73,12 +78,7 @@ const mapWorkflowRequestFailure = async (
   }
 
   const errorBodyResult = await ResultAsync.fromPromise(
-    cause.response
-      .clone()
-      .json()
-      .then((body: unknown) =>
-        contracts.backendErrorResponseSchema.parse(body),
-      ),
+    parseBackendErrorBody(cause.response),
     () => null,
   );
   if (errorBodyResult.isErr()) {
