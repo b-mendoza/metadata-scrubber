@@ -69,11 +69,11 @@ const ProductList = () => {
 const Message = () => {
   const { trpc } = Route.useRouteContext();
 
-  const getMessageQueryResult = useSuspenseQuery(
+  const messageQuery = useSuspenseQuery(
     trpc.products.getMessage.queryOptions(),
   );
 
-  const message = getMessageQueryResult.data.status;
+  const message = messageQuery.data.status;
 
   return <div>{message}</div>;
 };
