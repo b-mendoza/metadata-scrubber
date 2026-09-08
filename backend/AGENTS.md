@@ -1,6 +1,6 @@
 # Backend agent guide
 
-The backend is a Go HTTP service. It grants direct uploads to private storage. It inspects stored PDF files. It returns download grants for metadata-free copies.
+The backend is a Go HTTP service. It grants direct uploads to private storage. It inspects stored PDF files. It returns download grants for cleaned files.
 
 Use [Task](https://taskfile.dev) as the command interface for this service. Run each target as `task <target>`.
 
