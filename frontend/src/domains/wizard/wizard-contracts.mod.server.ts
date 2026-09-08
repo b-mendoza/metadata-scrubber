@@ -19,9 +19,9 @@ const CANONICAL_ETAG_PATTERN = /^[0-9a-f]{32}$/;
 const hasInvalidFileNameCharacter = (value: string): boolean => {
   for (const character of value) {
     if (
-      INVALID_FILE_NAME_CHARACTERS.has(character) ||
+      character === DELETE_CONTROL_CHARACTER ||
       character <= LAST_CONTROL_CHARACTER ||
-      character === DELETE_CONTROL_CHARACTER
+      INVALID_FILE_NAME_CHARACTERS.has(character)
     ) {
       return true;
     }
