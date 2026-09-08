@@ -199,13 +199,6 @@
     ],
     "grouped-accessor-pairs": ["error", "getBeforeSet"],
     "guard-for-in": ["error"],
-    "logical-assignment-operators": [
-      "error",
-      "always",
-      {
-        "enforceForIfStatements": true
-      }
-    ],
     "max-depth": [
       "error",
       {
