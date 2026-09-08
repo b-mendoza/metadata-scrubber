@@ -10,7 +10,7 @@ import eslintReact from "@eslint-react/eslint-plugin";
 import vitest from "@vitest/eslint-plugin";
 import { defineConfig, globalIgnores } from "eslint/config";
 import love from "eslint-config-love";
-import jsxA11y from "eslint-plugin-jsx-a11y";
+import jsxA11yX from "eslint-plugin-jsx-a11y-x";
 import oxlint from "eslint-plugin-oxlint";
 import reactHooks from "eslint-plugin-react-hooks";
 import simpleImportSort from "eslint-plugin-simple-import-sort";
@@ -59,11 +59,11 @@ export default defineConfig(
   reactHooks.configs.flat["recommended-latest"],
   {
     plugins: {
-      "jsx-a11y": jsxA11y,
+      "jsx-a11y-x": jsxA11yX,
     },
     rules: {
-      ...jsxA11y.configs.strict.rules,
-      "jsx-a11y/anchor-has-content": [
+      ...jsxA11yX.configs.strict.rules,
+      "jsx-a11y-x/anchor-has-content": [
         ERROR,
         {
           components: ["Link", "NavLink"],
