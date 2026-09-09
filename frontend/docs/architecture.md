@@ -132,6 +132,8 @@ The workflow schemas enforce these contracts:
 - Router tests cover backend status `413` as the safe tRPC `PAYLOAD_TOO_LARGE` error.
 - Uploader tests cover runtime size restrictions, the PDF-only and one-file restrictions, non-multipart PUT signing, direct browser PUT requests, successful metadata handoff, grant failures, PUT failures, and manual retries.
 - Uploader tests use the real `@uppy/aws-s3` plugin and a test-local `XMLHttpRequest` fake. They do not call R2.
-- Workflow transport tests cover exact server-directed delays, the 4000 ms cap, the three-attempt limit, rejected retry conditions, operation timeouts, total-timeout expiry, no-retry operations, and caller abort.
+- Workflow transport tests cover server-directed delays, the three-attempt limit, recognized network-error retries, operation timeouts, total-timeout expiry, no-retry operations, and caller abort.
+- Wizard tests cover root wiring, real upload success and failures, review, revision-bound scrub, duplicate guards, and terminal failures. Result tests cover grant expiry, visibility changes, manual renewal, missing objects, deletion outcomes, and stale responses. Accessibility tests cover keyboard controls, dialog focus, fresh mounts, and absent browser-storage identifiers.
+- Browser tests use happy-dom and typed operation doubles. They do not prove live storage behavior or screen-reader announcements.
 - Health transport tests keep the separate health retry and timeout contract under regression coverage.
 - `vitest.config.ts` requires test discovery. It does not permit a successful run with no tests.
