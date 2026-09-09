@@ -100,6 +100,30 @@ The workflow schemas enforce these contracts:
 - The Go backend also owns PDF inspection, metadata removal, sanitized revisions, download grants, and confirmed deletion.
 - Read the service-integration section of the root [architecture reference](../../docs/architecture.md) before you change storage code in the frontend.
 
+## Browser workflow
+
+- `/` accepts no workflow search payload. `/review` requires only `storageKey`. `/result` requires only `storageKey` and `etag`. `/outcome` requires only the fixed `kind` enum.
+- Strict Zod schemas reject extra fields and invalid identifiers before file requests. `wizard-identifiers.mod.ts` supplies browser-safe identifier schemas. Invalid search replaces the route with `/`.
+- Review and result loaders use `queryClient.query` with `retry: false`, `staleTime: 0`, and `gcTime: 0`. Route reload settings require a current backend check. A cached success cannot replace that check.
+- Same-tab refresh restores review or result from validated search. A missing object selects the missing-source outcome. A canceled loader cannot redirect a newer navigation.
+- Step completion and restart replace consumed history entries. Search never contains file names, metadata text, presigned URLs, or backend error text.
+- Removal of the products domain and its router registration is Task 3 (#307). Full resume-at-the-right-step from a shared link stays in #283.
+
+- The pathless `_wizard.tsx` layout renders the wizard scope and persistent missing-file notice. The index route renders upload. It has no products loader and sends no products request. The products domain and router registration remain in the repository.
+- The wizard loads upload settings with automatic retries and focus, reconnect, interval, and mount refetch disabled. A failed request has a deliberate retry control.
+- A successful direct PUT starts one inspection. The review uses backend labels, previews, byte sizes, and actions. A UTF-8 byte comparison identifies shortened previews. The ETag binds scrub to the reviewed revision.
+- Signed PDFs and PDFs with no supported metadata have terminal states. Conflict requires a new upload. A missing source selects `/outcome?kind=missing-source`. Restart retains the notice. Dismiss or a new review clears it.
+- The scope is supported Info, XMP, and custom metadata. The page does not claim to remove all hidden PDF content. It shows the retention notice directly below the scrub action.
+- The result uses a direct download link. On result entry, the route loader fetches one grant through the real query options proxy. The component receives its URL and expiry. It makes no mount request. It does not mount a grant query observer or poll processing.
+- The result stores the grant URL and authoritative `expiresAt` together. It schedules renewal 30 seconds before expiry. It prevents overlapping calls. It disables an expired link, including while renewal is pending, and checks expiry again before navigation.
+- A hidden tab cancels pending renewal and stops its renewal timer. A visible tab renews when expiry is unknown, expired, or within the lead window. Otherwise it restores the timer.
+- A failed renewal has no automatic retry. A known unexpired link remains usable only until expiry. A deliberate renewal control permits another attempt. An already-expired response fails. A short-lived grant does not cause an immediate renewal loop.
+- A missing scrubbed PDF clears the link and shows a safe notice. It does not repeat scrub.
+- A native dialog asks before deletion. Cancel receives initial focus. Cancel and Escape return focus to the opener without a delete request.
+- Confirmed deletion immediately clears the link and stops renewal. Late grant responses cannot restore access. Success starts a new upload flow. Failure keeps access cleared and permits another confirmation or a new upload.
+- View exit cancels and removes the exact grant query. Generation guards ignore stale operation results. Validated storage keys and ETags can appear in page URLs, history, referrers, and server logs during the object lifetime. The wizard does not save them in browser storage.
+- Native status and alert regions announce pending work and safe failures. A new upload receives heading focus after a restart.
+
 ## Testing status
 
 - Direct tRPC caller tests cover all six workflow procedures and root-router registration.
