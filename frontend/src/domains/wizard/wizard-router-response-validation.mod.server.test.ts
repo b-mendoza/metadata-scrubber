@@ -12,7 +12,10 @@ import {
   UNPROCESSABLE_ENTITY_STATUS_CODE,
   UNSUPPORTED_MEDIA_TYPE_STATUS_CODE,
 } from "#/shared/constants/http/status-codes/status-codes.mod";
-import { createWorkflowHttpClient } from "#/shared/libs/ky/workflow-http-client.mod.server";
+import {
+  createWorkflowHttpClient,
+  WORKFLOW_RETRY_LIMIT,
+} from "#/shared/libs/ky/workflow-http-client.mod.server";
 import type { RouterInputs } from "#/shared/libs/trpc/client/client.mod";
 import {
   createCallerFactory,
@@ -41,6 +44,7 @@ vi.mock(import("#/shared/middlewares/app-bindings/app-bindings.mod"), () => ({
   getAppBindings: vi.fn(),
 }));
 
+const INITIAL_FETCH_ATTEMPT_COUNT = 1;
 const BACKEND_BASE_URL = new URL("https://backend.test/");
 const FRONTEND_URL = "https://frontend.test/";
 const STORAGE_KEY = "uploads/00000000-0000-4000-8000-000000000001";
@@ -225,6 +229,7 @@ test.each([
   [UNPROCESSABLE_ENTITY_STATUS_CODE, "UNPROCESSABLE_CONTENT"],
   [SERVICE_UNAVAILABLE_STATUS_CODE, "SERVICE_UNAVAILABLE"],
 ] as const)("dryRun maps backend HTTP %i to %s", async (status, code) => {
+  vi.useFakeTimers();
   const input: DryRunInput = { storageKey: STORAGE_KEY };
   const response: BackendErrorResponse = {
     error: "safe backend error",
@@ -235,10 +240,19 @@ test.each([
   vi.stubGlobal("fetch", fetchMock);
   const request = new Request(FRONTEND_URL);
 
-  const error = await requireTRPCError(callerForRequest(request).dryRun(input));
+  const errorPromise = requireTRPCError(
+    callerForRequest(request).dryRun(input),
+  );
+  await vi.runAllTimersAsync();
+  const error = await errorPromise;
+  vi.useRealTimers();
 
   expect(error.code).toBe(code);
   expect(error.message).toBe(DRY_RUN_FAILURE_MESSAGE);
   expect(error.message).not.toContain("safe backend error");
-  expect(fetchMock).toHaveBeenCalledOnce();
+  expect(fetchMock).toHaveBeenCalledTimes(
+    status === SERVICE_UNAVAILABLE_STATUS_CODE
+      ? WORKFLOW_RETRY_LIMIT + INITIAL_FETCH_ATTEMPT_COUNT
+      : INITIAL_FETCH_ATTEMPT_COUNT,
+  );
 });
