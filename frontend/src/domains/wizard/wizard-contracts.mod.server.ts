@@ -1,5 +1,10 @@
 import * as z from "zod";
 
+import {
+  canonicalETagSchema,
+  storageKeySchema,
+} from "./wizard-identifiers.mod";
+
 const MINIMUM_FILE_SIZE_BYTES = 1;
 const WHOLE_SECOND_PRECISION = 0;
 // Zod string length counts UTF-16 code units. The byte limit must use TextEncoder.
@@ -8,12 +13,6 @@ const HTTP_PROTOCOL = /^https?$/v;
 const INVALID_FILE_NAME_CHARACTERS = new Set(["\\", "/", "\u{FFFD}"]);
 const LAST_CONTROL_CHARACTER = "\u{001F}";
 const DELETE_CONTROL_CHARACTER = "\u{007F}";
-// This regex matches the backend wire grammar: uploads/ and a lowercase UUIDv4.
-// A separate z.uuid() check would accept UUID forms that the backend does not emit.
-const STORAGE_KEY_PATTERN =
-  /^uploads\/[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/v;
-// This token is 32 lowercase hexadecimal characters, not a general RFC 9110 entity tag.
-const CANONICAL_ETAG_PATTERN = /^[0-9a-f]{32}$/v;
 
 // This loop replaces a control-character regex that no-control-regex forbids.
 const hasInvalidFileNameCharacter = (value: string): boolean => {
@@ -47,15 +46,6 @@ const fileNameSchema = z
   .refine((value) => !hasInvalidFileNameCharacter(value), {
     error: "The file name contains a character that is not allowed.",
   });
-
-const storageKeySchema = z
-  .string({ error: "The storage key must be a string." })
-  .regex(STORAGE_KEY_PATTERN, { error: "The storage key is invalid." })
-  .trim();
-export const canonicalETagSchema = z
-  .string({ error: "The ETag must be a string." })
-  .regex(CANONICAL_ETAG_PATTERN, { error: "The ETag is invalid." })
-  .trim();
 
 export const workflowConfigResponseSchema = z.strictObject({
   maxFileSizeBytes: z.int().positive(),
