@@ -9,7 +9,9 @@ Developers build the frontend with [TanStack Start](https://tanstack.com/start) 
 ## Source layout
 
 - Developers group feature code by domain under `src/domains/<domain>/`. The current domains include `wizard` and `products`.
-- The wizard domain contains the typed file-workflow tRPC router, its wire contracts, and its tests.
+- The wizard domain contains the typed file-workflow tRPC router, its wire contracts, browser views, and tests.
+- `wizard.mod.tsx` exports `WizardUpload`. `wizard-review.mod.tsx` owns review and scrub. Route files own navigation and terminal outcomes.
+- `wizard-result.mod.tsx` owns download grants and confirmed deletion. Both files are under `src/domains/wizard/components/wizard/`.
 - Developers keep cross-domain code under `src/shared/`. It contains `config`, `constants`, `database`, `libs` for tRPC and Ky, `middlewares`, and `utils`.
 - TanStack Router reads file-based routes from `src/routes/`. Developers keep API routes under `src/routes/api/`.
 - Developers keep test setup and shared render helpers under `src/tests/`. The render helpers are in `src/tests/utils/renderers/`.
@@ -92,7 +94,7 @@ The workflow schemas enforce these contracts:
 - The uploader calls `createUpload` with the file name and file size. It does not send file bytes in the tRPC call.
 - `createUpload` returns a private R2 `storageKey` and a presigned PUT URL.
 - The browser sends the PDF bytes directly to private R2 with the presigned URL.
-- Uppy stores the backend-generated `storageKey` in file metadata. Only `{ storageKey }` enters the wizard state after a successful upload.
+- Uppy stores the backend-generated `storageKey` in file metadata. Only `{ storageKey }` enters the review search after a successful upload.
 - No frontend route parses or proxies file bytes.
 - The Go backend owns R2 credentials and the file-size limit. The browser does not receive R2 credentials.
 - The Go backend also owns PDF inspection, metadata removal, sanitized revisions, download grants, and confirmed deletion.
