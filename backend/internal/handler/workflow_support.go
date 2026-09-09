@@ -143,8 +143,7 @@ func (handler *Handler) admissionRetryAfter(ctx context.Context) string {
 		return strconv.Itoa(admissionRetryBaseSeconds)
 	}
 
-	delaySeconds := max(admissionRetryBaseSeconds+jitter, 1)
-	return strconv.Itoa(delaySeconds)
+	return strconv.Itoa(admissionRetryBaseSeconds + jitter)
 }
 
 func (handler *Handler) writeUnexpectedFailure(w http.ResponseWriter, request *http.Request, err error, internalMessage string) {
