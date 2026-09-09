@@ -13,14 +13,17 @@ import {
 import { getAppBindings } from "#/shared/middlewares/app-bindings/app-bindings.mod";
 
 import type {
+  BackendErrorResponse,
   DryRunInput,
   RefreshDownloadGrantInput,
 } from "./wizard-contracts.mod.server";
 import {
+  CONFIRM_DELETE_FAILURE_MESSAGE,
   CREATE_UPLOAD_FAILURE_MESSAGE,
   DRY_RUN_FAILURE_MESSAGE,
   REFRESH_DOWNLOAD_GRANT_FAILURE_MESSAGE,
   wizardRouter,
+  WORKFLOW_CONFIG_FAILURE_MESSAGE,
 } from "./wizard-router.mod.server";
 
 vi.mock(import("#/shared/middlewares/app-bindings/app-bindings.mod"), () => ({
@@ -134,5 +137,108 @@ test("caller cancellation maps safely and starts no extra fetch", async () => {
 
   expect(error.code).toBe("BAD_GATEWAY");
   expect(error.message).toBe(DRY_RUN_FAILURE_MESSAGE);
+  expect(fetchMock).toHaveBeenCalledOnce();
+});
+
+test("getWorkflowConfig does not retry a processing-eligible 503", async () => {
+  vi.useFakeTimers();
+  const response: BackendErrorResponse = {
+    error: "processing capacity temporarily unavailable",
+  };
+  const fetchMock = vi.fn<typeof fetch>().mockResolvedValue(
+    Response.json(response, {
+      status: 503,
+      headers: { "Retry-After": "2" },
+    }),
+  );
+  vi.stubGlobal("fetch", fetchMock);
+  const request = new Request(FRONTEND_URL);
+  const errorPromise = requireTRPCError(
+    callerForRequest(request).getWorkflowConfig(),
+  );
+  await vi.runAllTimersAsync();
+  const error = await errorPromise;
+  expect(error.code).toBe("SERVICE_UNAVAILABLE");
+  expect(error.message).toBe(WORKFLOW_CONFIG_FAILURE_MESSAGE);
+  expect(fetchMock).toHaveBeenCalledOnce();
+});
+
+test("createUpload does not retry a processing-eligible 503", async () => {
+  vi.useFakeTimers();
+  const input: RouterInputs["wizard"]["createUpload"] = {
+    fileName: "report.pdf",
+    fileSizeBytes: MINIMUM_FILE_SIZE_BYTES,
+  };
+  const response: BackendErrorResponse = {
+    error: "processing capacity temporarily unavailable",
+  };
+  const fetchMock = vi.fn<typeof fetch>().mockResolvedValue(
+    Response.json(response, {
+      status: 503,
+      headers: { "Retry-After": "2" },
+    }),
+  );
+  vi.stubGlobal("fetch", fetchMock);
+  const request = new Request(FRONTEND_URL);
+  const errorPromise = requireTRPCError(
+    callerForRequest(request).createUpload(input),
+  );
+  await vi.runAllTimersAsync();
+  const error = await errorPromise;
+  expect(error.code).toBe("SERVICE_UNAVAILABLE");
+  expect(error.message).toBe(CREATE_UPLOAD_FAILURE_MESSAGE);
+  expect(fetchMock).toHaveBeenCalledOnce();
+});
+
+test("refreshDownloadGrant does not retry a processing-eligible 503", async () => {
+  vi.useFakeTimers();
+  const input: RouterInputs["wizard"]["refreshDownloadGrant"] = {
+    storageKey: STORAGE_KEY,
+    etag: CANONICAL_ETAG,
+  };
+  const response: BackendErrorResponse = {
+    error: "processing capacity temporarily unavailable",
+  };
+  const fetchMock = vi.fn<typeof fetch>().mockResolvedValue(
+    Response.json(response, {
+      status: 503,
+      headers: { "Retry-After": "2" },
+    }),
+  );
+  vi.stubGlobal("fetch", fetchMock);
+  const request = new Request(FRONTEND_URL);
+  const errorPromise = requireTRPCError(
+    callerForRequest(request).refreshDownloadGrant(input),
+  );
+  await vi.runAllTimersAsync();
+  const error = await errorPromise;
+  expect(error.code).toBe("SERVICE_UNAVAILABLE");
+  expect(error.message).toBe(REFRESH_DOWNLOAD_GRANT_FAILURE_MESSAGE);
+  expect(fetchMock).toHaveBeenCalledOnce();
+});
+
+test("confirmDelete does not retry a processing-eligible 503", async () => {
+  vi.useFakeTimers();
+  const input: RouterInputs["wizard"]["confirmDelete"] = {
+    storageKey: STORAGE_KEY,
+  };
+  const response: BackendErrorResponse = {
+    error: "processing capacity temporarily unavailable",
+  };
+  const fetchMock = vi.fn<typeof fetch>().mockResolvedValue(
+    Response.json(response, {
+      status: 503,
+      headers: { "Retry-After": "2" },
+    }),
+  );
+  vi.stubGlobal("fetch", fetchMock);
+  const request = new Request(FRONTEND_URL);
+  const errorPromise = requireTRPCError(
+    callerForRequest(request).confirmDelete(input),
+  );
+  await vi.runAllTimersAsync();
+  const error = await errorPromise;
+  expect(error.code).toBe("SERVICE_UNAVAILABLE");
+  expect(error.message).toBe(CONFIRM_DELETE_FAILURE_MESSAGE);
   expect(fetchMock).toHaveBeenCalledOnce();
 });
