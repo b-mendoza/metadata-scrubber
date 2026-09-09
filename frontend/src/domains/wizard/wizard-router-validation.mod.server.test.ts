@@ -11,10 +11,8 @@ import {
 } from "#/shared/libs/trpc/utils/initializer/initializer.mod.server";
 import { getAppBindings } from "#/shared/middlewares/app-bindings/app-bindings.mod";
 
-import {
-  canonicalETagSchema,
-  scrubFileInputSchema,
-} from "./wizard-contracts.mod.server";
+import { scrubFileInputSchema } from "./wizard-contracts.mod.server";
+import { canonicalETagSchema } from "./wizard-identifiers.mod";
 import { wizardRouter } from "./wizard-router.mod.server";
 
 vi.mock(import("#/shared/middlewares/app-bindings/app-bindings.mod"), () => ({
