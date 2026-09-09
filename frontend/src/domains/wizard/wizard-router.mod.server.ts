@@ -139,7 +139,7 @@ export const wizardRouter = createTRPCRouter({
 
   dryRun: publicProcedure
     .input(contracts.dryRunInputSchema)
-    .mutation(async ({ input, signal }) => {
+    .query(async ({ input, signal }) => {
       const { workflowHttpClient } = getAppBindings();
       const responseResult = await ResultAsync.fromPromise(
         workflowHttpClient
@@ -189,7 +189,7 @@ export const wizardRouter = createTRPCRouter({
 
   refreshDownloadGrant: publicProcedure
     .input(contracts.refreshDownloadGrantInputSchema)
-    .mutation(async ({ input, signal }) => {
+    .query(async ({ input, signal }) => {
       const { workflowHttpClient } = getAppBindings();
       const responseResult = await ResultAsync.fromPromise(
         workflowHttpClient
