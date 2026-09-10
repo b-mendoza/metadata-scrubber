@@ -233,25 +233,6 @@ export function WizardResult({
     };
   }, [initialExpiresAt, queryClient, revision, trpc]);
 
-  const renderGrantNotice = () => (
-    <>
-      {state.renewalError != null && (
-        <p role="alert">{GRANT_MESSAGES[state.renewalError]}</p>
-      )}
-      {(state.renewalError === "failed" ||
-        state.renewalError === "expired") && (
-        <button
-          type="button"
-          className="btn"
-          onClick={() => {
-            renewRef.current?.();
-          }}
-        >
-          Renew download
-        </button>
-      )}
-    </>
-  );
   return (
     <section>
       <h2>PDF metadata processed</h2>
@@ -315,7 +296,21 @@ export function WizardResult({
         </div>
       </dialog>
       {state.renewalPending && <p role="status">Renewing download…</p>}
-      {renderGrantNotice()}
+      {state.renewalError != null && (
+        <p role="alert">{GRANT_MESSAGES[state.renewalError]}</p>
+      )}
+      {(state.renewalError === "failed" ||
+        state.renewalError === "expired") && (
+        <button
+          type="button"
+          className="btn"
+          onClick={() => {
+            renewRef.current?.();
+          }}
+        >
+          Renew download
+        </button>
+      )}
       {state.downloadUrl != null && (
         <a
           className="btn btn-primary"
