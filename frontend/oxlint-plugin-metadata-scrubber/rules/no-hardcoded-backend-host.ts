@@ -8,7 +8,7 @@ const NO_EXPRESSIONS = 0;
 const STATIC_HTTP_AUTHORITY = /^:\/\/[^\/?#\s]+/v;
 const STATIC_HTTP_AUTHORITY_AFTER_PROTOCOL_COLON = /^\/\/[^\/?#\s]+/v;
 const STATIC_HTTP_AUTHORITY_AFTER_PROTOCOL_COLON_WITH_BOUNDARY =
-  /^\/\/[^/?#\s]+[/?#]/u;
+  /^\/\/[^\/?#\s]+[\/?#]/v;
 const STATIC_HTTP_AUTHORITY_WITH_BOUNDARY = /^:\/\/[^/?#\s]+[/?#]/u;
 const STATIC_HTTP_HOST = /^https?:\/\/[^/?#\s]+/iu;
 const STATIC_HTTP_HOST_WITH_AUTHORITY_BOUNDARY = /^https?:\/\/[^/?#\s]+[/?#]/iu;
