@@ -5,9 +5,7 @@ import {
   RouterProvider,
 } from "@tanstack/react-router";
 import { act, screen, waitFor } from "@testing-library/react";
-import type { Operation } from "@trpc/client";
-import { createTRPCClient, TRPCClientError } from "@trpc/client";
-import { observable } from "@trpc/server/observable";
+import { TRPCClientError } from "@trpc/client";
 import { createTRPCOptionsProxy } from "@trpc/tanstack-react-query";
 import ky from "ky";
 import {
@@ -20,6 +18,7 @@ import {
   vi,
 } from "vitest";
 
+import { createTestTRPCClient } from "#/domains/wizard/components/wizard/wizard.test-helper";
 import type { BackendErrorResponse } from "#/domains/wizard/wizard-contracts.mod.server";
 import { Route as RootRoute } from "#/routes/__root";
 import { routeTree } from "#/routeTree.gen";
@@ -40,29 +39,7 @@ vi.mock(import("#/shared/middlewares/app-bindings/app-bindings.mod"), () => ({
 Object.assign(RootRoute.options, {
   shellComponent: ({ children }: React.PropsWithChildren) => <>{children}</>,
 });
-type WorkflowOutput = RouterOutputs["wizard"][keyof RouterOutputs["wizard"]];
-const request = vi.fn<(operation: Operation) => Promise<WorkflowOutput>>();
-const client = createTRPCClient<AppRouter>({
-  links: [
-    () => (operation) =>
-      observable((observer) => {
-        void request(operation.op)
-          .then((data) => {
-            observer.next({ result: { data } });
-            observer.complete();
-          })
-          .catch((error: unknown) => {
-            observer.error(
-              TRPCClientError.from(
-                error instanceof Error
-                  ? error
-                  : new Error("Test transport failed"),
-              ),
-            );
-          });
-      }),
-  ],
-});
+const { request, client } = createTestTRPCClient();
 const ONE_REQUEST = 1;
 const FAILURES = [
   {
