@@ -1,6 +1,6 @@
 import * as z from "zod";
 
-const HTTP_PROTOCOL = /^https?$/;
+const HTTP_PROTOCOL = /^https?$/v;
 
 const MINIMUM_DATABASE_URL_LENGTH = 1;
 
