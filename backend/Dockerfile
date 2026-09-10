@@ -13,7 +13,7 @@ RUN --mount=type=cache,id=go-mod,target=/go/pkg/mod \
     --mount=type=cache,id=go-build,target=/root/.cache/go-build \
     CGO_ENABLED=0 GOOS=linux go build -trimpath -ldflags="-s -w" -o /metadata-scrubber .
 
-FROM gcr.io/distroless/static-debian12:nonroot AS runtime
+FROM gcr.io/distroless/static-debian12:nonroot@sha256:afa5c872c891853ca7fcf1f12c3edb23f7eeef36189728842dd51042ff57f7ab AS runtime
 WORKDIR /app
 # PORT is intentionally not pinned here: Vercel injects the port its router
 # forwards to, and the app defaults to 8080 (see internal/config) for local
