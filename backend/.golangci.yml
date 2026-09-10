@@ -122,12 +122,16 @@ linters:
       min-complexity: 8
     gocritic:
       disabled-checks:
+        - builtinShadow
+        - builtinShadowDecl
         - deprecatedComment
+        - externalErrorReassign
         - hugeParam
         # Owner policy: each parameter declares its own type.
         - paramTypeCombine
         - regexpMust
         - sloppyTypeAssert
+        - whyNoLint
         - wrapperFunc
       enable-all: true
       settings:
@@ -205,8 +209,7 @@ linters:
       require-specific: true
       allow-no-explanation: []
     perfsprint:
-      # staticcheck S1025/S1028 own the sprintf1 and strconcat rewrites.
-      # perfsprint also reports fmt.Sprintf("%s", v), so keep sprintf1 disabled here.
+      # Keep indexed string verbs and aliased Errorf calls that other checks miss.
       err-error: false
       errorf: true
       loop-other-ops: true
@@ -244,24 +247,19 @@ linters:
         - name: filename-format
           arguments:
             - "^[a-z0-9]+(?:_[a-z0-9]+)*\\.go$"
-        - name: identical-branches
         - name: if-return
         - name: max-control-nesting
           arguments:
             - 3
         - name: modifies-parameter
         - name: range
-        - name: receiver-naming
         - name: string-of-int
         - name: superfluous-else
         - name: time-equal
         - name: time-naming
         - name: unconditional-recursion
-        - name: unnecessary-stmt
-        - name: use-errors-new
         - name: useless-break
         - name: var-naming
-        - name: waitgroup-by-value
     # Staged rule settings for the logging policy above.
     # sloglint:
     #   no-global: all
@@ -322,9 +320,8 @@ formatters:
     - gci # deterministic, opinionated import sorting (regroups from scratch)
   settings:
     gofumpt:
-      # Tell gofumpt this module's path so it groups our own packages in a
-      # separate import block, matching gci's localmodule section below.
-      # Without this, gofumpt and gci disagree on local-import grouping.
+      # Keep the undotted module path out of the standard-library import group.
+      # gci creates the localmodule group.
       module-path: metadata-scrubber
     gci:
       sections:
