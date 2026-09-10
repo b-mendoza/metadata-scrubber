@@ -1,5 +1,3 @@
-import { TRPCError } from "@trpc/server";
-import ky from "ky";
 import { afterEach, expect, test, vi } from "vitest";
 
 import {
@@ -12,16 +10,8 @@ import {
   UNPROCESSABLE_ENTITY_STATUS_CODE,
   UNSUPPORTED_MEDIA_TYPE_STATUS_CODE,
 } from "#/shared/constants/http/status-codes/status-codes.mod";
-import {
-  createWorkflowHttpClient,
-  WORKFLOW_RETRY_LIMIT,
-} from "#/shared/libs/ky/workflow-http-client.mod.server";
+import { WORKFLOW_RETRY_LIMIT } from "#/shared/libs/ky/workflow-http-client.mod.server";
 import type { RouterInputs } from "#/shared/libs/trpc/client/client.mod";
-import {
-  createCallerFactory,
-  createTRPCRequestContext,
-} from "#/shared/libs/trpc/utils/initializer/initializer.mod.server";
-import { getAppBindings } from "#/shared/middlewares/app-bindings/app-bindings.mod";
 
 import type {
   BackendErrorResponse,
@@ -36,9 +26,12 @@ import {
   DRY_RUN_FAILURE_MESSAGE,
   REFRESH_DOWNLOAD_GRANT_FAILURE_MESSAGE,
   SCRUB_FILE_FAILURE_MESSAGE,
-  wizardRouter,
   WORKFLOW_CONFIG_FAILURE_MESSAGE,
 } from "./wizard-router.mod.server";
+import {
+  callerForRequest,
+  requireTRPCError,
+} from "./wizard-router.test-helper";
 
 vi.mock(import("#/shared/middlewares/app-bindings/app-bindings.mod"), () => ({
   getAppBindings: vi.fn(),
@@ -52,32 +45,6 @@ const CANONICAL_ETAG = "0123456789abcdef0123456789abcdef";
 const DOWNLOAD_URL = "https://downloads.test/sanitized.pdf";
 const ONE_BYTE = 1;
 
-const createWizardCaller = createCallerFactory(wizardRouter);
-
-const callerForRequest = (request: Request) => {
-  vi.mocked(getAppBindings).mockReturnValue({
-    httpClient: ky.create({ baseUrl: BACKEND_BASE_URL }),
-    workflowHttpClient: createWorkflowHttpClient(BACKEND_BASE_URL),
-  });
-  return createWizardCaller(createTRPCRequestContext(request), {
-    signal: request.signal,
-  });
-};
-
-const requireTRPCError = async (
-  operation: Promise<unknown>,
-): Promise<TRPCError> => {
-  try {
-    await operation;
-  } catch (error) {
-    expect(error).toBeInstanceOf(TRPCError);
-    if (error instanceof TRPCError) {
-      return error;
-    }
-  }
-  expect.fail("the workflow procedure must reject with a TRPCError");
-};
-
 afterEach(() => {
   vi.unstubAllGlobals();
 });
@@ -90,7 +57,7 @@ test("getWorkflowConfig rejects a malformed backend config body", async () => {
   const request = new Request(FRONTEND_URL);
 
   const error = await requireTRPCError(
-    callerForRequest(request).getWorkflowConfig(),
+    callerForRequest(request, BACKEND_BASE_URL).getWorkflowConfig(),
   );
 
   expect(error.code).toBe("BAD_GATEWAY");
@@ -111,7 +78,7 @@ test("createUpload rejects an invalid backend upload URL", async () => {
   const request = new Request(FRONTEND_URL);
 
   const error = await requireTRPCError(
-    callerForRequest(request).createUpload(input),
+    callerForRequest(request, BACKEND_BASE_URL).createUpload(input),
   );
 
   expect(error.code).toBe("BAD_GATEWAY");
@@ -135,7 +102,7 @@ test("createUpload maps an oversize backend response to PAYLOAD_TOO_LARGE", asyn
   const request = new Request(FRONTEND_URL);
 
   const error = await requireTRPCError(
-    callerForRequest(request).createUpload(input),
+    callerForRequest(request, BACKEND_BASE_URL).createUpload(input),
   );
 
   expect(error.code).toBe("PAYLOAD_TOO_LARGE");
@@ -154,7 +121,9 @@ test("dryRun rejects an invalid backend ETag", async () => {
   vi.stubGlobal("fetch", fetchMock);
   const request = new Request(FRONTEND_URL);
 
-  const error = await requireTRPCError(callerForRequest(request).dryRun(input));
+  const error = await requireTRPCError(
+    callerForRequest(request, BACKEND_BASE_URL).dryRun(input),
+  );
 
   expect(error.code).toBe("BAD_GATEWAY");
   expect(error.message).toBe(DRY_RUN_FAILURE_MESSAGE);
@@ -175,7 +144,7 @@ test("scrubFile rejects an invalid backend success payload", async () => {
   const request = new Request(FRONTEND_URL);
 
   const error = await requireTRPCError(
-    callerForRequest(request).scrubFile(input),
+    callerForRequest(request, BACKEND_BASE_URL).scrubFile(input),
   );
 
   expect(error.code).toBe("BAD_GATEWAY");
@@ -196,7 +165,7 @@ test("refreshDownloadGrant rejects an invalid backend timestamp", async () => {
   const request = new Request(FRONTEND_URL);
 
   const error = await requireTRPCError(
-    callerForRequest(request).refreshDownloadGrant(input),
+    callerForRequest(request, BACKEND_BASE_URL).refreshDownloadGrant(input),
   );
 
   expect(error.code).toBe("BAD_GATEWAY");
@@ -212,7 +181,7 @@ test("confirmDelete rejects an unconfirmed backend success payload", async () =>
   const request = new Request(FRONTEND_URL);
 
   const error = await requireTRPCError(
-    callerForRequest(request).confirmDelete(input),
+    callerForRequest(request, BACKEND_BASE_URL).confirmDelete(input),
   );
 
   expect(error.code).toBe("BAD_GATEWAY");
@@ -241,7 +210,7 @@ test.each([
   const request = new Request(FRONTEND_URL);
 
   const errorPromise = requireTRPCError(
-    callerForRequest(request).dryRun(input),
+    callerForRequest(request, BACKEND_BASE_URL).dryRun(input),
   );
   await vi.runAllTimersAsync();
   const error = await errorPromise;
