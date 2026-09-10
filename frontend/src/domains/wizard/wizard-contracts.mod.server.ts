@@ -113,8 +113,6 @@ export const backendErrorResponseSchema = z.strictObject({
 });
 
 export type WorkflowConfig = z.output<typeof workflowConfigResponseSchema>;
-export type CreateUploadInput = z.input<typeof uploadInputSchema>;
-export type CreateUploadResponse = z.output<typeof uploadResponseSchema>;
 export type DryRunInput = z.input<typeof dryRunInputSchema>;
 export type DryRunResponse = z.output<typeof dryRunResponseSchema>;
 export type ScrubFileInput = z.input<typeof scrubFileInputSchema>;
