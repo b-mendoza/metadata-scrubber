@@ -4,7 +4,7 @@ import { vi } from "vitest";
 
 import type { renderComponent } from "#/tests/utils/renderers/renderers.mod";
 
-const BROWSE_FILES_BUTTON_NAME = /browse files/i;
+const BROWSE_FILES_BUTTON_NAME = /browse files/iv;
 const NO_HTTP_STATUS = 0;
 
 type TestAwsS3Options = AwsS3Options<
