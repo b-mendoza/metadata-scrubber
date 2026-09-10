@@ -19,7 +19,7 @@ type CreateUpload = (
 
 type OnUploadComplete = (result: { storageKey: string }) => void;
 
-const RETRY_UPLOAD_BUTTON_NAME = /retry upload/i;
+const RETRY_UPLOAD_BUTTON_NAME = /retry upload/iv;
 const UPLOAD_ONE_FILE_BUTTON_NAME = /upload 1 file/i;
 const EXPECTED_SINGLE_COUNT = 1;
 const EXPECTED_RETRY_REQUEST_COUNT = 2;
