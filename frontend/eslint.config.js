@@ -257,14 +257,16 @@ export default defineConfig(
        * The project uses these established terms.
        * mod comes from the *.mod.ts file-name convention.
        * props and Props come from React.
+       * ref also comes from React. The @eslint-react/naming-convention-ref-name
+       * rule requires ref or a Ref suffix.
        */
       "unicorn/name-replacements": [
         ERROR,
         {
-          allowList: {
-            mod: true,
-            props: true,
-            Props: true,
+          replacements: {
+            mod: false,
+            props: false,
+            ref: false,
           },
         },
       ],
