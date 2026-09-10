@@ -1,6 +1,6 @@
 import type { ESTree } from "@oxlint/plugins";
 
-const API_ROUTE_PATH_PATTERN = /(?:^|\/)src\/routes\/api\/.*\.tsx?$/u;
+const API_ROUTE_PATH_PATTERN = /(?:^|\/)src\/routes\/api\/.*\.tsx?$/v;
 const DOMAIN_SERVER_MODULE_PATH_PATTERN =
   /(?:^|\/)src\/.*\.mod\.server\.tsx?$/u;
 const EMPTY_SPECIFIER_COUNT = 0;
