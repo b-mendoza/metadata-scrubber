@@ -30,6 +30,7 @@ const GRANT_MESSAGES = {
 const RENEWAL_LEAD_MS = 30_000;
 const GENERATION_INCREMENT = 1;
 const IMMEDIATE_DELAY_MS = 0;
+const INITIAL_GENERATION = 0;
 export function WizardResult({
   revision,
   initialDownloadUrl,
@@ -45,7 +46,7 @@ export function WizardResult({
     renewalError: null,
     deletion: "idle",
   });
-  const generationRef = useRef(IMMEDIATE_DELAY_MS);
+  const generationRef = useRef(INITIAL_GENERATION);
   const deletionStartedRef = useRef(false);
   const dialogRef = useRef<HTMLDialogElement>(null);
   const cancelButtonRef = useRef<HTMLButtonElement>(null);
