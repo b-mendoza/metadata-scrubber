@@ -11,7 +11,7 @@ const SHARED_DATABASE_SERVER_PATH_PATTERN =
   /(?:^|\/)src\/shared\/database\/.*\.server\.tsx?$/v;
 const SHARED_MIDDLEWARE_PATH_PATTERN =
   /(?:^|\/)src\/shared\/middlewares\/.*\.tsx?$/v;
-const TEST_FILE_PATH_PATTERN = /\.test\.[cm]?[jt]sx?$/u;
+const TEST_FILE_PATH_PATTERN = /\.test\.[cm]?[jt]sx?$/v;
 
 const stripTrailingSlashes = (path: string): string => {
   let pathWithoutTrailingSlashes = path;
