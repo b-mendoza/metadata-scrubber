@@ -8,7 +8,7 @@ const PATH_START_INDEX = 0;
 const REMOVE_LAST_CHARACTER_END = -1;
 const SERVER_FIXTURE_PATH_PATTERN = /(?:^|\/)fixtures\/.*server.*\.tsx?$/v;
 const SHARED_DATABASE_SERVER_PATH_PATTERN =
-  /(?:^|\/)src\/shared\/database\/.*\.server\.tsx?$/u;
+  /(?:^|\/)src\/shared\/database\/.*\.server\.tsx?$/v;
 const SHARED_MIDDLEWARE_PATH_PATTERN =
   /(?:^|\/)src\/shared\/middlewares\/.*\.tsx?$/u;
 const TEST_FILE_PATH_PATTERN = /\.test\.[cm]?[jt]sx?$/u;
