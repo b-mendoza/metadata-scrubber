@@ -5,9 +5,6 @@ import {
   RouterProvider,
 } from "@tanstack/react-router";
 import { act, screen, waitFor } from "@testing-library/react";
-import type { Operation } from "@trpc/client";
-import { createTRPCClient, TRPCClientError } from "@trpc/client";
-import { observable } from "@trpc/server/observable";
 import { createTRPCOptionsProxy } from "@trpc/tanstack-react-query";
 import {
   afterEach,
@@ -24,10 +21,10 @@ import {
   getFileInput,
   installXMLHttpRequestFake,
 } from "#/domains/wizard/components/file-uploader/file-uploader.test-helper";
+import { createTestTRPCClient } from "#/domains/wizard/components/wizard/wizard.test-helper";
 import { Route as RootRoute } from "#/routes/__root";
 import { routeTree } from "#/routeTree.gen";
 import type { RouterOutputs } from "#/shared/libs/trpc/client/client.mod";
-import type { AppRouter } from "#/shared/libs/trpc/routers/routers.mod.server";
 import { renderComponent } from "#/tests/utils/renderers/renderers.mod";
 
 Object.assign(RootRoute.options, {
@@ -58,29 +55,7 @@ const SCRUB_ATTEMPT_COUNT = 4;
 const FIRST_GRANT_ATTEMPT_COUNT = 5;
 const GRANT_LIFETIME_MS = 120_000;
 
-type WorkflowOutput = RouterOutputs["wizard"][keyof RouterOutputs["wizard"]];
-const request = vi.fn<(operation: Operation) => Promise<WorkflowOutput>>();
-const client = createTRPCClient<AppRouter>({
-  links: [
-    () => (operation) =>
-      observable((observer) => {
-        void request(operation.op)
-          .then((data) => {
-            observer.next({ result: { data } });
-            observer.complete();
-          })
-          .catch((error: unknown) => {
-            observer.error(
-              TRPCClientError.from(
-                error instanceof Error
-                  ? error
-                  : new Error("Test transport failed"),
-              ),
-            );
-          });
-      }),
-  ],
-});
+const { request, client } = createTestTRPCClient();
 
 beforeEach(() => {
   request.mockReset();
