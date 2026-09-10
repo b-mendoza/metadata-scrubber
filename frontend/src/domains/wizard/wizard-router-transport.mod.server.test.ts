@@ -1,16 +1,8 @@
 import { once } from "node:events";
 
-import { TRPCError } from "@trpc/server";
-import ky from "ky";
 import { afterEach, expect, test, vi } from "vitest";
 
-import { createWorkflowHttpClient } from "#/shared/libs/ky/workflow-http-client.mod.server";
 import type { RouterInputs } from "#/shared/libs/trpc/client/client.mod";
-import {
-  createCallerFactory,
-  createTRPCRequestContext,
-} from "#/shared/libs/trpc/utils/initializer/initializer.mod.server";
-import { getAppBindings } from "#/shared/middlewares/app-bindings/app-bindings.mod";
 
 import type {
   BackendErrorResponse,
@@ -22,9 +14,12 @@ import {
   CREATE_UPLOAD_FAILURE_MESSAGE,
   DRY_RUN_FAILURE_MESSAGE,
   REFRESH_DOWNLOAD_GRANT_FAILURE_MESSAGE,
-  wizardRouter,
   WORKFLOW_CONFIG_FAILURE_MESSAGE,
 } from "./wizard-router.mod.server";
+import {
+  callerForRequest,
+  requireTRPCError,
+} from "./wizard-router.test-helper";
 
 vi.mock(import("#/shared/middlewares/app-bindings/app-bindings.mod"), () => ({
   getAppBindings: vi.fn(),
@@ -35,32 +30,6 @@ const FRONTEND_URL = "https://frontend.test/";
 const STORAGE_KEY = "uploads/00000000-0000-4000-8000-000000000001";
 const CANONICAL_ETAG = "0123456789abcdef0123456789abcdef";
 const MINIMUM_FILE_SIZE_BYTES = 1;
-
-const createWizardCaller = createCallerFactory(wizardRouter);
-
-const callerForRequest = (request: Request) => {
-  vi.mocked(getAppBindings).mockReturnValue({
-    httpClient: ky.create({ baseUrl: BACKEND_BASE_URL }),
-    workflowHttpClient: createWorkflowHttpClient(BACKEND_BASE_URL),
-  });
-  return createWizardCaller(createTRPCRequestContext(request), {
-    signal: request.signal,
-  });
-};
-
-const requireTRPCError = async (
-  operation: Promise<unknown>,
-): Promise<TRPCError> => {
-  try {
-    await operation;
-  } catch (error) {
-    expect(error).toBeInstanceOf(TRPCError);
-    if (error instanceof TRPCError) {
-      return error;
-    }
-  }
-  expect.fail("the workflow procedure must reject with a TRPCError");
-};
 
 afterEach(() => {
   vi.useRealTimers();
@@ -79,7 +48,7 @@ test("an unclassified transport failure maps to BAD_GATEWAY without public detai
   const request = new Request(FRONTEND_URL);
 
   const error = await requireTRPCError(
-    callerForRequest(request).createUpload(input),
+    callerForRequest(request, BACKEND_BASE_URL).createUpload(input),
   );
 
   expect(error.code).toBe("BAD_GATEWAY");
@@ -102,7 +71,7 @@ test("a workflow client timeout maps to TIMEOUT without a retry", async () => {
   const request = new Request(FRONTEND_URL);
 
   const errorPromise = requireTRPCError(
-    callerForRequest(request).refreshDownloadGrant(input),
+    callerForRequest(request, BACKEND_BASE_URL).refreshDownloadGrant(input),
   );
   await vi.runAllTimersAsync();
   const error = await errorPromise;
@@ -127,7 +96,7 @@ test("caller cancellation maps safely and starts no extra fetch", async () => {
   const request = new Request(FRONTEND_URL, { signal: controller.signal });
 
   const errorPromise = requireTRPCError(
-    callerForRequest(request).dryRun(input),
+    callerForRequest(request, BACKEND_BASE_URL).dryRun(input),
   );
   await vi.waitFor(() => {
     expect(fetchMock).toHaveBeenCalledOnce();
@@ -154,7 +123,7 @@ test("getWorkflowConfig does not retry a processing-eligible 503", async () => {
   vi.stubGlobal("fetch", fetchMock);
   const request = new Request(FRONTEND_URL);
   const errorPromise = requireTRPCError(
-    callerForRequest(request).getWorkflowConfig(),
+    callerForRequest(request, BACKEND_BASE_URL).getWorkflowConfig(),
   );
   await vi.runAllTimersAsync();
   const error = await errorPromise;
@@ -181,7 +150,7 @@ test("createUpload does not retry a processing-eligible 503", async () => {
   vi.stubGlobal("fetch", fetchMock);
   const request = new Request(FRONTEND_URL);
   const errorPromise = requireTRPCError(
-    callerForRequest(request).createUpload(input),
+    callerForRequest(request, BACKEND_BASE_URL).createUpload(input),
   );
   await vi.runAllTimersAsync();
   const error = await errorPromise;
@@ -208,7 +177,7 @@ test("refreshDownloadGrant does not retry a processing-eligible 503", async () =
   vi.stubGlobal("fetch", fetchMock);
   const request = new Request(FRONTEND_URL);
   const errorPromise = requireTRPCError(
-    callerForRequest(request).refreshDownloadGrant(input),
+    callerForRequest(request, BACKEND_BASE_URL).refreshDownloadGrant(input),
   );
   await vi.runAllTimersAsync();
   const error = await errorPromise;
@@ -234,7 +203,7 @@ test("confirmDelete does not retry a processing-eligible 503", async () => {
   vi.stubGlobal("fetch", fetchMock);
   const request = new Request(FRONTEND_URL);
   const errorPromise = requireTRPCError(
-    callerForRequest(request).confirmDelete(input),
+    callerForRequest(request, BACKEND_BASE_URL).confirmDelete(input),
   );
   await vi.runAllTimersAsync();
   const error = await errorPromise;
