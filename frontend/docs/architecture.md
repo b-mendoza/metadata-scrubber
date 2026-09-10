@@ -135,5 +135,6 @@ The workflow schemas enforce these contracts:
 - Workflow transport tests cover server-directed delays, the three-attempt limit, recognized network-error retries, operation timeouts, total-timeout expiry, no-retry operations, and caller abort.
 - Wizard tests cover root wiring, real upload success and failures, review, revision-bound scrub, duplicate guards, and terminal failures. Result tests cover grant expiry, visibility changes, manual renewal, missing objects, deletion outcomes, and stale responses. Accessibility tests cover keyboard controls, dialog focus, fresh mounts, and absent browser-storage identifiers.
 - Browser tests use happy-dom and typed operation doubles. They do not prove live storage behavior or screen-reader announcements.
+- Shared test doubles live in `wizard.test-helper.ts` for the browser tRPC transport and in `wizard-router.test-helper.ts` for the server caller and the tRPC error check.
 - Health transport tests keep the separate health retry and timeout contract under regression coverage.
 - `vitest.config.ts` requires test discovery. It does not permit a successful run with no tests.
