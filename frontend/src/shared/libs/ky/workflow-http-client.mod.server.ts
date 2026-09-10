@@ -20,7 +20,7 @@ const WILL_WORKFLOW_RETRY_ON_TIMEOUT = false;
 
 const NO_RETRY_LIMIT = 0;
 const MINIMUM_RETRY_AFTER_SECONDS = 1;
-const DELAY_SECONDS_PATTERN = /^\d+$/;
+const DELAY_SECONDS_PATTERN = /^\d+$/v;
 
 // The regex copies Ky 2.1.0's delayPattern. The schema is stricter because it rejects HTTP dates, zero, and unsafe integers.
 // eslint-disable-next-line zod/prefer-string-schema-with-trim -- Ky 2.1.0 tests the raw header byte for byte. Trim would accept values that Ky rejects.
