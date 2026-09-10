@@ -28,7 +28,7 @@
     },
     "skipLibCheck": true,
     "strict": true,
-    "target": "es2023",
+    "target": "es2024",
     "types": ["vite/client", "node", "@total-typescript/ts-reset"],
     "useDefineForClassFields": true,
     "verbatimModuleSyntax": true
