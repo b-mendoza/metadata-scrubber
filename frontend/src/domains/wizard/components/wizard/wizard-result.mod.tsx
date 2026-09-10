@@ -237,7 +237,7 @@ export function WizardResult({
     <section>
       <h2>PDF metadata processed</h2>
       <p>A download grant lasts approximately 15 minutes.</p>
-      <p>{"Files are automatically deleted within up to 48 hours."}</p>
+      <p>Files are automatically deleted within up to 48 hours.</p>
       {state.deletion === "pending" && <p role="status">Deleting files…</p>}
       {["failed", "conflict"].includes(state.deletion) && (
         <p role="alert">
