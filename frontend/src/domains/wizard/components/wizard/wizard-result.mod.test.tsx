@@ -26,6 +26,7 @@ const SECOND_ATTEMPT_COUNT = 2;
 const BEFORE_RENEWAL_MS = 89_999;
 const RENEWAL_LEAD_MS = 30_000;
 const GRANT_LIFETIME_MS = 120_000;
+const NO_CACHED_QUERIES = 0;
 const { request, client } = createTestTRPCClient();
 beforeEach(() => {
   request.mockReset();
@@ -276,7 +277,7 @@ test("hidden view stops renewal, expired return renews, and exit ignores stale c
     await vi.advanceTimersByTimeAsync(GRANT_LIFETIME_MS);
   });
   expect(screen.queryByRole("link")).not.toBeInTheDocument();
-  expect(queryClient.getQueryCache().getAll()).toHaveLength(FLUSH_MS);
+  expect(queryClient.getQueryCache().getAll()).toHaveLength(NO_CACHED_QUERIES);
   expect(request).toHaveBeenCalledOnce();
 });
 
