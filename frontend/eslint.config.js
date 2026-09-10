@@ -248,12 +248,6 @@ export default defineConfig(
       "no-undefined": ERROR,
       "object-shorthand": ERROR,
       "react-hooks/exhaustive-deps": ERROR,
-      /**
-       * Disabled because the `v` flag requires es2024, but our project targets es2023.
-       * Re-enable when the project upgrades to es2024.
-       * @see https://eslint.org/docs/latest/rules/require-unicode-regexp
-       */
-      "require-unicode-regexp": OFF,
       "sonarjs/cognitive-complexity": [ERROR, MAX_COMPLEXITY],
       "sonarjs/no-commented-code": ERROR,
       "sonarjs/todo-tag": ERROR,
