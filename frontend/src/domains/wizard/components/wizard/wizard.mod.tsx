@@ -21,7 +21,6 @@ export function WizardUpload({
 }: Readonly<WizardUploadProps>) {
   const generationRef = useRef(INITIAL_GENERATION);
   const uploadStartedRef = useRef(false);
-  const uploadHeadingRef = useRef<HTMLHeadingElement>(null);
   const config = useQuery({
     ...trpc.wizard.getWorkflowConfig.queryOptions(),
     retry: false,
@@ -42,7 +41,7 @@ export function WizardUpload({
   const uploadGeneration = generationRef.current;
   return (
     <section>
-      <h2 ref={uploadHeadingRef} id="upload-heading" tabIndex={-1}>
+      <h2 id="upload-heading" tabIndex={-1}>
         Upload a PDF
       </h2>
       {config.isPending && <p role="status">Loading upload settings…</p>}
