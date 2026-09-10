@@ -4,7 +4,7 @@ const MINIMUM_FILE_SIZE_BYTES = 1;
 const WHOLE_SECOND_PRECISION = 0;
 // Zod string length counts UTF-16 code units. The byte limit must use TextEncoder.
 const MAXIMUM_FILE_NAME_BYTES = 255;
-const HTTP_PROTOCOL = /^https?$/;
+const HTTP_PROTOCOL = /^https?$/v;
 const INVALID_FILE_NAME_CHARACTERS = new Set(["\\", "/", "\u{FFFD}"]);
 const LAST_CONTROL_CHARACTER = "\u{001F}";
 const DELETE_CONTROL_CHARACTER = "\u{007F}";
