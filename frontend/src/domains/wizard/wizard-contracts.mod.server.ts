@@ -13,7 +13,7 @@ const DELETE_CONTROL_CHARACTER = "\u{007F}";
 const STORAGE_KEY_PATTERN =
   /^uploads\/[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/v;
 // This token is 32 lowercase hexadecimal characters, not a general RFC 9110 entity tag.
-const CANONICAL_ETAG_PATTERN = /^[0-9a-f]{32}$/;
+const CANONICAL_ETAG_PATTERN = /^[0-9a-f]{32}$/v;
 
 // This loop replaces a control-character regex that no-control-regex forbids.
 const hasInvalidFileNameCharacter = (value: string): boolean => {
