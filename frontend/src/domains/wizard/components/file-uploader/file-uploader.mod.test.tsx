@@ -21,7 +21,7 @@ type OnUploadComplete = (result: { storageKey: string }) => void;
 
 const FRACTIONAL_MEBIBYTE_NOTE = /1\.5 MiB/v;
 const TEN_MEBIBYTE_NOTE = /10 MiB/v;
-const UPLOAD_ONE_FILE_BUTTON_NAME = /upload 1 file/i;
+const UPLOAD_ONE_FILE_BUTTON_NAME = /upload 1 file/iv;
 const EXPECTED_SINGLE_COUNT = 1;
 const TEST_MAX_FILE_SIZE_BYTES = 10_485_760;
 const TEST_OVER_MAX_FILE_SIZE_BYTES = 10_485_761;
