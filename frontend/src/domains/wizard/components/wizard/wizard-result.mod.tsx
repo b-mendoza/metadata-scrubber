@@ -2,7 +2,7 @@ import type { QueryClient } from "@tanstack/react-query";
 import { useMutation } from "@tanstack/react-query";
 import { isTRPCClientError } from "@trpc/client";
 import type { TRPCOptionsProxy } from "@trpc/tanstack-react-query";
-import { useEffect, useEffectEvent, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 import type { RouterInputs } from "#/shared/libs/trpc/client/client.mod";
 import type { AppRouter } from "#/shared/libs/trpc/routers/routers.mod.server";
@@ -98,13 +98,6 @@ export function WizardResult({
       }));
     }
   };
-  const markRenewalPending = useEffectEvent(() => {
-    setState((previous) => ({
-      ...previous,
-      renewalPending: true,
-      renewalError: null,
-    }));
-  });
   useEffect(() => {
     let isActive = true;
     let sequence = 0;
@@ -173,7 +166,11 @@ export function WizardResult({
       isPending = true;
       hasFailed = false;
       const requestSequence = sequence;
-      markRenewalPending();
+      setState((previous) => ({
+        ...previous,
+        renewalPending: true,
+        renewalError: null,
+      }));
       void queryClient
         .query(options)
         .then((grant) => {
