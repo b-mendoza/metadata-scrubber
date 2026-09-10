@@ -10,7 +10,7 @@ const SERVER_FIXTURE_PATH_PATTERN = /(?:^|\/)fixtures\/.*server.*\.tsx?$/v;
 const SHARED_DATABASE_SERVER_PATH_PATTERN =
   /(?:^|\/)src\/shared\/database\/.*\.server\.tsx?$/v;
 const SHARED_MIDDLEWARE_PATH_PATTERN =
-  /(?:^|\/)src\/shared\/middlewares\/.*\.tsx?$/u;
+  /(?:^|\/)src\/shared\/middlewares\/.*\.tsx?$/v;
 const TEST_FILE_PATH_PATTERN = /\.test\.[cm]?[jt]sx?$/u;
 
 const stripTrailingSlashes = (path: string): string => {
