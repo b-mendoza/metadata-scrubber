@@ -15,7 +15,6 @@ interface WizardReviewProps {
   onComplete: () => void;
   onFailure: (error: unknown) => void;
 }
-const RETENTION = "Files are automatically deleted within up to 48 hours.";
 const INITIAL_GENERATION = 0;
 const GENERATION_INCREMENT = 1;
 export function WizardReview({
@@ -95,7 +94,7 @@ export function WizardReview({
         >
           Scrub it
         </button>
-        <p>{RETENTION}</p>
+        <p>Files are automatically deleted within up to 48 hours.</p>
       </div>
       {scrub.isPending && <p role="status">Scrubbing PDF…</p>}
     </section>
