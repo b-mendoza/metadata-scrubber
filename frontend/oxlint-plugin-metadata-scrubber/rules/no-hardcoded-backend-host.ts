@@ -11,7 +11,8 @@ const STATIC_HTTP_AUTHORITY_AFTER_PROTOCOL_COLON_WITH_BOUNDARY =
   /^\/\/[^\/?#\s]+[\/?#]/v;
 const STATIC_HTTP_AUTHORITY_WITH_BOUNDARY = /^:\/\/[^\/?#\s]+[\/?#]/v;
 const STATIC_HTTP_HOST = /^https?:\/\/[^\/?#\s]+/iv;
-const STATIC_HTTP_HOST_WITH_AUTHORITY_BOUNDARY = /^https?:\/\/[^/?#\s]+[/?#]/iu;
+const STATIC_HTTP_HOST_WITH_AUTHORITY_BOUNDARY =
+  /^https?:\/\/[^\/?#\s]+[\/?#]/iv;
 const STATIC_HTTP_PROTOCOLS = new Set(["http", "http:", "https", "https:"]);
 
 const getFirstTemplateText = (
