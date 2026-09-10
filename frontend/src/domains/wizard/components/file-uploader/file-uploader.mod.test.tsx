@@ -19,7 +19,7 @@ type CreateUpload = (
 
 type OnUploadComplete = (result: { storageKey: string }) => void;
 
-const FRACTIONAL_MEBIBYTE_NOTE = /1\.5 MiB/;
+const FRACTIONAL_MEBIBYTE_NOTE = /1\.5 MiB/v;
 const TEN_MEBIBYTE_NOTE = /10 MiB/;
 const UPLOAD_ONE_FILE_BUTTON_NAME = /upload 1 file/i;
 const EXPECTED_SINGLE_COUNT = 1;
