@@ -6,7 +6,7 @@ import { isTestFile, toProjectPath } from "../utilities.ts";
 const ENVIRONMENT_MODULE = "src/shared/config/env/environment.mod.server.ts";
 const NO_EXPRESSIONS = 0;
 const STATIC_HTTP_AUTHORITY = /^:\/\/[^\/?#\s]+/v;
-const STATIC_HTTP_AUTHORITY_AFTER_PROTOCOL_COLON = /^\/\/[^/?#\s]+/u;
+const STATIC_HTTP_AUTHORITY_AFTER_PROTOCOL_COLON = /^\/\/[^\/?#\s]+/v;
 const STATIC_HTTP_AUTHORITY_AFTER_PROTOCOL_COLON_WITH_BOUNDARY =
   /^\/\/[^/?#\s]+[/?#]/u;
 const STATIC_HTTP_AUTHORITY_WITH_BOUNDARY = /^:\/\/[^/?#\s]+[/?#]/u;
