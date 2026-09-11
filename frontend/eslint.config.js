@@ -222,7 +222,7 @@ export default defineConfig(
       ],
       [`${PLUGIN_NAMES.TypescriptESLint}/no-deprecated`]: SEVERITY_LEVELS.Error,
       [`${PLUGIN_NAMES.TypescriptESLint}/no-floating-promises`]: [
-        ERROR,
+        SEVERITY_LEVELS.Error,
         {
           checkThenables: true,
         },
