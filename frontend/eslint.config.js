@@ -288,7 +288,7 @@ export default defineConfig(
       // Prefer null over undefined as the explicit empty value.
       "no-undefined": SEVERITY_LEVELS.Error,
       "object-shorthand": SEVERITY_LEVELS.Error,
-      "react-hooks/exhaustive-deps": ERROR,
+      "react-hooks/exhaustive-deps": SEVERITY_LEVELS.Error,
       [`${PLUGIN_NAMES.SonarJS}/cognitive-complexity`]: [ERROR, MAX_COMPLEXITY],
       [`${PLUGIN_NAMES.SonarJS}/no-commented-code`]: ERROR,
       [`${PLUGIN_NAMES.SonarJS}/todo-tag`]: ERROR,
