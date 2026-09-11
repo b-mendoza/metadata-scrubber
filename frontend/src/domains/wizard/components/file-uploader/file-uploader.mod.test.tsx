@@ -25,6 +25,7 @@ const FRACTIONAL_MEBIBYTE_NOTE = /1\.5 MiB/v;
 const TEN_MEBIBYTE_NOTE = /10 MiB/v;
 const UPLOAD_ONE_FILE_BUTTON_NAME = /upload 1 file/iv;
 const EXPECTED_SINGLE_COUNT = 1;
+const EXPECTED_DESTROY_COUNT_AFTER_REPLACEMENT_UNMOUNT = 2;
 const TEST_MAX_FILE_SIZE_BYTES = 10_485_760;
 const TEST_OVER_MAX_FILE_SIZE_BYTES = 10_485_761;
 const TEST_FRACTIONAL_FILE_SIZE_BYTES = 1_572_864;
@@ -82,6 +83,54 @@ test("Uppy keeps its initial instance when uploader props change", () => {
   expect(destroySpy).toHaveBeenCalledOnce();
   const [destroyedUppy] = destroySpy.mock.contexts;
   expect(destroyedUppy).toBe(initialUppy);
+});
+
+test("a keyed remount destroys the old Uppy and keeps its replacement until unmount", () => {
+  const useSpy = vi.spyOn(Uppy.prototype, "use");
+  const destroySpy = vi.spyOn(Uppy.prototype, "destroy");
+  const createUpload = vi.fn<CreateUpload>();
+  const replacementCreateUpload = vi.fn<CreateUpload>();
+  const onUploadComplete = vi.fn<OnUploadComplete>();
+  const { rerender, unmount } = renderComponent(
+    <FileUploader
+      createUpload={createUpload}
+      key="initial"
+      maxFileSizeBytes={TEST_MAX_FILE_SIZE_BYTES}
+      onUploadComplete={onUploadComplete}
+    />,
+  );
+  const [initialUppy] = useSpy.mock.contexts;
+
+  expect(initialUppy).toBeInstanceOf(Uppy);
+  expect(destroySpy).not.toHaveBeenCalled();
+  useSpy.mockClear();
+
+  rerender(
+    <FileUploader
+      createUpload={replacementCreateUpload}
+      key="replacement"
+      maxFileSizeBytes={TEST_FRACTIONAL_FILE_SIZE_BYTES}
+      onUploadComplete={onUploadComplete}
+    />,
+  );
+  const [replacementUppy] = useSpy.mock.contexts;
+
+  expect(replacementUppy).toBeInstanceOf(Uppy);
+  expect(replacementUppy).not.toBe(initialUppy);
+  expect(useSpy.mock.calls.filter(([Plugin]) => Plugin === AwsS3)).toHaveLength(
+    EXPECTED_SINGLE_COUNT,
+  );
+  expect(destroySpy).toHaveBeenCalledOnce();
+  const [destroyedUppy] = destroySpy.mock.contexts;
+  expect(destroyedUppy).toBe(initialUppy);
+
+  unmount();
+
+  expect(destroySpy).toHaveBeenCalledTimes(
+    EXPECTED_DESTROY_COUNT_AFTER_REPLACEMENT_UNMOUNT,
+  );
+  const [, destroyedReplacementUppy] = destroySpy.mock.contexts;
+  expect(destroyedReplacementUppy).toBe(replacementUppy);
 });
 
 test("the Dashboard note shows a whole-number runtime MiB limit", () => {
