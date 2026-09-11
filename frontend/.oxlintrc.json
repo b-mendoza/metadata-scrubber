@@ -791,6 +791,7 @@
     "@eslint-react/dom-no-missing-button-type": "warn",
     "@eslint-react/dom-no-missing-iframe-sandbox": "warn",
     "@eslint-react/dom-no-unsafe-target-blank": "warn",
+    "@tanstack/router/create-route-property-order": "warn",
     "@tanstack/router/route-param-names": "error",
     "no-restricted-imports": [
       "error",
