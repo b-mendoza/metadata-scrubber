@@ -414,7 +414,7 @@ export default defineConfig(
       [`${PLUGIN_NAMES.Vitest}/prefer-equality-matcher`]: SEVERITY_LEVELS.Error,
       [`${PLUGIN_NAMES.Vitest}/prefer-to-be`]: SEVERITY_LEVELS.Error,
       [`${PLUGIN_NAMES.Vitest}/prefer-to-contain`]: SEVERITY_LEVELS.Error,
-      [`${PLUGIN_NAMES.Vitest}/prefer-to-have-length`]: ERROR,
+      [`${PLUGIN_NAMES.Vitest}/prefer-to-have-length`]: SEVERITY_LEVELS.Error,
 
       // Our addition: a `vi.mock` factory must import the module it replaces,
       // since Vitest hoists the factory above outer bindings.
