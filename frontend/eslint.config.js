@@ -293,7 +293,7 @@ export default defineConfig(
         SEVERITY_LEVELS.Error,
         MAX_COMPLEXITY,
       ],
-      [`${PLUGIN_NAMES.SonarJS}/no-commented-code`]: ERROR,
+      [`${PLUGIN_NAMES.SonarJS}/no-commented-code`]: SEVERITY_LEVELS.Error,
       [`${PLUGIN_NAMES.SonarJS}/todo-tag`]: ERROR,
       // Keep null legal because the project uses it as the one explicit absent value.
       [`${PLUGIN_NAMES.Unicorn}/no-null`]: OFF,
