@@ -61,6 +61,7 @@ const PLUGIN_NAMES = {
   MetadataScrubber: "metadata-scrubber",
   JSXA11yX: "jsx-a11y-x",
   E18e: "e18e",
+  SonarJS: "sonarjs",
 };
 
 export default defineConfig(
@@ -174,7 +175,7 @@ export default defineConfig(
       [`${PLUGIN_NAMES.E18e}/prefer-object-has-own`]: OFF,
       [`${PLUGIN_NAMES.E18e}/prefer-spread-syntax`]: OFF,
       [`${PLUGIN_NAMES.E18e}/prefer-string-fromcharcode`]: OFF,
-      "sonarjs/prefer-regexp-exec": OFF,
+      [`${PLUGIN_NAMES.SonarJS}/prefer-regexp-exec`]: OFF,
       // =======================================================================
 
       "@eslint-community/eslint-comments/disable-enable-pair": ERROR,
