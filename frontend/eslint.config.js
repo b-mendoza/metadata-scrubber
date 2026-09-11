@@ -270,7 +270,7 @@ export default defineConfig(
       "no-undefined": ERROR,
       "object-shorthand": ERROR,
       "react-hooks/exhaustive-deps": ERROR,
-      "sonarjs/cognitive-complexity": [ERROR, MAX_COMPLEXITY],
+      [`${PLUGIN_NAMES.SonarJS}/cognitive-complexity`]: [ERROR, MAX_COMPLEXITY],
       "sonarjs/no-commented-code": ERROR,
       "sonarjs/todo-tag": ERROR,
       // Keep null legal because the project uses it as the one explicit absent value.
