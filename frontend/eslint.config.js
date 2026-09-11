@@ -275,7 +275,7 @@ export default defineConfig(
       "arrow-body-style": SEVERITY_LEVELS.Off,
       [`${PLUGIN_NAMES.ImportX}/newline-after-import`]: SEVERITY_LEVELS.Error,
       "no-restricted-imports": [
-        ERROR,
+        SEVERITY_LEVELS.Error,
         {
           patterns: BASE_RESTRICTED_IMPORT_PATTERNS,
         },
