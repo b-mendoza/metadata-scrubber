@@ -151,6 +151,19 @@ const cases = [
     ],
   ],
   [
+    "separate-type-imports",
+    "separate-type-imports.ts",
+    [
+      'Move inline type bindings `KyInstance, RetryOptions, ShouldRetryState` from `ky` to a separate `import type` declaration. Preserve each imported name and local alias. Keep runtime bindings in a separate import declaration. Type imports disappear from JavaScript. If no runtime import remains, keep a side-effect import when module initialization is required. Ky example: `import type { KyInstance, RetryOptions, ShouldRetryState } from "ky";` and `import ky, { HTTPError } from "ky";`.',
+      'Move inline type bindings `KyInstance as Client` from `ky` to a separate `import type` declaration. Preserve each imported name and local alias. Keep runtime bindings in a separate import declaration. Type imports disappear from JavaScript. If no runtime import remains, keep a side-effect import when module initialization is required. Ky example: `import type { KyInstance, RetryOptions, ShouldRetryState } from "ky";` and `import ky, { HTTPError } from "ky";`.',
+      'Move inline type bindings `CpuInfo, NetworkInterfaceInfo` from `node:os` to a separate `import type` declaration. Preserve each imported name and local alias. Keep runtime bindings in a separate import declaration. Type imports disappear from JavaScript. If no runtime import remains, keep a side-effect import when module initialization is required. Ky example: `import type { KyInstance, RetryOptions, ShouldRetryState } from "ky";` and `import ky, { HTTPError } from "ky";`.',
+      'Move inline type bindings `KyInstance as AllInlineClient, RetryOptions as AllInlineRetryOptions` from `ky` to a separate `import type` declaration. Preserve each imported name and local alias. Keep runtime bindings in a separate import declaration. Type imports disappear from JavaScript. If no runtime import remains, keep a side-effect import when module initialization is required. Ky example: `import type { KyInstance, RetryOptions, ShouldRetryState } from "ky";` and `import ky, { HTTPError } from "ky";`.',
+      'Move inline type bindings `ShouldRetryState as InlineState` from `ky` to a separate `import type` declaration. Preserve each imported name and local alias. Keep runtime bindings in a separate import declaration. Type imports disappear from JavaScript. If no runtime import remains, keep a side-effect import when module initialization is required. Ky example: `import type { KyInstance, RetryOptions, ShouldRetryState } from "ky";` and `import ky, { HTTPError } from "ky";`.',
+      'Move inline type bindings `CpuInfo as Processor` from `node:os` to a separate `import type` declaration. Preserve each imported name and local alias. Keep runtime bindings in a separate import declaration. Type imports disappear from JavaScript. If no runtime import remains, keep a side-effect import when module initialization is required. Ky example: `import type { KyInstance, RetryOptions, ShouldRetryState } from "ky";` and `import ky, { HTTPError } from "ky";`.',
+      'Move inline type bindings `KyInstance as AttributedClient, RetryOptions as AttributedRetryOptions` from `ky` to a separate `import type` declaration. Preserve each imported name and local alias. Keep runtime bindings in a separate import declaration. Type imports disappear from JavaScript. If no runtime import remains, keep a side-effect import when module initialization is required. Ky example: `import type { KyInstance, RetryOptions, ShouldRetryState } from "ky";` and `import ky, { HTTPError } from "ky";`.',
+    ],
+  ],
+  [
     "use-shared-render-helper",
     "use-shared-render-helper.test.tsx",
     [
