@@ -115,7 +115,8 @@ export default defineConfig(
       [`${PLUGIN_NAMES.MetadataScrubber}/no-classes`]: ERROR,
       [`${PLUGIN_NAMES.MetadataScrubber}/no-expect-type-of`]: ERROR,
       [`${PLUGIN_NAMES.MetadataScrubber}/no-hardcoded-backend-host`]: ERROR,
-      "metadata-scrubber/no-mutable-module-state-in-server-code": ERROR,
+      [`${PLUGIN_NAMES.MetadataScrubber}/no-mutable-module-state-in-server-code`]:
+        ERROR,
       "metadata-scrubber/no-silent-test-prerequisite": ERROR,
       "metadata-scrubber/use-shared-render-helper": ERROR,
     },
