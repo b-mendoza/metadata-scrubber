@@ -194,7 +194,8 @@ export default defineConfig(
       [`${PLUGIN_NAMES.SonarJS}/prefer-regexp-exec`]: SEVERITY_LEVELS.Off,
       // =======================================================================
 
-      [`${PLUGIN_NAMES.ESLintCommunityComments}/disable-enable-pair`]: ERROR,
+      [`${PLUGIN_NAMES.ESLintCommunityComments}/disable-enable-pair`]:
+        SEVERITY_LEVELS.Error,
       [`${PLUGIN_NAMES.TypescriptESLint}/consistent-type-imports`]: [
         ERROR,
         {
