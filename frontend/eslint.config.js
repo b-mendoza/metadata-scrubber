@@ -136,7 +136,8 @@ export default defineConfig(
         SEVERITY_LEVELS.Error,
       [`${PLUGIN_NAMES.MetadataScrubber}/no-silent-test-prerequisite`]:
         SEVERITY_LEVELS.Error,
-      [`${PLUGIN_NAMES.MetadataScrubber}/use-shared-render-helper`]: ERROR,
+      [`${PLUGIN_NAMES.MetadataScrubber}/use-shared-render-helper`]:
+        SEVERITY_LEVELS.Error,
     },
   },
   eslintReact.configs["strict-type-checked"],
