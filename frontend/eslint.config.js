@@ -58,6 +58,7 @@ const BASE_RESTRICTED_SYNTAX = [
 const PLUGIN_NAMES = {
   SimpleImportSort: "simple-import-sort",
   ImportX: "import-x",
+  MetadataScrubber: "metadata-scrubber",
 };
 
 export default defineConfig(
@@ -108,7 +109,7 @@ export default defineConfig(
   sonarjs.configs?.["recommended"],
   {
     plugins: {
-      "metadata-scrubber": metadataScrubber,
+      [PLUGIN_NAMES.MetadataScrubber]: metadataScrubber,
     },
     rules: {
       "metadata-scrubber/no-classes": ERROR,
