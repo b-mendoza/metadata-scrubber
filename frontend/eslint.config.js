@@ -88,7 +88,7 @@ export default defineConfig(
     },
     rules: {
       [`${PLUGIN_NAMES.ImportX}/export`]: ERROR,
-      "import-x/first": ERROR,
+      [`${PLUGIN_NAMES.ImportX}/first`]: ERROR,
       "import-x/no-absolute-path": [
         ERROR,
         {
