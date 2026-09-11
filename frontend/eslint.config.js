@@ -205,7 +205,7 @@ export default defineConfig(
         },
       ],
       [`${PLUGIN_NAMES.TypescriptESLint}/no-deprecated`]: ERROR,
-      "@typescript-eslint/no-floating-promises": [
+      [`${PLUGIN_NAMES.TypescriptESLint}/no-floating-promises`]: [
         ERROR,
         {
           checkThenables: true,
