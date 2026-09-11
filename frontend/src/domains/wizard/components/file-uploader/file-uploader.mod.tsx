@@ -69,12 +69,26 @@ const createUppy = (
   return uppy;
 };
 
-export const FileUploader = (props: FileUploaderProps) => {
-  const { createUpload, maxFileSizeBytes, onUploadComplete } = props;
-
+const useUppyInstance = (
+  createUpload: FileUploaderProps["createUpload"],
+  maxFileSizeBytes: FileUploaderProps["maxFileSizeBytes"],
+): ReturnType<typeof createUppy> => {
   // The Uppy instance captures the initial `createUpload` and `maxFileSizeBytes` values.
   // A caller must remount this component to apply changed values.
   const [uppy] = useState(() => createUppy(createUpload, maxFileSizeBytes));
+
+  useEffect(() => {
+    return () => {
+      uppy.destroy();
+    };
+  }, [uppy]);
+
+  return uppy;
+};
+
+export const FileUploader = (props: FileUploaderProps) => {
+  const { createUpload, maxFileSizeBytes, onUploadComplete } = props;
+  const uppy = useUppyInstance(createUpload, maxFileSizeBytes);
 
   useUppyEvent(uppy, "complete", (uploadResult) => {
     const [successfulFile] = uploadResult.successful ?? [];
@@ -88,12 +102,6 @@ export const FileUploader = (props: FileUploaderProps) => {
 
     onUploadComplete(uploadedFileMetadata);
   });
-
-  useEffect(() => {
-    return () => {
-      uppy.destroy();
-    };
-  }, [uppy]);
 
   const maxFileSizeMebibytes = new Intl.NumberFormat("en-US", {
     maximumFractionDigits: 2,
