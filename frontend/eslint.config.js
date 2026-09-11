@@ -273,7 +273,7 @@ export default defineConfig(
         "in-try-catch",
       ],
       "arrow-body-style": SEVERITY_LEVELS.Off,
-      [`${PLUGIN_NAMES.ImportX}/newline-after-import`]: ERROR,
+      [`${PLUGIN_NAMES.ImportX}/newline-after-import`]: SEVERITY_LEVELS.Error,
       "no-restricted-imports": [
         ERROR,
         {
