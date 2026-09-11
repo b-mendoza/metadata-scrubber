@@ -154,6 +154,8 @@
         "allow": []
       }
     ],
+    "simple-import-sort/imports": "error",
+    "simple-import-sort/exports": "error",
     "@eslint-community/eslint-comments/disable-enable-pair": "error",
     "@eslint-community/eslint-comments/no-aggregating-enable": ["error"],
     "@eslint-community/eslint-comments/no-duplicate-disable": ["error"],
@@ -709,8 +711,6 @@
     "metadata-scrubber/no-mutable-module-state-in-server-code": "error",
     "metadata-scrubber/no-silent-test-prerequisite": "error",
     "metadata-scrubber/use-shared-render-helper": "error",
-    "simple-import-sort/imports": "error",
-    "simple-import-sort/exports": "error",
     "no-restricted-imports": [
       "error",
       {
