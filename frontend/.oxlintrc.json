@@ -10,11 +10,11 @@
     "jsx-a11y"
   ],
   "jsPlugins": [
+    "eslint-plugin-simple-import-sort",
     "@eslint-community/eslint-plugin-eslint-comments",
     "@e18e/eslint-plugin",
     "eslint-plugin-sonarjs",
-    "./oxlint-plugin-metadata-scrubber/index.ts",
-    "eslint-plugin-simple-import-sort"
+    "./oxlint-plugin-metadata-scrubber/index.ts"
   ],
   "categories": {
     "correctness": "off"
