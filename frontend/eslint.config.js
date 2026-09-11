@@ -411,7 +411,7 @@ export default defineConfig(
       // which comparison broke.
       [`${PLUGIN_NAMES.Vitest}/prefer-comparison-matcher`]:
         SEVERITY_LEVELS.Error,
-      [`${PLUGIN_NAMES.Vitest}/prefer-equality-matcher`]: ERROR,
+      [`${PLUGIN_NAMES.Vitest}/prefer-equality-matcher`]: SEVERITY_LEVELS.Error,
       [`${PLUGIN_NAMES.Vitest}/prefer-to-be`]: ERROR,
       [`${PLUGIN_NAMES.Vitest}/prefer-to-contain`]: ERROR,
       [`${PLUGIN_NAMES.Vitest}/prefer-to-have-length`]: ERROR,
