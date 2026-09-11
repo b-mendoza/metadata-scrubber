@@ -384,7 +384,7 @@ export default defineConfig(
           fixable: false,
         },
       ],
-      "vitest/no-disabled-tests": ERROR,
+      [`${PLUGIN_NAMES.Vitest}/no-disabled-tests`]: ERROR,
       "testing-library/no-debugging-utils": ERROR,
 
       // Use the matcher that names the assertion, so the failure message says
