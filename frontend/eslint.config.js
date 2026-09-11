@@ -391,7 +391,7 @@ export default defineConfig(
       // which comparison broke.
       [`${PLUGIN_NAMES.Vitest}/prefer-comparison-matcher`]: ERROR,
       [`${PLUGIN_NAMES.Vitest}/prefer-equality-matcher`]: ERROR,
-      "vitest/prefer-to-be": ERROR,
+      [`${PLUGIN_NAMES.Vitest}/prefer-to-be`]: ERROR,
       "vitest/prefer-to-contain": ERROR,
       "vitest/prefer-to-have-length": ERROR,
 
