@@ -711,7 +711,6 @@
     "metadata-scrubber/use-shared-render-helper": "error",
     "simple-import-sort/imports": "error",
     "simple-import-sort/exports": "error",
-    "import/newline-after-import": "error",
     "no-restricted-imports": [
       "error",
       {
@@ -769,6 +768,7 @@
     "import/no-duplicates": "error",
     "import/no-named-default": "error",
     "import/no-webpack-loader-syntax": "error",
+    "import/newline-after-import": "error",
     "jsx-a11y/alt-text": "error",
     "jsx-a11y/anchor-has-content": [
       "error",
