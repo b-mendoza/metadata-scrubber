@@ -64,6 +64,7 @@ const PLUGIN_NAMES = {
   SonarJS: "sonarjs",
   ESLintCommunityComments: "@eslint-community/eslint-comments",
   TypescriptESLint: "@typescript-eslint",
+  Unicorn: "unicorn",
 };
 
 export default defineConfig(
@@ -274,7 +275,7 @@ export default defineConfig(
       [`${PLUGIN_NAMES.SonarJS}/no-commented-code`]: ERROR,
       [`${PLUGIN_NAMES.SonarJS}/todo-tag`]: ERROR,
       // Keep null legal because the project uses it as the one explicit absent value.
-      "unicorn/no-null": OFF,
+      [`${PLUGIN_NAMES.Unicorn}/no-null`]: OFF,
       /**
        * The project uses these established terms.
        * mod comes from the *.mod.ts file-name convention.
