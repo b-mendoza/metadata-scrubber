@@ -211,7 +211,7 @@ export default defineConfig(
           checkThenables: true,
         },
       ],
-      "@typescript-eslint/no-magic-numbers": [
+      [`${PLUGIN_NAMES.TypescriptESLint}/no-magic-numbers`]: [
         ERROR,
         {
           ignoreTypeIndexes: true,
