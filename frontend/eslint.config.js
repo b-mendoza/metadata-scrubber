@@ -98,7 +98,7 @@ export default defineConfig(
         },
       ],
       [`${PLUGIN_NAMES.ImportX}/no-duplicates`]: ERROR,
-      "import-x/no-named-default": ERROR,
+      [`${PLUGIN_NAMES.ImportX}/no-named-default`]: ERROR,
       "import-x/no-webpack-loader-syntax": ERROR,
     },
   },
