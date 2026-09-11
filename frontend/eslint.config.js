@@ -198,7 +198,7 @@ export default defineConfig(
        * the main arguments and makes each call site harder to read.
        * This rule overrides the eslint-config-love limit of 4.
        */
-      "@typescript-eslint/max-params": [
+      [`${PLUGIN_NAMES.TypescriptESLint}/max-params`]: [
         ERROR,
         {
           max: 3,
