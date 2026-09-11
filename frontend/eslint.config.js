@@ -412,7 +412,7 @@ export default defineConfig(
       [`${PLUGIN_NAMES.Vitest}/prefer-comparison-matcher`]:
         SEVERITY_LEVELS.Error,
       [`${PLUGIN_NAMES.Vitest}/prefer-equality-matcher`]: SEVERITY_LEVELS.Error,
-      [`${PLUGIN_NAMES.Vitest}/prefer-to-be`]: ERROR,
+      [`${PLUGIN_NAMES.Vitest}/prefer-to-be`]: SEVERITY_LEVELS.Error,
       [`${PLUGIN_NAMES.Vitest}/prefer-to-contain`]: ERROR,
       [`${PLUGIN_NAMES.Vitest}/prefer-to-have-length`]: ERROR,
 
