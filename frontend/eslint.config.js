@@ -89,7 +89,7 @@ export default defineConfig(
     rules: {
       [`${PLUGIN_NAMES.ImportX}/export`]: ERROR,
       [`${PLUGIN_NAMES.ImportX}/first`]: ERROR,
-      "import-x/no-absolute-path": [
+      [`${PLUGIN_NAMES.ImportX}/no-absolute-path`]: [
         ERROR,
         {
           amd: false,
