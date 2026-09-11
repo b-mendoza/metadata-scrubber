@@ -20,6 +20,8 @@ import type { KyInstance, RetryOptions, ShouldRetryState } from "ky";
 import ky, { HTTPError } from "ky";
 ```
 
+- `separate-type-imports` enforces the import split above. It allows standalone named, default, and namespace type imports.
+
 ## File names
 
 - Use `*.mod.ts` and `*.mod.tsx` for module files. Use the `.tsx` extension when a module file contains JSX.
