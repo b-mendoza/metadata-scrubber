@@ -133,7 +133,7 @@ export default defineConfig(
       [`${PLUGIN_NAMES.MetadataScrubber}/no-hardcoded-backend-host`]:
         SEVERITY_LEVELS.Error,
       [`${PLUGIN_NAMES.MetadataScrubber}/no-mutable-module-state-in-server-code`]:
-        ERROR,
+        SEVERITY_LEVELS.Error,
       [`${PLUGIN_NAMES.MetadataScrubber}/no-silent-test-prerequisite`]: ERROR,
       [`${PLUGIN_NAMES.MetadataScrubber}/use-shared-render-helper`]: ERROR,
     },
