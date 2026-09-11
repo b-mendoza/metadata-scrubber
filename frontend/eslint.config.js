@@ -223,7 +223,7 @@ export default defineConfig(
           checksVoidReturn: false,
         },
       ],
-      "@typescript-eslint/only-throw-error": [
+      [`${PLUGIN_NAMES.TypescriptESLint}/only-throw-error`]: [
         ERROR,
         {
           allow: [
