@@ -234,7 +234,7 @@ export default defineConfig(
         },
       ],
       [`${PLUGIN_NAMES.TypescriptESLint}/no-misused-promises`]: [
-        ERROR,
+        SEVERITY_LEVELS.Error,
         {
           checksVoidReturn: false,
         },
