@@ -103,7 +103,7 @@ export default defineConfig(
     },
     rules: {
       [`${PLUGIN_NAMES.ImportX}/export`]: SEVERITY_LEVELS.Error,
-      [`${PLUGIN_NAMES.ImportX}/first`]: ERROR,
+      [`${PLUGIN_NAMES.ImportX}/first`]: SEVERITY_LEVELS.Error,
       [`${PLUGIN_NAMES.ImportX}/no-absolute-path`]: [
         ERROR,
         {
