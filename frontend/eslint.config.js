@@ -409,7 +409,8 @@ export default defineConfig(
 
       // Use the matcher that names the assertion, so the failure message says
       // which comparison broke.
-      [`${PLUGIN_NAMES.Vitest}/prefer-comparison-matcher`]: ERROR,
+      [`${PLUGIN_NAMES.Vitest}/prefer-comparison-matcher`]:
+        SEVERITY_LEVELS.Error,
       [`${PLUGIN_NAMES.Vitest}/prefer-equality-matcher`]: ERROR,
       [`${PLUGIN_NAMES.Vitest}/prefer-to-be`]: ERROR,
       [`${PLUGIN_NAMES.Vitest}/prefer-to-contain`]: ERROR,
