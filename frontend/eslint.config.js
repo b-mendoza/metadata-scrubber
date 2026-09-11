@@ -85,7 +85,7 @@ export default defineConfig(
     },
     rules: {
       [`${PLUGIN_NAMES.SimpleImportSort}/imports`]: SEVERITY_LEVELS.Error,
-      [`${PLUGIN_NAMES.SimpleImportSort}/exports`]: ERROR,
+      [`${PLUGIN_NAMES.SimpleImportSort}/exports`]: SEVERITY_LEVELS.Error,
     },
   },
   // @ts-expect-error Type incompatibility between @typescript-eslint/utils re-exported types and defineConfig.
