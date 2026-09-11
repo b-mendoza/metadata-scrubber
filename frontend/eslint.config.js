@@ -128,7 +128,8 @@ export default defineConfig(
     },
     rules: {
       [`${PLUGIN_NAMES.MetadataScrubber}/no-classes`]: SEVERITY_LEVELS.Error,
-      [`${PLUGIN_NAMES.MetadataScrubber}/no-expect-type-of`]: ERROR,
+      [`${PLUGIN_NAMES.MetadataScrubber}/no-expect-type-of`]:
+        SEVERITY_LEVELS.Error,
       [`${PLUGIN_NAMES.MetadataScrubber}/no-hardcoded-backend-host`]: ERROR,
       [`${PLUGIN_NAMES.MetadataScrubber}/no-mutable-module-state-in-server-code`]:
         ERROR,
