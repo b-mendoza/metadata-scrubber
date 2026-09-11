@@ -158,17 +158,17 @@ importers:
         specifier: 1.0.2
         version: 1.0.2(react-dom@19.2.8(react@19.2.8))(react@19.2.8)
       '@uppy/aws-s3':
-        specifier: 6.0.0
-        version: 6.0.0(@uppy/core@6.0.0)
+        specifier: 6.1.0
+        version: 6.1.0(@uppy/core@6.0.1)
       '@uppy/core':
-        specifier: 6.0.0
-        version: 6.0.0
+        specifier: 6.0.1
+        version: 6.0.1
       '@uppy/dashboard':
         specifier: 6.0.0
-        version: 6.0.0(@uppy/core@6.0.0)
+        version: 6.0.0(@uppy/core@6.0.1)
       '@uppy/react':
         specifier: 6.0.0
-        version: 6.0.0(@uppy/core@6.0.0)(@uppy/dashboard@6.0.0(@uppy/core@6.0.0))(@uppy/google-drive-picker@2.0.0(@uppy/core@6.0.0))(@uppy/google-photos-picker@2.0.0(@uppy/core@6.0.0))(react-dom@19.2.8(react@19.2.8))(react@19.2.8)
+        version: 6.0.0(@uppy/core@6.0.1)(@uppy/dashboard@6.0.0(@uppy/core@6.0.1))(@uppy/google-drive-picker@2.0.0(@uppy/core@6.0.1))(@uppy/google-photos-picker@2.0.0(@uppy/core@6.0.1))(react-dom@19.2.8(react@19.2.8))(react@19.2.8)
       ai:
         specifier: 7.0.93
         version: 7.0.93(zod@4.5.4)
@@ -2617,10 +2617,10 @@ packages:
     cpu: [x64]
     os: [win32]
 
-  '@uppy/aws-s3@6.0.0':
-    resolution: {integrity: sha512-FnHZr50CgzQInmIfiJjPr7wLXHbTgX6QMkYRIR/Px5rzjwSlacbrnDa2+LrgaJgpFBKGruC++svu+AdotKyxIg==}
+  '@uppy/aws-s3@6.1.0':
+    resolution: {integrity: sha512-br0dQU7Q4WfW21FBkXyCG2zRdGxH1xO5By9Mt3n3YKL8v/dC9MCFtuqW30+8hIij/eVVrB2JrOFFfmw1iXwuUA==}
     peerDependencies:
-      '@uppy/core': ^6.0.0
+      '@uppy/core': ^6.0.1
 
   '@uppy/components@2.0.0':
     resolution: {integrity: sha512-wviwX37ISeJQEaHh5ijyfSW7wDb5Ctvy10dnkRjuN9hddJo59N7lx+dKe985cP4OBBSr+wAzAkrvP6I8MmMvMg==}
@@ -2639,8 +2639,8 @@ packages:
       '@uppy/webcam':
         optional: true
 
-  '@uppy/core@6.0.0':
-    resolution: {integrity: sha512-qaNqf4t2nxnbFFLSVmLr7Jw9TaA4fzvl8paR/ggwiOo5XFgAfbCFzjDzP8l2r5UzR6cCt3wS95QWvrm82UGZ+g==}
+  '@uppy/core@6.0.1':
+    resolution: {integrity: sha512-H+v4tOBPYY8Cf0JWoGa3+JPTl9Of8SBaVUH5TNwGgynncTWrQtuyGK91hv9wOjm0SFds3X5psPx1ArhngdSrBg==}
 
   '@uppy/dashboard@6.0.0':
     resolution: {integrity: sha512-8ODlTuK4yTCSwTIXrt7kRmsJLpnZdOOJG8MaRMOQdr3VxsOxkvifnYFXNdjTgCnmq09KAtXP3Tssuwt6BpK5oQ==}
@@ -7017,15 +7017,15 @@ snapshots:
   '@unrs/resolver-binding-win32-x64-msvc@1.12.2':
     optional: true
 
-  '@uppy/aws-s3@6.0.0(@uppy/core@6.0.0)':
+  '@uppy/aws-s3@6.1.0(@uppy/core@6.0.1)':
     dependencies:
-      '@uppy/core': 6.0.0
+      '@uppy/core': 6.0.1
 
-  '@uppy/components@2.0.0(@uppy/core@6.0.0)(@uppy/google-drive-picker@2.0.0(@uppy/core@6.0.0))(@uppy/google-photos-picker@2.0.0(@uppy/core@6.0.0))':
+  '@uppy/components@2.0.0(@uppy/core@6.0.1)(@uppy/google-drive-picker@2.0.0(@uppy/core@6.0.1))(@uppy/google-photos-picker@2.0.0(@uppy/core@6.0.1))':
     dependencies:
-      '@uppy/core': 6.0.0
-      '@uppy/google-drive-picker': 2.0.0(@uppy/core@6.0.0)
-      '@uppy/google-photos-picker': 2.0.0(@uppy/core@6.0.0)
+      '@uppy/core': 6.0.1
+      '@uppy/google-drive-picker': 2.0.0(@uppy/core@6.0.1)
+      '@uppy/google-photos-picker': 2.0.0(@uppy/core@6.0.1)
       clsx: 2.1.1
       dequal: 2.0.3
       preact: 10.29.8
@@ -7033,7 +7033,7 @@ snapshots:
     transitivePeerDependencies:
       - preact-render-to-string
 
-  '@uppy/core@6.0.0':
+  '@uppy/core@6.0.1':
     dependencies:
       '@transloadit/prettier-bytes': 2.0.0
       classnames: 2.5.1
@@ -7047,11 +7047,11 @@ snapshots:
     transitivePeerDependencies:
       - preact-render-to-string
 
-  '@uppy/dashboard@6.0.0(@uppy/core@6.0.0)':
+  '@uppy/dashboard@6.0.0(@uppy/core@6.0.1)':
     dependencies:
       '@transloadit/prettier-bytes': 2.0.0
-      '@uppy/core': 6.0.0
-      '@uppy/thumbnail-generator': 6.0.0(@uppy/core@6.0.0)
+      '@uppy/core': 6.0.1
+      '@uppy/thumbnail-generator': 6.0.0(@uppy/core@6.0.1)
       classnames: 2.5.1
       lodash: 4.18.1
       nanoid: 5.1.16
@@ -7060,39 +7060,39 @@ snapshots:
     transitivePeerDependencies:
       - preact-render-to-string
 
-  '@uppy/google-drive-picker@2.0.0(@uppy/core@6.0.0)':
+  '@uppy/google-drive-picker@2.0.0(@uppy/core@6.0.1)':
     dependencies:
-      '@uppy/core': 6.0.0
+      '@uppy/core': 6.0.1
       preact: 10.29.8
     transitivePeerDependencies:
       - preact-render-to-string
 
-  '@uppy/google-photos-picker@2.0.0(@uppy/core@6.0.0)':
+  '@uppy/google-photos-picker@2.0.0(@uppy/core@6.0.1)':
     dependencies:
-      '@uppy/core': 6.0.0
+      '@uppy/core': 6.0.1
       preact: 10.29.8
     transitivePeerDependencies:
       - preact-render-to-string
 
-  '@uppy/react@6.0.0(@uppy/core@6.0.0)(@uppy/dashboard@6.0.0(@uppy/core@6.0.0))(@uppy/google-drive-picker@2.0.0(@uppy/core@6.0.0))(@uppy/google-photos-picker@2.0.0(@uppy/core@6.0.0))(react-dom@19.2.8(react@19.2.8))(react@19.2.8)':
+  '@uppy/react@6.0.0(@uppy/core@6.0.1)(@uppy/dashboard@6.0.0(@uppy/core@6.0.1))(@uppy/google-drive-picker@2.0.0(@uppy/core@6.0.1))(@uppy/google-photos-picker@2.0.0(@uppy/core@6.0.1))(react-dom@19.2.8(react@19.2.8))(react@19.2.8)':
     dependencies:
-      '@uppy/components': 2.0.0(@uppy/core@6.0.0)(@uppy/google-drive-picker@2.0.0(@uppy/core@6.0.0))(@uppy/google-photos-picker@2.0.0(@uppy/core@6.0.0))
-      '@uppy/core': 6.0.0
+      '@uppy/components': 2.0.0(@uppy/core@6.0.1)(@uppy/google-drive-picker@2.0.0(@uppy/core@6.0.1))(@uppy/google-photos-picker@2.0.0(@uppy/core@6.0.1))
+      '@uppy/core': 6.0.1
       preact: 10.29.8
       react: 19.2.8
       react-dom: 19.2.8(react@19.2.8)
       use-sync-external-store: 1.6.0(react@19.2.8)
     optionalDependencies:
-      '@uppy/dashboard': 6.0.0(@uppy/core@6.0.0)
+      '@uppy/dashboard': 6.0.0(@uppy/core@6.0.1)
     transitivePeerDependencies:
       - '@uppy/google-drive-picker'
       - '@uppy/google-photos-picker'
       - '@uppy/image-editor'
       - preact-render-to-string
 
-  '@uppy/thumbnail-generator@6.0.0(@uppy/core@6.0.0)':
+  '@uppy/thumbnail-generator@6.0.0(@uppy/core@6.0.1)':
     dependencies:
-      '@uppy/core': 6.0.0
+      '@uppy/core': 6.0.1
       exifr: 7.1.3
 
   '@vercel/oidc@3.2.0': {}
