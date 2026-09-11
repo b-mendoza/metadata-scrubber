@@ -365,7 +365,7 @@ export default defineConfig(
     },
   },
   {
-    files: ["oxlint-plugin-metadata-scrubber/**/*.ts"],
+    files: ["oxlint-plugin-metadata-scrubber/**/*.ts?(x)"],
     languageOptions: {
       globals: globals.node,
     },
