@@ -315,7 +315,7 @@ export default defineConfig(
         },
       ],
       [`${PLUGIN_NAMES.Unicorn}/text-encoding-identifier-case`]: [
-        ERROR,
+        SEVERITY_LEVELS.Error,
         {
           withDash: true,
         },
