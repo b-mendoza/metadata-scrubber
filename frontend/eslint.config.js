@@ -283,7 +283,7 @@ export default defineConfig(
        * ref also comes from React. The @eslint-react/naming-convention-ref-name
        * rule requires ref or a Ref suffix.
        */
-      "unicorn/name-replacements": [
+      [`${PLUGIN_NAMES.Unicorn}/name-replacements`]: [
         ERROR,
         {
           replacements: {
