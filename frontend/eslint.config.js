@@ -45,9 +45,6 @@ const PLUGIN_NAMES = {
 const ERROR = 2;
 const OFF = 0;
 
-// MAX_COMPLEXITY caps cyclomatic complexity per function.
-const MAX_COMPLEXITY = 8;
-
 const BASE_RESTRICTED_IMPORT_PATTERNS = [
   /**
    * The zod package root is the only supported entry point.
@@ -69,6 +66,9 @@ const BASE_RESTRICTED_SYNTAX = [
     message: "Use a lookup map that raises an error for unknown keys instead.",
   },
 ];
+
+// MAX_COMPLEXITY caps cyclomatic complexity per function.
+const MAX_COMPLEXITY = 8;
 
 export default defineConfig(
   eslint.configs.recommended,
