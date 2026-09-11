@@ -133,6 +133,7 @@ export default defineConfig(
         SEVERITY_LEVELS.Error,
       [`${PLUGIN_NAMES.MetadataScrubber}/no-silent-test-prerequisite`]:
         SEVERITY_LEVELS.Error,
+      [`${PLUGIN_NAMES.MetadataScrubber}/no-use-query`]: SEVERITY_LEVELS.Error,
       [`${PLUGIN_NAMES.MetadataScrubber}/use-shared-render-helper`]:
         SEVERITY_LEVELS.Error,
     },
