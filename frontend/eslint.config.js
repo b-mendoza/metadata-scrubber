@@ -14,6 +14,7 @@ import { importX } from "eslint-plugin-import-x";
 import jsxA11yX from "eslint-plugin-jsx-a11y-x";
 import oxlint from "eslint-plugin-oxlint";
 import reactHooks from "eslint-plugin-react-hooks";
+import reactYouMightNotNeedAnEffect from "eslint-plugin-react-you-might-not-need-an-effect";
 import simpleImportSort from "eslint-plugin-simple-import-sort";
 import sonarjs from "eslint-plugin-sonarjs";
 import testingLibrary from "eslint-plugin-testing-library";
@@ -58,6 +59,7 @@ export default defineConfig(
   ...tseslint.configs.stylisticTypeChecked,
   eslintReact.configs["strict-type-checked"],
   reactHooks.configs.flat["recommended-latest"],
+  reactYouMightNotNeedAnEffect.configs.strict,
   {
     plugins: {
       "jsx-a11y-x": jsxA11yX,
