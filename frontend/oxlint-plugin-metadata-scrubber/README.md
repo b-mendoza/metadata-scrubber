@@ -21,6 +21,8 @@ This plugin encodes the project's coding standards as enforceable Oxlint rules. 
 
 - `no-use-query` rejects runtime `useQuery` imports, source re-exports, static namespace members, and destructuring from `@tanstack/react-query`. It also rejects runtime wildcard exports from that package. Use `useSuspenseQuery` with an ancestor Suspense boundary and suitable error handling. Type-only uses and other Query APIs remain allowed.
 
+- `separate-type-imports` rejects inline `type` specifiers in import declarations. It reports once per declaration, including declarations with only inline type specifiers. Use a separate `import type` declaration. Keep runtime imports separate. Preserve aliases and required module side effects. Standalone named, default, and namespace type imports remain allowed. A runtime binding named `type` remains allowed.
+
 ## How to contribute a rule
 
 1. Add a rule file under `rules/` and create the rule with `defineRule`.
