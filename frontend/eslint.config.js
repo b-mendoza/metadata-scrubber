@@ -45,6 +45,11 @@ const PLUGIN_NAMES = {
 const ERROR = 2;
 const OFF = 0;
 
+const SEVERITY_LEVELS = Object.freeze({
+  Error: 2,
+  Off: 0,
+});
+
 const BASE_RESTRICTED_IMPORT_PATTERNS = [
   /**
    * The zod package root is the only supported entry point.
@@ -79,7 +84,7 @@ export default defineConfig(
       [PLUGIN_NAMES.SimpleImportSort]: simpleImportSort,
     },
     rules: {
-      [`${PLUGIN_NAMES.SimpleImportSort}/imports`]: ERROR,
+      [`${PLUGIN_NAMES.SimpleImportSort}/imports`]: SEVERITY_LEVELS.Error,
       [`${PLUGIN_NAMES.SimpleImportSort}/exports`]: ERROR,
     },
   },
