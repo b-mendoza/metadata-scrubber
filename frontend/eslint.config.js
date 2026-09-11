@@ -97,7 +97,7 @@ export default defineConfig(
           esmodule: true,
         },
       ],
-      "import-x/no-duplicates": ERROR,
+      [`${PLUGIN_NAMES.ImportX}/no-duplicates`]: ERROR,
       "import-x/no-named-default": ERROR,
       "import-x/no-webpack-loader-syntax": ERROR,
     },
