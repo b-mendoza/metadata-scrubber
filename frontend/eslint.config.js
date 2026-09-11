@@ -404,7 +404,8 @@ export default defineConfig(
         },
       ],
       [`${PLUGIN_NAMES.Vitest}/no-disabled-tests`]: SEVERITY_LEVELS.Error,
-      [`${PLUGIN_NAMES.TestingLibrary}/no-debugging-utils`]: ERROR,
+      [`${PLUGIN_NAMES.TestingLibrary}/no-debugging-utils`]:
+        SEVERITY_LEVELS.Error,
 
       // Use the matcher that names the assertion, so the failure message says
       // which comparison broke.
