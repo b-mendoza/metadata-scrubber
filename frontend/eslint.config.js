@@ -325,6 +325,12 @@ export default defineConfig(
     },
   },
   {
+    files: ["oxlint-plugin-metadata-scrubber/**/*.ts"],
+    languageOptions: {
+      globals: globals.node,
+    },
+  },
+  {
     files: ["src/**/*.test.ts?(x)"],
     ...testingLibrary.configs["flat/react"],
   },
