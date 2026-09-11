@@ -12,7 +12,7 @@ This plugin encodes the project's coding standards as enforceable Oxlint rules. 
 
 ## Rules
 
-- `no-classes` — Requires plain functions and objects instead of class declarations and class expressions. The rule has no class exception. Its negative fixture covers a class declaration, a class expression, and an `Error` subclass.
+- `no-classes` requires plain functions and objects instead of class declarations and class expressions. It also rejects classes that extend `Error`.
 - `no-expect-type-of` — Requires TypeScript contracts instead of Vitest `expectTypeOf(...)` calls.
 - `no-hardcoded-backend-host` — Requires environment fields instead of static HTTP service hosts outside tests and the validated environment module.
 - `no-mutable-module-state-in-server-code` — Forbids module-scope `let` and `var` declarations in server modules.
