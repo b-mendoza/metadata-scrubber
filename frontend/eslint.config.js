@@ -321,7 +321,7 @@ export default defineConfig(
         },
       ],
       complexity: [
-        ERROR,
+        SEVERITY_LEVELS.Error,
         {
           variant: "modified",
           max: MAX_COMPLEXITY,
