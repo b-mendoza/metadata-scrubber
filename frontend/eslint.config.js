@@ -55,6 +55,9 @@ const BASE_RESTRICTED_SYNTAX = [
     message: "Use a lookup map that raises an error for unknown keys instead.",
   },
 ];
+const PLUGIN_NAMES = {
+  SimpleImportSort: "simple-import-sort",
+};
 
 export default defineConfig(
   eslint.configs.recommended,
@@ -62,7 +65,7 @@ export default defineConfig(
   ...tseslint.configs.stylisticTypeChecked,
   {
     plugins: {
-      "simple-import-sort": simpleImportSort,
+      [PLUGIN_NAMES.SimpleImportSort]: simpleImportSort,
     },
     rules: {
       "simple-import-sort/imports": ERROR,
