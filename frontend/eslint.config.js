@@ -57,6 +57,15 @@ export default defineConfig(
   eslint.configs.recommended,
   ...tseslint.configs.strictTypeChecked,
   ...tseslint.configs.stylisticTypeChecked,
+  {
+    plugins: {
+      "simple-import-sort": simpleImportSort,
+    },
+    rules: {
+      "simple-import-sort/imports": ERROR,
+      "simple-import-sort/exports": ERROR,
+    },
+  },
   // @ts-expect-error Type incompatibility between @typescript-eslint/utils re-exported types and defineConfig.
   // This is a known issue with plugins using TSESLint.FlatConfig types.
   // See: https://github.com/typescript-eslint/typescript-eslint/issues/11543
@@ -101,15 +110,6 @@ export default defineConfig(
       "metadata-scrubber/no-mutable-module-state-in-server-code": ERROR,
       "metadata-scrubber/no-silent-test-prerequisite": ERROR,
       "metadata-scrubber/use-shared-render-helper": ERROR,
-    },
-  },
-  {
-    plugins: {
-      "simple-import-sort": simpleImportSort,
-    },
-    rules: {
-      "simple-import-sort/imports": ERROR,
-      "simple-import-sort/exports": ERROR,
     },
   },
   eslintReact.configs["strict-type-checked"],
