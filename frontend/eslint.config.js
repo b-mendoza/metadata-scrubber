@@ -189,7 +189,7 @@ export default defineConfig(
       [`${PLUGIN_NAMES.E18e}/prefer-includes`]: SEVERITY_LEVELS.Off,
       [`${PLUGIN_NAMES.E18e}/prefer-nullish-coalescing`]: SEVERITY_LEVELS.Off,
       [`${PLUGIN_NAMES.E18e}/prefer-object-has-own`]: SEVERITY_LEVELS.Off,
-      [`${PLUGIN_NAMES.E18e}/prefer-spread-syntax`]: OFF,
+      [`${PLUGIN_NAMES.E18e}/prefer-spread-syntax`]: SEVERITY_LEVELS.Off,
       [`${PLUGIN_NAMES.E18e}/prefer-string-fromcharcode`]: OFF,
       [`${PLUGIN_NAMES.SonarJS}/prefer-regexp-exec`]: OFF,
       // =======================================================================
