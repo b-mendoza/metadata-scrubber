@@ -59,6 +59,7 @@ const PLUGIN_NAMES = {
   SimpleImportSort: "simple-import-sort",
   ImportX: "import-x",
   MetadataScrubber: "metadata-scrubber",
+  JSXA11yX: "jsx-a11y-x",
 };
 
 export default defineConfig(
@@ -126,7 +127,7 @@ export default defineConfig(
   reactYouMightNotNeedAnEffect.configs.strict,
   {
     plugins: {
-      "jsx-a11y-x": jsxA11yX,
+      [PLUGIN_NAMES.JSXA11yX]: jsxA11yX,
     },
     rules: {
       ...jsxA11yX.configs.strict.rules,
