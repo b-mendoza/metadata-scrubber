@@ -13,6 +13,13 @@ Read the long-lived [TypeScript design conventions](./agent/code-conventions.md)
 - Keep each imported name and local alias. A runtime binding named `type` is not a type-only import.
 - Move inline type specifiers into a standalone type declaration, even when the original declaration has no runtime bindings. Keep a side-effect import when module initialization is required.
 
+The workflow Ky client uses this split:
+
+```ts
+import type { KyInstance, RetryOptions, ShouldRetryState } from "ky";
+import ky, { HTTPError } from "ky";
+```
+
 ## File names
 
 - Use `*.mod.ts` and `*.mod.tsx` for module files. Use the `.tsx` extension when a module file contains JSX.
