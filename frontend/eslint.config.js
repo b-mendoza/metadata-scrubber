@@ -69,7 +69,7 @@ export default defineConfig(
     },
     rules: {
       [`${PLUGIN_NAMES.SimpleImportSort}/imports`]: ERROR,
-      "simple-import-sort/exports": ERROR,
+      [`${PLUGIN_NAMES.SimpleImportSort}/exports`]: ERROR,
     },
   },
   // @ts-expect-error Type incompatibility between @typescript-eslint/utils re-exported types and defineConfig.
