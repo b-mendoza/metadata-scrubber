@@ -57,23 +57,6 @@ export default defineConfig(
   eslint.configs.recommended,
   ...tseslint.configs.strictTypeChecked,
   ...tseslint.configs.stylisticTypeChecked,
-  eslintReact.configs["strict-type-checked"],
-  reactHooks.configs.flat["recommended-latest"],
-  reactYouMightNotNeedAnEffect.configs.strict,
-  {
-    plugins: {
-      "jsx-a11y-x": jsxA11yX,
-    },
-    rules: {
-      ...jsxA11yX.configs.strict.rules,
-      "jsx-a11y-x/anchor-has-content": [
-        ERROR,
-        {
-          components: ["Link", "NavLink"],
-        },
-      ],
-    },
-  },
   // @ts-expect-error Type incompatibility between @typescript-eslint/utils re-exported types and defineConfig.
   // This is a known issue with plugins using TSESLint.FlatConfig types.
   // See: https://github.com/typescript-eslint/typescript-eslint/issues/11543
@@ -127,6 +110,23 @@ export default defineConfig(
     rules: {
       "simple-import-sort/imports": ERROR,
       "simple-import-sort/exports": ERROR,
+    },
+  },
+  eslintReact.configs["strict-type-checked"],
+  reactHooks.configs.flat["recommended-latest"],
+  reactYouMightNotNeedAnEffect.configs.strict,
+  {
+    plugins: {
+      "jsx-a11y-x": jsxA11yX,
+    },
+    rules: {
+      ...jsxA11yX.configs.strict.rules,
+      "jsx-a11y-x/anchor-has-content": [
+        ERROR,
+        {
+          components: ["Link", "NavLink"],
+        },
+      ],
     },
   },
   eslintPluginZod.configs.recommended,
