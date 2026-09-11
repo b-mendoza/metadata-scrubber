@@ -187,7 +187,7 @@ export default defineConfig(
           fixStyle: "separate-type-imports",
         },
       ],
-      "@typescript-eslint/explicit-function-return-type": OFF,
+      [`${PLUGIN_NAMES.TypescriptESLint}/explicit-function-return-type`]: OFF,
       /**
        * A function accepts at most 3 parameters.
        * The Deno style guide sets this shape: at most 2 required positional
