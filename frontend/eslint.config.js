@@ -315,7 +315,6 @@ export default defineConfig(
     files: [
       "drizzle.config.ts",
       "eslint.config.js",
-      "oxlint-plugin-metadata-scrubber/**/*.ts",
       "scripts/**/*.ts",
       "vite.config.ts",
       "vitest.config.ts",
