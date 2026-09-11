@@ -269,7 +269,7 @@ export default defineConfig(
         },
       ],
       [`${PLUGIN_NAMES.TypescriptESLint}/return-await`]: [
-        ERROR,
+        SEVERITY_LEVELS.Error,
         "in-try-catch",
       ],
       "arrow-body-style": OFF,
