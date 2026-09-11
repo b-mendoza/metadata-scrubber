@@ -20,7 +20,7 @@ import ky, { HTTPError } from "ky";
 
 ## Custom lint rules
 
-The [plugin reference](../oxlint-plugin-metadata-scrubber/README.md) lists all nine rules. ESLint and the fixture config enable all nine at error severity. The main Oxlint config activates six existing rules. The user must update `.oxlintrc.json` to activate the following three rules there. Agents must leave that file unchanged.
+The [plugin reference](../oxlint-plugin-metadata-scrubber/README.md) lists all nine rules. ESLint and the fixture config enable all nine at error severity. The main Oxlint config enables all nine at error severity. Agents must leave that file unchanged.
 
 - `use-effect-in-custom-hook` requires React Effects to belong to named custom hooks. Keep Uppy construction and destruction in `useUppyInstance`. Keep event subscription and Dashboard rendering in `FileUploader`. Remount `FileUploader` to apply changed creation inputs. The rule cannot prove that an Effect is necessary or that a hook name describes its purpose.
 - `no-use-query` rejects runtime `useQuery` access from `@tanstack/react-query`. Use Suspense Query APIs where the application needs that data. Review the actual parent Suspense and error boundaries, route data needs, and retry behavior. Static lint does not prove those runtime properties.
