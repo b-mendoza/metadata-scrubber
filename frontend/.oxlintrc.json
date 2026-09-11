@@ -15,7 +15,8 @@
     "@e18e/eslint-plugin",
     "eslint-plugin-sonarjs",
     "./oxlint-plugin-metadata-scrubber/index.ts",
-    "@eslint-react/eslint-plugin"
+    "@eslint-react/eslint-plugin",
+    "@tanstack/eslint-plugin-router"
   ],
   "categories": {
     "correctness": "off"
