@@ -131,7 +131,7 @@ export default defineConfig(
     },
     rules: {
       ...jsxA11yX.configs.strict.rules,
-      "jsx-a11y-x/anchor-has-content": [
+      [`${PLUGIN_NAMES.JSXA11yX}/anchor-has-content`]: [
         ERROR,
         {
           components: ["Link", "NavLink"],
