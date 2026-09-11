@@ -28,6 +28,20 @@ import tseslint from "typescript-eslint";
 
 import metadataScrubber from "./oxlint-plugin-metadata-scrubber/index.ts";
 
+const PLUGIN_NAMES = {
+  SimpleImportSort: "simple-import-sort",
+  ImportX: "import-x",
+  MetadataScrubber: "metadata-scrubber",
+  JSXA11yX: "jsx-a11y-x",
+  E18e: "e18e",
+  SonarJS: "sonarjs",
+  ESLintCommunityComments: "@eslint-community/eslint-comments",
+  TypescriptESLint: "@typescript-eslint",
+  Unicorn: "unicorn",
+  Vitest: "vitest",
+  TestingLibrary: "testing-library",
+};
+
 const ERROR = 2;
 const OFF = 0;
 
@@ -55,19 +69,6 @@ const BASE_RESTRICTED_SYNTAX = [
     message: "Use a lookup map that raises an error for unknown keys instead.",
   },
 ];
-const PLUGIN_NAMES = {
-  SimpleImportSort: "simple-import-sort",
-  ImportX: "import-x",
-  MetadataScrubber: "metadata-scrubber",
-  JSXA11yX: "jsx-a11y-x",
-  E18e: "e18e",
-  SonarJS: "sonarjs",
-  ESLintCommunityComments: "@eslint-community/eslint-comments",
-  TypescriptESLint: "@typescript-eslint",
-  Unicorn: "unicorn",
-  Vitest: "vitest",
-  TestingLibrary: "testing-library",
-};
 
 export default defineConfig(
   eslint.configs.recommended,
