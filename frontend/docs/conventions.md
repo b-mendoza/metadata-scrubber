@@ -8,6 +8,7 @@ Read the long-lived [TypeScript design conventions](./agent/code-conventions.md)
 
 - Use the `#/` path alias for imports from `src/`. `tsconfig.app.json` configures this alias.
 
+- `use-effect-in-custom-hook` requires React Effects to belong to named custom hooks. Keep Uppy construction and destruction in `useUppyInstance`. Keep event subscription and Dashboard rendering in `FileUploader`. Remount `FileUploader` to apply changed creation inputs. The rule cannot prove that an Effect is necessary or that a hook name describes its purpose.
 - `no-use-query` rejects runtime `useQuery` access from `@tanstack/react-query`. Use Suspense Query APIs where the application needs that data. Review the actual parent Suspense and error boundaries, route data needs, and retry behavior. Static lint does not prove those runtime properties.
 - Put types in standalone `import type` declarations. Keep runtime bindings in separate declarations, even for the same module.
 - Keep each imported name and local alias. A runtime binding named `type` is not a type-only import.
