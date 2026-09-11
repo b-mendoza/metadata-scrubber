@@ -1186,10 +1186,10 @@
       "files": [
         "drizzle.config.ts",
         "eslint.config.js",
-        "oxlint-plugin-metadata-scrubber/**/*.ts",
         "scripts/**/*.ts",
         "vite.config.ts",
-        "vitest.config.ts"
+        "vitest.config.ts",
+        "oxlint-plugin-metadata-scrubber/**/*.ts"
       ],
       "env": {
         "node": true
