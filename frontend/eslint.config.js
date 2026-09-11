@@ -215,7 +215,7 @@ export default defineConfig(
        * This rule overrides the eslint-config-love limit of 4.
        */
       [`${PLUGIN_NAMES.TypescriptESLint}/max-params`]: [
-        ERROR,
+        SEVERITY_LEVELS.Error,
         {
           max: 3,
         },
