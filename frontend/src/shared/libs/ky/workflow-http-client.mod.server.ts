@@ -1,9 +1,5 @@
-import ky, {
-  HTTPError,
-  type KyInstance,
-  type RetryOptions,
-  type ShouldRetryState,
-} from "ky";
+import type { KyInstance, RetryOptions, ShouldRetryState } from "ky";
+import ky, { HTTPError } from "ky";
 import * as z from "zod";
 
 import { SERVICE_UNAVAILABLE_STATUS_CODE } from "#/shared/constants/http/status-codes/status-codes.mod";
