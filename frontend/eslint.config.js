@@ -295,8 +295,8 @@ export default defineConfig(
     },
   },
   /**
-   * These two blocks mirror the `tsconfig.app.json` / `tsconfig.node.json`
-   * split.
+   * These blocks mirror the `tsconfig.app.json` / `tsconfig.node.json` /
+   * `tsconfig.oxlint-plugin.json` split.
    *
    * A file under `src` can hold browser code and server code at once, so it
    * needs `browser` plus `node`. `shared-node-browser` holds only the globals
