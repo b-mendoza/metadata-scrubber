@@ -181,7 +181,7 @@ export default defineConfig(
        */
       // =======================================================================
       [`${PLUGIN_NAMES.E18e}/prefer-array-at`]: SEVERITY_LEVELS.Off,
-      [`${PLUGIN_NAMES.E18e}/prefer-array-fill`]: OFF,
+      [`${PLUGIN_NAMES.E18e}/prefer-array-fill`]: SEVERITY_LEVELS.Off,
       [`${PLUGIN_NAMES.E18e}/prefer-array-some`]: OFF,
       [`${PLUGIN_NAMES.E18e}/prefer-array-to-reversed`]: OFF,
       [`${PLUGIN_NAMES.E18e}/prefer-array-to-sorted`]: OFF,
