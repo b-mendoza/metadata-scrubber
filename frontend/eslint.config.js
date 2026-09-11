@@ -397,7 +397,7 @@ export default defineConfig(
 
       // Our addition: a `vi.mock` factory must import the module it replaces,
       // since Vitest hoists the factory above outer bindings.
-      "vitest/prefer-import-in-mock": ERROR,
+      [`${PLUGIN_NAMES.Vitest}/prefer-import-in-mock`]: ERROR,
     },
   },
   {
