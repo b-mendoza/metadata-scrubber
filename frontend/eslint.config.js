@@ -180,7 +180,7 @@ export default defineConfig(
        * the enabled `.test()` rules.
        */
       // =======================================================================
-      [`${PLUGIN_NAMES.E18e}/prefer-array-at`]: OFF,
+      [`${PLUGIN_NAMES.E18e}/prefer-array-at`]: SEVERITY_LEVELS.Off,
       [`${PLUGIN_NAMES.E18e}/prefer-array-fill`]: OFF,
       [`${PLUGIN_NAMES.E18e}/prefer-array-some`]: OFF,
       [`${PLUGIN_NAMES.E18e}/prefer-array-to-reversed`]: OFF,
