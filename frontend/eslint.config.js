@@ -197,7 +197,7 @@ export default defineConfig(
       [`${PLUGIN_NAMES.ESLintCommunityComments}/disable-enable-pair`]:
         SEVERITY_LEVELS.Error,
       [`${PLUGIN_NAMES.TypescriptESLint}/consistent-type-imports`]: [
-        ERROR,
+        SEVERITY_LEVELS.Error,
         {
           fixStyle: "separate-type-imports",
         },
