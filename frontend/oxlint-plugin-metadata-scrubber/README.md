@@ -52,6 +52,7 @@ Each message must identify the problem, give the reason, and state the required 
 
 ## Known limitations
 
+- The Query rule does not check actual Suspense or error-boundary ancestry. It does not decide route data criticality, loader use, server or client execution, streaming, or retry behavior. Review these properties in the application. A boundary can live in another file. Not every component needs a loader.
 - Namespace Vitest calls such as `vitest.expectTypeOf(...)` and `vitest.test.skip(...)` are not resolved.
 - Disabled Vitest calls through `test.todo(...)` and `test.skipIf(true)(...)` are not reported.
 - Suggested guard assertions do not preserve TypeScript control-flow narrowing. Adapt the surrounding code when it depends on that narrowing.
