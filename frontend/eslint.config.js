@@ -136,6 +136,8 @@ export default defineConfig(
       [`${PLUGIN_NAMES.MetadataScrubber}/no-use-query`]: SEVERITY_LEVELS.Error,
       [`${PLUGIN_NAMES.MetadataScrubber}/separate-type-imports`]:
         SEVERITY_LEVELS.Error,
+      [`${PLUGIN_NAMES.MetadataScrubber}/use-effect-in-custom-hook`]:
+        SEVERITY_LEVELS.Error,
       [`${PLUGIN_NAMES.MetadataScrubber}/use-shared-render-helper`]:
         SEVERITY_LEVELS.Error,
     },
