@@ -8,7 +8,7 @@
       "path": "./tsconfig.node.json"
     },
     {
-      "path": "./oxlint-plugin-metadata-scrubber/tsconfig.json"
+      "path": "./tsconfig.oxlint-plugin.json"
     }
   ]
 }
