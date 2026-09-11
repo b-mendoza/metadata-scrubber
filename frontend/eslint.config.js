@@ -252,7 +252,7 @@ export default defineConfig(
         },
       ],
       [`${PLUGIN_NAMES.TypescriptESLint}/prefer-destructuring`]: [
-        ERROR,
+        SEVERITY_LEVELS.Error,
         {
           array: false,
           object: true,
