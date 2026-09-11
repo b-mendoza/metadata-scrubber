@@ -257,7 +257,7 @@ export default defineConfig(
         "in-try-catch",
       ],
       "arrow-body-style": OFF,
-      "import-x/newline-after-import": ERROR,
+      [`${PLUGIN_NAMES.ImportX}/newline-after-import`]: ERROR,
       "no-restricted-imports": [
         ERROR,
         {
