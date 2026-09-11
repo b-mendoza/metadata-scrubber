@@ -14,7 +14,8 @@
     "@eslint-community/eslint-plugin-eslint-comments",
     "@e18e/eslint-plugin",
     "eslint-plugin-sonarjs",
-    "./oxlint-plugin-metadata-scrubber/index.ts"
+    "./oxlint-plugin-metadata-scrubber/index.ts",
+    "@eslint-react/eslint-plugin"
   ],
   "categories": {
     "correctness": "off"
