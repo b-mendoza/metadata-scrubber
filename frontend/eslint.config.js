@@ -150,7 +150,7 @@ export default defineConfig(
     rules: {
       ...jsxA11yX.configs.strict.rules,
       [`${PLUGIN_NAMES.JSXA11yX}/anchor-has-content`]: [
-        ERROR,
+        SEVERITY_LEVELS.Error,
         {
           components: ["Link", "NavLink"],
         },
