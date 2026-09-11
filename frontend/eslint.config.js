@@ -8,6 +8,7 @@ import e18e from "@e18e/eslint-plugin";
 import eslint from "@eslint/js";
 import eslintReact from "@eslint-react/eslint-plugin";
 import pluginQuery from "@tanstack/eslint-plugin-query";
+import pluginRouter from "@tanstack/eslint-plugin-router";
 import vitest from "@vitest/eslint-plugin";
 import { defineConfig, globalIgnores } from "eslint/config";
 import love from "eslint-config-love";
@@ -130,6 +131,7 @@ export default defineConfig(
       ],
     },
   },
+  pluginRouter.configs["flat/recommended"],
   pluginQuery.configs["flat/recommended-strict"],
   eslintPluginZod.configs.recommended,
   {
