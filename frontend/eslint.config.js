@@ -389,7 +389,7 @@ export default defineConfig(
 
       // Use the matcher that names the assertion, so the failure message says
       // which comparison broke.
-      "vitest/prefer-comparison-matcher": ERROR,
+      [`${PLUGIN_NAMES.Vitest}/prefer-comparison-matcher`]: ERROR,
       "vitest/prefer-equality-matcher": ERROR,
       "vitest/prefer-to-be": ERROR,
       "vitest/prefer-to-contain": ERROR,
