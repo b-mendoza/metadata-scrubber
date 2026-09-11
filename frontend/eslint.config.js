@@ -57,6 +57,7 @@ const BASE_RESTRICTED_SYNTAX = [
 ];
 const PLUGIN_NAMES = {
   SimpleImportSort: "simple-import-sort",
+  ImportX: "import-x",
 };
 
 export default defineConfig(
@@ -83,7 +84,7 @@ export default defineConfig(
   // ===========================================================================
   {
     plugins: {
-      "import-x": importX,
+      [PLUGIN_NAMES.ImportX]: importX,
     },
     rules: {
       "import-x/export": ERROR,
