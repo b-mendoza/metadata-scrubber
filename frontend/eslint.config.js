@@ -184,7 +184,7 @@ export default defineConfig(
       [`${PLUGIN_NAMES.E18e}/prefer-array-fill`]: SEVERITY_LEVELS.Off,
       [`${PLUGIN_NAMES.E18e}/prefer-array-some`]: SEVERITY_LEVELS.Off,
       [`${PLUGIN_NAMES.E18e}/prefer-array-to-reversed`]: SEVERITY_LEVELS.Off,
-      [`${PLUGIN_NAMES.E18e}/prefer-array-to-sorted`]: OFF,
+      [`${PLUGIN_NAMES.E18e}/prefer-array-to-sorted`]: SEVERITY_LEVELS.Off,
       [`${PLUGIN_NAMES.E18e}/prefer-date-now`]: OFF,
       [`${PLUGIN_NAMES.E18e}/prefer-includes`]: OFF,
       [`${PLUGIN_NAMES.E18e}/prefer-nullish-coalescing`]: OFF,
