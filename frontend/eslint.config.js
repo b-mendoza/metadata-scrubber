@@ -134,7 +134,8 @@ export default defineConfig(
         SEVERITY_LEVELS.Error,
       [`${PLUGIN_NAMES.MetadataScrubber}/no-mutable-module-state-in-server-code`]:
         SEVERITY_LEVELS.Error,
-      [`${PLUGIN_NAMES.MetadataScrubber}/no-silent-test-prerequisite`]: ERROR,
+      [`${PLUGIN_NAMES.MetadataScrubber}/no-silent-test-prerequisite`]:
+        SEVERITY_LEVELS.Error,
       [`${PLUGIN_NAMES.MetadataScrubber}/use-shared-render-helper`]: ERROR,
     },
   },
