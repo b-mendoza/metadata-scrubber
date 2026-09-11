@@ -9,6 +9,7 @@ Read the long-lived [TypeScript design conventions](./agent/code-conventions.md)
 - Use the `#/` path alias for imports from `src/`. `tsconfig.app.json` configures this alias.
 
 - `no-use-query` rejects runtime `useQuery` access from `@tanstack/react-query`. Use Suspense Query APIs where the application needs that data. Review the actual parent Suspense and error boundaries, route data needs, and retry behavior. Static lint does not prove those runtime properties.
+- Put types in standalone `import type` declarations. Keep runtime bindings in separate declarations, even for the same module.
 
 ## File names
 
