@@ -42,9 +42,6 @@ const PLUGIN_NAMES = {
   TestingLibrary: "testing-library",
 };
 
-const ERROR = 2;
-const OFF = 0;
-
 const SEVERITY_LEVELS = Object.freeze({
   Error: 2,
   Off: 0,
@@ -418,14 +415,14 @@ export default defineConfig(
 
       // Our addition: a `vi.mock` factory must import the module it replaces,
       // since Vitest hoists the factory above outer bindings.
-      [`${PLUGIN_NAMES.Vitest}/prefer-import-in-mock`]: ERROR,
+      [`${PLUGIN_NAMES.Vitest}/prefer-import-in-mock`]: SEVERITY_LEVELS.Error,
     },
   },
   {
     files: ["oxlint-plugin-metadata-scrubber/check-fixtures.ts"],
     rules: {
       // This file is a CLI harness. Console output is its user interface.
-      "no-console": OFF,
+      "no-console": SEVERITY_LEVELS.Off,
     },
   },
   /**
