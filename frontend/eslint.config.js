@@ -296,7 +296,7 @@ export default defineConfig(
       [`${PLUGIN_NAMES.SonarJS}/no-commented-code`]: SEVERITY_LEVELS.Error,
       [`${PLUGIN_NAMES.SonarJS}/todo-tag`]: SEVERITY_LEVELS.Error,
       // Keep null legal because the project uses it as the one explicit absent value.
-      [`${PLUGIN_NAMES.Unicorn}/no-null`]: OFF,
+      [`${PLUGIN_NAMES.Unicorn}/no-null`]: SEVERITY_LEVELS.Off,
       /**
        * The project uses these established terms.
        * mod comes from the *.mod.ts file-name convention.
