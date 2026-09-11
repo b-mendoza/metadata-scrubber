@@ -114,7 +114,8 @@ export default defineConfig(
       ],
       [`${PLUGIN_NAMES.ImportX}/no-duplicates`]: SEVERITY_LEVELS.Error,
       [`${PLUGIN_NAMES.ImportX}/no-named-default`]: SEVERITY_LEVELS.Error,
-      [`${PLUGIN_NAMES.ImportX}/no-webpack-loader-syntax`]: ERROR,
+      [`${PLUGIN_NAMES.ImportX}/no-webpack-loader-syntax`]:
+        SEVERITY_LEVELS.Error,
     },
   },
   // ===========================================================================
