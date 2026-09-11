@@ -305,7 +305,7 @@ export default defineConfig(
        * rule requires ref or a Ref suffix.
        */
       [`${PLUGIN_NAMES.Unicorn}/name-replacements`]: [
-        ERROR,
+        SEVERITY_LEVELS.Error,
         {
           replacements: {
             mod: false,
