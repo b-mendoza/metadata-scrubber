@@ -10,7 +10,9 @@ This plugin encodes the project's coding standards as enforceable Oxlint rules. 
 
 `index.ts` registers nine `metadata-scrubber/...` rules. `fixture.config.json` enables all nine at error severity. `frontend/eslint.config.js` also loads this plugin and enables all nine at error severity.
 
-The main `frontend/.oxlintrc.json` loads this plugin but activates only the six existing rules. It does not yet activate `use-effect-in-custom-hook`, `no-use-query`, or `separate-type-imports`. The user must update that config. Agents must leave it unchanged. All nine custom rules remain active in ESLint after the Oxlint bridge. Run `pnpm run lint` from `frontend/` to run the service lint checks. Run `node oxlint-plugin-metadata-scrubber/check-fixtures.ts` from `frontend/` to run the fixture check. It uses `fixture.config.json`, not the main Oxlint config. It checks positive counts and exact ordered negative messages. The fixture check is separate from `pnpm run lint`.
+The main `frontend/.oxlintrc.json` loads this plugin but activates only the six existing rules. It does not yet activate `use-effect-in-custom-hook`, `no-use-query`, or `separate-type-imports`. The user must update that config. Agents must leave it unchanged. All nine custom rules remain active in ESLint after the Oxlint bridge.
+
+Run `pnpm run lint` from `frontend/` to run the service lint checks. Run `node oxlint-plugin-metadata-scrubber/check-fixtures.ts` from `frontend/` to run the fixture check. It uses `fixture.config.json`, not the main Oxlint config. It checks positive counts and exact ordered negative messages. The fixture check is separate from `pnpm run lint`.
 
 ## Rules
 
@@ -21,16 +23,17 @@ The main `frontend/.oxlintrc.json` loads this plugin but activates only the six 
 - `no-silent-test-prerequisite` rejects `.skip` calls on Vitest test APIs, including chains such as `test.skip.each(...)`. It also rejects bare test prerequisite returns in test callbacks.
 - `use-shared-render-helper` requires the shared `renderComponent` helper for Testing Library rendering.
 
+These six rules are active in the main Oxlint config. The following three rules are active in ESLint and the fixture config. Their main Oxlint activation is pending the user's config update.
+
 - `use-effect-in-custom-hook` requires direct React `useEffect` calls inside the nearest named custom hook. It rejects runtime extraction of the Effect reference. Renamed imports, static React members, and immutable namespace aliases retain their React binding. Nested callbacks need their own valid owner. Type-only uses remain allowed.
 - `no-use-query` rejects runtime `useQuery` imports, source re-exports, static namespace members, and destructuring from `@tanstack/react-query`. It also rejects runtime wildcard exports from that package. Use `useSuspenseQuery` with an ancestor Suspense boundary and suitable error handling. Type-only uses and other Query APIs remain allowed.
-
 - `separate-type-imports` rejects inline `type` specifiers in import declarations. It reports once per declaration, including declarations with only inline type specifiers. Use a separate `import type` declaration. Keep runtime imports separate. Preserve aliases and required module side effects. Standalone named, default, and namespace type imports remain allowed. A runtime binding named `type` remains allowed.
 
 ## How to contribute a rule
 
 1. Add a rule file under `rules/` and create the rule with `defineRule`.
 2. Export the rule from `index.ts`.
-3. Register the rule in `fixture.config.json`.
+3. Enable the rule in `fixture.config.json` and `frontend/eslint.config.js`. Leave main Oxlint activation to the user's `.oxlintrc.json` update.
 4. Define message templates in `meta.messages`.
 5. Report with `messageId` and `{{ interpolation }}` data.
 6. Do not put an inline message string in `context.report`.
@@ -57,9 +60,10 @@ Each message must identify the problem, give the reason, and state the required 
 
 ## Known limitations
 
+- The Effect and Query rules track static member names and immutable namespace aliases. They do not evaluate dynamic keys, follow mutable namespace aliases, or prove arbitrary runtime data flow.
+- The Effect rule checks the nearest function owner. It cannot prove that external synchronization is necessary or that the hook name describes its purpose. A name such as `useMount` passes the name pattern but still needs review.
 - The Query rule does not check actual Suspense or error-boundary ancestry. It does not decide route data criticality, loader use, server or client execution, streaming, or retry behavior. Review these properties in the application. A boundary can live in another file. Not every component needs a loader.
 - The type-import rule does not decide whether a module needs a side-effect import. Review module initialization before removing the last runtime import.
-- The Effect rule checks the nearest function owner. It cannot prove that external synchronization is necessary or that the hook name describes its purpose. A name such as `useMount` passes the name pattern but still needs review.
 - Namespace Vitest calls such as `vitest.expectTypeOf(...)` and `vitest.test.skip(...)` are not resolved.
 - Disabled Vitest calls through `test.todo(...)` and `test.skipIf(true)(...)` are not reported.
 - Suggested guard assertions do not preserve TypeScript control-flow narrowing. Adapt the surrounding code when it depends on that narrowing.
