@@ -68,7 +68,7 @@ export default defineConfig(
       [PLUGIN_NAMES.SimpleImportSort]: simpleImportSort,
     },
     rules: {
-      "simple-import-sort/imports": ERROR,
+      [`${PLUGIN_NAMES.SimpleImportSort}/imports`]: ERROR,
       "simple-import-sort/exports": ERROR,
     },
   },
