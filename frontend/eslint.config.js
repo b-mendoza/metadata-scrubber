@@ -393,7 +393,7 @@ export default defineConfig(
       // Upstream turned this off because a testing-library query throws when
       // it matches nothing, so a test with no literal `expect` can still
       // assert something.
-      [`${PLUGIN_NAMES.Vitest}/expect-expect`]: OFF,
+      [`${PLUGIN_NAMES.Vitest}/expect-expect`]: SEVERITY_LEVELS.Off,
 
       // Error, and no autofix: we want a leftover `.only` visible in review,
       // and a fix would delete it while someone debugs.
