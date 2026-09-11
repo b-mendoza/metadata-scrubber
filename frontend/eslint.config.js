@@ -398,7 +398,7 @@ export default defineConfig(
       // Error, and no autofix: we want a leftover `.only` visible in review,
       // and a fix would delete it while someone debugs.
       [`${PLUGIN_NAMES.Vitest}/no-focused-tests`]: [
-        ERROR,
+        SEVERITY_LEVELS.Error,
         {
           fixable: false,
         },
