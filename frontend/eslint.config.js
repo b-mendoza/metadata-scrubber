@@ -118,7 +118,7 @@ export default defineConfig(
       [`${PLUGIN_NAMES.MetadataScrubber}/no-mutable-module-state-in-server-code`]:
         ERROR,
       [`${PLUGIN_NAMES.MetadataScrubber}/no-silent-test-prerequisite`]: ERROR,
-      "metadata-scrubber/use-shared-render-helper": ERROR,
+      [`${PLUGIN_NAMES.MetadataScrubber}/use-shared-render-helper`]: ERROR,
     },
   },
   eslintReact.configs["strict-type-checked"],
