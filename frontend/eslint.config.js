@@ -191,7 +191,7 @@ export default defineConfig(
       [`${PLUGIN_NAMES.E18e}/prefer-object-has-own`]: SEVERITY_LEVELS.Off,
       [`${PLUGIN_NAMES.E18e}/prefer-spread-syntax`]: SEVERITY_LEVELS.Off,
       [`${PLUGIN_NAMES.E18e}/prefer-string-fromcharcode`]: SEVERITY_LEVELS.Off,
-      [`${PLUGIN_NAMES.SonarJS}/prefer-regexp-exec`]: OFF,
+      [`${PLUGIN_NAMES.SonarJS}/prefer-regexp-exec`]: SEVERITY_LEVELS.Off,
       // =======================================================================
 
       [`${PLUGIN_NAMES.ESLintCommunityComments}/disable-enable-pair`]: ERROR,
