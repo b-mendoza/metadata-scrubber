@@ -799,6 +799,7 @@
     "@tanstack/query/no-unstable-deps": "error",
     "@tanstack/query/infinite-query-property-order": "error",
     "@tanstack/query/mutation-property-order": "error",
+    "@tanstack/query/prefer-query-options": "error",
     "no-restricted-imports": [
       "error",
       {
