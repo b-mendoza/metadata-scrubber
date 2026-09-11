@@ -112,7 +112,7 @@ export default defineConfig(
           esmodule: true,
         },
       ],
-      [`${PLUGIN_NAMES.ImportX}/no-duplicates`]: ERROR,
+      [`${PLUGIN_NAMES.ImportX}/no-duplicates`]: SEVERITY_LEVELS.Error,
       [`${PLUGIN_NAMES.ImportX}/no-named-default`]: ERROR,
       [`${PLUGIN_NAMES.ImportX}/no-webpack-loader-syntax`]: ERROR,
     },
