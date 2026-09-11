@@ -168,7 +168,7 @@ export default defineConfig(
       [`${PLUGIN_NAMES.E18e}/prefer-array-some`]: OFF,
       [`${PLUGIN_NAMES.E18e}/prefer-array-to-reversed`]: OFF,
       [`${PLUGIN_NAMES.E18e}/prefer-array-to-sorted`]: OFF,
-      "e18e/prefer-date-now": OFF,
+      [`${PLUGIN_NAMES.E18e}/prefer-date-now`]: OFF,
       "e18e/prefer-includes": OFF,
       "e18e/prefer-nullish-coalescing": OFF,
       "e18e/prefer-object-has-own": OFF,
