@@ -330,7 +330,7 @@ export default defineConfig(
       // The project requires loose equality against null.
       // One comparison then covers both null and undefined.
       eqeqeq: [
-        ERROR,
+        SEVERITY_LEVELS.Error,
         "always",
         {
           null: "never",
