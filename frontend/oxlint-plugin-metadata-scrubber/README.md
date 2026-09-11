@@ -19,6 +19,8 @@ This plugin encodes the project's coding standards as enforceable Oxlint rules. 
 - `no-silent-test-prerequisite` rejects `.skip` calls on Vitest test APIs, including chains such as `test.skip.each(...)`. It also rejects bare test prerequisite returns in test callbacks.
 - `use-shared-render-helper` requires the shared `renderComponent` helper for Testing Library rendering.
 
+- `no-use-query` rejects runtime `useQuery` imports, source re-exports, static namespace members, and destructuring from `@tanstack/react-query`. It also rejects runtime wildcard exports from that package. Use `useSuspenseQuery` with an ancestor Suspense boundary and suitable error handling. Type-only uses and other Query APIs remain allowed.
+
 ## How to contribute a rule
 
 1. Add a rule file under `rules/` and create the rule with `defineRule`.
