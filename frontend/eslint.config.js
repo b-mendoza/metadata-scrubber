@@ -63,6 +63,7 @@ const PLUGIN_NAMES = {
   E18e: "e18e",
   SonarJS: "sonarjs",
   ESLintCommunityComments: "@eslint-community/eslint-comments",
+  TypescriptESLint: "@typescript-eslint",
 };
 
 export default defineConfig(
@@ -180,7 +181,7 @@ export default defineConfig(
       // =======================================================================
 
       [`${PLUGIN_NAMES.ESLintCommunityComments}/disable-enable-pair`]: ERROR,
-      "@typescript-eslint/consistent-type-imports": [
+      [`${PLUGIN_NAMES.TypescriptESLint}/consistent-type-imports`]: [
         ERROR,
         {
           fixStyle: "separate-type-imports",
