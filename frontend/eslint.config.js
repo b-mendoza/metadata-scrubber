@@ -165,7 +165,7 @@ export default defineConfig(
       // =======================================================================
       [`${PLUGIN_NAMES.E18e}/prefer-array-at`]: OFF,
       [`${PLUGIN_NAMES.E18e}/prefer-array-fill`]: OFF,
-      "e18e/prefer-array-some": OFF,
+      [`${PLUGIN_NAMES.E18e}/prefer-array-some`]: OFF,
       "e18e/prefer-array-to-reversed": OFF,
       "e18e/prefer-array-to-sorted": OFF,
       "e18e/prefer-date-now": OFF,
