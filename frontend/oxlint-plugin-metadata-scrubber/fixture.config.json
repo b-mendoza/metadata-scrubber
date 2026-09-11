@@ -8,6 +8,7 @@
     "metadata-scrubber/no-silent-test-prerequisite": "error",
     "metadata-scrubber/no-use-query": "error",
     "metadata-scrubber/separate-type-imports": "error",
+    "metadata-scrubber/use-effect-in-custom-hook": "error",
     "metadata-scrubber/use-shared-render-helper": "error"
   }
 }
