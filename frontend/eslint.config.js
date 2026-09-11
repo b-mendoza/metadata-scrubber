@@ -293,7 +293,7 @@ export default defineConfig(
           },
         },
       ],
-      "unicorn/text-encoding-identifier-case": [
+      [`${PLUGIN_NAMES.Unicorn}/text-encoding-identifier-case`]: [
         ERROR,
         {
           withDash: true,
