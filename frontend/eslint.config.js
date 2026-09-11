@@ -130,7 +130,8 @@ export default defineConfig(
       [`${PLUGIN_NAMES.MetadataScrubber}/no-classes`]: SEVERITY_LEVELS.Error,
       [`${PLUGIN_NAMES.MetadataScrubber}/no-expect-type-of`]:
         SEVERITY_LEVELS.Error,
-      [`${PLUGIN_NAMES.MetadataScrubber}/no-hardcoded-backend-host`]: ERROR,
+      [`${PLUGIN_NAMES.MetadataScrubber}/no-hardcoded-backend-host`]:
+        SEVERITY_LEVELS.Error,
       [`${PLUGIN_NAMES.MetadataScrubber}/no-mutable-module-state-in-server-code`]:
         ERROR,
       [`${PLUGIN_NAMES.MetadataScrubber}/no-silent-test-prerequisite`]: ERROR,
