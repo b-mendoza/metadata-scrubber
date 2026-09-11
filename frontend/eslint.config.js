@@ -235,7 +235,7 @@ export default defineConfig(
           ],
         },
       ],
-      "@typescript-eslint/prefer-destructuring": [
+      [`${PLUGIN_NAMES.TypescriptESLint}/prefer-destructuring`]: [
         ERROR,
         {
           array: false,
