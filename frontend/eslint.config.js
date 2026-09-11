@@ -252,7 +252,10 @@ export default defineConfig(
           enforceForRenamedProperties: false,
         },
       ],
-      "@typescript-eslint/return-await": [ERROR, "in-try-catch"],
+      [`${PLUGIN_NAMES.TypescriptESLint}/return-await`]: [
+        ERROR,
+        "in-try-catch",
+      ],
       "arrow-body-style": OFF,
       "import-x/newline-after-import": ERROR,
       "no-restricted-imports": [
