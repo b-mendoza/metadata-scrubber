@@ -217,7 +217,7 @@ export default defineConfig(
           ignoreTypeIndexes: true,
         },
       ],
-      "@typescript-eslint/no-misused-promises": [
+      [`${PLUGIN_NAMES.TypescriptESLint}/no-misused-promises`]: [
         ERROR,
         {
           checksVoidReturn: false,
