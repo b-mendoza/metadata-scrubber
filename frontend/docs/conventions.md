@@ -11,6 +11,7 @@ Read the long-lived [TypeScript design conventions](./agent/code-conventions.md)
 - `no-use-query` rejects runtime `useQuery` access from `@tanstack/react-query`. Use Suspense Query APIs where the application needs that data. Review the actual parent Suspense and error boundaries, route data needs, and retry behavior. Static lint does not prove those runtime properties.
 - Put types in standalone `import type` declarations. Keep runtime bindings in separate declarations, even for the same module.
 - Keep each imported name and local alias. A runtime binding named `type` is not a type-only import.
+- Move inline type specifiers into a standalone type declaration, even when the original declaration has no runtime bindings. Keep a side-effect import when module initialization is required.
 
 ## File names
 
