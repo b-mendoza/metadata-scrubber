@@ -286,7 +286,7 @@ export default defineConfig(
       ],
       // The project uses null as the one explicit absent value.
       // Prefer null over undefined as the explicit empty value.
-      "no-undefined": ERROR,
+      "no-undefined": SEVERITY_LEVELS.Error,
       "object-shorthand": ERROR,
       "react-hooks/exhaustive-deps": ERROR,
       [`${PLUGIN_NAMES.SonarJS}/cognitive-complexity`]: [ERROR, MAX_COMPLEXITY],
