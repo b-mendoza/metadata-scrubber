@@ -220,7 +220,7 @@ export default defineConfig(
           max: 3,
         },
       ],
-      [`${PLUGIN_NAMES.TypescriptESLint}/no-deprecated`]: ERROR,
+      [`${PLUGIN_NAMES.TypescriptESLint}/no-deprecated`]: SEVERITY_LEVELS.Error,
       [`${PLUGIN_NAMES.TypescriptESLint}/no-floating-promises`]: [
         ERROR,
         {
