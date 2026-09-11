@@ -321,9 +321,7 @@ export default defineConfig(
       "vitest.config.ts",
     ],
     languageOptions: {
-      globals: {
-        ...globals.node,
-      },
+      globals: globals.node,
     },
   },
   {
