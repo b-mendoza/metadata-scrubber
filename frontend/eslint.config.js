@@ -112,7 +112,7 @@ export default defineConfig(
       [PLUGIN_NAMES.MetadataScrubber]: metadataScrubber,
     },
     rules: {
-      "metadata-scrubber/no-classes": ERROR,
+      [`${PLUGIN_NAMES.MetadataScrubber}/no-classes`]: ERROR,
       "metadata-scrubber/no-expect-type-of": ERROR,
       "metadata-scrubber/no-hardcoded-backend-host": ERROR,
       "metadata-scrubber/no-mutable-module-state-in-server-code": ERROR,
