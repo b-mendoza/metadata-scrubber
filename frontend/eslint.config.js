@@ -228,7 +228,7 @@ export default defineConfig(
         },
       ],
       [`${PLUGIN_NAMES.TypescriptESLint}/no-magic-numbers`]: [
-        ERROR,
+        SEVERITY_LEVELS.Error,
         {
           ignoreTypeIndexes: true,
         },
