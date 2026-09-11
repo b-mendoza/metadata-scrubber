@@ -280,7 +280,10 @@ export default defineConfig(
           patterns: BASE_RESTRICTED_IMPORT_PATTERNS,
         },
       ],
-      "no-restricted-syntax": [ERROR, ...BASE_RESTRICTED_SYNTAX],
+      "no-restricted-syntax": [
+        SEVERITY_LEVELS.Error,
+        ...BASE_RESTRICTED_SYNTAX,
+      ],
       // The project uses null as the one explicit absent value.
       // Prefer null over undefined as the explicit empty value.
       "no-undefined": ERROR,
