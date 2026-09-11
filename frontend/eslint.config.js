@@ -393,7 +393,7 @@ export default defineConfig(
       [`${PLUGIN_NAMES.Vitest}/prefer-equality-matcher`]: ERROR,
       [`${PLUGIN_NAMES.Vitest}/prefer-to-be`]: ERROR,
       [`${PLUGIN_NAMES.Vitest}/prefer-to-contain`]: ERROR,
-      "vitest/prefer-to-have-length": ERROR,
+      [`${PLUGIN_NAMES.Vitest}/prefer-to-have-length`]: ERROR,
 
       // Our addition: a `vi.mock` factory must import the module it replaces,
       // since Vitest hoists the factory above outer bindings.
