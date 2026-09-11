@@ -2465,7 +2465,7 @@
         "scripts/**/*.ts",
         "vite.config.ts",
         "vitest.config.ts",
-        "oxlint-plugin-metadata-scrubber/**/*.ts"
+        "oxlint-plugin-metadata-scrubber/**/*.ts?(x)"
       ],
       "env": {
         "node": true
