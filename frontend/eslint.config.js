@@ -117,7 +117,7 @@ export default defineConfig(
       [`${PLUGIN_NAMES.MetadataScrubber}/no-hardcoded-backend-host`]: ERROR,
       [`${PLUGIN_NAMES.MetadataScrubber}/no-mutable-module-state-in-server-code`]:
         ERROR,
-      "metadata-scrubber/no-silent-test-prerequisite": ERROR,
+      [`${PLUGIN_NAMES.MetadataScrubber}/no-silent-test-prerequisite`]: ERROR,
       "metadata-scrubber/use-shared-render-helper": ERROR,
     },
   },
