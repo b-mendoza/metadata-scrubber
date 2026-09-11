@@ -272,7 +272,7 @@ export default defineConfig(
       "react-hooks/exhaustive-deps": ERROR,
       [`${PLUGIN_NAMES.SonarJS}/cognitive-complexity`]: [ERROR, MAX_COMPLEXITY],
       [`${PLUGIN_NAMES.SonarJS}/no-commented-code`]: ERROR,
-      "sonarjs/todo-tag": ERROR,
+      [`${PLUGIN_NAMES.SonarJS}/todo-tag`]: ERROR,
       // Keep null legal because the project uses it as the one explicit absent value.
       "unicorn/no-null": OFF,
       /**
