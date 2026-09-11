@@ -10,7 +10,7 @@ This plugin encodes the project's coding standards as enforceable Oxlint rules. 
 
 `index.ts` registers nine `metadata-scrubber/...` rules. `fixture.config.json` enables all nine at error severity. `frontend/eslint.config.js` also loads this plugin and enables all nine at error severity.
 
-The main `frontend/.oxlintrc.json` loads this plugin but activates only the six existing rules. It does not yet activate `use-effect-in-custom-hook`, `no-use-query`, or `separate-type-imports`. The user must update that config. Agents must leave it unchanged. All nine custom rules remain active in ESLint after the Oxlint bridge.
+The main `frontend/.oxlintrc.json` loads this plugin but activates only the six existing rules. It does not yet activate `use-effect-in-custom-hook`, `no-use-query`, or `separate-type-imports`. The user must update that config. Agents must leave it unchanged. All nine custom rules remain active in ESLint after the Oxlint bridge. Run `pnpm run lint` from `frontend/` to run the service lint checks. Run `node oxlint-plugin-metadata-scrubber/check-fixtures.ts` from `frontend/` to run the fixture check. It uses `fixture.config.json`, not the main Oxlint config. It checks positive counts and exact ordered negative messages. The fixture check is separate from `pnpm run lint`.
 
 ## Rules
 
