@@ -1,4 +1,6 @@
 import { act, screen, waitFor } from "@testing-library/react";
+import AwsS3 from "@uppy/aws-s3";
+import Uppy from "@uppy/core";
 import { afterEach, expect, test, vi } from "vitest";
 
 import { FileUploader } from "#/domains/wizard/components/file-uploader/file-uploader.mod";
@@ -32,6 +34,54 @@ afterEach(() => {
   vi.unstubAllGlobals();
   vi.restoreAllMocks();
   FakeXMLHttpRequest.reset();
+});
+
+test("Uppy keeps its initial instance when uploader props change", () => {
+  const useSpy = vi.spyOn(Uppy.prototype, "use");
+  const destroySpy = vi.spyOn(Uppy.prototype, "destroy");
+  const createUpload = vi.fn<CreateUpload>();
+  const replacementCreateUpload = vi.fn<CreateUpload>();
+  const onUploadComplete = vi.fn<OnUploadComplete>();
+  const { rerender, unmount } = renderComponent(
+    <FileUploader
+      createUpload={createUpload}
+      maxFileSizeBytes={TEST_MAX_FILE_SIZE_BYTES}
+      onUploadComplete={onUploadComplete}
+    />,
+  );
+  const [initialUppy] = useSpy.mock.contexts;
+
+  expect(initialUppy).toBeInstanceOf(Uppy);
+  expect(destroySpy).not.toHaveBeenCalled();
+
+  rerender(
+    <FileUploader
+      createUpload={createUpload}
+      maxFileSizeBytes={TEST_MAX_FILE_SIZE_BYTES}
+      onUploadComplete={onUploadComplete}
+    />,
+  );
+  rerender(
+    <FileUploader
+      createUpload={replacementCreateUpload}
+      maxFileSizeBytes={TEST_FRACTIONAL_FILE_SIZE_BYTES}
+      onUploadComplete={onUploadComplete}
+    />,
+  );
+
+  expect(useSpy.mock.calls.filter(([Plugin]) => Plugin === AwsS3)).toHaveLength(
+    EXPECTED_SINGLE_COUNT,
+  );
+  expect(
+    useSpy.mock.contexts.every((instance) => instance === initialUppy),
+  ).toBe(true);
+  expect(destroySpy).not.toHaveBeenCalled();
+
+  unmount();
+
+  expect(destroySpy).toHaveBeenCalledOnce();
+  const [destroyedUppy] = destroySpy.mock.contexts;
+  expect(destroyedUppy).toBe(initialUppy);
 });
 
 test("the Dashboard note shows a whole-number runtime MiB limit", () => {
