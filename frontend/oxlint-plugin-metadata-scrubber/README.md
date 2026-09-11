@@ -17,7 +17,7 @@ This plugin encodes the project's coding standards as enforceable Oxlint rules. 
 - `no-hardcoded-backend-host` requires environment fields instead of static HTTP service hosts outside tests and the validated environment module.
 - `no-mutable-module-state-in-server-code` rejects module-scope `let` and `var` declarations in server modules.
 - `no-silent-test-prerequisite` rejects `.skip` calls on Vitest test APIs, including chains such as `test.skip.each(...)`. It also rejects bare test prerequisite returns in test callbacks.
-- `use-shared-render-helper` — Requires the shared `renderComponent` helper for Testing Library rendering.
+- `use-shared-render-helper` requires the shared `renderComponent` helper for Testing Library rendering.
 
 ## How to contribute a rule
 
