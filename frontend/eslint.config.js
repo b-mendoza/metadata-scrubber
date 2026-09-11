@@ -62,6 +62,7 @@ const PLUGIN_NAMES = {
   JSXA11yX: "jsx-a11y-x",
   E18e: "e18e",
   SonarJS: "sonarjs",
+  ESLintCommunityComments: "@eslint-community/eslint-comments",
 };
 
 export default defineConfig(
@@ -178,7 +179,7 @@ export default defineConfig(
       [`${PLUGIN_NAMES.SonarJS}/prefer-regexp-exec`]: OFF,
       // =======================================================================
 
-      "@eslint-community/eslint-comments/disable-enable-pair": ERROR,
+      [`${PLUGIN_NAMES.ESLintCommunityComments}/disable-enable-pair`]: ERROR,
       "@typescript-eslint/consistent-type-imports": [
         ERROR,
         {
