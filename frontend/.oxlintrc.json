@@ -333,6 +333,12 @@
     "prefer-spread": ["error"],
     "prefer-template": ["error"],
     "radix": ["error"],
+    "require-unicode-regexp": [
+      "error",
+      {
+        "requireFlag": "v"
+      }
+    ],
     "symbol-description": ["error"],
     "unicode-bom": ["error", "never"],
     "yoda": ["error", "never"],
