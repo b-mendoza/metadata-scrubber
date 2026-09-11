@@ -60,6 +60,7 @@ const PLUGIN_NAMES = {
   ImportX: "import-x",
   MetadataScrubber: "metadata-scrubber",
   JSXA11yX: "jsx-a11y-x",
+  E18e: "e18e",
 };
 
 export default defineConfig(
@@ -162,7 +163,7 @@ export default defineConfig(
        * the enabled `.test()` rules.
        */
       // =======================================================================
-      "e18e/prefer-array-at": OFF,
+      [`${PLUGIN_NAMES.E18e}/prefer-array-at`]: OFF,
       "e18e/prefer-array-fill": OFF,
       "e18e/prefer-array-some": OFF,
       "e18e/prefer-array-to-reversed": OFF,
