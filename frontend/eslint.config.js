@@ -171,7 +171,7 @@ export default defineConfig(
       [`${PLUGIN_NAMES.E18e}/prefer-date-now`]: OFF,
       [`${PLUGIN_NAMES.E18e}/prefer-includes`]: OFF,
       [`${PLUGIN_NAMES.E18e}/prefer-nullish-coalescing`]: OFF,
-      "e18e/prefer-object-has-own": OFF,
+      [`${PLUGIN_NAMES.E18e}/prefer-object-has-own`]: OFF,
       "e18e/prefer-spread-syntax": OFF,
       "e18e/prefer-string-fromcharcode": OFF,
       "sonarjs/prefer-regexp-exec": OFF,
