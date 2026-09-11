@@ -240,7 +240,7 @@ export default defineConfig(
         },
       ],
       [`${PLUGIN_NAMES.TypescriptESLint}/only-throw-error`]: [
-        ERROR,
+        SEVERITY_LEVELS.Error,
         {
           allow: [
             {
