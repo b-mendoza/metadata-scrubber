@@ -248,6 +248,9 @@ importers:
       '@tanstack/devtools-vite':
         specifier: 0.8.5
         version: 0.8.5(@emnapi/core@1.11.3)(@emnapi/runtime@1.11.3)(vite@8.2.2(@types/node@25.9.5)(jiti@2.7.0)(yaml@2.9.0))
+      '@tanstack/eslint-plugin-query':
+        specifier: 5.102.8
+        version: 5.102.8(eslint@10.10.0(jiti@2.7.0)(supports-color@7.2.0))(supports-color@7.2.0)(typescript@6.0.3)
       '@tanstack/react-devtools':
         specifier: 0.10.12
         version: 0.10.12(@types/react-dom@19.2.7(@types/react@19.2.18))(@types/react@19.2.18)(csstype@3.2.3)(react-dom@19.2.8(react@19.2.8))(react@19.2.8)(solid-js@1.9.15)
@@ -1948,6 +1951,15 @@ packages:
     hasBin: true
     peerDependencies:
       solid-js: '>=1.9.7'
+
+  '@tanstack/eslint-plugin-query@5.102.8':
+    resolution: {integrity: sha512-zRjG2PL3zvoqnsSNJFyfX5Mo+OwRwTbLERwZVO3oNQQn82V949INwaLrprzsOW/ivuow7gASeAUUC24xH7kwSQ==}
+    peerDependencies:
+      eslint: ^8.57.0 || ^9.0.0 || ^10.0.0
+      typescript: ^5.6.0 || ^6.0.0 || ^7.0.0
+    peerDependenciesMeta:
+      typescript:
+        optional: true
 
   '@tanstack/history@1.162.2':
     resolution: {integrity: sha512-Lemp3DJbzNqcin/nZpWxycDaEqySDbnIshDbyHJMMCapD4ZQMe57szRpBXOfzfP6fyWAtHNrLrcBUyANJ6Vlow==}
@@ -6250,6 +6262,15 @@ snapshots:
       - bufferutil
       - csstype
       - utf-8-validate
+
+  '@tanstack/eslint-plugin-query@5.102.8(eslint@10.10.0(jiti@2.7.0)(supports-color@7.2.0))(supports-color@7.2.0)(typescript@6.0.3)':
+    dependencies:
+      '@typescript-eslint/utils': 8.70.0(eslint@10.10.0(jiti@2.7.0)(supports-color@7.2.0))(supports-color@7.2.0)(typescript@6.0.3)
+      eslint: 10.10.0(jiti@2.7.0)(supports-color@7.2.0)
+    optionalDependencies:
+      typescript: 6.0.3
+    transitivePeerDependencies:
+      - supports-color
 
   '@tanstack/history@1.162.2': {}
 
