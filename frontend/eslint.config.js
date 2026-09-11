@@ -204,7 +204,7 @@ export default defineConfig(
           max: 3,
         },
       ],
-      "@typescript-eslint/no-deprecated": ERROR,
+      [`${PLUGIN_NAMES.TypescriptESLint}/no-deprecated`]: ERROR,
       "@typescript-eslint/no-floating-promises": [
         ERROR,
         {
