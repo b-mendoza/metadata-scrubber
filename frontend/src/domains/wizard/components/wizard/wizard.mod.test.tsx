@@ -39,14 +39,14 @@ vi.mock(
   },
 );
 
-const RETRY_UPLOAD_NAME = /retry upload/i;
-const UPLOAD_LIMIT_TEXT = /10 MiB/;
-const UPLOAD_BUTTON_NAME = /upload 1 file/i;
-const INSPECTING_TEXT = /Inspecting/;
-const REPLACEMENT_TEXT = /Neutral replacement/;
-const SCRUBBING_TEXT = /Scrubbing/;
-const GRANT_DURATION_TEXT = /approximately 15 minutes/i;
-const SCOPE_TEXT = /does not remove all hidden PDF content/;
+const RETRY_UPLOAD_NAME = /retry upload/iv;
+const UPLOAD_LIMIT_TEXT = /10 MiB/v;
+const UPLOAD_BUTTON_NAME = /upload 1 file/iv;
+const INSPECTING_TEXT = /Inspecting/v;
+const REPLACEMENT_TEXT = /Neutral replacement/v;
+const SCRUBBING_TEXT = /Scrubbing/v;
+const GRANT_DURATION_TEXT = /approximately 15 minutes/iv;
+const SCOPE_TEXT = /does not remove all hidden PDF content/v;
 
 const INITIAL_ATTEMPT_COUNT = 1;
 const UPLOAD_ATTEMPT_COUNT = 2;
