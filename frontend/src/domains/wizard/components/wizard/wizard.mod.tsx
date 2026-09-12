@@ -1,9 +1,15 @@
 import "@uppy/core/css/style.min.css";
 import "@uppy/dashboard/css/style.min.css";
 
-import { useMutation, useQuery } from "@tanstack/react-query";
+import {
+  QueryErrorResetBoundary,
+  useMutation,
+  useSuspenseQuery,
+} from "@tanstack/react-query";
+import { CatchBoundary } from "@tanstack/react-router";
 import type { TRPCOptionsProxy } from "@trpc/tanstack-react-query";
-import { useEffect, useRef } from "react";
+import type { RefObject } from "react";
+import { Suspense, useEffect, useRef } from "react";
 
 import { FileUploader } from "#/domains/wizard/components/file-uploader/file-uploader.mod";
 import type { RouterInputs } from "#/shared/libs/trpc/client/client.mod";
@@ -13,15 +19,31 @@ interface WizardUploadProps {
   trpc: TRPCOptionsProxy<AppRouter>;
   onUploadComplete: (input: RouterInputs["wizard"]["dryRun"]) => void;
 }
+interface WizardUploadSettingsProps {
+  trpc: TRPCOptionsProxy<AppRouter>;
+  onUploadComplete: (input: RouterInputs["wizard"]["dryRun"]) => void;
+  generationRef: RefObject<number>;
+  uploadStartedRef: RefObject<boolean>;
+}
 const INITIAL_GENERATION = 0;
 const GENERATION_INCREMENT = 1;
-export function WizardUpload({
+const useUploadSessionGeneration = () => {
+  const generationRef = useRef(INITIAL_GENERATION);
+  useEffect(
+    () => () => {
+      generationRef.current += GENERATION_INCREMENT;
+    },
+    [],
+  );
+  return generationRef;
+};
+function WizardUploadSettings({
   trpc,
   onUploadComplete,
-}: Readonly<WizardUploadProps>) {
-  const generationRef = useRef(INITIAL_GENERATION);
-  const uploadStartedRef = useRef(false);
-  const config = useQuery({
+  generationRef,
+  uploadStartedRef,
+}: Readonly<WizardUploadSettingsProps>) {
+  const config = useSuspenseQuery({
     ...trpc.wizard.getWorkflowConfig.queryOptions(),
     retry: false,
     refetchOnWindowFocus: false,
@@ -32,19 +54,9 @@ export function WizardUpload({
   const upload = useMutation(
     trpc.wizard.createUpload.mutationOptions({ retry: false }),
   );
-  useEffect(
-    () => () => {
-      generationRef.current += GENERATION_INCREMENT;
-    },
-    [],
-  );
   const uploadGeneration = generationRef.current;
   return (
-    <section>
-      <h2 id="upload-heading" tabIndex={-1}>
-        Upload a PDF
-      </h2>
-      {config.isPending && <p role="status">Loading upload settings…</p>}
+    <>
       {config.isError && (
         <div role="alert">
           Could not load upload settings.
@@ -59,22 +71,67 @@ export function WizardUpload({
           </button>
         </div>
       )}
-      {config.data != null && (
-        <FileUploader
-          createUpload={upload.mutateAsync}
-          maxFileSizeBytes={config.data.maxFileSizeBytes}
-          onUploadComplete={(result) => {
-            if (
-              uploadStartedRef.current ||
-              uploadGeneration !== generationRef.current
-            ) {
-              return;
-            }
-            uploadStartedRef.current = true;
-            onUploadComplete(result);
-          }}
-        />
-      )}
+      <FileUploader
+        createUpload={upload.mutateAsync}
+        maxFileSizeBytes={config.data.maxFileSizeBytes}
+        onUploadComplete={(result) => {
+          if (
+            uploadStartedRef.current ||
+            uploadGeneration !== generationRef.current
+          ) {
+            return;
+          }
+          onUploadComplete(result);
+        }}
+      />
+    </>
+  );
+}
+export function WizardUpload({
+  trpc,
+  onUploadComplete,
+}: Readonly<WizardUploadProps>) {
+  const generationRef = useUploadSessionGeneration();
+  const uploadStartedRef = useRef(false);
+  return (
+    <section>
+      <h2 id="upload-heading" tabIndex={-1}>
+        Upload a PDF
+      </h2>
+      <QueryErrorResetBoundary>
+        {({ reset }) => (
+          <CatchBoundary
+            getResetKey={() => "wizard-upload-settings"}
+            errorComponent={({ reset: resetCatch }) => (
+              <div role="alert">
+                Could not load upload settings.
+                <button
+                  type="button"
+                  className="btn"
+                  onClick={() => {
+                    reset();
+                    resetCatch();
+                  }}
+                >
+                  Retry settings
+                </button>
+              </div>
+            )}
+          >
+            <Suspense fallback={<p role="status">Loading upload settings…</p>}>
+              <WizardUploadSettings
+                trpc={trpc}
+                onUploadComplete={(result) => {
+                  uploadStartedRef.current = true;
+                  onUploadComplete(result);
+                }}
+                generationRef={generationRef}
+                uploadStartedRef={uploadStartedRef}
+              />
+            </Suspense>
+          </CatchBoundary>
+        )}
+      </QueryErrorResetBoundary>
     </section>
   );
 }
