@@ -2,6 +2,7 @@ import type { QueryClient } from "@tanstack/react-query";
 import { useMutation } from "@tanstack/react-query";
 import { isTRPCClientError } from "@trpc/client";
 import type { TRPCOptionsProxy } from "@trpc/tanstack-react-query";
+import type { MouseEvent } from "react";
 import { useEffect, useRef, useState } from "react";
 
 import type { RouterInputs } from "#/shared/libs/trpc/client/client.mod";
@@ -31,7 +32,7 @@ const RENEWAL_LEAD_MS = 30_000;
 const GENERATION_INCREMENT = 1;
 const IMMEDIATE_DELAY_MS = 0;
 const INITIAL_GENERATION = 0;
-export function WizardResult({
+function useResultSession({
   revision,
   initialDownloadUrl,
   initialExpiresAt,
@@ -233,6 +234,46 @@ export function WizardResult({
     };
   }, [initialExpiresAt, queryClient, revision, trpc]);
 
+  return {
+    state,
+    dialogRef,
+    cancelButtonRef,
+    deletionButtonRef,
+    restart,
+    closeDelete,
+    confirmDelete,
+    openDelete: () => {
+      deletionStartedRef.current = false;
+      dialogRef.current?.showModal();
+      cancelButtonRef.current?.focus();
+    },
+    renew: () => {
+      renewRef.current?.();
+    },
+    expireDownload: (event: MouseEvent<HTMLAnchorElement>) => {
+      if (state.expiresAt == null || state.expiresAt > Date.now()) {
+        return;
+      }
+
+      event.preventDefault();
+      setState({ ...state, downloadUrl: null });
+    },
+  };
+}
+
+export function WizardResult(props: Readonly<WizardResultProps>) {
+  const {
+    state,
+    dialogRef,
+    cancelButtonRef,
+    deletionButtonRef,
+    restart,
+    closeDelete,
+    confirmDelete,
+    openDelete,
+    renew,
+    expireDownload,
+  } = useResultSession(props);
   return (
     <section>
       <h2>PDF metadata processed</h2>
@@ -250,11 +291,7 @@ export function WizardResult({
         type="button"
         className="btn"
         disabled={state.deletion === "pending"}
-        onClick={() => {
-          deletionStartedRef.current = false;
-          dialogRef.current?.showModal();
-          cancelButtonRef.current?.focus();
-        }}
+        onClick={openDelete}
       >
         Delete files
       </button>
@@ -301,13 +338,7 @@ export function WizardResult({
       )}
       {(state.renewalError === "failed" ||
         state.renewalError === "expired") && (
-        <button
-          type="button"
-          className="btn"
-          onClick={() => {
-            renewRef.current?.();
-          }}
-        >
+        <button type="button" className="btn" onClick={renew}>
           Renew download
         </button>
       )}
@@ -315,14 +346,7 @@ export function WizardResult({
         <a
           className="btn btn-primary"
           href={state.downloadUrl}
-          onClick={(event) => {
-            if (state.expiresAt == null || state.expiresAt > Date.now()) {
-              return;
-            }
-
-            event.preventDefault();
-            setState({ ...state, downloadUrl: null });
-          }}
+          onClick={expireDownload}
         >
           Download PDF
         </a>
