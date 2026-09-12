@@ -17,6 +17,16 @@ interface WizardReviewProps {
 }
 const INITIAL_GENERATION = 0;
 const GENERATION_INCREMENT = 1;
+const useScrubSessionGeneration = () => {
+  const generationRef = useRef(INITIAL_GENERATION);
+  useEffect(
+    () => () => {
+      generationRef.current += GENERATION_INCREMENT;
+    },
+    [],
+  );
+  return generationRef;
+};
 export function WizardReview({
   revision,
   fields,
@@ -24,16 +34,10 @@ export function WizardReview({
   onComplete,
   onFailure,
 }: Readonly<WizardReviewProps>) {
-  const generationRef = useRef(INITIAL_GENERATION);
+  const generationRef = useScrubSessionGeneration();
   const scrubStartedRef = useRef(false);
   const scrub = useMutation(
     trpc.wizard.scrubFile.mutationOptions({ retry: false }),
-  );
-  useEffect(
-    () => () => {
-      generationRef.current += GENERATION_INCREMENT;
-    },
-    [],
   );
   const scrubFile = async () => {
     if (scrubStartedRef.current) return;
