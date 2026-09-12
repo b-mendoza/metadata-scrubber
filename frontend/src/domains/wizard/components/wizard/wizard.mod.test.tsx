@@ -366,3 +366,46 @@ test.each(["grant", "PUT"] as const)(
     ).not.toBeInTheDocument();
   },
 );
+test("a pending config load keeps the heading, then a failed load retries", async () => {
+  const queryClient = new QueryClient();
+  const trpc = createTRPCOptionsProxy({ client, queryClient });
+  const history = createMemoryHistory({ initialEntries: ["/"] });
+  const router = createRouter({
+    routeTree,
+    history,
+    context: { queryClient, trpc },
+  });
+  onTestFinished(() => {
+    queryClient.clear();
+    history.destroy();
+  });
+  const config: RouterOutputs["wizard"]["getWorkflowConfig"] = {
+    maxFileSizeBytes: 10_485_760,
+  };
+  const { promise, reject } =
+    Promise.withResolvers<RouterOutputs["wizard"]["getWorkflowConfig"]>();
+  request.mockReturnValueOnce(promise);
+  const { user } = renderComponent(
+    <QueryClientProvider client={queryClient}>
+      <RouterProvider router={router} />
+    </QueryClientProvider>,
+  );
+  expect(
+    await screen.findByRole("heading", { name: "Upload a PDF" }),
+  ).toBeVisible();
+  expect(screen.getByRole("status")).toHaveTextContent(
+    "Loading upload settings",
+  );
+  expect(vi.mocked(FileUploader)).not.toHaveBeenCalled();
+  act(() => {
+    reject(new Error("private config detail"));
+  });
+  expect(await screen.findByRole("alert")).toHaveTextContent(
+    "Could not load upload settings.",
+  );
+  expect(document.body).not.toHaveTextContent("private config detail");
+  expect(screen.getByRole("heading", { name: "Upload a PDF" })).toBeVisible();
+  request.mockResolvedValueOnce(config);
+  await user.click(screen.getByRole("button", { name: "Retry settings" }));
+  expect(await screen.findByText(UPLOAD_LIMIT_TEXT)).toBeVisible();
+});
