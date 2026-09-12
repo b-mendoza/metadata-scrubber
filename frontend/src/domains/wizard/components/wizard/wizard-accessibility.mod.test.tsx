@@ -38,7 +38,7 @@ vi.mock(
 const GRANT_LIFETIME_MS = 120_000;
 const ONE_DELETE = 1;
 const EMPTY_STORAGE_COUNT = 0;
-const UPLOAD_LIMIT_TEXT = /10 MiB/;
+const UPLOAD_LIMIT_TEXT = /10 MiB/v;
 
 const UPLOAD_ATTEMPT_COUNT = 2;
 
