@@ -11,8 +11,25 @@ export const Route = createFileRoute("/_wizard")({
   component: WizardLayout,
   head: () => ({ meta: [{ title: "Remove PDF metadata" }] }),
 });
-function WizardLayout() {
+function useUploadHeadingFocus() {
   const visitedStepRef = useRef(false);
+  const router = useRouter();
+  useEffect(
+    () =>
+      router.subscribe("onRendered", ({ toLocation }) => {
+        if (toLocation.pathname !== "/") {
+          visitedStepRef.current = true;
+        } else if (visitedStepRef.current) {
+          document
+            .querySelector<HTMLHeadingElement>("#upload-heading")
+            ?.focus();
+        }
+      }),
+    [router],
+  );
+}
+function WizardLayout() {
+  useUploadHeadingFocus();
   const outcome = useMatch({ from: "/_wizard/outcome", shouldThrow: false });
   const pathname = useRouterState({
     select: (state) => state.location.pathname,
@@ -30,20 +47,6 @@ function WizardLayout() {
     if (kind === "missing-source") setNotice(true);
     if (pathname === "/review") setNotice(false);
   }
-  const router = useRouter();
-  useEffect(
-    () =>
-      router.subscribe("onRendered", ({ toLocation }) => {
-        if (toLocation.pathname !== "/") {
-          visitedStepRef.current = true;
-        } else if (visitedStepRef.current) {
-          document
-            .querySelector<HTMLHeadingElement>("#upload-heading")
-            ?.focus();
-        }
-      }),
-    [router],
-  );
   return (
     <main className="mx-auto max-w-4xl space-y-6 p-4">
       <h1 className="text-3xl font-bold">Remove PDF metadata</h1>
