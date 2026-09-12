@@ -409,3 +409,49 @@ test("a pending config load keeps the heading, then a failed load retries", asyn
   await user.click(screen.getByRole("button", { name: "Retry settings" }));
   expect(await screen.findByText(UPLOAD_LIMIT_TEXT)).toBeVisible();
 });
+test("a cached config keeps the uploader through a failed refetch and retry", async () => {
+  const queryClient = new QueryClient();
+  const trpc = createTRPCOptionsProxy({ client, queryClient });
+  const history = createMemoryHistory({ initialEntries: ["/"] });
+  const router = createRouter({
+    routeTree,
+    history,
+    context: { queryClient, trpc },
+  });
+  onTestFinished(() => {
+    queryClient.clear();
+    history.destroy();
+  });
+  const config: RouterOutputs["wizard"]["getWorkflowConfig"] = {
+    maxFileSizeBytes: 10_485_760,
+  };
+  const { queryKey } = trpc.wizard.getWorkflowConfig.queryOptions();
+  queryClient.setQueryData(queryKey, config);
+  request.mockRejectedValueOnce(new Error("stale refetch"));
+  const { user } = renderComponent(
+    <QueryClientProvider client={queryClient}>
+      <RouterProvider router={router} />
+    </QueryClientProvider>,
+  );
+  const heading = await screen.findByRole("heading", { name: "Upload a PDF" });
+  const limit = screen.getByText(UPLOAD_LIMIT_TEXT);
+  expect(limit).toBeVisible();
+  expect(screen.queryByRole("alert")).not.toBeInTheDocument();
+  expect(request).not.toHaveBeenCalled();
+  await act(async () => {
+    await queryClient.refetchQueries({ queryKey });
+  });
+  expect(await screen.findByRole("alert")).toHaveTextContent(
+    "Could not load upload settings.",
+  );
+  expect(document.body).not.toHaveTextContent("stale refetch");
+  expect(screen.getByRole("heading", { name: "Upload a PDF" })).toBe(heading);
+  expect(screen.getByText(UPLOAD_LIMIT_TEXT)).toBe(limit);
+  request.mockResolvedValueOnce(config);
+  await user.click(screen.getByRole("button", { name: "Retry settings" }));
+  await waitFor(() => {
+    expect(screen.queryByRole("alert")).not.toBeInTheDocument();
+  });
+  expect(screen.getByRole("heading", { name: "Upload a PDF" })).toBe(heading);
+  expect(screen.getByText(UPLOAD_LIMIT_TEXT)).toBe(limit);
+});
