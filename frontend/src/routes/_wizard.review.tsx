@@ -1,3 +1,4 @@
+import { QueryClient } from "@tanstack/react-query";
 import {
   createFileRoute,
   redirect,
@@ -5,6 +6,7 @@ import {
 } from "@tanstack/react-router";
 import { isTRPCClientError } from "@trpc/client";
 import type { TRPCError } from "@trpc/server";
+import type { TRPCOptionsProxy } from "@trpc/tanstack-react-query";
 import { ResultAsync } from "neverthrow";
 import * as z from "zod";
 
@@ -44,13 +46,33 @@ export const Route = createFileRoute("/_wizard/review")({
       Could not complete the PDF operation. Start a new upload.
     </p>
   ),
-  loader: async ({ context: { queryClient, trpc }, deps, abortController }) => {
+  loader: loadReview,
+  component: ReviewRoute,
+});
+export async function loadReview({
+  context: { trpc },
+  deps,
+  abortController,
+}: {
+  context: { trpc: TRPCOptionsProxy<AppRouter> };
+  deps: z.infer<typeof searchSchema>;
+  abortController: AbortController;
+}) {
+  abortController.signal.throwIfAborted();
+  const queryClient = new QueryClient();
+  queryClient.mount();
+  const cancel = () => {
+    void queryClient.cancelQueries();
+  };
+  abortController.signal.addEventListener("abort", cancel, { once: true });
+  try {
     const responseResult = await ResultAsync.fromPromise(
       queryClient.query(
         trpc.wizard.dryRun.queryOptions(deps, {
           retry: false,
           staleTime: 0,
           gcTime: 0,
+          trpc: { abortOnUnmount: true },
         }),
       ),
       (error: unknown) => error,
@@ -87,9 +109,12 @@ export const Route = createFileRoute("/_wizard/review")({
       revision: { storageKey: deps.storageKey, etag: response.etag },
       fields: response.fields,
     };
-  },
-  component: ReviewRoute,
-});
+  } finally {
+    abortController.signal.removeEventListener("abort", cancel);
+    queryClient.clear();
+    queryClient.unmount();
+  }
+}
 function ReviewRoute() {
   const data = Route.useLoaderData();
   const { trpc } = Route.useRouteContext();
