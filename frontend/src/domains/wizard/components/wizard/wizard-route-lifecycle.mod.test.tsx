@@ -105,6 +105,33 @@ test.each(["review", "result"] as const)(
     );
   },
 );
+test.each(["review", "result"] as const)(
+  "%s starts no request for a pre-aborted entry",
+  async (step) => {
+    const queryClient = new QueryClient();
+    const trpc = createTRPCOptionsProxy({ client, queryClient });
+    const loader = step === "review" ? loadReview : loadResult;
+    const loaderDependencies: RouterInputs["wizard"]["refreshDownloadGrant"] = {
+      storageKey: "uploads/00000000-0000-4000-8000-000000000001",
+      etag: "0123456789abcdef0123456789abcdef",
+    };
+    const abortController = new AbortController();
+    abortController.abort();
+    onTestFinished(() => {
+      queryClient.clear();
+    });
+    await expect(
+      loader({
+        abortController,
+        context: { trpc },
+        deps: loaderDependencies,
+      }),
+    ).rejects.toMatchObject({ name: "AbortError" });
+    expect(request).not.toHaveBeenCalled();
+    expect(focusManager.hasListeners()).toBe(false);
+    expect(onlineManager.hasListeners()).toBe(false);
+  },
+);
 test.each(["review-loader", "result-loader"] as const)(
   "exit during %s keeps the newer route",
   async (boundary) => {
