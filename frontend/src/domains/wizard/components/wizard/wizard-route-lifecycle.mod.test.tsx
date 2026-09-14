@@ -1,4 +1,9 @@
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import {
+  focusManager,
+  onlineManager,
+  QueryClient,
+  QueryClientProvider,
+} from "@tanstack/react-query";
 import {
   createMemoryHistory,
   createRouter,
@@ -18,6 +23,8 @@ import {
 import type { WorkflowOutput } from "#/domains/wizard/components/wizard/wizard.test-helper";
 import { createTestTRPCClient } from "#/domains/wizard/components/wizard/wizard.test-helper";
 import { Route as RootRoute } from "#/routes/__root";
+import { loadResult } from "#/routes/_wizard.result";
+import { loadReview } from "#/routes/_wizard.review";
 import { routeTree } from "#/routeTree.gen";
 import type {
   RouterInputs,
@@ -30,6 +37,8 @@ Object.assign(RootRoute.options, {
 });
 const { request, client } = createTestTRPCClient();
 const TWO_REQUESTS = 2;
+const EVENT_LISTENER_INDEX = 1;
+const EMPTY_QUERY_COUNT = 0;
 const GRANT_LIFETIME_MS = 120_000;
 const RENEWAL_TIME_MS = 90_000;
 const FLUSH_MS = 0;
@@ -41,6 +50,61 @@ afterEach(() => {
   vi.useRealTimers();
 });
 
+test.each(["review", "result"] as const)(
+  "%s abort settles before the pending response and releases its listeners",
+  async (step) => {
+    const queryClient = new QueryClient();
+    const trpc = createTRPCOptionsProxy({ client, queryClient });
+    const loader = step === "review" ? loadReview : loadResult;
+    const loaderDependencies: RouterInputs["wizard"]["refreshDownloadGrant"] = {
+      storageKey: "uploads/00000000-0000-4000-8000-000000000001",
+      etag: "0123456789abcdef0123456789abcdef",
+    };
+    const abortController = new AbortController();
+    const removeListener = vi.spyOn(
+      abortController.signal,
+      "removeEventListener",
+    );
+    const addListener = vi.spyOn(abortController.signal, "addEventListener");
+    const pending = Promise.withResolvers<WorkflowOutput>();
+    request.mockReturnValueOnce(pending.promise);
+    const operation = loader({
+      abortController,
+      context: { trpc },
+      deps: loaderDependencies,
+    });
+    const settled = vi.fn();
+    void Promise.resolve(operation).then(settled).catch(settled);
+    onTestFinished(() => {
+      abortController.abort();
+      pending.reject(new Error("released pending transport"));
+      queryClient.clear();
+    });
+    await vi.waitFor(() => {
+      expect(request).toHaveBeenCalledOnce();
+    });
+    const [firstRequest] = request.mock.calls;
+    abortController.abort();
+    expect(firstRequest).toMatchObject([{ signal: { aborted: true } }]);
+    await vi.waitFor(() => {
+      expect(settled).toHaveBeenCalledOnce();
+    });
+    await expect(operation).rejects.toMatchObject({ name: "AbortError" });
+    const abortRegistration = addListener.mock.calls.find(
+      ([event]) => event === "abort",
+    );
+    expect(abortRegistration).toBeDefined();
+    expect(removeListener).toHaveBeenCalledWith(
+      "abort",
+      abortRegistration?.[EVENT_LISTENER_INDEX],
+    );
+    expect(focusManager.hasListeners()).toBe(false);
+    expect(onlineManager.hasListeners()).toBe(false);
+    expect(queryClient.getQueryCache().getAll()).toHaveLength(
+      EMPTY_QUERY_COUNT,
+    );
+  },
+);
 test.each(["review-loader", "result-loader"] as const)(
   "exit during %s keeps the newer route",
   async (boundary) => {
