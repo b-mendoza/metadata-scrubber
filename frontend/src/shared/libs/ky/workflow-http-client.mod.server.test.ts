@@ -34,7 +34,10 @@ const FIVE_SECONDS_MS = 5000;
 const ONE_MILLISECOND_MS = 1;
 const INITIAL_FETCH_ATTEMPT_COUNT = 1;
 const TWO_FETCH_ATTEMPTS = 2;
+const THREE_FETCH_ATTEMPTS = 3;
 const FIXED_RANDOM_VALUE = 0.5;
+const FIRST_JITTERED_DELAY_MS = 150;
+const SECOND_JITTERED_DELAY_MS = 300;
 
 const unavailableResponse = (): Response => {
   return Response.json(
@@ -68,8 +71,8 @@ afterEach(() => {
 });
 
 test("an eligible 503 waits for the server Retry-After value before it retries", async () => {
-  vi.spyOn(Math, "random").mockReturnValue(FIXED_RANDOM_VALUE);
   vi.useFakeTimers();
+  vi.spyOn(Math, "random").mockReturnValue(FIXED_RANDOM_VALUE);
   const fetchMock = vi
     .fn<typeof fetch>()
     .mockResolvedValueOnce(unavailableResponse())
@@ -200,8 +203,9 @@ test("workflow retries reject an unrecognized error after one attempt", async ()
   expect(fetchMock).toHaveBeenCalledOnce();
 });
 
-test("recognized network failures stop after three total attempts", async () => {
+test("recognized network failures use jittered delays and stop after three total attempts", async () => {
   vi.useFakeTimers();
+  vi.spyOn(Math, "random").mockReturnValue(FIXED_RANDOM_VALUE);
   const fetchMock = vi
     .fn<typeof fetch>()
     .mockRejectedValue(new TypeError("fetch failed"));
@@ -214,12 +218,25 @@ test("recognized network failures stop after three total attempts", async () => 
       totalTimeout: WORKFLOW_DRY_RUN_TIMEOUT_MS,
     }),
   );
+
+  await vi.advanceTimersByTimeAsync(
+    FIRST_JITTERED_DELAY_MS - ONE_MILLISECOND_MS,
+  );
+  expect(fetchMock).toHaveBeenCalledOnce();
+  await vi.advanceTimersByTimeAsync(ONE_MILLISECOND_MS);
+  expect(fetchMock).toHaveBeenCalledTimes(TWO_FETCH_ATTEMPTS);
+
+  await vi.advanceTimersByTimeAsync(
+    SECOND_JITTERED_DELAY_MS - ONE_MILLISECOND_MS,
+  );
+  expect(fetchMock).toHaveBeenCalledTimes(TWO_FETCH_ATTEMPTS);
+  await vi.advanceTimersByTimeAsync(ONE_MILLISECOND_MS);
+  expect(fetchMock).toHaveBeenCalledTimes(THREE_FETCH_ATTEMPTS);
+
   await vi.runAllTimersAsync();
   const error = await failurePromise;
   expect(error).toBeInstanceOf(NetworkError);
-  expect(fetchMock).toHaveBeenCalledTimes(
-    WORKFLOW_RETRY_LIMIT + INITIAL_FETCH_ATTEMPT_COUNT,
-  );
+  expect(fetchMock).toHaveBeenCalledTimes(THREE_FETCH_ATTEMPTS);
 });
 
 test.each([
