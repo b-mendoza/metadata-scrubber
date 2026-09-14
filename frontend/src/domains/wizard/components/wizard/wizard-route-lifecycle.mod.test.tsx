@@ -30,6 +30,7 @@ import type {
   RouterInputs,
   RouterOutputs,
 } from "#/shared/libs/trpc/client/client.mod";
+import { initializeTRPCClient } from "#/shared/libs/trpc/client/client.mod";
 import { renderComponent } from "#/tests/utils/renderers/renderers.mod";
 
 Object.assign(RootRoute.options, {
@@ -51,6 +52,7 @@ afterEach(() => {
   vi.unstubAllGlobals();
   onlineManager.setOnline(true);
 });
+
 test.each(["review", "result"] as const)(
   "%s abort settles before the pending response and releases its listeners",
   async (step) => {
@@ -134,6 +136,7 @@ test.each(["review", "result"] as const)(
     expect(onlineManager.hasListeners()).toBe(false);
   },
 );
+
 test.each([
   ["review", true],
   ["result", true],
@@ -223,11 +226,15 @@ test.each([
     );
   },
 );
+
 test.each(["review-loader", "result-loader"] as const)(
-  "exit during %s keeps the newer route",
+  "exit during %s cancels its request and keeps the newer route",
   async (boundary) => {
     const queryClient = new QueryClient();
-    const trpc = createTRPCOptionsProxy({ client, queryClient });
+    const trpc = createTRPCOptionsProxy({
+      client: initializeTRPCClient(new URL("https://frontend.test/api/trpc")),
+      queryClient,
+    });
     const revision: RouterInputs["wizard"]["scrubFile"] = {
       storageKey: "uploads/00000000-0000-4000-8000-000000000001",
       etag: "0123456789abcdef0123456789abcdef",
@@ -244,8 +251,14 @@ test.each(["review-loader", "result-loader"] as const)(
       history,
       context: { queryClient, trpc },
     });
-    const pending = Promise.withResolvers<WorkflowOutput>();
-    request.mockReturnValueOnce(pending.promise);
+    const pending = Promise.withResolvers<Response>();
+    const started = Promise.withResolvers<AbortSignal>();
+    const fetchMock = vi.fn<typeof fetch>(async (input, init) => {
+      const outgoing = new Request(input, init);
+      started.resolve(outgoing.signal);
+      return pending.promise;
+    });
+    vi.stubGlobal("fetch", fetchMock);
     const { unmount } = renderComponent(
       <QueryClientProvider client={queryClient}>
         <RouterProvider router={router} />
@@ -253,10 +266,12 @@ test.each(["review-loader", "result-loader"] as const)(
     );
     onTestFinished(() => {
       unmount();
+      pending.reject(new DOMException("released pending fetch", "AbortError"));
       queryClient.clear();
       history.destroy();
     });
     await screen.findByRole("status");
+    const signal = await started.promise;
     await act(async () => {
       await router.navigate({
         to: "/outcome",
@@ -264,20 +279,21 @@ test.each(["review-loader", "result-loader"] as const)(
         replace: true,
       });
     });
-    act(() => {
-      pending.reject(new Error("abandoned loader"));
+    expect(signal.aborted).toBe(true);
+    vi.useFakeTimers();
+    await act(async () => {
+      pending.reject(new DOMException("abandoned loader", "AbortError"));
+      await vi.advanceTimersByTimeAsync(FLUSH_MS);
     });
     expect(router.state.location.pathname).toBe("/outcome");
     expect(router.state.location.search).toEqual({ kind: "clean" });
     expect(screen.queryByRole("link")).not.toBeInTheDocument();
     expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
-    const requestsBeforeExit = request.mock.calls.length;
-    vi.useFakeTimers();
     await act(async () => {
       document.dispatchEvent(new Event("visibilitychange"));
       await vi.advanceTimersByTimeAsync(GRANT_LIFETIME_MS);
     });
-    expect(request.mock.calls).toHaveLength(requestsBeforeExit);
+    expect(fetchMock).toHaveBeenCalledOnce();
     await act(async () => {
       await vi.advanceTimersByTimeAsync(FLUSH_MS);
     });
