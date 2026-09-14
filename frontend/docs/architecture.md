@@ -105,7 +105,9 @@ The workflow schemas enforce these contracts:
 
 - `/` accepts no workflow search payload. `/review` requires only `storageKey`. `/result` requires only `storageKey` and `etag`. `/outcome` requires only the fixed `kind` enum.
 - Strict Zod schemas reject extra fields and invalid identifiers before file requests. `wizard-identifiers.mod.ts` supplies browser-safe identifier schemas. Invalid search replaces the route with `/`.
-- Review and result loaders use `queryClient.query` with `retry: false`, `staleTime: 0`, and `gcTime: 0`. Route reload settings require a current backend check. A cached success cannot replace that check.
+- The route files register the typed `loadReview` and `loadResult` functions. Direct loader tests call these functions without Router-only arguments. Each review and result loader mounts its own `QueryClient`. It uses `queryClient.query` with `retry: false`, `staleTime: 0`, `gcTime: 0`, and `trpc: { abortOnUnmount: true }`. Route reload settings require a current backend check. A cached success cannot replace that check.
+- A loader rejects a pre-aborted entry before it starts work. Route abort cancels its private query. Completion removes the abort listener, clears the client, and unmounts it. A live offline loader resumes when the connection returns. An aborted loader stays canceled.
+- Each overlapping loader starts a separate request, even for the same key. Loaders do not share request deduplication with each other or with result-component renewal. An old loader cannot cancel either operation.
 - Same-tab refresh restores review or result from validated search. A missing object selects the missing-source outcome. A canceled loader cannot redirect a newer navigation.
 - Step completion and restart replace consumed history entries. Search never contains file names, metadata text, presigned URLs, or backend error text.
 - Removal of the products domain and its router registration is Task 3 (#307). Full resume-at-the-right-step from a shared link stays in #283.
