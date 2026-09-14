@@ -88,6 +88,13 @@ test("renewal follows authoritative expiry and disables links while a renewal is
   });
   expect(request).toHaveBeenCalledTimes(INITIAL_ATTEMPT_COUNT);
   expect(screen.getByRole("status")).toHaveTextContent("Renewing download");
+  act(() => {
+    document.dispatchEvent(new Event("visibilitychange"));
+  });
+  expect(screen.getByRole("link", { name: "Download PDF" })).toHaveAttribute(
+    "href",
+    grant.downloadUrl,
+  );
   await act(async () => {
     await vi.advanceTimersByTimeAsync(RENEWAL_LEAD_MS);
   });
@@ -103,12 +110,9 @@ test("renewal follows authoritative expiry and disables links while a renewal is
     nextGrant.downloadUrl,
   );
   await act(async () => {
-    await vi.advanceTimersByTimeAsync(GRANT_LIFETIME_MS);
+    await vi.advanceTimersByTimeAsync(GRANT_LIFETIME_MS - RENEWAL_LEAD_MS);
   });
   expect(request).toHaveBeenCalledTimes(SECOND_ATTEMPT_COUNT);
-  expect(
-    screen.queryByRole("link", { name: "Download PDF" }),
-  ).not.toBeInTheDocument();
   await act(async () => {
     rejectLateRenewal(new Error("private provider details"));
     await vi.advanceTimersByTimeAsync(FLUSH_MS);
@@ -116,9 +120,26 @@ test("renewal follows authoritative expiry and disables links while a renewal is
   expect(screen.getByRole("alert")).toHaveTextContent(
     "Could not renew the download.",
   );
+  expect(screen.getByRole("link", { name: "Download PDF" })).toHaveAttribute(
+    "href",
+    nextGrant.downloadUrl,
+  );
+  const visibility = vi.spyOn(document, "visibilityState", "get");
+  visibility.mockReturnValue("hidden");
+  act(() => {
+    document.dispatchEvent(new Event("visibilitychange"));
+  });
+  vi.setSystemTime(new Date("2026-09-09T12:04:01Z"));
+  visibility.mockReturnValue("visible");
+  act(() => {
+    document.dispatchEvent(new Event("visibilitychange"));
+  });
   expect(
     screen.queryByRole("link", { name: "Download PDF" }),
   ).not.toBeInTheDocument();
+  expect(screen.getByRole("alert")).toHaveTextContent(
+    "The download grant expired.",
+  );
   await act(async () => {
     dispatchEvent(new Event("focus"));
     dispatchEvent(new Event("online"));
