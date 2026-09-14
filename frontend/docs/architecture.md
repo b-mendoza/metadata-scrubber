@@ -30,6 +30,7 @@ Developers build the frontend with [TanStack Start](https://tanstack.com/start) 
   - `confirmDelete`
 - `getWorkflowConfig`, `dryRun`, and `refreshDownloadGrant` are queries. Inspection and grant refresh still send the existing backend POST with typed JSON. The other workflow procedures are mutations.
 - Each procedure has an explicit Zod input schema when it accepts input. Each procedure validates its backend success body with Zod.
+- The server branch of `getRouterContext()` creates a request-local tRPC client with `unstable_localLink`. Its Query options pass the operation signal to the procedure and Ky. The browser client uses `httpBatchStreamLink` instead.
 - The tRPC workflow sends storage keys, canonical ETags, file names, and file sizes. It never sends file bytes.
 
 ## App bindings
