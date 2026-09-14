@@ -204,6 +204,7 @@ function useResultSession({
         });
         return;
       }
+      if (expiry != null && expiry <= Date.now()) expire();
       if (hasFailed) return;
       if (expiry == null || expiry - Date.now() <= RENEWAL_LEAD_MS) {
         renew();
