@@ -242,7 +242,7 @@ test.each(["expired", "short", "missing"] as const)(
   },
 );
 
-test("hidden view stops renewal, expired return renews, and exit ignores stale completion", async () => {
+test("expired return clears a delayed link and accepts only an active renewal", async () => {
   const queryClient = new QueryClient();
   const trpc = createTRPCOptionsProxy({ client, queryClient });
   onTestFinished(() => {
@@ -256,9 +256,15 @@ test("hidden view stops renewal, expired return renews, and exit ignores stale c
     downloadUrl: "https://downloads.test/grant.pdf",
     expiresAt: "2026-09-09T12:02:00Z",
   };
+  const nextGrant: RouterOutputs["wizard"]["refreshDownloadGrant"] = {
+    downloadUrl: "https://downloads.test/fresh.pdf",
+    expiresAt: "2026-09-09T12:04:00Z",
+  };
   const next =
     Promise.withResolvers<RouterOutputs["wizard"]["refreshDownloadGrant"]>();
-  request.mockReturnValueOnce(next.promise);
+  const stale =
+    Promise.withResolvers<RouterOutputs["wizard"]["refreshDownloadGrant"]>();
+  request.mockReturnValueOnce(next.promise).mockReturnValueOnce(stale.promise);
   vi.useFakeTimers();
   vi.setSystemTime(new Date("2026-09-09T12:00:00Z"));
   const visibility = vi.spyOn(document, "visibilityState", "get");
@@ -281,28 +287,38 @@ test("hidden view stops renewal, expired return renews, and exit ignores stale c
   act(() => {
     document.dispatchEvent(new Event("visibilitychange"));
   });
-  await act(async () => {
-    await vi.advanceTimersByTimeAsync(GRANT_LIFETIME_MS);
-  });
+  vi.setSystemTime(new Date("2026-09-09T12:02:01Z"));
   expect(request).not.toHaveBeenCalled();
-  expect(screen.queryByRole("link")).not.toBeInTheDocument();
   visibility.mockReturnValue("visible");
   act(() => {
     document.dispatchEvent(new Event("visibilitychange"));
   });
+  expect(screen.getByRole("status")).toHaveTextContent("Renewing download");
+  expect(
+    screen.queryByRole("link", { name: "Download PDF" }),
+  ).not.toBeInTheDocument();
   await act(async () => {
-    await vi.advanceTimersByTimeAsync(FLUSH_MS);
+    next.resolve(nextGrant);
+    await next.promise;
   });
+  expect(screen.getByRole("link", { name: "Download PDF" })).toHaveAttribute(
+    "href",
+    nextGrant.downloadUrl,
+  );
   expect(request).toHaveBeenCalledOnce();
+  await act(async () => {
+    await vi.advanceTimersByTimeAsync(GRANT_LIFETIME_MS - RENEWAL_LEAD_MS);
+  });
+  expect(request).toHaveBeenCalledTimes(SECOND_ATTEMPT_COUNT);
   unmount();
   await act(async () => {
-    next.resolve(grant);
-    await next.promise;
+    stale.resolve(nextGrant);
+    await stale.promise;
     await vi.advanceTimersByTimeAsync(GRANT_LIFETIME_MS);
   });
   expect(screen.queryByRole("link")).not.toBeInTheDocument();
   expect(queryClient.getQueryCache().getAll()).toHaveLength(NO_CACHED_QUERIES);
-  expect(request).toHaveBeenCalledOnce();
+  expect(request).toHaveBeenCalledTimes(SECOND_ATTEMPT_COUNT);
 });
 
 test.each(["deleted", "already missing", "CONFLICT"] as const)(
