@@ -1,12 +1,20 @@
 import { once } from "node:events";
 
-import { CancelledError } from "@tanstack/react-query";
+import { CancelledError, QueryClient } from "@tanstack/react-query";
 import { getRequest } from "@tanstack/react-start/server";
+import { createTRPCOptionsProxy } from "@trpc/tanstack-react-query";
 import ky from "ky";
 import { afterEach, expect, onTestFinished, test, vi } from "vitest";
 
+import type { WorkflowOutput } from "#/domains/wizard/components/wizard/wizard.test-helper";
+import { createTestTRPCClient } from "#/domains/wizard/components/wizard/wizard.test-helper";
+import { loadResult } from "#/routes/_wizard.result";
+import { loadReview } from "#/routes/_wizard.review";
 import { createWorkflowHttpClient } from "#/shared/libs/ky/workflow-http-client.mod.server";
-import type { RouterInputs } from "#/shared/libs/trpc/client/client.mod";
+import type {
+  RouterInputs,
+  RouterOutputs,
+} from "#/shared/libs/trpc/client/client.mod";
 import {
   getRouterContext,
   initializeTRPCClient,
@@ -45,6 +53,8 @@ const FRONTEND_URL = "https://frontend.test/";
 const STORAGE_KEY = "uploads/00000000-0000-4000-8000-000000000001";
 const CANONICAL_ETAG = "0123456789abcdef0123456789abcdef";
 const MINIMUM_FILE_SIZE_BYTES = 1;
+const TWO_REQUESTS = 2;
+const GRANT_LIFETIME_MS = 120_000;
 
 afterEach(() => {
   vi.useRealTimers();
@@ -329,3 +339,85 @@ test("confirmDelete does not retry a processing-eligible 503", async () => {
   expect(error.message).toBe(CONFIRM_DELETE_FAILURE_MESSAGE);
   expect(fetchMock).toHaveBeenCalledOnce();
 });
+
+test.each(["review", "result"] as const)(
+  "%s overlapping same-key loaders keep separate requests when the old one aborts",
+  async (step) => {
+    const { request, client } = createTestTRPCClient();
+    const queryClient = new QueryClient();
+    const trpc = createTRPCOptionsProxy({ client, queryClient });
+    const loader = step === "review" ? loadReview : loadResult;
+    const loaderDependencies: RouterInputs["wizard"]["refreshDownloadGrant"] = {
+      storageKey: "uploads/00000000-0000-4000-8000-000000000001",
+      etag: "0123456789abcdef0123456789abcdef",
+    };
+    const oldController = new AbortController();
+    const newController = new AbortController();
+    const oldResponse = Promise.withResolvers<WorkflowOutput>();
+    const newResponse = Promise.withResolvers<WorkflowOutput>();
+    request
+      .mockReturnValueOnce(oldResponse.promise)
+      .mockReturnValueOnce(newResponse.promise);
+    const previous = loader({
+      abortController: oldController,
+      context: { trpc },
+      deps: loaderDependencies,
+    });
+    const oldSettled = vi.fn();
+    void Promise.resolve(previous).then(oldSettled).catch(oldSettled);
+    const current = loader({
+      abortController: newController,
+      context: { trpc },
+      deps: loaderDependencies,
+    });
+    const newSettled = vi.fn();
+    void Promise.resolve(current).then(newSettled).catch(newSettled);
+    onTestFinished(() => {
+      oldController.abort();
+      newController.abort();
+      oldResponse.resolve({
+        etag: loaderDependencies.etag,
+        fields: [],
+      } satisfies RouterOutputs["wizard"]["dryRun"]);
+      newResponse.resolve({
+        etag: loaderDependencies.etag,
+        fields: [],
+      } satisfies RouterOutputs["wizard"]["dryRun"]);
+      queryClient.clear();
+    });
+    await vi.waitFor(() => {
+      expect(request).toHaveBeenCalledTimes(TWO_REQUESTS);
+    });
+    oldController.abort();
+    const [oldRequest, newRequest] = request.mock.calls;
+    expect(oldRequest).toMatchObject([{ signal: { aborted: true } }]);
+    expect(newRequest).toMatchObject([{ signal: { aborted: false } }]);
+    await vi.waitFor(() => {
+      expect(oldSettled).toHaveBeenCalledOnce();
+    });
+    await expect(previous).rejects.toMatchObject({ name: "AbortError" });
+    expect(newSettled).not.toHaveBeenCalled();
+    const inspected: RouterOutputs["wizard"]["dryRun"] = {
+      etag: loaderDependencies.etag,
+      fields: [
+        {
+          name: "title",
+          label: "New title",
+          preview: "new",
+          originalByteSize: 3,
+          action: "remove",
+        },
+      ],
+    };
+    const grant: RouterOutputs["wizard"]["refreshDownloadGrant"] = {
+      downloadUrl: "https://downloads.test/new.pdf",
+      expiresAt: new Date(Date.now() + GRANT_LIFETIME_MS).toISOString(),
+    };
+    newResponse.resolve(step === "review" ? inspected : grant);
+    await expect(current).resolves.toEqual(
+      step === "review"
+        ? { revision: loaderDependencies, fields: inspected.fields }
+        : { revision: loaderDependencies, grant },
+    );
+  },
+);
