@@ -34,6 +34,7 @@ const FIVE_SECONDS_MS = 5000;
 const ONE_MILLISECOND_MS = 1;
 const INITIAL_FETCH_ATTEMPT_COUNT = 1;
 const TWO_FETCH_ATTEMPTS = 2;
+const FIXED_RANDOM_VALUE = 0.5;
 
 const unavailableResponse = (): Response => {
   return Response.json(
@@ -67,6 +68,7 @@ afterEach(() => {
 });
 
 test("an eligible 503 waits for the server Retry-After value before it retries", async () => {
+  vi.spyOn(Math, "random").mockReturnValue(FIXED_RANDOM_VALUE);
   vi.useFakeTimers();
   const fetchMock = vi
     .fn<typeof fetch>()
