@@ -19,6 +19,7 @@ export const WORKFLOW_NO_RETRY_OPTIONS = {
 } satisfies RetryOptions;
 
 export const WORKFLOW_SERVER_DIRECTED_RETRY_OPTIONS = {
+  jitter: true,
   limit: WORKFLOW_RETRY_LIMIT,
   methods: ["post"],
   retryOnTimeout: false,
