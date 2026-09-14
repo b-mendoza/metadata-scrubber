@@ -48,8 +48,9 @@ beforeEach(() => {
 });
 afterEach(() => {
   vi.useRealTimers();
+  vi.unstubAllGlobals();
+  onlineManager.setOnline(true);
 });
-
 test.each(["review", "result"] as const)(
   "%s abort settles before the pending response and releases its listeners",
   async (step) => {
@@ -105,6 +106,7 @@ test.each(["review", "result"] as const)(
     );
   },
 );
+
 test.each(["review", "result"] as const)(
   "%s starts no request for a pre-aborted entry",
   async (step) => {
@@ -130,6 +132,95 @@ test.each(["review", "result"] as const)(
     expect(request).not.toHaveBeenCalled();
     expect(focusManager.hasListeners()).toBe(false);
     expect(onlineManager.hasListeners()).toBe(false);
+  },
+);
+test.each([
+  ["review", true],
+  ["result", true],
+  ["review", false],
+  ["result", false],
+] as const)(
+  "%s offline loader with abort=%s resumes only while live",
+  async (step, abort) => {
+    const queryClient = new QueryClient();
+    const trpc = createTRPCOptionsProxy({ client, queryClient });
+    const loader = step === "review" ? loadReview : loadResult;
+    const loaderDependencies: RouterInputs["wizard"]["refreshDownloadGrant"] = {
+      storageKey: "uploads/00000000-0000-4000-8000-000000000001",
+      etag: "0123456789abcdef0123456789abcdef",
+    };
+    const inspected: RouterOutputs["wizard"]["dryRun"] = {
+      etag: loaderDependencies.etag,
+      fields: [
+        {
+          name: "title",
+          label: "Title",
+          preview: "new",
+          originalByteSize: 3,
+          action: "remove",
+        },
+      ],
+    };
+    const grant: RouterOutputs["wizard"]["refreshDownloadGrant"] = {
+      downloadUrl: "https://downloads.test/entry.pdf",
+      expiresAt: new Date(Date.now() + GRANT_LIFETIME_MS).toISOString(),
+    };
+    request.mockResolvedValueOnce(step === "review" ? inspected : grant);
+    const abortController = new AbortController();
+    const addListener = vi.spyOn(abortController.signal, "addEventListener");
+    const removeListener = vi.spyOn(
+      abortController.signal,
+      "removeEventListener",
+    );
+    vi.useFakeTimers();
+    onlineManager.setOnline(false);
+    const operation = loader({
+      abortController,
+      context: { trpc },
+      deps: loaderDependencies,
+    });
+    const settled = vi.fn();
+    void Promise.resolve(operation).then(settled).catch(settled);
+    onTestFinished(() => {
+      abortController.abort();
+      queryClient.clear();
+    });
+    expect(request).not.toHaveBeenCalled();
+    if (abort) {
+      abortController.abort();
+      await vi.waitFor(() => {
+        expect(settled).toHaveBeenCalledOnce();
+      });
+      await expect(operation).rejects.toMatchObject({ name: "AbortError" });
+    }
+    onlineManager.setOnline(true);
+    if (abort) {
+      await vi.advanceTimersByTimeAsync(FLUSH_MS);
+      expect(request).not.toHaveBeenCalled();
+    } else {
+      await vi.waitFor(() => {
+        expect(settled).toHaveBeenCalledOnce();
+      });
+      expect(request).toHaveBeenCalledOnce();
+      await expect(operation).resolves.toEqual(
+        step === "review"
+          ? { revision: loaderDependencies, fields: inspected.fields }
+          : { revision: loaderDependencies, grant },
+      );
+    }
+    const abortRegistration = addListener.mock.calls.find(
+      ([event]) => event === "abort",
+    );
+    expect(abortRegistration).toBeDefined();
+    expect(removeListener).toHaveBeenCalledWith(
+      "abort",
+      abortRegistration?.[EVENT_LISTENER_INDEX],
+    );
+    expect(focusManager.hasListeners()).toBe(false);
+    expect(onlineManager.hasListeners()).toBe(false);
+    expect(queryClient.getQueryCache().getAll()).toHaveLength(
+      EMPTY_QUERY_COUNT,
+    );
   },
 );
 test.each(["review-loader", "result-loader"] as const)(
