@@ -1,13 +1,24 @@
 import { once } from "node:events";
 
-import { afterEach, expect, test, vi } from "vitest";
+import { CancelledError } from "@tanstack/react-query";
+import { getRequest } from "@tanstack/react-start/server";
+import ky from "ky";
+import { afterEach, expect, onTestFinished, test, vi } from "vitest";
 
+import { createWorkflowHttpClient } from "#/shared/libs/ky/workflow-http-client.mod.server";
 import type { RouterInputs } from "#/shared/libs/trpc/client/client.mod";
+import {
+  getRouterContext,
+  initializeTRPCClient,
+} from "#/shared/libs/trpc/client/client.mod";
+import { getAppBindings } from "#/shared/middlewares/app-bindings/app-bindings.mod";
 
 import type {
   BackendErrorResponse,
   DryRunInput,
+  DryRunResponse,
   RefreshDownloadGrantInput,
+  RefreshDownloadGrantResponse,
 } from "./wizard-contracts.mod.server";
 import {
   CONFIRM_DELETE_FAILURE_MESSAGE,
@@ -20,6 +31,10 @@ import {
   callerForRequest,
   requireTRPCError,
 } from "./wizard-router.test-helper";
+
+vi.mock(import("@tanstack/react-start/server"), () => ({
+  getRequest: vi.fn(),
+}));
 
 vi.mock(import("#/shared/middlewares/app-bindings/app-bindings.mod"), () => ({
   getAppBindings: vi.fn(),
@@ -35,6 +50,109 @@ afterEach(() => {
   vi.useRealTimers();
   vi.unstubAllGlobals();
 });
+
+test.each([
+  ["dryRun", true],
+  ["refreshDownloadGrant", true],
+  ["dryRun", false],
+  ["refreshDownloadGrant", false],
+] as const)(
+  "SSR Query %s with abort=%s preserves its backend transport contract",
+  async (procedure, abort) => {
+    const inspected: DryRunResponse = {
+      etag: CANONICAL_ETAG,
+      fields: [
+        {
+          name: "title",
+          label: "Title",
+          preview: "private",
+          originalByteSize: 7,
+          action: "remove",
+        },
+      ],
+    };
+    const grant: RefreshDownloadGrantResponse = {
+      downloadUrl: "https://downloads.test/report.pdf",
+      expiresAt: "2099-01-01T00:00:00Z",
+    };
+    const response = procedure === "dryRun" ? inspected : grant;
+    const pending = Promise.withResolvers<Response>();
+    const started = Promise.withResolvers<Request>();
+    const fetchMock = vi.fn<typeof fetch>(async (input, init) => {
+      const backendRequest = new Request(input, init);
+      started.resolve(backendRequest);
+      return pending.promise;
+    });
+    vi.stubGlobal("fetch", fetchMock);
+    vi.mocked(getRequest).mockReturnValue(new Request(FRONTEND_URL));
+    vi.mocked(getAppBindings).mockReturnValue({
+      httpClient: ky.create({ baseUrl: BACKEND_BASE_URL }),
+      workflowHttpClient: createWorkflowHttpClient(BACKEND_BASE_URL),
+    });
+    const { queryClient, trpc } = getRouterContext(
+      initializeTRPCClient(new URL("/api/trpc", FRONTEND_URL)),
+    );
+    queryClient.mount();
+    onTestFinished(() => {
+      pending.resolve(Response.json(response));
+      queryClient.clear();
+      queryClient.unmount();
+    });
+    const settled = vi.fn<(outcome: unknown) => void>();
+    const dryRunInput: RouterInputs["wizard"]["dryRun"] = {
+      storageKey: STORAGE_KEY,
+    };
+    const grantInput: RouterInputs["wizard"]["refreshDownloadGrant"] = {
+      storageKey: STORAGE_KEY,
+      etag: CANONICAL_ETAG,
+    };
+    const operation =
+      procedure === "dryRun"
+        ? queryClient.query(
+            trpc.wizard.dryRun.queryOptions(dryRunInput, {
+              retry: false,
+              staleTime: 0,
+              gcTime: 0,
+              trpc: { abortOnUnmount: true },
+            }),
+          )
+        : queryClient.query(
+            trpc.wizard.refreshDownloadGrant.queryOptions(grantInput, {
+              retry: false,
+              staleTime: 0,
+              gcTime: 0,
+              trpc: { abortOnUnmount: true },
+            }),
+          );
+    void Promise.resolve(operation).then(settled).catch(settled);
+    const backendRequest = await started.promise;
+    expect(backendRequest.signal.aborted).toBe(false);
+    if (abort) {
+      await queryClient.cancelQueries();
+      expect(backendRequest.signal.aborted).toBe(true);
+      await vi.waitFor(() => {
+        expect(settled).toHaveBeenCalledOnce();
+      });
+      expect(settled).toHaveBeenCalledWith(expect.any(CancelledError));
+    } else {
+      pending.resolve(Response.json(response));
+      await expect(operation).resolves.toEqual(response);
+    }
+    expect(fetchMock).toHaveBeenCalledOnce();
+    expect(backendRequest.method).toBe("POST");
+    expect(backendRequest.url).toBe(
+      new URL(
+        procedure === "dryRun"
+          ? "/api/files/dry-run"
+          : "/api/files/download-grant",
+        BACKEND_BASE_URL,
+      ).href,
+    );
+    await expect(backendRequest.clone().json()).resolves.toEqual(
+      procedure === "dryRun" ? dryRunInput : grantInput,
+    );
+  },
+);
 
 test("an unclassified transport failure maps to BAD_GATEWAY without public details", async () => {
   const input: RouterInputs["wizard"]["createUpload"] = {
