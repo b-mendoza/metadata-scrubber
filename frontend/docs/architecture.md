@@ -62,7 +62,7 @@ Developers build the frontend with [TanStack Start](https://tanstack.com/start) 
 - `dryRun` uses a 90-second attempt timeout and a 90-second total timeout.
 - `scrubFile` uses a 240-second attempt timeout and a 240-second total timeout.
 - Dry-run and scrub permit at most two retries for `POST` responses with status `503`. Recognized network errors also retry under Ky's native policy. Timeouts and other response status codes do not retry.
-- Ky handles `Retry-After`. The workflow client adds no header parsing, validation, minimum, or cap. An absent or malformed header uses Ky's default delay. Attempt and total timeouts still bound each operation.
+- Ky handles `Retry-After`. The workflow client adds no header parsing, validation, minimum, or cap. An absent or malformed header uses Ky's calculated delay with native full jitter. `jitter: true` does not change a valid `Retry-After` delay. Attempt and total timeouts still bound each operation.
 - Backend status `400`, `404`, `408`, `409`, `413`, `415`, `422`, and `503` map to the matching safe tRPC error code.
 - A Ky timeout maps to `TIMEOUT`. Invalid backend success JSON and invalid backend error JSON map to `BAD_GATEWAY`. Other upstream failures also map to `BAD_GATEWAY`.
 - Public tRPC errors do not include backend error text, provider details, credentials, object keys, request IDs, or presigned URL details.
