@@ -228,6 +228,9 @@ test.each(["expired", "short", "missing"] as const)(
       screen.queryByRole("link", { name: "Download PDF" }),
     ).not.toBeInTheDocument();
     if (boundary === "missing") {
+      act(() => {
+        document.dispatchEvent(new Event("visibilitychange"));
+      });
       expect(screen.getByRole("alert")).toHaveTextContent(
         "The scrubbed PDF is missing.",
       );
