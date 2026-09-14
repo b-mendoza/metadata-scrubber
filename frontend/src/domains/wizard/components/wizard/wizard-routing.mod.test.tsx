@@ -19,6 +19,7 @@ import {
 import type { WorkflowOutput } from "#/domains/wizard/components/wizard/wizard.test-helper";
 import { createTestTRPCClient } from "#/domains/wizard/components/wizard/wizard.test-helper";
 import { Route as RootRoute } from "#/routes/__root";
+import { loadResult } from "#/routes/_wizard.result";
 import { routeTree } from "#/routeTree.gen";
 import type {
   RouterInputs,
@@ -32,6 +33,7 @@ Object.assign(RootRoute.options, {
 });
 const { request, client } = createTestTRPCClient();
 const TWO_REQUESTS = 2;
+const FLUSH_MS = 0;
 const GRANT_LIFETIME_MS = 120_000;
 const NORMAL_STALE_MS = 60_000;
 beforeEach(() => {
@@ -288,6 +290,81 @@ test.each(["review", "result"] as const)(
     expect(router.state.location.search).toEqual({ kind: "missing-source" });
   },
 );
+
+test("an old same-key result loader cannot cancel component renewal", async () => {
+  const queryClient = new QueryClient();
+  const trpc = createTRPCOptionsProxy({ client, queryClient });
+  const revision: RouterInputs["wizard"]["refreshDownloadGrant"] = {
+    storageKey: "uploads/00000000-0000-4000-8000-000000000001",
+    etag: "0123456789abcdef0123456789abcdef",
+  };
+  const history = createMemoryHistory({
+    initialEntries: [`/result?${new URLSearchParams(revision)}`],
+  });
+  const router = createRouter({
+    routeTree,
+    history,
+    context: { queryClient, trpc },
+  });
+  const oldController = new AbortController();
+  const abandoned = Promise.withResolvers<WorkflowOutput>();
+  const renewal = Promise.withResolvers<WorkflowOutput>();
+  const grant: RouterOutputs["wizard"]["refreshDownloadGrant"] = {
+    downloadUrl: "https://downloads.test/entry.pdf",
+    expiresAt: new Date(Date.now() + GRANT_LIFETIME_MS).toISOString(),
+  };
+  request
+    .mockReturnValueOnce(abandoned.promise)
+    .mockResolvedValueOnce(grant)
+    .mockReturnValueOnce(renewal.promise);
+  const oldOperation = loadResult({
+    abortController: oldController,
+    context: { trpc },
+    deps: revision,
+  });
+  const canceled = expect(oldOperation).rejects.toMatchObject({
+    name: "AbortError",
+  });
+  const { unmount } = renderComponent(
+    <QueryClientProvider client={queryClient}>
+      <RouterProvider router={router} />
+    </QueryClientProvider>,
+  );
+  onTestFinished(() => {
+    unmount();
+    oldController.abort();
+    abandoned.resolve(grant);
+    renewal.resolve(grant);
+    queryClient.clear();
+    history.destroy();
+  });
+  await screen.findByRole("link", { name: "Download PDF" });
+  expect(request).toHaveBeenCalledTimes(TWO_REQUESTS);
+  vi.useFakeTimers();
+  const RENEWAL_TIME_MS = 90_000;
+  await act(async () => {
+    document.dispatchEvent(new Event("visibilitychange"));
+    await vi.advanceTimersByTimeAsync(RENEWAL_TIME_MS);
+  });
+  const THREE_REQUESTS = 3;
+  expect(request).toHaveBeenCalledTimes(THREE_REQUESTS);
+  act(() => {
+    oldController.abort();
+  });
+  await canceled;
+  const renewed: RouterOutputs["wizard"]["refreshDownloadGrant"] = {
+    downloadUrl: "https://downloads.test/renewed.pdf",
+    expiresAt: new Date(Date.now() + GRANT_LIFETIME_MS).toISOString(),
+  };
+  await act(async () => {
+    renewal.resolve(renewed);
+    await vi.advanceTimersByTimeAsync(FLUSH_MS);
+  });
+  expect(screen.getByRole("link", { name: "Download PDF" })).toHaveAttribute(
+    "href",
+    renewed.downloadUrl,
+  );
+});
 
 test.each(["review", "result-key", "result-etag"] as const)(
   "%s changes load the new identifiers and ignore the old pending loader",
