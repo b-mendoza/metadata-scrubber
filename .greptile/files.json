@@ -29,7 +29,7 @@
       "scope": ["frontend/src/**"]
     },
     {
-      "path": "frontend/docs/agent/code-conventions.md",
+      "path": "frontend/docs/agent/STEERING/server-module-naming.md",
       "description": "Frontend TypeScript design guidance.",
       "scope": ["frontend/src/**"]
     }
