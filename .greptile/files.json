@@ -10,7 +10,7 @@
       "scope": ["backend/**", "frontend/src/**"]
     },
     {
-      "path": "docs/agent/testing.md",
+      "path": "docs/agent/STEERING/test-app-decisions.md",
       "description": "Repository guidance for useful tests and partial assertions.",
       "scope": [
         "backend/**/*_test.go",
