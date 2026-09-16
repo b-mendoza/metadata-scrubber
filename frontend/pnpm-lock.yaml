@@ -168,7 +168,7 @@ importers:
     dependencies:
       '@ai-sdk/react':
         specifier: 4.0.102
-        version: 4.0.102(react@19.3.0)(zod@4.6.2)
+        version: 4.0.102(react@19.3.0)(zod@4.6.4)
       '@aws-sdk/client-s3':
         specifier: 3.1131.0
         version: 3.1131.0
@@ -180,10 +180,10 @@ importers:
         version: 2.1.1
       '@hookform/resolvers':
         specifier: 5.9.1
-        version: 5.9.1(@standard-schema/spec@1.1.0)(react-hook-form@7.88.0(react@19.3.0))(zod@4.6.2)
+        version: 5.9.1(@standard-schema/spec@1.1.0)(react-hook-form@7.88.0(react@19.3.0))(zod@4.6.4)
       '@openrouter/ai-sdk-provider':
         specifier: 3.0.0
-        version: 3.0.0(ai@7.0.99(zod@4.6.2))(zod@4.6.2)
+        version: 3.0.0(ai@7.0.99(zod@4.6.4))(zod@4.6.4)
       '@tanstack/react-query':
         specifier: 5.102.8
         version: 5.102.8(react@19.3.0)
@@ -228,7 +228,7 @@ importers:
         version: 6.0.0(@uppy/core@6.0.1)(@uppy/dashboard@6.0.0(@uppy/core@6.0.1))(@uppy/google-drive-picker@2.0.0(@uppy/core@6.0.1))(@uppy/google-photos-picker@2.0.0(@uppy/core@6.0.1))(react-dom@19.3.0(react@19.3.0))(react@19.3.0)
       ai:
         specifier: 7.0.99
-        version: 7.0.99(zod@4.6.2)
+        version: 7.0.99(zod@4.6.4)
       clsx:
         specifier: 2.1.1
         version: 2.1.1
@@ -240,7 +240,7 @@ importers:
         version: 5.9.2
       drizzle-orm:
         specifier: 1.0.0-rc.4
-        version: 1.0.0-rc.4(postgres@3.4.9)(zod@4.6.2)
+        version: 1.0.0-rc.4(postgres@3.4.9)(zod@4.6.4)
       isbot:
         specifier: 5.2.2
         version: 5.2.2
@@ -278,8 +278,8 @@ importers:
         specifier: 4.3.3
         version: 4.3.3
       zod:
-        specifier: 4.6.2
-        version: 4.6.2
+        specifier: 4.6.4
+        version: 4.6.4
     devDependencies:
       '@e18e/eslint-plugin':
         specifier: 0.8.0
@@ -397,7 +397,7 @@ importers:
         version: 74.0.0(eslint@10.10.0(jiti@2.7.0)(supports-color@7.2.0))
       eslint-plugin-zod:
         specifier: 4.12.1
-        version: 4.12.1(eslint@10.10.0(jiti@2.7.0)(supports-color@7.2.0))(oxlint@1.82.0(oxlint-tsgolint@7.0.2001))(supports-color@7.2.0)(typescript@6.0.3)(zod@4.6.2)
+        version: 4.12.1(eslint@10.10.0(jiti@2.7.0)(supports-color@7.2.0))(oxlint@1.82.0(oxlint-tsgolint@7.0.2001))(supports-color@7.2.0)(typescript@6.0.3)(zod@4.6.4)
       globals:
         specifier: 17.12.0
         version: 17.12.0
@@ -4934,8 +4934,8 @@ packages:
     peerDependencies:
       zod: ^3.25.0 || ^4.0.0
 
-  zod@4.6.2:
-    resolution: {integrity: sha512-lh5RCAGFa1Cm2hjtNwLQhSs/AsqdWnTQaBER9fEwN/88pSh7KOtJavtBx/0VlkN/uFd61SwYmljLMDAsHlvzBQ==}
+  zod@4.6.4:
+    resolution: {integrity: sha512-AXSD6hvGdvRjajG/l1cC+d6IrhH+sjmPKtYeQdJIK8MFJl3LyClzS+o/YsVC+zQZPupAaeH5skwwm8YqYH7BqA==}
 
   zwitch@2.0.4:
     resolution: {integrity: sha512-bXE4cR/kVZhKZX/RjPEflHaKVhUVl85noU3v6b8apfQEc1x4A+zBxjZ4lN8LqGd6WZ3dl98pY4o717VFmoPp+A==}
@@ -4944,40 +4944,40 @@ snapshots:
 
   '@adobe/css-tools@4.5.0': {}
 
-  '@ai-sdk/gateway@4.0.80(zod@4.6.2)':
+  '@ai-sdk/gateway@4.0.80(zod@4.6.4)':
     dependencies:
       '@ai-sdk/provider': 4.0.14
-      '@ai-sdk/provider-utils': 5.0.40(zod@4.6.2)
+      '@ai-sdk/provider-utils': 5.0.40(zod@4.6.4)
       '@vercel/oidc': 3.2.0
-      zod: 4.6.2
+      zod: 4.6.4
 
-  '@ai-sdk/mcp@2.0.49(zod@4.6.2)':
+  '@ai-sdk/mcp@2.0.49(zod@4.6.4)':
     dependencies:
       '@ai-sdk/provider': 4.0.14
-      '@ai-sdk/provider-utils': 5.0.40(zod@4.6.2)
+      '@ai-sdk/provider-utils': 5.0.40(zod@4.6.4)
       cross-spawn: 7.0.6
       pkce-challenge: 5.0.1
-      zod: 4.6.2
+      zod: 4.6.4
 
-  '@ai-sdk/provider-utils@5.0.40(zod@4.6.2)':
+  '@ai-sdk/provider-utils@5.0.40(zod@4.6.4)':
     dependencies:
       '@ai-sdk/provider': 4.0.14
       '@standard-schema/spec': 1.1.0
       '@workflow/serde': 4.1.0
       eventsource-parser: 3.1.1
       undici: 7.29.0
-      zod: 4.6.2
+      zod: 4.6.4
 
   '@ai-sdk/provider@4.0.14':
     dependencies:
       json-schema: 0.4.0
 
-  '@ai-sdk/react@4.0.102(react@19.3.0)(zod@4.6.2)':
+  '@ai-sdk/react@4.0.102(react@19.3.0)(zod@4.6.4)':
     dependencies:
-      '@ai-sdk/mcp': 2.0.49(zod@4.6.2)
+      '@ai-sdk/mcp': 2.0.49(zod@4.6.4)
       '@ai-sdk/provider': 4.0.14
-      '@ai-sdk/provider-utils': 5.0.40(zod@4.6.2)
-      ai: 7.0.99(zod@4.6.2)
+      '@ai-sdk/provider-utils': 5.0.40(zod@4.6.4)
+      ai: 7.0.99(zod@4.6.4)
       react: 19.3.0
       swr: 2.5.1(react@19.3.0)
       throttleit: 2.1.0
@@ -5558,7 +5558,7 @@ snapshots:
       eslint: 10.10.0(jiti@2.7.0)(supports-color@7.2.0)
       ts-pattern: 5.9.0
       typescript: 6.0.3
-      zod: 4.6.2
+      zod: 4.6.4
     transitivePeerDependencies:
       - supports-color
 
@@ -5618,13 +5618,13 @@ snapshots:
 
   '@faker-js/faker@10.6.0': {}
 
-  '@hookform/resolvers@5.9.1(@standard-schema/spec@1.1.0)(react-hook-form@7.88.0(react@19.3.0))(zod@4.6.2)':
+  '@hookform/resolvers@5.9.1(@standard-schema/spec@1.1.0)(react-hook-form@7.88.0(react@19.3.0))(zod@4.6.4)':
     dependencies:
       '@standard-schema/utils': 0.3.0
       react-hook-form: 7.88.0(react@19.3.0)
     optionalDependencies:
       '@standard-schema/spec': 1.1.0
-      zod: 4.6.2
+      zod: 4.6.4
 
   '@humanfs/core@0.19.2':
     dependencies:
@@ -5725,10 +5725,10 @@ snapshots:
 
   '@oozcitak/util@10.0.0': {}
 
-  '@openrouter/ai-sdk-provider@3.0.0(ai@7.0.99(zod@4.6.2))(zod@4.6.2)':
+  '@openrouter/ai-sdk-provider@3.0.0(ai@7.0.99(zod@4.6.4))(zod@4.6.4)':
     dependencies:
-      ai: 7.0.99(zod@4.6.2)
-      zod: 4.6.2
+      ai: 7.0.99(zod@4.6.4)
+      zod: 4.6.4
 
   '@oxc-parser/binding-android-arm-eabi@0.120.0':
     optional: true
@@ -6512,7 +6512,7 @@ snapshots:
       jiti: 2.7.0
       magic-string: 0.30.21
       prettier: 3.9.6
-      zod: 4.6.2
+      zod: 4.6.4
     transitivePeerDependencies:
       - supports-color
 
@@ -6526,7 +6526,7 @@ snapshots:
       '@tanstack/router-utils': 1.162.3(supports-color@7.2.0)
       chokidar: 5.0.0
       unplugin: 3.3.0(rolldown@1.2.5)(vite@8.3.0(@types/node@25.9.6)(jiti@2.7.0)(yaml@2.9.0))
-      zod: 4.6.2
+      zod: 4.6.4
     optionalDependencies:
       '@tanstack/react-router': 1.170.35(react-dom@19.3.0(react@19.3.0))(react@19.3.0)
       vite: 8.3.0(@types/node@25.9.6)(jiti@2.7.0)(yaml@2.9.0)
@@ -6589,7 +6589,7 @@ snapshots:
       ufo: 1.6.4
       vitefu: 1.1.3(vite@8.3.0(@types/node@25.9.6)(jiti@2.7.0)(yaml@2.9.0))
       xmlbuilder2: 4.0.3
-      zod: 4.6.2
+      zod: 4.6.4
     optionalDependencies:
       vite: 8.3.0(@types/node@25.9.6)(jiti@2.7.0)(yaml@2.9.0)
     transitivePeerDependencies:
@@ -7215,12 +7215,12 @@ snapshots:
 
   acorn@8.18.0: {}
 
-  ai@7.0.99(zod@4.6.2):
+  ai@7.0.99(zod@4.6.4):
     dependencies:
-      '@ai-sdk/gateway': 4.0.80(zod@4.6.2)
+      '@ai-sdk/gateway': 4.0.80(zod@4.6.4)
       '@ai-sdk/provider': 4.0.14
-      '@ai-sdk/provider-utils': 5.0.40(zod@4.6.2)
-      zod: 4.6.2
+      '@ai-sdk/provider-utils': 5.0.40(zod@4.6.4)
+      zod: 4.6.4
 
   ajv@6.15.0:
     dependencies:
@@ -7419,10 +7419,10 @@ snapshots:
       get-tsconfig: 4.14.3
       jiti: 2.7.0
 
-  drizzle-orm@1.0.0-rc.4(postgres@3.4.9)(zod@4.6.2):
+  drizzle-orm@1.0.0-rc.4(postgres@3.4.9)(zod@4.6.4):
     optionalDependencies:
       postgres: 3.4.9
-      zod: 4.6.2
+      zod: 4.6.4
 
   electron-to-chromium@1.5.412: {}
 
@@ -7583,8 +7583,8 @@ snapshots:
       '@babel/parser': 7.29.8
       eslint: 10.10.0(jiti@2.7.0)(supports-color@7.2.0)
       hermes-parser: 0.25.1
-      zod: 4.6.2
-      zod-validation-error: 4.0.2(zod@4.6.2)
+      zod: 4.6.4
+      zod-validation-error: 4.0.2(zod@4.6.4)
     transitivePeerDependencies:
       - supports-color
 
@@ -7728,14 +7728,14 @@ snapshots:
       strip-indent: 4.1.1
       yaml: 2.9.0
 
-  eslint-plugin-zod@4.12.1(eslint@10.10.0(jiti@2.7.0)(supports-color@7.2.0))(oxlint@1.82.0(oxlint-tsgolint@7.0.2001))(supports-color@7.2.0)(typescript@6.0.3)(zod@4.6.2):
+  eslint-plugin-zod@4.12.1(eslint@10.10.0(jiti@2.7.0)(supports-color@7.2.0))(oxlint@1.82.0(oxlint-tsgolint@7.0.2001))(supports-color@7.2.0)(typescript@6.0.3)(zod@4.6.4):
     dependencies:
       '@eslint-zod/utils': 4.0.0(eslint@10.10.0(jiti@2.7.0)(supports-color@7.2.0))(supports-color@7.2.0)(typescript@6.0.3)
       '@typescript-eslint/utils': 8.70.0(eslint@10.10.0(jiti@2.7.0)(supports-color@7.2.0))(supports-color@7.2.0)(typescript@6.0.3)
     optionalDependencies:
       eslint: 10.10.0(jiti@2.7.0)(supports-color@7.2.0)
       oxlint: 1.82.0(oxlint-tsgolint@7.0.2001)
-      zod: 4.6.2
+      zod: 4.6.4
     transitivePeerDependencies:
       - supports-color
       - typescript
@@ -9201,10 +9201,10 @@ snapshots:
 
   yocto-queue@0.1.0: {}
 
-  zod-validation-error@4.0.2(zod@4.6.2):
+  zod-validation-error@4.0.2(zod@4.6.4):
     dependencies:
-      zod: 4.6.2
+      zod: 4.6.4
 
-  zod@4.6.2: {}
+  zod@4.6.4: {}
 
   zwitch@2.0.4: {}
