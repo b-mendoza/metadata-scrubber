@@ -1,17 +1,9 @@
-import { TRPCError } from "@trpc/server";
-import ky from "ky";
 import { afterEach, expect, test, vi } from "vitest";
 
 import {
   CONFLICT_STATUS_CODE,
   NOT_FOUND_STATUS_CODE,
 } from "#/shared/constants/http/status-codes/status-codes.mod";
-import { createWorkflowHttpClient } from "#/shared/libs/ky/workflow-http-client.mod.server";
-import {
-  createCallerFactory,
-  createTRPCRequestContext,
-} from "#/shared/libs/trpc/utils/initializer/initializer.mod.server";
-import { getAppBindings } from "#/shared/middlewares/app-bindings/app-bindings.mod";
 
 import type {
   BackendErrorResponse,
@@ -24,8 +16,11 @@ import {
   CONFIRM_DELETE_FAILURE_MESSAGE,
   REFRESH_DOWNLOAD_GRANT_FAILURE_MESSAGE,
   SCRUB_FILE_FAILURE_MESSAGE,
-  wizardRouter,
 } from "./wizard-router.mod.server";
+import {
+  callerForRequest,
+  requireTRPCError,
+} from "./wizard-router.test-helper";
 
 vi.mock(import("#/shared/middlewares/app-bindings/app-bindings.mod"), () => ({
   getAppBindings: vi.fn(),
@@ -36,32 +31,6 @@ const FRONTEND_URL = "https://frontend.test/";
 const STORAGE_KEY = "uploads/00000000-0000-4000-8000-000000000001";
 const CANONICAL_ETAG = "0123456789abcdef0123456789abcdef";
 const TWO_FETCH_ATTEMPTS = 2;
-
-const createWizardCaller = createCallerFactory(wizardRouter);
-
-const callerForRequest = (request: Request) => {
-  vi.mocked(getAppBindings).mockReturnValue({
-    httpClient: ky.create({ baseUrl: BACKEND_BASE_URL }),
-    workflowHttpClient: createWorkflowHttpClient(BACKEND_BASE_URL),
-  });
-  return createWizardCaller(createTRPCRequestContext(request), {
-    signal: request.signal,
-  });
-};
-
-const requireTRPCError = async (
-  operation: Promise<unknown>,
-): Promise<TRPCError> => {
-  try {
-    await operation;
-  } catch (error) {
-    expect(error).toBeInstanceOf(TRPCError);
-    if (error instanceof TRPCError) {
-      return error;
-    }
-  }
-  expect.fail("the workflow procedure must reject with a TRPCError");
-};
 
 afterEach(() => {
   vi.unstubAllGlobals();
@@ -88,7 +57,7 @@ test("scrubFile keeps missing source and revision conflict results distinct", as
     );
   vi.stubGlobal("fetch", fetchMock);
   const request = new Request(FRONTEND_URL);
-  const caller = callerForRequest(request);
+  const caller = callerForRequest(request, BACKEND_BASE_URL);
 
   const missingError = await requireTRPCError(caller.scrubFile(input));
   const conflictError = await requireTRPCError(caller.scrubFile(input));
@@ -119,7 +88,7 @@ test("duplicate scrub success returns a fresh normal done response", async () =>
     .mockResolvedValueOnce(Response.json(secondResponse));
   vi.stubGlobal("fetch", fetchMock);
   const request = new Request(FRONTEND_URL);
-  const caller = callerForRequest(request);
+  const caller = callerForRequest(request, BACKEND_BASE_URL);
 
   await expect(caller.scrubFile(input)).resolves.toEqual(firstResponse);
   await expect(caller.scrubFile(input)).resolves.toEqual(secondResponse);
@@ -143,7 +112,7 @@ test("refreshDownloadGrant maps a missing revision to NOT_FOUND", async () => {
   const request = new Request(FRONTEND_URL);
 
   const error = await requireTRPCError(
-    callerForRequest(request).refreshDownloadGrant(input),
+    callerForRequest(request, BACKEND_BASE_URL).refreshDownloadGrant(input),
   );
 
   expect(error.code).toBe("NOT_FOUND");
@@ -165,7 +134,7 @@ test("confirmDelete maps unconfirmed deletion to CONFLICT", async () => {
   const request = new Request(FRONTEND_URL);
 
   const error = await requireTRPCError(
-    callerForRequest(request).confirmDelete(input),
+    callerForRequest(request, BACKEND_BASE_URL).confirmDelete(input),
   );
 
   expect(error.code).toBe("CONFLICT");
@@ -185,7 +154,7 @@ test("invalid backend error JSON maps to BAD_GATEWAY without public details", as
   const request = new Request(FRONTEND_URL);
 
   const error = await requireTRPCError(
-    callerForRequest(request).confirmDelete(input),
+    callerForRequest(request, BACKEND_BASE_URL).confirmDelete(input),
   );
 
   expect(error.code).toBe("BAD_GATEWAY");
