@@ -6,7 +6,7 @@ Scope: scrub, sanitized storage, download-grant refresh, and deletion. Scrub mus
 
 ### Correct: Check source existence before the scrub cache
 
-Context: [`internal/handler/file_workflow.go`](../../../internal/handler/file_workflow.go), inside `Scrub`. Source availability must pass before the sanitized revision lookup.
+Context: [`internal/handler/file_workflow.go`](../../../../internal/handler/file_workflow.go), inside `Scrub`. Source availability must pass before the sanitized revision lookup.
 
 ```text
 Check source existence.
@@ -19,7 +19,7 @@ A cache miss acquires shared capacity before source download and processing.
 
 ### Correct: Check the conditional source read
 
-Context: [`internal/handler/file_workflow.go`](../../../internal/handler/file_workflow.go), inside `cleanSource` after admission. The caller validates the canonical ETag. Sniffing and cleaning follow this checked read.
+Context: [`internal/handler/file_workflow.go`](../../../../internal/handler/file_workflow.go), inside `cleanSource` after admission. The caller validates the canonical ETag. Sniffing and cleaning follow this checked read.
 
 ```go
 source, err := scrubWorkflow.objectStorage.DownloadSource(scrubWorkflow.request.Context(), scrubWorkflow.fileID, scrubWorkflow.input.ETag)
@@ -32,7 +32,7 @@ The R2 adapter sends `If-Match` for a nonempty expected ETag. A changed revision
 
 ### Correct: Derive the immutable key from `sourceETag`
 
-Context: [`internal/storage/storage.go`](../../../internal/storage/storage.go). `UploadSanitized` uses this key with the reviewed ETag. The key identifies one source revision; a repeated write for that same revision is allowed.
+Context: [`internal/storage/storage.go`](../../../../internal/storage/storage.go). `UploadSanitized` uses this key with the reviewed ETag. The key identifies one source revision; a repeated write for that same revision is allowed.
 
 ```go
 func SanitizedObjectKey(fileID string, sourceETag string) (string, error) {
@@ -51,7 +51,7 @@ func SanitizedObjectKey(fileID string, sourceETag string) (string, error) {
 
 ### Correct: Refresh only the exact sanitized revision
 
-Context: [`internal/handler/download_grant.go`](../../../internal/handler/download_grant.go), inside `DownloadGrant`. This refresh checks sanitized output, not source availability.
+Context: [`internal/handler/download_grant.go`](../../../../internal/handler/download_grant.go), inside `DownloadGrant`. This refresh checks sanitized output, not source availability.
 
 ```text
 Check that the requested sanitized fileID/ETag revision exists.
@@ -63,7 +63,7 @@ Do not download the source or rerun PDF processing.
 
 ### Correct: Verify storage before returning deletion success
 
-Context: the end of `R2.DeleteFlow` in [`internal/storage/r2.go`](../../../internal/storage/r2.go), after checked key construction.
+Context: the end of `R2.DeleteFlow` in [`internal/storage/r2.go`](../../../../internal/storage/r2.go), after checked key construction.
 
 ```go
 if err := r2.deleteSource(ctx, sourceKey); err != nil {
@@ -77,7 +77,7 @@ return r2.verifyFlowEmpty(ctx, sourceKey, sanitizedPrefix)
 
 `deleteSanitizedRevisions` visits every provider page. A batch response can contain per-item errors even when the request succeeds. The adapter uses final verification as the authority, including after a partial result: check source absence and the sanitized prefix. An empty flow succeeds; a remaining object returns `ErrFlowObjectsRemain`. A failed verification is not proof of deletion.
 
-Context: [`internal/handler/delete_flow.go`](../../../internal/handler/delete_flow.go), inside `DeleteFlow`. `deleteStoredFlow` maps `ErrFlowObjectsRemain` to `409` and checks the error response write. Its boolean must pass before the success write.
+Context: [`internal/handler/delete_flow.go`](../../../../internal/handler/delete_flow.go), inside `DeleteFlow`. `deleteStoredFlow` maps `ErrFlowObjectsRemain` to `409` and checks the error response write. Its boolean must pass before the success write.
 
 ```go
 if !handler.deleteStoredFlow(w, request, objectStorage, fileID) {
