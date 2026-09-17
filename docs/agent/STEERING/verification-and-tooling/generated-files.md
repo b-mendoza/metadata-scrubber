@@ -7,7 +7,7 @@ Why: a hand edit hides the real source and can disappear when the tool runs agai
 ## Do's
 ### Change the source or generator and let the owning tool produce the diff
 
-Use the commands in the affected service's `AGENTS.md`. Regenerate the output after changing its source. Use the package manager or owning tool for lockfile changes.
+Find the owning command in the affected service's authoritative manifest or task declaration. Regenerate the output after changing its source. Use the package manager or owning tool for lockfile changes.
 
 ```text
 Current frontend examples, run from frontend/:
