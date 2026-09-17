@@ -1,6 +1,6 @@
 # Bootstrap only a missing or mismatched toolchain
 
-Scope: Node, pnpm, and the bootstrap script.
+Scope: Node, pnpm, formatting, and the bootstrap script.
 
 Why: the manifests own the pins, and bootstrap changes the machine and working tree.
 
@@ -8,12 +8,14 @@ Why: the manifests own the pins, and bootstrap changes the machine and working t
 
 ### Read the pins and bootstrap only when needed
 
-Read `.nvmrc`, `package.json#engines.node`, and `package.json#packageManager` instead of copying their versions into prose. From `frontend/`, check the installed tools:
+Use `pnpm` for this service. Read `.nvmrc`, `package.json#engines.node`, and `package.json#packageManager` instead of copying their versions into prose. From `frontend/`, check the installed tools:
 
 ```bash
 node --version
 pnpm --version
 ```
+
+Use `oxfmt`, not Prettier. `pnpm exec oxfmt --check <file>` checks one file without writing; `pnpm exec oxfmt --write <file>` formats it in place.
 
 If a tool is missing or mismatched and setup is in scope, use `bash scripts/setup-node.sh`. It installs fnm if needed, selects the pinned Node version, enables pnpm through Corepack, and installs dependencies. It then runs lint, autofix, tests, coverage, and a production build. Warn about these installs and writes before running it.
 
