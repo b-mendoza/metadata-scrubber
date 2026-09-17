@@ -21,7 +21,9 @@ uploadInputSchema.parse({ fileName: " report.pdf", fileSizeBytes: 0 }); // throw
 
 Validate backend success and error bodies too. Use `workflowConfigResponseSchema`, not a made-up config shape, and `backendErrorResponseSchema` for error bodies. All workflow input, success, error, and nested object schemas reject unknown properties. Keep environment parsing on `environmentSchema`; it selects supported variables from `process.env` rather than rejecting unrelated environment variables.
 
-Input validators throw instead of returning error objects as successful values. Keep deliberate synchronous Zod throws; map dependency failures at the operation and throw the mapped error at the boundary as described in [server failure handling](server-neverthrow.md). Backend `413` maps to safe `PAYLOAD_TOO_LARGE`, not leaked backend text.
+`environmentSchema` in `src/shared/config/env/environment.mod.server.ts` parses `process.env` on each request. `BACKEND_URL` is required and must be an absolute `http` or `https` URL. `DATABASE_URL` is optional until the database client is wired up. Keep the database binding code commented until the application connects the database client. This service has no `.env.example`; the schema file is the authoritative variable list.
+
+Input validators throw instead of returning error objects as successful values. Keep deliberate synchronous Zod throws; map dependency failures at the operation and throw the mapped error at the boundary as described in [server failure handling](../server-runtime/server-neverthrow.md). Backend `413` maps to safe `PAYLOAD_TOO_LARGE`, not leaked backend text.
 
 ## Don'ts
 
