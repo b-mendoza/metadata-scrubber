@@ -25,6 +25,8 @@ export const mapHealthFailure = (cause: unknown) =>
 
 Do not serialize `cause`, raw errors, or stacks into responses or route error UI. Log only approved, redacted diagnostic fields. Never log credentials, storage keys, or signed URLs. Do not dump the raw error, request, or response body into logs.
 
+Health outbound failures map to safe `BAD_GATEWAY`. Workflow status `400`, `404`, `408`, `409`, `413`, `415`, `422`, and `503` maps respectively to `BAD_REQUEST`, `NOT_FOUND`, `TIMEOUT`, `CONFLICT`, `PAYLOAD_TOO_LARGE`, `UNSUPPORTED_MEDIA_TYPE`, `UNPROCESSABLE_CONTENT`, and `SERVICE_UNAVAILABLE`. Ky timeouts map to `TIMEOUT`; invalid success/error JSON and other upstream failures map to `BAD_GATEWAY`. Input validators throw, not return errors as data.
+
 ## Don'ts
 
 ### Do not use upstream text as the public message
