@@ -1,12 +1,12 @@
 # Require concrete types and meaningful constraints
 
-Scope: backend application code. [`lint/noemptyinterface`](../../../lint/noemptyinterface/noemptyinterface.go) rejects `any`, literal empty interfaces, and names or aliases that resolve to an empty interface. Analyzer test fixtures intentionally contain rejected forms.
+Scope: backend application code. [`lint/noemptyinterface`](../../../../lint/noemptyinterface/noemptyinterface.go) rejects `any`, literal empty interfaces, and names or aliases that resolve to an empty interface. Analyzer test fixtures intentionally contain rejected forms.
 
 ## Do's
 
 ### Correct: Constrain a generic to the shapes it supports
 
-Context: [`internal/handler/json.go`](../../../internal/handler/json.go). The response union names every supported response type. The function propagates the encoder error; callers must check it.
+Context: [`internal/handler/json.go`](../../../../internal/handler/json.go). The response union names every supported response type. The function propagates the encoder error; callers must check it.
 
 ```go
 func writeJSON[T reachabilityResponse | workflowConfigResponse | uploadResponse | dryRunResponse | scrubResponse | downloadGrantResponse | deleteResponse](
@@ -24,7 +24,7 @@ Use generics only when one implementation genuinely supports several types. Requ
 
 ### Correct: Use the concrete request type and check decoding
 
-Context: [`internal/handler/file_workflow.go`](../../../internal/handler/file_workflow.go), inside `Scrub`. The shared decoder has its own explicit request union.
+Context: [`internal/handler/file_workflow.go`](../../../../internal/handler/file_workflow.go), inside `Scrub`. The shared decoder has its own explicit request union.
 
 ```go
 input, ok := decodeJSONRequest[scrubRequest](handler.logger, w, request)
@@ -33,7 +33,7 @@ if !ok {
 }
 ```
 
-For behavior-based dependencies, use named interfaces with the operations the caller needs, such as [`storage.Storage`](../../../internal/storage/storage.go). See [storage injection](storage-port-injection.md). Keep a concrete type when only one shape is accepted.
+For behavior-based dependencies, use named interfaces with the operations the caller needs, such as [`storage.Storage`](../../../../internal/storage/storage.go). See [storage injection](../storage-contracts/storage-port-injection.md). Keep a concrete type when only one shape is accepted.
 
 ## Don'ts
 
