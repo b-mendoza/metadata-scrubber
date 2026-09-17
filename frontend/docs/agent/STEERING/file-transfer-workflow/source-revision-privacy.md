@@ -40,4 +40,4 @@ This error leaks an object key and a provider request ID:
 }
 ```
 
-Keep upstream text, credentials, keys, signed URLs, and request IDs out of public errors. Preserve the cause internally and return a [safe mapped error](safe-error-boundary.md).
+Keep upstream text, credentials, keys, signed URLs, and request IDs out of public errors. Preserve the cause internally and return a [safe mapped error](../server-runtime/safe-error-boundary.md).
