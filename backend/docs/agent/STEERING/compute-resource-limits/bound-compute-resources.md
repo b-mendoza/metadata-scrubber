@@ -6,7 +6,7 @@ Scope: PDF reads, parsing, and inspection in `internal/scrub`. The 10 MiB input 
 
 ### Correct: Check input size and use the bounded parser configuration
 
-Context: [`internal/scrub/read.go`](../../../internal/scrub/read.go). `MaxInputBytes` is `10_485_760`; the exported error is `ErrInputTooLarge`. This shared path also checks parsing and validation failures.
+Context: [`internal/scrub/read.go`](../../../../internal/scrub/read.go). `MaxInputBytes` is `10_485_760`; the exported error is `ErrInputTooLarge`. This shared path also checks parsing and validation failures.
 
 ```go
 func readPDFWithValidator(inputBytes []byte, validate validatePDFContextOperation) (*model.Context, error) {
@@ -27,7 +27,7 @@ func readPDFWithValidator(inputBytes []byte, validate validatePDFContextOperatio
 
 ### Correct: Set every decoded, image, and structural limit
 
-Context: `boundedPDFConfiguration` in [`internal/scrub/read.go`](../../../internal/scrub/read.go). Keep all nine fields. Changing a ceiling needs measured evidence and corresponding contract tests.
+Context: `boundedPDFConfiguration` in [`internal/scrub/read.go`](../../../../internal/scrub/read.go). Keep all nine fields. Changing a ceiling needs measured evidence and corresponding contract tests.
 
 ```go
 func boundedPDFConfiguration() *model.Configuration {
@@ -50,7 +50,7 @@ func boundedPDFConfiguration() *model.Configuration {
 }
 ```
 
-The offset-zero `%PDF-` check in [`internal/sniff/sniff.go`](../../../internal/sniff/sniff.go) selects candidates only. It does not replace bounded parsing and structural validation.
+The offset-zero `%PDF-` check in [`internal/sniff/sniff.go`](../../../../internal/sniff/sniff.go) selects candidates only. It does not replace bounded parsing and structural validation.
 
 ## Don'ts
 
