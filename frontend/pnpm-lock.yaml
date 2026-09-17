@@ -396,8 +396,8 @@ importers:
         specifier: 74.0.0
         version: 74.0.0(eslint@10.10.0(jiti@2.7.0)(supports-color@7.2.0))
       eslint-plugin-zod:
-        specifier: 4.12.1
-        version: 4.12.1(eslint@10.10.0(jiti@2.7.0)(supports-color@7.2.0))(oxlint@1.82.0(oxlint-tsgolint@7.0.2001))(supports-color@7.2.0)(typescript@6.0.3)(zod@4.6.5)
+        specifier: 4.13.0
+        version: 4.13.0(eslint@10.10.0(jiti@2.7.0)(supports-color@7.2.0))(oxlint@1.82.0(oxlint-tsgolint@7.0.2001))(supports-color@7.2.0)(typescript@6.0.3)(zod@4.6.5)
       globals:
         specifier: 17.12.0
         version: 17.12.0
@@ -937,8 +937,8 @@ packages:
       eslint: '*'
       typescript: '*'
 
-  '@eslint-zod/utils@4.0.0':
-    resolution: {integrity: sha512-kqRYnin4TDGI4oA/RH3ttVS7lxSSb+4B3r8spYawNiud3TH6vKewnqfkAi7HqXiFFJy0w1WOTJHeO7hM6To7oQ==}
+  '@eslint-zod/utils@5.0.0':
+    resolution: {integrity: sha512-uOUIOSpSbfV1Icx9x5FJJF5vTa/deJetZFEVo73POf3CKFuu8vCHQpFJFf1savIH7h4Oo3vI+XjOCFRHu9abzQ==}
     engines: {node: ^20 || ^22 || >=24}
 
   '@eslint/config-array@0.23.5':
@@ -3499,8 +3499,8 @@ packages:
     peerDependencies:
       eslint: '>=10.4'
 
-  eslint-plugin-zod@4.12.1:
-    resolution: {integrity: sha512-GutzQgU5aZlYbW0iClmoKhjOB3kWHpWwIJo9MQveiorsV3z5nAIgzATtF5LP+86+S796bIFRa0iJkL9uueLPoQ==}
+  eslint-plugin-zod@4.13.0:
+    resolution: {integrity: sha512-V8i+vB7ewCSVGVRB7VabhUD1tEBgTBu5DlRA/NSd7rujP3qTvImEdStsSqncCeGbnG+Aq3R7lHnwEB2depzshQ==}
     engines: {node: ^20 || ^22 || >=24}
     peerDependencies:
       eslint: ^9 || ^10
@@ -5575,7 +5575,7 @@ snapshots:
     transitivePeerDependencies:
       - supports-color
 
-  '@eslint-zod/utils@4.0.0(eslint@10.10.0(jiti@2.7.0)(supports-color@7.2.0))(supports-color@7.2.0)(typescript@6.0.3)':
+  '@eslint-zod/utils@5.0.0(eslint@10.10.0(jiti@2.7.0)(supports-color@7.2.0))(supports-color@7.2.0)(typescript@6.0.3)':
     dependencies:
       '@typescript-eslint/utils': 8.70.0(eslint@10.10.0(jiti@2.7.0)(supports-color@7.2.0))(supports-color@7.2.0)(typescript@6.0.3)
       esquery: 1.7.0
@@ -7729,9 +7729,9 @@ snapshots:
       strip-indent: 4.1.1
       yaml: 2.9.0
 
-  eslint-plugin-zod@4.12.1(eslint@10.10.0(jiti@2.7.0)(supports-color@7.2.0))(oxlint@1.82.0(oxlint-tsgolint@7.0.2001))(supports-color@7.2.0)(typescript@6.0.3)(zod@4.6.5):
+  eslint-plugin-zod@4.13.0(eslint@10.10.0(jiti@2.7.0)(supports-color@7.2.0))(oxlint@1.82.0(oxlint-tsgolint@7.0.2001))(supports-color@7.2.0)(typescript@6.0.3)(zod@4.6.5):
     dependencies:
-      '@eslint-zod/utils': 4.0.0(eslint@10.10.0(jiti@2.7.0)(supports-color@7.2.0))(supports-color@7.2.0)(typescript@6.0.3)
+      '@eslint-zod/utils': 5.0.0(eslint@10.10.0(jiti@2.7.0)(supports-color@7.2.0))(supports-color@7.2.0)(typescript@6.0.3)
       '@typescript-eslint/utils': 8.70.0(eslint@10.10.0(jiti@2.7.0)(supports-color@7.2.0))(supports-color@7.2.0)(typescript@6.0.3)
     optionalDependencies:
       eslint: 10.10.0(jiti@2.7.0)(supports-color@7.2.0)
