@@ -1,5 +1,5 @@
 {
-  "instructions": "Review only concerns that deterministic checks cannot enforce. Never waive, override, or discount a failing deterministic check. Keep this review advisory. Do not provide the only merge approval.",
+  "instructions": "Use the canonical repository steering:\n\n- [Shared steering](../docs/agent/STEERING/): `docs/agent/STEERING/`.\n- [Frontend steering](../frontend/docs/agent/STEERING/): `frontend/docs/agent/STEERING/`.\n- [Backend steering](../backend/docs/agent/STEERING/): `backend/docs/agent/STEERING/`.\n\nSelect applicable domains and rules by the review action and changed paths. Use domain names, filenames, and targeted searches. Read applicable rules and necessary related rules in full before reviewing. Shared and service rules are mandatory within their scopes. Service rules do not silently override shared rules. Do not preload unrelated domains or entire trees. Reassess when the review scope changes.\n\nThese links are retrieval instructions, not automatic file inclusion. If a rule cannot be accessed, report the gap. Do not invent its content.",
   "rules": [
     {
       "id": "backend-boundary-contracts",
