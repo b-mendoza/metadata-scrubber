@@ -33,7 +33,7 @@ export const Route = createFileRoute("/")({
 
 `match` consumes both result variants and returns a Promise, which the loader returns so the router waits. `queryClient.query(options)` returns fresh cached data or fetches missing, stale, or invalidated data. A failed fetch reaches the loader's error boundary. Preserve the query's configured freshness policy instead of overriding it with `staleTime: "static"`, which accepts existing cached data even after invalidation.
 
-This non-async boundary follows the server policy but encounters the [current lint conflict](server-neverthrow.md#map-failures-at-the-operation-and-adapt-both-variants-once). Report that conflict instead of adding `async` or suppressing the rule.
+This non-async boundary follows the server policy but encounters the [current lint conflict](../server-runtime/server-neverthrow.md#map-failures-at-the-operation-and-adapt-both-variants-once). Report that conflict instead of adding `async` or suppressing the rule.
 
 ### Build context only inside the existing router factory
 
