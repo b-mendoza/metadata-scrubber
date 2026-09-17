@@ -13,6 +13,8 @@ Make each diff hunk traceable to the goal. Exclude unrelated refactors and refor
 
 Add a compatibility shim, deprecation path, or fallback only for a real contract, such as a published API, persisted data, or deployed clients. Preserve the contract when needed. If no consumer requires the old path, delete it.
 
+Choose names that express clear domain meaning; passing a deterministic name denylist is not enough. Established Go names remain valid: `ctx`, `w`, `r`, `ok`, `err` near its cause, and short loop indexes.
+
 ```text
 Hypothetical change: one upload use case needs a new admission decision.
 Keep that decision explicit in the use case and update its existing tests.
