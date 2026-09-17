@@ -38,7 +38,7 @@ scrubFileInputSchema.parse({
 
 `fileSizeBytes` must be a positive integer. `fileNameSchema` rejects blank or padded names, names over 255 UTF-8 bytes, control characters, slashes, backslashes, and the replacement character. It does not trim names into validity. Download-grant expiry uses RFC 3339 whole-second timestamps.
 
-The backend owns the size ceiling. Read the positive runtime `maxFileSizeBytes` through `getWorkflowConfig`; do not copy a cap into the frontend. See [direct uploads](direct-storage-uploads.md).
+The backend owns the size ceiling. Read the positive runtime `maxFileSizeBytes` through `getWorkflowConfig`; do not copy a cap into the frontend. See [direct uploads](../file-transfer-workflow/direct-storage-uploads.md).
 
 ### Give every generic an explicit, meaningful constraint
 
