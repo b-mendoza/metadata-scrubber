@@ -8,7 +8,7 @@ Keep initialized configuration, the storage client, the validator cache, and the
 
 ### Correct: Build the workflow value within its request
 
-Context: [`internal/handler/file_workflow.go`](../../../internal/handler/file_workflow.go), inside `Scrub` after input validation and storage binding lookup. `objectStorage` is shared; this workflow value belongs to the current request.
+Context: [`internal/handler/file_workflow.go`](../../../../internal/handler/file_workflow.go), inside `Scrub` after input validation and storage binding lookup. `objectStorage` is shared; this workflow value belongs to the current request.
 
 ```go
 scrubWorkflow := scrubWorkflowRequest{
@@ -18,7 +18,7 @@ scrubWorkflow := scrubWorkflowRequest{
 
 ### Correct: Tie resources to the stage that uses them
 
-Context: `cleanSource` and `materializeScrubbed` in [`internal/handler/file_workflow.go`](../../../internal/handler/file_workflow.go). Follow [admission](bound-compute-admission.md) and [PDF resource limits](bound-compute-resources.md) rather than duplicating them.
+Context: `cleanSource` and `materializeScrubbed` in [`internal/handler/file_workflow.go`](../../../../internal/handler/file_workflow.go). Follow [admission](bound-compute-admission.md) and [PDF resource limits](bound-compute-resources.md) rather than duplicating them.
 
 ```text
 cleanSource holds a permit for the source download and PDF cleaning.
