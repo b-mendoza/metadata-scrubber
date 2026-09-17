@@ -8,7 +8,7 @@ Why: the rules encode project standards, but static checks do not prove every ru
 
 ### Keep all nine rules active and check their fixtures separately
 
-The [plugin reference](../../../oxlint-plugin-metadata-scrubber/README.md) lists all nine rules. `eslint.config.js` keeps all nine at error severity, including in the effective ESLint config. The main `.oxlintrc.json` and `fixture.config.json` also enable all nine at error severity. The final ESLint adapter disables supported Oxlint-owned rules, such as `no-floating-promises`, not these custom rules. Leave the main Oxlint config unchanged; the user synchronizes it from ESLint policy. Do not weaken these configs.
+The [plugin reference](../../../../oxlint-plugin-metadata-scrubber/README.md) lists all nine rules. `eslint.config.js` keeps all nine at error severity, including in the effective ESLint config. The main `.oxlintrc.json` and `fixture.config.json` also enable all nine at error severity. The final ESLint adapter disables supported Oxlint-owned rules, such as `no-floating-promises`, not these custom rules. Leave the main Oxlint config unchanged; the user synchronizes it from ESLint policy. Do not weaken these configs.
 
 From `frontend/`, run the separate fixture check when a rule changes:
 
@@ -23,7 +23,7 @@ The fixture script uses `fixture.config.json`, checks zero positive diagnostics 
 
 ### Do not treat lint success as proof that every Result is consumed
 
-Keep `no-floating-promises` with `checkThenables: true`; Oxlint runs its active copy. It catches a bare unawaited `ResultAsync`, not a discarded synchronous `Result` or an awaited `ResultAsync` whose inner `Result` is ignored. Review both gaps by hand. These are wrong consumption examples, not an exception to the [server rule](server-neverthrow.md):
+Keep `no-floating-promises` with `checkThenables: true`; Oxlint runs its active copy. It catches a bare unawaited `ResultAsync`, not a discarded synchronous `Result` or an awaited `ResultAsync` whose inner `Result` is ignored. Review both gaps by hand. These are wrong consumption examples, not an exception to the [server rule](../server-runtime/server-neverthrow.md):
 
 ```ts
 import { ok, ResultAsync } from "neverthrow";
