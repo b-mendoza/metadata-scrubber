@@ -1,6 +1,6 @@
 # Run the defined verification commands
 
-Scope: backend changes and tests. Use [`Taskfile.yml`](../../../Taskfile.yml) targets from `backend/`. Preserve failure signals and let tooling update generated files.
+Scope: backend changes and tests. Use [`Taskfile.yml`](../../../../Taskfile.yml) targets from `backend/`. Preserve failure signals and let tooling update generated files.
 
 ## Do's
 
@@ -22,9 +22,9 @@ task test
 
 ### Correct: Wait for the test condition instead of sleeping
 
-[`lint/nohiddentestsignal`](../../../lint/nohiddentestsignal/nohiddentestsignal.go) rejects `testing` skip calls and `time.Sleep` calls in Go test files. Fail on missing prerequisites. Synchronize on the needed condition and bound the wait.
+[`lint/nohiddentestsignal`](../../../../lint/nohiddentestsignal/nohiddentestsignal.go) rejects `testing` skip calls and `time.Sleep` calls in Go test files. Fail on missing prerequisites. Synchronize on the needed condition and bound the wait.
 
-Context: [`handler_admission_capacity_test.go`](../../../internal/handler/handler_admission_capacity_test.go), after installing the `enteredWait` signal and starting the request. `cancel` is the request's cancellation function.
+Context: [`handler_admission_capacity_test.go`](../../../../internal/handler/handler_admission_capacity_test.go), after installing the `enteredWait` signal and starting the request. `cancel` is the request's cancellation function.
 
 ```go
 select {
