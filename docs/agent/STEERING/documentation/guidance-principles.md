@@ -9,7 +9,7 @@ Why: agents load guidance into context. Each line must change an action.
 
 Add a rule after an observed failure shows the need. State the required action. Use a standalone prohibition for a repeated failure. Remove obsolete rules that no longer affect an action. Keep a rule whose enforcement still prevents a mistake; agents complying is not a reason to delete it.
 
-Stable, actionable principles and their mandatory correct and incorrect fenced examples live in the flat root and service `docs/agent/STEERING` files. Each `AGENTS.md` is a compact, exhaustive index of its rules with command and reference tables. Keep volatile rosters of source locations out of the rule prose. Record them in those index tables or in existing reference docs outside `docs/agent/`, and update them with the change that makes them stale.
+Stable, actionable principles and their mandatory correct and incorrect fenced examples live in meaningful domain directories under the shared and service `docs/agent/STEERING/` roots. Each `AGENTS.md` is a brief directory-based entry point that requires task-relevant retrieval, not an exhaustive rule index or command catalog. Keep volatile rosters of source locations in existing reference docs outside `docs/agent/`, not in rule prose or `AGENTS.md`. Update those references with the change that makes them stale. Do not create a new reference or index just to satisfy the layout.
 
 A rule and its examples may use real import specifiers, APIs, and call-site source references. These examples teach the action better than a placeholder. Keep each snippet matching the real source. Update the snippet in the same change as the source it shows.
 
