@@ -6,7 +6,7 @@ Scope: startup, middleware, handlers, and storage adapters. Keep provider SDK ty
 
 ### Correct: Validate configuration, then construct the adapter once
 
-Context: [`main.go`](../../../main.go), inside `run`. `config.Load` returns an error; `storage.NewR2` returns only `*R2` and does not contact storage during construction.
+Context: [`main.go`](../../../../main.go), inside `run`. `config.Load` returns an error; `storage.NewR2` returns only `*R2` and does not contact storage during construction.
 
 ```go
 cfg, err := config.Load()
@@ -20,7 +20,7 @@ server := newServer(cfg, storage.NewR2(cfg), logger)
 
 ### Correct: Inject the existing adapter into request bindings
 
-Context: [`main.go`](../../../main.go), the return from `newServer`. Its `objectStorage` argument is `storage.Storage`; `mux` already has the workflow routes.
+Context: [`main.go`](../../../../main.go), the return from `newServer`. Its `objectStorage` argument is `storage.Storage`; `mux` already has the workflow routes.
 
 ```go
 return &http.Server{
@@ -37,7 +37,7 @@ Handlers use domain values such as file IDs, ETags, and grants. They must not ac
 
 ### Correct: Check the request binding before using the port
 
-Context: [`internal/handler/file_workflow.go`](../../../internal/handler/file_workflow.go), inside `Scrub`. `storageFromRequest` handles a missing binding with a safe response and checks the response write.
+Context: [`internal/handler/file_workflow.go`](../../../../internal/handler/file_workflow.go), inside `Scrub`. `storageFromRequest` handles a missing binding with a safe response and checks the response write.
 
 ```go
 objectStorage := handler.storageFromRequest(w, request)
