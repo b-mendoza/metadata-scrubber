@@ -6,7 +6,7 @@ Scope: concurrency limits in the backend. An active-work cap, a waiter-count cap
 
 ### Correct: State all three bounds separately
 
-Context: [`internal/handler/handler.go`](../../../internal/handler/handler.go) and [`acquirePermit`](../../../internal/handler/workflow_support.go). The channel holds acquired permits, not queued requests. Its length counts admitted stages, including their source downloads.
+Context: [`internal/handler/handler.go`](../../../../internal/handler/handler.go) and [`acquirePermit`](../../../../internal/handler/workflow_support.go). The channel holds acquired permits, not queued requests. Its length counts admitted stages, including their source downloads.
 
 ```text
 Active stages: at most 2 share the process gate.
@@ -18,7 +18,7 @@ The unbounded waiter count is a current limitation, not a prohibition on queue-l
 
 ### Correct: Keep overload separate from caller cancellation
 
-Context: the behavior covered by [`handler_admission_capacity_test.go`](../../../internal/handler/handler_admission_capacity_test.go).
+Context: the behavior covered by [`handler_admission_capacity_test.go`](../../../../internal/handler/handler_admission_capacity_test.go).
 
 ```text
 Both permits are held. A third request reaches its admission timeout.

@@ -6,7 +6,7 @@ Scope: dry-run and scrub processing. Create one channel of capacity 2 at startup
 
 ### Correct: Create the shared gate at startup
 
-Context: [`main.go`](../../../main.go), inside `newServer`. Capacity is the fixed `handler.ProcessingPermitCount`.
+Context: [`main.go`](../../../../main.go), inside `newServer`. Capacity is the fixed `handler.ProcessingPermitCount`.
 
 ```go
 workflow := handler.New(logger, make(chan struct{}, handler.ProcessingPermitCount))
@@ -14,7 +14,7 @@ workflow := handler.New(logger, make(chan struct{}, handler.ProcessingPermitCoun
 
 ### Correct: Acquire before downloading and release when the stage ends
 
-Context: [`internal/handler/file_workflow.go`](../../../internal/handler/file_workflow.go), inside `inspectSource`. `cleanSource` uses the same gate. Both stages check admission before downloading source bytes, then release with `defer`.
+Context: [`internal/handler/file_workflow.go`](../../../../internal/handler/file_workflow.go), inside `inspectSource`. `cleanSource` uses the same gate. Both stages check admission before downloading source bytes, then release with `defer`.
 
 ```go
 release, err := handler.acquirePermit(inspectWorkflow.request.Context())
@@ -24,11 +24,11 @@ if err != nil {
 defer release()
 ```
 
-[`acquirePermit`](../../../internal/handler/workflow_support.go) checks the caller's context before waiting and after acquisition. It returns the permit immediately if that context ended during acquisition. The wait has a 2 s budget. Caller cancellation or deadline expiry returns the caller's error; only the admission wait expiring returns `errAdmissionTimeout`.
+[`acquirePermit`](../../../../internal/handler/workflow_support.go) checks the caller's context before waiting and after acquisition. It returns the permit immediately if that context ended during acquisition. The wait has a 2 s budget. Caller cancellation or deadline expiry returns the caller's error; only the admission wait expiring returns `errAdmissionTimeout`.
 
 ### Correct: Refuse admission timeout with a checked retryable response
 
-Context: [`writeAdmissionFailure`](../../../internal/handler/workflow_support.go), inside its `errAdmissionTimeout` branch. It returns `503` with whole-second `Retry-After`, base 2 plus jitter of 0..2. If jitter generation fails, the hint is 2. Caller cancellation or deadline expiry instead returns `408` without this retry hint.
+Context: [`writeAdmissionFailure`](../../../../internal/handler/workflow_support.go), inside its `errAdmissionTimeout` branch. It returns `503` with whole-second `Retry-After`, base 2 plus jitter of 0..2. If jitter generation fails, the hint is 2. Caller cancellation or deadline expiry instead returns `408` without this retry hint.
 
 ```go
 w.Header().Set(header.RetryAfter, handler.admissionRetryAfter(request.Context()))
