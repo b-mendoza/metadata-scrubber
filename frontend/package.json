@@ -106,7 +106,7 @@
     "eslint-plugin-sonarjs": "4.2.0",
     "eslint-plugin-testing-library": "7.16.2",
     "eslint-plugin-unicorn": "74.0.0",
-    "eslint-plugin-zod": "4.13.0",
+    "eslint-plugin-zod": "4.13.1",
     "globals": "17.12.0",
     "happy-dom": "20.14.5",
     "nitro": "3.0.260903-beta",
