@@ -2,7 +2,11 @@ import { QueryClient } from "@tanstack/react-query";
 import { createIsomorphicFn } from "@tanstack/react-start";
 import { getRequest } from "@tanstack/react-start/server";
 import type { TRPCClient } from "@trpc/client";
-import { createTRPCClient, httpBatchStreamLink } from "@trpc/client";
+import {
+  createTRPCClient,
+  httpBatchStreamLink,
+  unstable_localLink,
+} from "@trpc/client";
 import type { inferRouterInputs, inferRouterOutputs } from "@trpc/server";
 import {
   createTRPCContext,
@@ -91,11 +95,21 @@ const initializeTRPCOptionsProxy = createIsomorphicFn()
   .server((queryClient) => {
     const request = getRequest();
 
-    return createTRPCOptionsProxy({
-      ctx: () => createTRPCRequestContext(request),
-      queryClient,
-      router: appRouter,
+    const client = createTRPCClient<AppRouter>({
+      links: [
+        unstable_localLink({
+          router: appRouter,
+          createContext: async () => {
+            const context = await Promise.resolve(
+              createTRPCRequestContext(request),
+            );
+            return context;
+          },
+          transformer: { serialize: stringify, deserialize: parse },
+        }),
+      ],
     });
+    return createTRPCOptionsProxy({ client, queryClient });
   });
 
 interface TRPCProviderProps extends React.PropsWithChildren {
