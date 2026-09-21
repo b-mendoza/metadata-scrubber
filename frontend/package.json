@@ -114,7 +114,7 @@
     "oxc-transform-react": "0.150.0",
     "oxfmt": "0.68.0",
     "oxlint": "1.83.0",
-    "oxlint-tsgolint": "7.0.2001",
+    "oxlint-tsgolint": "7.0.2002",
     "tailwindcss-react-aria-components": "2.2.0",
     "typescript": "6.0.3",
     "typescript-eslint": "8.70.0",
