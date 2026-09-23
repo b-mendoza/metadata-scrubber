@@ -37,14 +37,27 @@ jq -r --argjson retained_count "$retained_count" \
 
 cleanup_ids=$(jq -r --argjson retained_count "$retained_count" \
   '.[$retained_count:][] | .id' <<<"$images_newest_first")
+delete_pids=()
 
 while read -r image_id; do
   [[ -z "$image_id" ]] && continue
-  printf 'Deleting %s...\n' "$image_id"
-  if ! "${VERCEL_COMMAND[@]}" image rm "$VCR_REPOSITORY" "$image_id" \
-    "${VERCEL_TARGET_ARGS[@]}" \
-    --yes; then
-    printf 'Failed to delete %s; aborting with images remaining.\n' "$image_id" >&2
-    exit 1
-  fi
+  (
+    printf 'Deleting %s...\n' "$image_id"
+    if ! "${VERCEL_COMMAND[@]}" image rm "$VCR_REPOSITORY" "$image_id" \
+      "${VERCEL_TARGET_ARGS[@]}" \
+      --yes; then
+      printf 'Failed to delete %s.\n' "$image_id" >&2
+      exit 1
+    fi
+  ) </dev/null &
+  delete_pids+=("$!")
 done <<<"$cleanup_ids"
+
+delete_status=0
+for delete_pid in ${delete_pids[@]+"${delete_pids[@]}"}; do
+  if ! wait "$delete_pid"; then
+    delete_status=1
+  fi
+done
+
+exit "$delete_status"
