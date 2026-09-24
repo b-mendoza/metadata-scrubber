@@ -35,7 +35,7 @@
       "source": "b-mendoza/agent-skills",
       "sourceType": "github",
       "skillPath": "skills/committing-scoped-changes/SKILL.md",
-      "computedHash": "c25a18ed2bec7a0af517fd5007f88bd241bccfbadd15ef601bd96d6724dde55d"
+      "computedHash": "34e6d828175d20a049a07ddcd2f2c0d24d792f863e15e20cd3e2f5666540a211"
     },
     "creating-work-item-children": {
       "source": "b-mendoza/agent-skills",
@@ -59,7 +59,7 @@
       "source": "obra/superpowers",
       "sourceType": "github",
       "skillPath": "skills/executing-plans/SKILL.md",
-      "computedHash": "78a07800ee99a5861ae10be59d79fad085fdca10444e8aaeb2691597e357cff8"
+      "computedHash": "5d587b5a8ed12c3d6808bce1561d9a72eab37a9b44d51d9dff99232decaae78e"
     },
     "executing-work-item-task": {
       "source": "b-mendoza/agent-skills",
@@ -89,7 +89,7 @@
       "source": "addyosmani/agent-skills",
       "sourceType": "github",
       "skillPath": "skills/interview-me/SKILL.md",
-      "computedHash": "efded91ac7f7626239b338ce8622afeb557151b86532b632f3c9eb5b2ff9048f"
+      "computedHash": "4229002dd862e6e037c8a01c3e31d9af097465c58b2c3611912edb2af005f303"
     },
     "orchestrating-workflow": {
       "source": "b-mendoza/agent-skills",
@@ -114,12 +114,6 @@
       "sourceType": "github",
       "skillPath": "skills/planning-work-item-tasks/SKILL.md",
       "computedHash": "a74b90a693e01f221844bb60588dd944980eb23aaf5d6eca84951f74a4e51dba"
-    },
-    "ponytail": {
-      "source": "DietrichGebert/ponytail",
-      "sourceType": "github",
-      "skillPath": "skills/ponytail/SKILL.md",
-      "computedHash": "210fa0831f649ce9f8a305f7b7c8cf2a0dd09ac4dd53067109941b96e7811d4e"
     },
     "pr-creator": {
       "source": "b-mendoza/agent-skills",
@@ -167,7 +161,7 @@
       "source": "addyosmani/agent-skills",
       "sourceType": "github",
       "skillPath": "skills/spec-driven-development/SKILL.md",
-      "computedHash": "a6cdfed42f757f84d3d6968fbea5b257b28c08ff9aa52de6f12fe78a5fb1393b"
+      "computedHash": "d4dc15caa8d97749267da68676aeadff3fb5b8d9a4462664937137ac09610e4f"
     },
     "stop-slop": {
       "source": "hardikpandya/stop-slop",
@@ -179,13 +173,13 @@
       "source": "obra/superpowers",
       "sourceType": "github",
       "skillPath": "skills/subagent-driven-development/SKILL.md",
-      "computedHash": "367cc1d3216d6672b947c8c6583dbd6440ea407beb6da75a97d3a8ee1a23640a"
+      "computedHash": "d5caecf77dad1d6b86be893ce3fdeb0222921c64bb955db8b12a5780eecb4ec6"
     },
     "test-driven-development": {
       "source": "obra/superpowers",
       "sourceType": "github",
       "skillPath": "skills/test-driven-development/SKILL.md",
-      "computedHash": "a4126a9c5f17be3c228aa9e5755898ade283448b86099f56f40852e8c14532be"
+      "computedHash": "3cfe4ebb6fa7288f668d87880d279c8e48f7a92b63415e296857060f5ce22e05"
     },
     "unslop": {
       "source": "cursor/plugins",
@@ -210,7 +204,7 @@
       "source": "obra/superpowers",
       "sourceType": "github",
       "skillPath": "skills/writing-plans/SKILL.md",
-      "computedHash": "27c75044e444a4fc68798c3f799dc23eaff3a6bfabff32e6ad75bb20f881c094"
+      "computedHash": "cc8517a6bc569a0633b585649291688217b8a65d547c2ac5fa0923e56ecffa8c"
     }
   }
 }
