@@ -221,20 +221,6 @@ func storeMetadataStreamContent(context *model.Context, streamContent metadataSt
 	}
 }
 
-func storeIndirectMetadataStreamContent(context *model.Context, streamContent metadataStreamContent) error {
-	stream, ok := streamContent.streamObject.(types.IndirectRef)
-	if !ok {
-		return fmt.Errorf("unsupported indirect metadata stream type %T", streamContent.streamObject)
-	}
-	entry, storedStream, found := resolveIndirectMetadataStream(context, stream)
-	if !found {
-		return nil
-	}
-	storedStream.Content = streamContent.content
-	entry.Object = storedStream
-	return nil
-}
-
 func storeDirectMetadataStreamContent(_ *model.Context, streamContent metadataStreamContent) error {
 	stream, ok := streamContent.streamObject.(types.StreamDict)
 	if !ok {
