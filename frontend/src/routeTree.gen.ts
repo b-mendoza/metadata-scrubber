@@ -9,13 +9,36 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
-import { Route as IndexRouteImport } from './routes/index'
+import { Route as WizardRouteImport } from './routes/_wizard'
+import { Route as WizardIndexRouteImport } from './routes/_wizard.index'
+import { Route as WizardOutcomeRouteImport } from './routes/_wizard.outcome'
+import { Route as WizardResultRouteImport } from './routes/_wizard.result'
+import { Route as WizardReviewRouteImport } from './routes/_wizard.review'
 import { Route as ApiTrpcSplatRouteImport } from './routes/api/trpc.$'
 
-const IndexRoute = IndexRouteImport.update({
+const WizardRoute = WizardRouteImport.update({
+  id: '/_wizard',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const WizardIndexRoute = WizardIndexRouteImport.update({
   id: '/',
   path: '/',
-  getParentRoute: () => rootRouteImport,
+  getParentRoute: () => WizardRoute,
+} as any)
+const WizardOutcomeRoute = WizardOutcomeRouteImport.update({
+  id: '/outcome',
+  path: '/outcome',
+  getParentRoute: () => WizardRoute,
+} as any)
+const WizardResultRoute = WizardResultRouteImport.update({
+  id: '/result',
+  path: '/result',
+  getParentRoute: () => WizardRoute,
+} as any)
+const WizardReviewRoute = WizardReviewRouteImport.update({
+  id: '/review',
+  path: '/review',
+  getParentRoute: () => WizardRoute,
 } as any)
 const ApiTrpcSplatRoute = ApiTrpcSplatRouteImport.update({
   id: '/api/trpc/$',
@@ -24,39 +47,84 @@ const ApiTrpcSplatRoute = ApiTrpcSplatRouteImport.update({
 } as any)
 
 export interface FileRoutesByFullPath {
-  '/': typeof IndexRoute
+  '/': typeof WizardIndexRoute
+  '/outcome': typeof WizardOutcomeRoute
+  '/result': typeof WizardResultRoute
+  '/review': typeof WizardReviewRoute
   '/api/trpc/$': typeof ApiTrpcSplatRoute
 }
 export interface FileRoutesByTo {
-  '/': typeof IndexRoute
+  '/outcome': typeof WizardOutcomeRoute
+  '/result': typeof WizardResultRoute
+  '/review': typeof WizardReviewRoute
+  '/': typeof WizardIndexRoute
   '/api/trpc/$': typeof ApiTrpcSplatRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
-  '/': typeof IndexRoute
+  '/_wizard': typeof WizardRouteWithChildren
+  '/_wizard/outcome': typeof WizardOutcomeRoute
+  '/_wizard/result': typeof WizardResultRoute
+  '/_wizard/review': typeof WizardReviewRoute
+  '/_wizard/': typeof WizardIndexRoute
   '/api/trpc/$': typeof ApiTrpcSplatRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/api/trpc/$'
+  fullPaths: '/' | '/outcome' | '/result' | '/review' | '/api/trpc/$'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/api/trpc/$'
-  id: '__root__' | '/' | '/api/trpc/$'
+  to: '/outcome' | '/result' | '/review' | '/' | '/api/trpc/$'
+  id:
+    | '__root__'
+    | '/_wizard'
+    | '/_wizard/outcome'
+    | '/_wizard/result'
+    | '/_wizard/review'
+    | '/_wizard/'
+    | '/api/trpc/$'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
-  IndexRoute: typeof IndexRoute
+  WizardRoute: typeof WizardRouteWithChildren
   ApiTrpcSplatRoute: typeof ApiTrpcSplatRoute
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
-    '/': {
-      id: '/'
+    '/_wizard': {
+      id: '/_wizard'
+      path: ''
+      fullPath: '/'
+      preLoaderRoute: typeof WizardRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/_wizard/': {
+      id: '/_wizard/'
       path: '/'
       fullPath: '/'
-      preLoaderRoute: typeof IndexRouteImport
-      parentRoute: typeof rootRouteImport
+      preLoaderRoute: typeof WizardIndexRouteImport
+      parentRoute: typeof WizardRoute
+    }
+    '/_wizard/outcome': {
+      id: '/_wizard/outcome'
+      path: '/outcome'
+      fullPath: '/outcome'
+      preLoaderRoute: typeof WizardOutcomeRouteImport
+      parentRoute: typeof WizardRoute
+    }
+    '/_wizard/result': {
+      id: '/_wizard/result'
+      path: '/result'
+      fullPath: '/result'
+      preLoaderRoute: typeof WizardResultRouteImport
+      parentRoute: typeof WizardRoute
+    }
+    '/_wizard/review': {
+      id: '/_wizard/review'
+      path: '/review'
+      fullPath: '/review'
+      preLoaderRoute: typeof WizardReviewRouteImport
+      parentRoute: typeof WizardRoute
     }
     '/api/trpc/$': {
       id: '/api/trpc/$'
@@ -68,8 +136,25 @@ declare module '@tanstack/react-router' {
   }
 }
 
+interface WizardRouteChildren {
+  WizardOutcomeRoute: typeof WizardOutcomeRoute
+  WizardResultRoute: typeof WizardResultRoute
+  WizardReviewRoute: typeof WizardReviewRoute
+  WizardIndexRoute: typeof WizardIndexRoute
+}
+
+const WizardRouteChildren: WizardRouteChildren = {
+  WizardOutcomeRoute: WizardOutcomeRoute,
+  WizardResultRoute: WizardResultRoute,
+  WizardReviewRoute: WizardReviewRoute,
+  WizardIndexRoute: WizardIndexRoute,
+}
+
+const WizardRouteWithChildren =
+  WizardRoute._addFileChildren(WizardRouteChildren)
+
 const rootRouteChildren: RootRouteChildren = {
-  IndexRoute: IndexRoute,
+  WizardRoute: WizardRouteWithChildren,
   ApiTrpcSplatRoute: ApiTrpcSplatRoute,
 }
 export const routeTree = rootRouteImport
