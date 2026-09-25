@@ -2,6 +2,8 @@
 
 set -euo pipefail
 
+export NO_UPDATE_NOTIFIER=1
+
 VERCEL_SCOPE="bryan-mendozas-projects"
 VERCEL_PROJECT="metadata-scrubber"
 VCR_REPOSITORY="backend"
