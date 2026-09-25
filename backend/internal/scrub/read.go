@@ -213,7 +213,9 @@ func storeMetadataStreamContent(context *model.Context, streamContent metadataSt
 		entry.Object = storedStream
 		return nil
 	case types.StreamDict:
-		return storeDirectMetadataStreamContent(context, streamContent)
+		stream.Content = streamContent.content
+		streamContent.dictionary[streamContent.key] = stream
+		return nil
 	default:
 		return fmt.Errorf("unsupported metadata stream type %T", streamContent.streamObject)
 	}
