@@ -221,16 +221,6 @@ func storeMetadataStreamContent(context *model.Context, streamContent metadataSt
 	}
 }
 
-func storeDirectMetadataStreamContent(_ *model.Context, streamContent metadataStreamContent) error {
-	stream, ok := streamContent.streamObject.(types.StreamDict)
-	if !ok {
-		return fmt.Errorf("unsupported direct metadata stream type %T", streamContent.streamObject)
-	}
-	stream.Content = streamContent.content
-	streamContent.dictionary[streamContent.key] = stream
-	return nil
-}
-
 func snapshotMetadataEntries(context *model.Context) ([]metadataEntrySnapshot, error) {
 	snapshots := make([]metadataEntrySnapshot, 0)
 	walker := structuralWalker{
