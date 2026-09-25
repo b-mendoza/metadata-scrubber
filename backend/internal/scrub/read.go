@@ -203,9 +203,15 @@ type metadataStreamContent struct {
 }
 
 func storeMetadataStreamContent(context *model.Context, streamContent metadataStreamContent) error {
-	switch streamContent.streamObject.(type) {
+	switch stream := streamContent.streamObject.(type) {
 	case types.IndirectRef:
-		return storeIndirectMetadataStreamContent(context, streamContent)
+		entry, storedStream, found := resolveIndirectMetadataStream(context, stream)
+		if !found {
+			return nil
+		}
+		storedStream.Content = streamContent.content
+		entry.Object = storedStream
+		return nil
 	case types.StreamDict:
 		return storeDirectMetadataStreamContent(context, streamContent)
 	default:
