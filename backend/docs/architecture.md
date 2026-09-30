@@ -18,9 +18,9 @@
 
 | Package | Responsibility |
 | --- | --- |
-| `lint/nohiddentestsignal` | `lint/nohiddentestsignal` provides a golangci-lint module linter. The linter reports test skips and `time.Sleep` calls in Go test files. |
-| `lint/noemptyinterface` | `lint/noemptyinterface` provides a golangci-lint module linter. The linter reports `any`, literal empty interfaces, and named types or aliases that resolve to empty interfaces in application code. |
-| `lint/plugin` | `lint/plugin` registers both analyzers with the golangci-lint Module Plugin System. |
+| `lint/nohiddentestsignal` | `lint/nohiddentestsignal` provides a Go analyzer. The analyzer reports test skips and `time.Sleep` calls in Go test files. |
+| `lint/noemptyinterface` | `lint/noemptyinterface` provides a Go analyzer. The analyzer reports `any`, literal empty interfaces, and named types or aliases that resolve to empty interfaces in application code. |
+| `lint/cmd/analyzers` | `lint/cmd/analyzers` runs both analyzers on application packages. The lint targets select the service root and all packages under `internal/`. |
 
 ## HTTP API
 
@@ -52,4 +52,4 @@ The delete route removes the source and all sanitized revisions for one file. Th
 - If the client cancels while the request waits, the server returns `408 Request Timeout`.
 - Dry-run returns the source's canonical unquoted ETag. The ETag grammar is exactly 32 lower-case hexadecimal characters. Scrub binds the reviewed source revision to both the conditional source read and the immutable sanitized object key.
 - The server applies a read-header timeout. It performs a graceful shutdown on SIGINT or SIGTERM.
-- `.golangci.yml` and `.custom-gcl.yml` contain the lint configuration. The `go` directive in `go.mod` pins the required Go version.
+- `.golangci.yml` contains the stock lint configuration. The `go` directive in `go.mod` pins the required Go version.
