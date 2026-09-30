@@ -4,7 +4,6 @@ version: "3.51.1"
 
 vars:
   BINARY: metadata-scrubber
-  CUSTOM_GOLANGCI_LINT: ./custom-gcl
   GOLANGCI_LINT_CONFIG: .golangci.yml
 
 tasks:
@@ -44,26 +43,14 @@ tasks:
     cmds:
       - task: test
 
-  lint:build:
-    desc: Build the custom golangci-lint binary when its inputs change
-    sources:
-      - .custom-gcl.yml
-      - go.mod
-      - go.sum
-      - "lint/**/*.go"
-    generates:
-      - custom-gcl
-    cmds:
-      - go tool golangci-lint custom
-
-  # Read-only source gate. golangci-lint's `run` checks the enabled formatters
-  # too, so one command covers lint, custom analysis, and formatting.
+  # golangci-lint run checks formatting as well as lint rules.
+  # Custom analyzers check only application packages: . and ./internal/...
+  # Add new application directories to the analyzer package list.
   lint:
     desc: Lint and verify formatting (read-only)
-    deps:
-      - lint:build
     cmds:
-      - "{{.CUSTOM_GOLANGCI_LINT}} run --config {{.GOLANGCI_LINT_CONFIG}}"
+      - go tool golangci-lint run --config {{.GOLANGCI_LINT_CONFIG}}
+      - go run ./lint/cmd/analyzers . ./internal/...
 
   # Advisory security scan. It queries the changing Go vulnerability database.
   security:
@@ -71,16 +58,15 @@ tasks:
     cmds:
       - go tool govulncheck ./...
 
-  # Write umbrella (destructive): apply lint auto-fixes, then format with
-  # gofumpt + gci (orchestrated by golangci-lint). Format runs last so the
-  # result is always cleanly formatted.
+  # Check custom rules after auto-fixes and formatting can change the source.
+  # Custom analyzers check only application packages: . and ./internal/...
+  # Add new application directories to the analyzer package list.
   fix:
     desc: Apply lint auto-fixes and format the source code (writes files)
-    deps:
-      - lint:build
     cmds:
-      - "{{.CUSTOM_GOLANGCI_LINT}} run --config {{.GOLANGCI_LINT_CONFIG}} --fix"
-      - "{{.CUSTOM_GOLANGCI_LINT}} fmt --config {{.GOLANGCI_LINT_CONFIG}}"
+      - go tool golangci-lint run --config {{.GOLANGCI_LINT_CONFIG}} --fix
+      - go tool golangci-lint fmt --config {{.GOLANGCI_LINT_CONFIG}}
+      - go run ./lint/cmd/analyzers . ./internal/...
 
   tidy:
     desc: Add missing and remove unused module dependencies
