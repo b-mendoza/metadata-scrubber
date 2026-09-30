@@ -7,7 +7,6 @@ import (
 	"net/http"
 	"net/url"
 	"strconv"
-	"strings"
 	"sync"
 	"time"
 )
@@ -311,39 +310,6 @@ func (fake *Fake) UploadSanitized(
 }
 
 // DeleteFlow removes the source and every sanitized revision for one file ID.
-func (fake *Fake) DeleteFlow(ctx context.Context, fileID string) error {
-	if err := contextError(ctx, operationDeleteFlow); err != nil {
-		return err
-	}
-	objectKey, err := SourceObjectKey(fileID)
-	if err != nil {
-		return err
-	}
-	objectPrefix, err := SanitizedObjectPrefix(fileID)
-	if err != nil {
-		return err
-	}
-
-	fake.mu.Lock()
-	defer fake.mu.Unlock()
-	if err := fake.recordAttemptLocked(ctx, FakeCall{
-		Operation:    FakeDeleteFlow,
-		FileID:       fileID,
-		ObjectKey:    objectKey,
-		ObjectPrefix: objectPrefix,
-	}); err != nil {
-		return err
-	}
-
-	delete(fake.sources, fileID)
-	for sanitizedKey := range fake.sanitizedObjects {
-		if strings.HasPrefix(sanitizedKey, objectPrefix) {
-			delete(fake.sanitizedObjects, sanitizedKey)
-		}
-	}
-	return nil
-}
-
 func copySourceObject(source SourceObject) SourceObject {
 	return SourceObject{
 		PDFBytes: copyBytes(source.PDFBytes),
