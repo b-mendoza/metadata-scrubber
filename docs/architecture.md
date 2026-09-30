@@ -23,7 +23,7 @@
 - The scrub workflow accepts PDF input only. The backend checks for `%PDF-` at offset zero and then parses the PDF structure.
 - The browser uploads the PDF directly to private R2 with a presigned PUT URL. No frontend route accepts file bytes.
 - Source objects are private. The backend stores each sanitized result under an immutable source-revision key. The frontend uses the canonical source ETag to bind review, scrub, and download refresh to one revision.
-- The backend confirms full-flow deletion before it reports success. The operation removes the source and every sanitized revision for the file.
+- The backend confirms full-flow deletion before it reports success. The operation removes the source and every sanitized revision for the file. Confirmed deletion shows absence at the time of the checks. A scrub that is already in progress can still write a cleaned file after that.
 - Backend workflow errors contain safe public text. The frontend maps them to safe tRPC errors and does not return provider details.
 
 ## Short-lived references for each service
