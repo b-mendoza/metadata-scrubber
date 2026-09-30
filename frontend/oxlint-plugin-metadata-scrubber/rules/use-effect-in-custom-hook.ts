@@ -78,10 +78,12 @@ const isWriteOnlyTarget = (node: ESTree.Node): boolean => {
   );
 };
 
-const getBinding = (
+const getReferenceBinding = (
   node: Extract<ESTree.Node, { type: "Identifier" }>,
   sourceCode: SourceCode,
 ): Variable | null => {
+  // A type-only declaration can shadow the name without shadowing its value.
+  // Switch discriminants can have their reference in an upper scope.
   let scope: Scope | null = sourceCode.getScope(node);
   while (scope != null) {
     const reference = scope.references.find(
@@ -136,7 +138,7 @@ const isReactNamespace = (
 ): boolean => {
   const expression = unwrapExpression(node);
   if (expression.type !== "Identifier") return false;
-  const binding = getBinding(expression, sourceCode);
+  const binding = getReferenceBinding(expression, sourceCode);
   if (binding == null || visited.has(binding)) return false;
   visited.add(binding);
   for (const definition of binding.defs) {
@@ -206,8 +208,9 @@ const getStaticKeyValue = (node: ESTree.Node): string | null => {
   return quasi?.value.cooked ?? null;
 };
 
-const getDestructuredPropertyName = (node: ESTree.Node): string | null => {
-  if (node.type !== "Property") return null;
+const getDestructuredPropertyName = (
+  node: ESTree.BindingProperty,
+): string | null => {
   if (!node.computed && node.key.type === "Identifier") return node.key.name;
   return getStaticKeyValue(node.key);
 };
@@ -258,7 +261,7 @@ export default defineRule({
 
     return {
       Identifier(node) {
-        const binding = getBinding(node, sourceCode);
+        const binding = getReferenceBinding(node, sourceCode);
         if (binding == null) return;
         if (
           binding.defs.every((definition) => !isReactEffectImport(definition))
