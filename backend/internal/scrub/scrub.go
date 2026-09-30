@@ -137,7 +137,7 @@ func classifyPDFError(err error, origin InspectionOrigin) error {
 }
 
 func readAndAnalyzePDF(inputBytes []byte, origin InspectionOrigin) (*model.Context, *pdfAnalysis, error) {
-	context, err := readPDF(inputBytes)
+	context, err := readPDFWithValidator(inputBytes, api.ValidateContext)
 	if err != nil {
 		return nil, nil, classifyPDFError(err, origin)
 	}

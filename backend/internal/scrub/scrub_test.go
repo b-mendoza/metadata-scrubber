@@ -519,7 +519,7 @@ func TestAnalyzePDFReleasesDecodedMetadataStreamCaches(t *testing.T) {
 		writeTypedPDFFixture(t, pdfContext, &output)
 		return output.Bytes()
 	}()
-	pdfContext, err := readPDF(pdfBytes)
+	pdfContext, err := readPDFWithValidator(pdfBytes, api.ValidateContext)
 	require.NoError(t, err)
 	metadataStreamType := "Metadata"
 	primedMetadataStreamCount := 0

@@ -25,10 +25,6 @@ const (
 
 type validatePDFContextOperation func(*model.Context) error
 
-func readPDF(inputBytes []byte) (*model.Context, error) {
-	return readPDFWithValidator(inputBytes, api.ValidateContext)
-}
-
 func readPDFWithValidator(inputBytes []byte, validate validatePDFContextOperation) (*model.Context, error) {
 	if len(inputBytes) > MaxInputBytes {
 		return nil, ErrInputTooLarge
