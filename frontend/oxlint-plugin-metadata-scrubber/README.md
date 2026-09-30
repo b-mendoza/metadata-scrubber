@@ -39,7 +39,7 @@ Run `pnpm run lint` from `frontend/` to run the service lint checks. Run `node o
 8. Do not match an identifier by its name only.
 9. Add a positive fixture that produces zero diagnostics.
 10. Add a negative fixture that produces the required diagnostics.
-11. Pin the exact diagnostic count in `check-fixtures.ts`. Pin each exact rendered message in the same file.
+11. Pin the exact diagnostic count in `fixture-cases.ts`. Pin each exact rendered message in the same file.
 12. Run the fixture before the rule change and record the expected failure.
 13. Implement the smallest rule change that makes the fixture pass.
 14. Do not add lint-suppression comments.
