@@ -155,43 +155,6 @@ func (fake *Fake) recordAttemptLocked(ctx context.Context, call FakeCall) error 
 	return nil
 }
 
-func (fake *Fake) PresignSourceUpload(
-	ctx context.Context,
-	fileID string,
-	sizeBytes int64,
-	expiry time.Duration,
-) (PresignedRequest, error) {
-	if err := contextError(ctx, operationPresignSourceUpload); err != nil {
-		return PresignedRequest{}, err
-	}
-	objectKey, err := validateSourceUploadInput(fileID, sizeBytes, expiry)
-	if err != nil {
-		return PresignedRequest{}, err
-	}
-
-	fake.mu.Lock()
-	defer fake.mu.Unlock()
-	if err := fake.recordAttemptLocked(ctx, FakeCall{
-		Operation: FakePresignSourceUpload,
-		FileID:    fileID,
-		ObjectKey: objectKey,
-		SizeBytes: sizeBytes,
-		Expiry:    expiry,
-	}); err != nil {
-		return PresignedRequest{}, err
-	}
-
-	fake.grantSequence++
-	return PresignedRequest{
-		URL: fakeGrantURL(objectKey, fake.grantSequence),
-		RequiredHeaders: http.Header{
-			"Content-Type":   []string{PDFContentType},
-			"Content-Length": []string{strconv.FormatInt(sizeBytes, 10)},
-		},
-	}, nil
-}
-
-// PresignSanitizedDownload returns a private GET grant for one exact source revision.
 func (fake *Fake) PresignSanitizedDownload(
 	ctx context.Context,
 	fileID string,
