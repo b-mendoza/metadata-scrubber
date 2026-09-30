@@ -114,9 +114,8 @@ interface InterpolatedProtocolTemplate {
 const getInterpolatedProtocolTemplate = (
   node: ESTree.TemplateLiteral,
 ): InterpolatedProtocolTemplate | undefined => {
-  const [firstQuasi, nextQuasi] = node.quasis;
-  if (firstQuasi == null) return;
-  if ((firstQuasi.value.cooked ?? firstQuasi.value.raw) !== "") return;
+  const [, nextQuasi] = node.quasis;
+  if (getFirstTemplateText(node) !== "") return;
   const [firstExpression, laterExpression] = node.expressions;
   if (firstExpression == null) return;
   if (nextQuasi == null) return;
