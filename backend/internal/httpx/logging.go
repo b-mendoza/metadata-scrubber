@@ -31,11 +31,12 @@ func serveLoggedRequest(logger *slog.Logger, next http.Handler, w http.ResponseW
 	)
 
 	recorder := &loggingResponseWriter{ResponseWriter: w, status: http.StatusOK}
-	defer logRequestCompletion(logger, requestLogContext{
-		request:   requestLogRequest{method: r.Method, path: path, context: r.Context()},
-		recorder:  recorder,
-		startedAt: startedAt,
-	})
+	defer logRequestCompletion(
+		logger,
+		requestLogRequest{method: r.Method, path: path, context: r.Context()},
+		recorder,
+		startedAt,
+	)
 	next.ServeHTTP(recorder, r)
 }
 
@@ -45,33 +46,27 @@ type requestLogRequest struct {
 	context context.Context
 }
 
-type requestLogContext struct {
-	request   requestLogRequest
-	recorder  *loggingResponseWriter
-	startedAt time.Time
-}
-
-func logRequestCompletion(logger *slog.Logger, logContext requestLogContext) {
+func logRequestCompletion(logger *slog.Logger, request requestLogRequest, recorder *loggingResponseWriter, startedAt time.Time) {
 	recovered := recover()
 	level := slog.LevelInfo
 	if recovered != nil {
-		if !logContext.recorder.wroteHeader {
-			logContext.recorder.status = http.StatusInternalServerError
+		if !recorder.wroteHeader {
+			recorder.status = http.StatusInternalServerError
 		}
 		level = slog.LevelError
 	}
 
 	attrs := []slog.Attr{
-		slog.String("method", logContext.request.method),
-		slog.String("path", logContext.request.path),
-		slog.Int("status", logContext.recorder.status),
-		slog.Int("bytes", logContext.recorder.bytesWritten),
-		slog.Int64("duration_ms", time.Since(logContext.startedAt).Milliseconds()),
+		slog.String("method", request.method),
+		slog.String("path", request.path),
+		slog.Int("status", recorder.status),
+		slog.Int("bytes", recorder.bytesWritten),
+		slog.Int64("duration_ms", time.Since(startedAt).Milliseconds()),
 	}
 	if recovered != nil {
 		attrs = append(attrs, slog.Bool("panicked", true))
 	}
-	logger.LogAttrs(logContext.request.context, level, "request completed", attrs...)
+	logger.LogAttrs(request.context, level, "request completed", attrs...)
 	if recovered != nil {
 		panic(recovered)
 	}
