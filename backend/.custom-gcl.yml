@@ -1,7 +1,0 @@
-version: v2.13.1
-name: custom-gcl
-destination: .
-plugins:
-  - module: metadata-scrubber
-    import: metadata-scrubber/lint/plugin
-    path: .
