@@ -1,7 +1,6 @@
 package storage
 
 import (
-	"bytes"
 	"context"
 	"errors"
 	"net/http"
@@ -68,34 +67,6 @@ func newR2(cfg config.Config, options r2Options) *R2 {
 	}
 }
 
-func (r2 *R2) UploadSanitized(
-	ctx context.Context,
-	fileID string,
-	sourceETag string,
-	pdfBytes []byte,
-) error {
-	if err := contextError(ctx, operationUploadSanitized); err != nil {
-		return err
-	}
-	objectKey, err := SanitizedObjectKey(fileID, sourceETag)
-	if err != nil {
-		return err
-	}
-
-	_, err = r2.client.PutObject(ctx, &s3.PutObjectInput{
-		Bucket:      aws.String(r2.bucket),
-		Key:         aws.String(objectKey),
-		Body:        bytes.NewReader(pdfBytes),
-		ContentType: aws.String(PDFContentType),
-	})
-	if err != nil {
-		return r2OperationError(ctx, operationUploadSanitized)
-	}
-
-	return nil
-}
-
-// DeleteFlow removes the source and every sanitized revision for one file ID.
 func (r2 *R2) DeleteFlow(ctx context.Context, fileID string) error {
 	if err := contextError(ctx, operationDeleteFlow); err != nil {
 		return err
