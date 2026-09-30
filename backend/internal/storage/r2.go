@@ -3,6 +3,7 @@ package storage
 import (
 	"context"
 	"errors"
+	"fmt"
 	"net/http"
 	"time"
 
@@ -65,12 +66,15 @@ func newR2(cfg config.Config, options r2Options) *R2 {
 	}
 }
 
+// r2OperationError sanitizes a provider failure. Cancellation and deadline are
+// propagated only when the caller's own context ended; a provider-side stall or
+// timeout is a dependency failure, not a caller signal.
 func r2OperationError(ctx context.Context, operation string) error {
 	if ctxErr := ctx.Err(); ctxErr != nil {
-		return operationError(operation, ctxErr)
+		return fmt.Errorf("%s: %w", operation, ctxErr)
 	}
 
-	return operationError(operation, ErrDependency)
+	return fmt.Errorf("%s: %w", operation, ErrDependency)
 }
 
 // httpStatusCode reports the provider status code carried by err. The second
