@@ -9,15 +9,10 @@ import { defineRule } from "@oxlint/plugins";
 
 import { getStaticPropertyName, isTestFile } from "../utilities.ts";
 
-const TESTING_LIBRARY_SOURCE = "@testing-library/react";
-const TESTING_LIBRARY_PURE_SOURCE = "@testing-library/react/pure";
 const TESTING_LIBRARY_SOURCES = new Set([
-  TESTING_LIBRARY_SOURCE,
-  TESTING_LIBRARY_PURE_SOURCE,
+  "@testing-library/react",
+  "@testing-library/react/pure",
 ]);
-
-const isTestingLibrarySource = (source: string): boolean =>
-  TESTING_LIBRARY_SOURCES.has(source);
 
 const getImportedName = (specifier: ESTree.ImportSpecifier): string | null => {
   const { imported } = specifier;
@@ -46,7 +41,7 @@ const getTestingLibraryNamespaceImportSourceFromDefinition = (
     return null;
   }
   const source = definition.parent.source.value;
-  return isTestingLibrarySource(source) ? source : null;
+  return TESTING_LIBRARY_SOURCES.has(source) ? source : null;
 };
 
 const getTestingLibraryNamespaceImportSource = (
@@ -91,7 +86,7 @@ export default defineRule({
 
     return {
       ImportDeclaration(node) {
-        if (!isTestingLibrarySource(node.source.value)) return;
+        if (!TESTING_LIBRARY_SOURCES.has(node.source.value)) return;
         for (const specifier of node.specifiers) {
           if (!isRuntimeRenderImportSpecifier(specifier, node)) continue;
           context.report({
