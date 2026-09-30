@@ -70,30 +70,6 @@ func newR2(cfg config.Config, options r2Options) *R2 {
 	}
 }
 
-func (r2 *R2) SourceExists(ctx context.Context, fileID string) (bool, error) {
-	if err := contextError(ctx, operationCheckSourceObject); err != nil {
-		return false, err
-	}
-	objectKey, err := SourceObjectKey(fileID)
-	if err != nil {
-		return false, err
-	}
-
-	_, err = r2.client.HeadObject(ctx, &s3.HeadObjectInput{
-		Bucket: aws.String(r2.bucket),
-		Key:    aws.String(objectKey),
-	})
-	if err == nil {
-		return true, nil
-	}
-	if statusCode, hasStatusCode := httpStatusCode(err); hasStatusCode && statusCode == http.StatusNotFound {
-		return false, nil
-	}
-
-	return false, r2OperationError(ctx, operationCheckSourceObject)
-}
-
-// DownloadSource reads the current source revision and optionally enforces an expected ETag.
 func (r2 *R2) DownloadSource(
 	ctx context.Context,
 	fileID string,
@@ -160,35 +136,6 @@ func readSourceObject(ctx context.Context, output *s3.GetObjectOutput) (SourceOb
 	return SourceObject{PDFBytes: pdfBytes, Metadata: maps.Clone(output.Metadata), ETag: normalizedETag}, nil
 }
 
-// SanitizedExists reports whether the exact immutable sanitized revision exists.
-func (r2 *R2) SanitizedExists(
-	ctx context.Context,
-	fileID string,
-	sourceETag string,
-) (bool, error) {
-	if err := contextError(ctx, operationCheckSanitizedObject); err != nil {
-		return false, err
-	}
-	objectKey, err := SanitizedObjectKey(fileID, sourceETag)
-	if err != nil {
-		return false, err
-	}
-
-	_, err = r2.client.HeadObject(ctx, &s3.HeadObjectInput{
-		Bucket: aws.String(r2.bucket),
-		Key:    aws.String(objectKey),
-	})
-	if err == nil {
-		return true, nil
-	}
-	if statusCode, hasStatusCode := httpStatusCode(err); hasStatusCode && statusCode == http.StatusNotFound {
-		return false, nil
-	}
-
-	return false, r2OperationError(ctx, operationCheckSanitizedObject)
-}
-
-// UploadSanitized writes PDF bytes to the exact immutable revision key.
 func (r2 *R2) UploadSanitized(
 	ctx context.Context,
 	fileID string,
