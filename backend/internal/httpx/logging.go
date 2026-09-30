@@ -12,32 +12,23 @@ import (
 func RequestLogger(logger *slog.Logger) func(http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			serveLoggedRequest(logger, next, w, r)
+			startedAt := time.Now()
+			path := r.URL.Path
+			logger.LogAttrs(
+				r.Context(),
+				slog.LevelInfo,
+				"request started",
+				slog.String("method", r.Method),
+				slog.String("path", path),
+				slog.String("remote_addr", r.RemoteAddr),
+				slog.String("user_agent", r.UserAgent()),
+			)
+
+			recorder := &loggingResponseWriter{ResponseWriter: w, status: http.StatusOK}
+			defer logRequestCompletion(logger, requestLogRequest{method: r.Method, path: path, context: r.Context()}, recorder, startedAt)
+			next.ServeHTTP(recorder, r)
 		})
 	}
-}
-
-func serveLoggedRequest(logger *slog.Logger, next http.Handler, w http.ResponseWriter, r *http.Request) {
-	startedAt := time.Now()
-	path := r.URL.Path
-	logger.LogAttrs(
-		r.Context(),
-		slog.LevelInfo,
-		"request started",
-		slog.String("method", r.Method),
-		slog.String("path", path),
-		slog.String("remote_addr", r.RemoteAddr),
-		slog.String("user_agent", r.UserAgent()),
-	)
-
-	recorder := &loggingResponseWriter{ResponseWriter: w, status: http.StatusOK}
-	defer logRequestCompletion(
-		logger,
-		requestLogRequest{method: r.Method, path: path, context: r.Context()},
-		recorder,
-		startedAt,
-	)
-	next.ServeHTTP(recorder, r)
 }
 
 type requestLogRequest struct {
