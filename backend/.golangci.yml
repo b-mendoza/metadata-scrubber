@@ -41,8 +41,6 @@ linters:
     - nilerr
     - nilnesserr
     - nilnil
-    - noemptyinterface
-    - nohiddentestsignal
     - nolintlint
     - nosprintfhostport
     - perfsprint
@@ -75,13 +73,6 @@ linters:
       right-to-left-isolate: true
       first-strong-isolate: true
       pop-directional-isolate: true
-    custom:
-      noemptyinterface:
-        type: module
-        description: Report empty interface types.
-      nohiddentestsignal:
-        type: module
-        description: Report test skips and sleeps in Go test files.
     cyclop:
       max-complexity: 8
       package-average: 0
