@@ -2,6 +2,7 @@ package storage
 
 import (
 	"context"
+	"fmt"
 	"maps"
 	"net/http"
 	"net/url"
@@ -142,19 +143,18 @@ func (fake *Fake) Calls() []FakeCall {
 // and are therefore never recorded.
 func (fake *Fake) recordAttemptLocked(ctx context.Context, call FakeCall) error {
 	operation := fakeOperations[call.Operation]
-	if err := contextError(ctx, operation); err != nil {
-		return err
+	if err := ctx.Err(); err != nil {
+		return fmt.Errorf("%s: %w", operation, err)
 	}
 
 	fake.calls = append(fake.calls, call)
 	if injectedErr := fake.failures[call.Operation]; injectedErr != nil {
-		return operationError(operation, injectedErr)
+		return fmt.Errorf("%s: %w", operation, injectedErr)
 	}
 
 	return nil
 }
 
-// PresignSourceUpload returns a private PDF PUT grant scoped to the source key.
 func (fake *Fake) PresignSourceUpload(
 	ctx context.Context,
 	fileID string,
