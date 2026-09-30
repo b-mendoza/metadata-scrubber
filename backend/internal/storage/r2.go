@@ -4,8 +4,6 @@ import (
 	"bytes"
 	"context"
 	"errors"
-	"io"
-	"maps"
 	"net/http"
 	"strings"
 	"time"
@@ -68,72 +66,6 @@ func newR2(cfg config.Config, options r2Options) *R2 {
 		presigner: s3.NewPresignClient(client),
 		bucket:    cfg.R2Bucket,
 	}
-}
-
-func (r2 *R2) DownloadSource(
-	ctx context.Context,
-	fileID string,
-	expectedETag string,
-) (SourceObject, error) {
-	if err := contextError(ctx, operationDownloadSource); err != nil {
-		return SourceObject{}, err
-	}
-	objectKey, err := validateSourceReadInput(fileID, expectedETag)
-	if err != nil {
-		return SourceObject{}, err
-	}
-
-	input := &s3.GetObjectInput{
-		Bucket: aws.String(r2.bucket),
-		Key:    aws.String(objectKey),
-	}
-	if expectedETag != "" {
-		input.IfMatch = aws.String("\"" + expectedETag + "\"")
-	}
-
-	output, err := r2.client.GetObject(ctx, input)
-	if err != nil {
-		return SourceObject{}, classifySourceDownloadError(ctx, err, expectedETag)
-	}
-	return readSourceObject(ctx, output)
-}
-
-func classifySourceDownloadError(ctx context.Context, err error, expectedETag string) error {
-	statusCode, hasStatusCode := httpStatusCode(err)
-	if hasStatusCode && expectedETag != "" && statusCode == http.StatusPreconditionFailed {
-		return operationError(operationDownloadSource, ErrSourceRevisionConflict)
-	}
-	if hasStatusCode && statusCode == http.StatusNotFound {
-		return operationError(operationDownloadSource, ErrSourceNotFound)
-	}
-	return r2OperationError(ctx, operationDownloadSource)
-}
-
-func readSourceObject(ctx context.Context, output *s3.GetObjectOutput) (SourceObject, error) {
-	if output.Body == nil {
-		return SourceObject{}, operationError(operationDownloadSource, ErrDependency)
-	}
-	if output.ETag == nil {
-		if err := output.Body.Close(); err != nil {
-			return SourceObject{}, r2OperationError(ctx, operationDownloadSource)
-		}
-		return SourceObject{}, operationError(operationDownloadSource, ErrDependency)
-	}
-
-	pdfBytes, readErr := io.ReadAll(io.LimitReader(output.Body, MaxSourceObjectBytes+1))
-	closeErr := output.Body.Close()
-	if readErr != nil || closeErr != nil {
-		return SourceObject{}, r2OperationError(ctx, operationDownloadSource)
-	}
-	if len(pdfBytes) > MaxSourceObjectBytes {
-		return SourceObject{}, operationError(operationDownloadSource, ErrSourceObjectTooLarge)
-	}
-
-	normalizedETag, err := NormalizeProviderETag(*output.ETag)
-	if err != nil {
-		return SourceObject{}, operationError(operationDownloadSource, ErrDependency)
-	}
-	return SourceObject{PDFBytes: pdfBytes, Metadata: maps.Clone(output.Metadata), ETag: normalizedETag}, nil
 }
 
 func (r2 *R2) UploadSanitized(
