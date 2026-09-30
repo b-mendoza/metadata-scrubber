@@ -3,7 +3,6 @@ import type { ESTree } from "@oxlint/plugins";
 const API_ROUTE_PATH_PATTERN = /(?:^|\/)src\/routes\/api\/.*\.tsx?$/v;
 const DOMAIN_SERVER_MODULE_PATH_PATTERN =
   /(?:^|\/)src\/.*\.mod\.server\.tsx?$/v;
-const EMPTY_SPECIFIER_COUNT = 0;
 const PATH_START_INDEX = 0;
 const REMOVE_LAST_CHARACTER_END = -1;
 const SERVER_FIXTURE_PATH_PATTERN = /(?:^|\/)fixtures\/.*server.*\.tsx?$/v;
@@ -41,12 +40,6 @@ export const getStaticPropertyName = (
   return null;
 };
 
-export const isIdentifier = (
-  node: ESTree.Node | null | undefined,
-  name: string,
-): node is ESTree.IdentifierReference =>
-  node?.type === "Identifier" && node.name === name;
-
 export const isFunction = (
   node: ESTree.Node | null | undefined,
 ): node is ESTree.ArrowFunctionExpression | ESTree.Function =>
@@ -55,9 +48,9 @@ export const isFunction = (
   node?.type === "FunctionExpression";
 
 export const isTestFile = (filename: string): boolean =>
-  TEST_FILE_PATH_PATTERN.test(normalizePath(filename));
+  TEST_FILE_PATH_PATTERN.test(filename.replaceAll("\\", "/"));
 
-export const isServerProjectPath = (path: string): boolean =>
+const isServerProjectPath = (path: string): boolean =>
   DOMAIN_SERVER_MODULE_PATH_PATTERN.test(path) ||
   SHARED_DATABASE_SERVER_PATH_PATTERN.test(path) ||
   API_ROUTE_PATH_PATTERN.test(path) ||
@@ -68,22 +61,11 @@ export const isServerModule = (filename: string, cwd: string): boolean => {
   return isServerProjectPath(path) || SERVER_FIXTURE_PATH_PATTERN.test(path);
 };
 
-export const normalizePath = (path: string): string =>
-  path.replaceAll("\\", "/");
-
 export const toProjectPath = (filename: string, cwd: string): string => {
-  const normalizedFilename = normalizePath(filename);
-  const normalizedCwd = stripTrailingSlashes(normalizePath(cwd));
+  const normalizedFilename = filename.replaceAll("\\", "/");
+  const normalizedCwd = stripTrailingSlashes(cwd.replaceAll("\\", "/"));
   const prefix = `${normalizedCwd}/`;
   return normalizedFilename.startsWith(prefix)
     ? normalizedFilename.slice(prefix.length)
     : normalizedFilename;
 };
-
-export const isRuntimeImport = (node: ESTree.ImportDeclaration): boolean =>
-  node.importKind !== "type" &&
-  (node.specifiers.length === EMPTY_SPECIFIER_COUNT ||
-    node.specifiers.some(
-      (specifier) =>
-        specifier.type !== "ImportSpecifier" || specifier.importKind !== "type",
-    ));
