@@ -1,9 +1,7 @@
 package storage
 
 import (
-	"context"
 	"encoding/base64"
-	"fmt"
 	"strings"
 	"time"
 	"unicode"
@@ -147,16 +145,4 @@ func validatePresignExpiry(expiry time.Duration) error {
 	}
 
 	return nil
-}
-
-func contextError(ctx context.Context, operation string) error {
-	if err := ctx.Err(); err != nil {
-		return operationError(operation, err)
-	}
-
-	return nil
-}
-
-func operationError(operation string, err error) error {
-	return fmt.Errorf("%s: %w", operation, err)
 }
