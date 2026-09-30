@@ -31,12 +31,6 @@ type standardInfoFieldDescriptor struct {
 	action FieldAction
 }
 
-type neutralPDFCPUInfo struct {
-	producer     string
-	creationDate string
-	modDate      string
-}
-
 var standardInfoFields = map[string]standardInfoFieldDescriptor{
 	"Author":       {name: "info.author", label: "Author", action: ActionRemove},
 	"CreationDate": {name: "info.creation_date", label: "Creation date", action: ActionReplace},
@@ -47,6 +41,12 @@ var standardInfoFields = map[string]standardInfoFieldDescriptor{
 	"Subject":      {name: "info.subject", label: "Subject", action: ActionRemove},
 	"Title":        {name: "info.title", label: "Title", action: ActionRemove},
 	"Trapped":      {name: "info.trapped", label: "Trapped", action: ActionRemove},
+}
+
+type neutralPDFCPUInfo struct {
+	producer     string
+	creationDate string
+	modDate      string
 }
 
 func analyzePDF(context *model.Context, origin InspectionOrigin) (*pdfAnalysis, error) {
@@ -149,18 +149,16 @@ func analyzeObjectMetadata(context *model.Context, analysis *pdfAnalysis) error 
 		return err
 	}
 
-	seenTargets := &metadataTargetTracker{}
 	for _, objectNumber := range sortedLiveObjectNumbers(context) {
 		entry := context.Table[objectNumber]
 		state := traversalState{
 			analysis:     analysis,
 			context:      context,
 			roles:        roles,
-			seenTargets:  seenTargets,
 			objectNumber: objectNumber,
 		}
 		walker := structuralWalker{context: context, inspectMetadata: state.inspectMetadataEntry}
-		if err := walker.walkObject(entry.Object, nil); err != nil {
+		if err := walker.walkObject(entry.Object, false); err != nil {
 			return err
 		}
 	}
@@ -168,11 +166,7 @@ func analyzeObjectMetadata(context *model.Context, analysis *pdfAnalysis) error 
 	return nil
 }
 
-func (state *traversalState) inspectMetadataEntry(dictionary types.Dict, key string, path []int) (resultErr error) {
-	if state.seenTargets.contains(state.objectNumber, path, key) {
-		return nil
-	}
-
+func (state *traversalState) inspectMetadataEntry(dictionary types.Dict, key string, nested bool) (resultErr error) {
 	streamObject := dictionary[key]
 	streamDictionary, _, err := state.context.DereferenceStreamDict(streamObject)
 	if err != nil {
@@ -199,11 +193,10 @@ func (state *traversalState) inspectMetadataEntry(dictionary types.Dict, key str
 		return errors.New("PDF metadata stream is not valid UTF-8")
 	}
 
-	name, label := state.metadataIdentity(path)
+	name, label := state.metadataIdentity(nested)
 	if err := state.analysis.addMetadataBytes(name, label, content, ActionRemove); err != nil {
 		return err
 	}
-	state.seenTargets.add(state.objectNumber, path, key)
 	state.analysis.metadataTargets = append(state.analysis.metadataTargets, dictionaryEntryTarget{dictionary: dictionary, key: key})
 
 	return nil
@@ -226,12 +219,12 @@ func decodeMetadataStreamWithinBudget(streamDictionary *types.StreamDict, remain
 	return content, nil
 }
 
-func (state *traversalState) metadataIdentity(path []int) (name string, label string) {
+func (state *traversalState) metadataIdentity(nested bool) (name string, label string) {
 	role := state.roles[state.objectNumber]
-	if len(path) == 0 && role.catalog {
+	if !nested && role.catalog {
 		return "metadata.catalog", "Document metadata"
 	}
-	if len(path) == 0 && role.pageNumber > 0 {
+	if !nested && role.pageNumber > 0 {
 		return fmt.Sprintf("metadata.page.%04d", role.pageNumber), fmt.Sprintf("Page %d metadata", role.pageNumber)
 	}
 

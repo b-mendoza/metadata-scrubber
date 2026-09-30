@@ -221,7 +221,7 @@ func snapshotMetadataEntries(context *model.Context) ([]metadataEntrySnapshot, e
 	snapshots := make([]metadataEntrySnapshot, 0)
 	walker := structuralWalker{
 		context: context,
-		inspectMetadata: func(dictionary types.Dict, key string, _ []int) error {
+		inspectMetadata: func(dictionary types.Dict, key string, _ bool) error {
 			snapshots = append(snapshots, metadataEntrySnapshot{dictionary: dictionary, key: key, value: dictionary[key]})
 			return nil
 		},
@@ -229,7 +229,7 @@ func snapshotMetadataEntries(context *model.Context) ([]metadataEntrySnapshot, e
 
 	for _, objectNumber := range sortedLiveObjectNumbers(context) {
 		entry := context.Table[objectNumber]
-		if err := walker.walkObject(entry.Object, nil); err != nil {
+		if err := walker.walkObject(entry.Object, false); err != nil {
 			return nil, err
 		}
 	}
