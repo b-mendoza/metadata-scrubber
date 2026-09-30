@@ -23,7 +23,6 @@ interface TestApiCallChain {
 
 const NO_DEFINITIONS = 0;
 const TEST_FUNCTION_NAMES = new Set<TestApi>(["it", "test"]);
-const SKIPPABLE_NAMES = new Set<TestApi>(["describe", "it", "test"]);
 
 const getImportedName = (specifier: ESTree.ImportSpecifier): string | null => {
   const { imported } = specifier;
@@ -179,7 +178,7 @@ export default defineRule({
           return;
         }
         const testApi = context.sourceCode.getText(node.callee);
-        if (chain.hasSkip && SKIPPABLE_NAMES.has(chain.rootApi)) {
+        if (chain.hasSkip) {
           context.report({
             node,
             messageId: "disabledTest",
