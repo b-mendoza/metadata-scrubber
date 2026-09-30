@@ -25,7 +25,7 @@ var Analyzer = &analysis.Analyzer{
 	Run:  run,
 }
 
-func run(pass *analysis.Pass) (any, error) { //nolint:noemptyinterface // the x/tools analysis API fixes this return type.
+func run(pass *analysis.Pass) (any, error) {
 	universeAny := types.Universe.Lookup("any")
 
 	for _, file := range pass.Files {
