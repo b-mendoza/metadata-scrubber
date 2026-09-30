@@ -19,43 +19,15 @@ type dictionaryKey struct {
 	logical string
 }
 
-type metadataTargetIdentity struct {
-	objectNumber int
-	path         []int
-	key          string
-}
-
-type metadataTargetTracker struct {
-	identities []metadataTargetIdentity
-}
-
-func (tracker *metadataTargetTracker) contains(objectNumber int, path []int, key string) bool {
-	for _, identity := range tracker.identities {
-		if identity.objectNumber == objectNumber && identity.key == key && slices.Equal(identity.path, path) {
-			return true
-		}
-	}
-	return false
-}
-
-func (tracker *metadataTargetTracker) add(objectNumber int, path []int, key string) {
-	tracker.identities = append(tracker.identities, metadataTargetIdentity{
-		objectNumber: objectNumber,
-		path:         slices.Clone(path),
-		key:          key,
-	})
-}
-
 type traversalState struct {
 	analysis        *pdfAnalysis
 	context         *model.Context
 	roles           map[int]objectRole
-	seenTargets     *metadataTargetTracker
 	metadataOrdinal int
 	objectNumber    int
 }
 
-type metadataEntryInspector func(dictionary types.Dict, key string, path []int) error
+type metadataEntryInspector func(dictionary types.Dict, key string, nested bool) error
 
 type structuralWalker struct {
 	context         *model.Context
@@ -74,24 +46,24 @@ func sortedLiveObjectNumbers(context *model.Context) []int {
 	return objectNumbers
 }
 
-func (walker structuralWalker) walkObject(object types.Object, path []int) error {
+func (walker structuralWalker) walkObject(object types.Object, nested bool) error {
 	switch value := object.(type) {
 	case types.Dict:
-		return walker.walkDictionary(value, path)
+		return walker.walkDictionary(value, nested)
 	case types.StreamDict:
-		return walker.walkDictionary(value.Dict, path)
+		return walker.walkDictionary(value.Dict, nested)
 	case types.ObjectStreamDict:
-		return walker.walkDictionary(value.Dict, path)
+		return walker.walkDictionary(value.Dict, nested)
 	case types.XRefStreamDict:
-		return walker.walkDictionary(value.Dict, path)
+		return walker.walkDictionary(value.Dict, nested)
 	case types.Array:
-		return walker.walkArray(value, path)
+		return walker.walkArray(value)
 	default:
 		return nil
 	}
 }
 
-func (walker structuralWalker) walkDictionary(dictionary types.Dict, path []int) error {
+func (walker structuralWalker) walkDictionary(dictionary types.Dict, nested bool) error {
 	hasSignatureType, err := dictionaryHasSignatureType(walker.context, dictionary)
 	if err != nil {
 		return err
@@ -104,8 +76,8 @@ func (walker structuralWalker) walkDictionary(dictionary types.Dict, path []int)
 	if err != nil {
 		return err
 	}
-	for keyIndex, key := range keys {
-		if err := walker.walkDictionaryEntry(dictionary, key, keyIndex, path); err != nil {
+	for _, key := range keys {
+		if err := walker.walkDictionaryEntry(dictionary, key, nested); err != nil {
 			return err
 		}
 	}
@@ -115,27 +87,24 @@ func (walker structuralWalker) walkDictionary(dictionary types.Dict, path []int)
 func (walker structuralWalker) walkDictionaryEntry(
 	dictionary types.Dict,
 	key dictionaryKey,
-	keyIndex int,
-	path []int,
+	nested bool,
 ) error {
 	if key.logical == "Metadata" {
-		return walker.inspectMetadata(dictionary, key.encoded, path)
+		return walker.inspectMetadata(dictionary, key.encoded, nested)
 	}
 	value := dictionary[key.encoded]
 	if _, indirect := value.(types.IndirectRef); indirect {
 		return nil
 	}
-	childPath := append(slices.Clone(path), keyIndex+1)
-	return walker.walkObject(value, childPath)
+	return walker.walkObject(value, true)
 }
 
-func (walker structuralWalker) walkArray(array types.Array, path []int) error {
-	for valueIndex, value := range array {
+func (walker structuralWalker) walkArray(array types.Array) error {
+	for _, value := range array {
 		if _, indirect := value.(types.IndirectRef); indirect {
 			continue
 		}
-		childPath := append(slices.Clone(path), valueIndex+1)
-		if err := walker.walkObject(value, childPath); err != nil {
+		if err := walker.walkObject(value, true); err != nil {
 			return err
 		}
 	}
