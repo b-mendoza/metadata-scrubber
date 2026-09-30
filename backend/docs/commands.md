@@ -11,11 +11,12 @@
 | `task test` | Run the service and analyzer suites with the race detector and coverage by using `go test -race -cover ./...`. |
 | `task test:coverage` | Run the suite and write `coverage.out`, which Git ignores. Print the per-function coverage summary after the test run. |
 | `task test:watch` | This target re-runs the suite when Go sources change. It re-runs the suite when `testdata` fixtures or module files change. |
-| `task lint:build` | Build the custom `golangci-lint` binary when its inputs change. |
-| `task lint` | Run the custom `golangci-lint` binary with both backend analyzers and verify formatting. This target does not write files. |
+| `task lint` | Run stock `golangci-lint` to check lint rules and formatting. Then run both backend analyzers on application packages. This target does not write files. |
 | `task security` | Use `govulncheck` to scan dependencies for known vulnerabilities. This target uses the network. |
-| `task fix` | Apply lint auto-fixes before formatting the source. This target writes files. |
+| `task fix` | Apply stock `golangci-lint` auto-fixes. Then format the source with `gofumpt` and `gci`. Then run both backend analyzers on application packages. This target writes files. |
 | `task tidy` | Use `go mod tidy` to add missing module dependencies and remove unused module dependencies. |
+
+Both `task lint` and `task fix` run `go run ./lint/cmd/analyzers . ./internal/...`. The package list includes the service root and all packages under `internal/`. Add new application directories to the analyzer package list in both targets. Stock `golangci-lint` checks all packages, including analyzer code.
 
 ## Use tooling to update generated files
 
