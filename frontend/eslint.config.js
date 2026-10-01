@@ -338,6 +338,10 @@ export default defineConfig(
   {
     files: ["src/**/*.test.ts?(x)"],
     ...testingLibrary.configs["flat/react"],
+    rules: {
+      ...testingLibrary.configs["flat/react"].rules,
+      "testing-library/no-debugging-utils": "error",
+    },
   },
   {
     files: ["src/**/*.test.ts?(x)"],
@@ -366,7 +370,6 @@ export default defineConfig(
         },
       ],
       "vitest/no-disabled-tests": "error",
-      "testing-library/no-debugging-utils": "error",
 
       // Use the matcher that names the assertion, so the failure message says
       // which comparison broke.
