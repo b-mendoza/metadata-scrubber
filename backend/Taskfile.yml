@@ -5,6 +5,8 @@ version: "3.51.1"
 vars:
   BINARY: metadata-scrubber
   GOLANGCI_LINT_CONFIG: .golangci.yml
+  # Custom analyzers check application packages only. Add new application directories here.
+  APPLICATION_PACKAGES: . ./internal/...
 
 tasks:
   build:
@@ -31,9 +33,7 @@ tasks:
   test:watch:
     desc: Re-run the test suite whenever Go sources, test fixtures, or module files change
     watch: true
-    # method: none disables Task's up-to-date checkpointing so the suite
-    # always runs once at watcher startup instead of being skipped as
-    # "up to date" from a previous invocation's checksum.
+    # Run at watcher startup even when a previous run is up to date.
     method: none
     sources:
       - "**/*.go"
@@ -44,13 +44,11 @@ tasks:
       - task: test
 
   # golangci-lint run checks formatting as well as lint rules.
-  # Custom analyzers check only application packages: . and ./internal/...
-  # Add new application directories to the analyzer package list.
   lint:
     desc: Lint and verify formatting (read-only)
     cmds:
       - go tool golangci-lint run --config {{.GOLANGCI_LINT_CONFIG}}
-      - go run ./lint/cmd/analyzers . ./internal/...
+      - go run ./lint/cmd/analyzers {{.APPLICATION_PACKAGES}}
 
   # Advisory security scan. It queries the changing Go vulnerability database.
   security:
@@ -59,14 +57,12 @@ tasks:
       - go tool govulncheck ./...
 
   # Check custom rules after auto-fixes and formatting can change the source.
-  # Custom analyzers check only application packages: . and ./internal/...
-  # Add new application directories to the analyzer package list.
   fix:
     desc: Apply lint auto-fixes and format the source code (writes files)
     cmds:
       - go tool golangci-lint run --config {{.GOLANGCI_LINT_CONFIG}} --fix
       - go tool golangci-lint fmt --config {{.GOLANGCI_LINT_CONFIG}}
-      - go run ./lint/cmd/analyzers . ./internal/...
+      - go run ./lint/cmd/analyzers {{.APPLICATION_PACKAGES}}
 
   tidy:
     desc: Add missing and remove unused module dependencies
