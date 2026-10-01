@@ -63,31 +63,15 @@ linters:
   settings:
     asasalint:
       use-builtin-exclusions: false
-    bidichk:
-      left-to-right-embedding: true
-      right-to-left-embedding: true
-      pop-directional-formatting: true
-      left-to-right-override: true
-      right-to-left-override: true
-      left-to-right-isolate: true
-      right-to-left-isolate: true
-      first-strong-isolate: true
-      pop-directional-isolate: true
     cyclop:
       max-complexity: 8
-      package-average: 0
     errcheck:
       check-type-assertions: false # forcetypeassert owns type assertions
       check-blank: true
-      disable-default-exclusions: false
     exhaustive:
       check:
         - switch
         - map
-      default-signifies-exhaustive: false
-      explicit-exhaustive-map: false
-      explicit-exhaustive-switch: false
-      package-scope-only: false
     fatcontext:
       check-struct-pointers: true
     forbidigo:
@@ -104,8 +88,6 @@ linters:
           msg: Use the injected *slog.Logger instead of the global slog functions.
     funlen:
       lines: -1
-      statements: 40
-      ignore-comments: true
     gochecksumtype:
       default-signifies-exhaustive: false
       include-shared-interfaces: true
@@ -124,8 +106,6 @@ linters:
       settings:
         captLocal:
           paramsOnly: false
-        commentedOutCode:
-          minLength: 15
         elseif:
           skipBalanced: false
         rangeExprCopy:
@@ -149,8 +129,6 @@ linters:
         - TODO
         - XXX
     gosec:
-      severity: low
-      confidence: low
       config:
         global:
           # Ignore the suppression effect of "#nosec" comments.
@@ -167,21 +145,10 @@ linters:
       max: 5
     iotamixing:
       report-individual: true
-    makezero:
-      always: false
     misspell:
       locale: US
     mnd:
-      checks:
-        - argument
-        - case
-        - condition
-        - operation
-        - return
-        - assign
       ignored-numbers:
-        - "0"
-        - "1"
         - "2"
     modernize:
       disable:
@@ -194,12 +161,9 @@ linters:
     nolintlint:
       require-explanation: true
       require-specific: true
-      allow-no-explanation: []
     perfsprint:
       # staticcheck S1025/S1028 own the sprintf1 and strconcat rewrites.
       # perfsprint also reports fmt.Sprintf("%s", v), so keep sprintf1 disabled here.
-      err-error: false
-      errorf: true
       loop-other-ops: true
       sprintf1: false
       strconcat: false
@@ -209,7 +173,6 @@ linters:
       patterns:
         - ".*"
     revive:
-      enable-all-rules: false
       rules:
         - name: argument-limit
           arguments:
@@ -270,25 +233,17 @@ linters:
       http-status-code-whitelist: []
     testifylint:
       enable-all: true
-      bool-compare:
-        ignore-custom-types: false
       formatter:
-        check-format-string: true
-        require-f-funcs: false
         require-string-msg: true
       go-require:
         # The exemption hid require calls inside httptest.NewServer handlers.
         # Those handlers run on server goroutines, where FailNow is invalid.
         ignore-http-handlers: false
-      suite-extra-assert-call:
-        mode: remove
     unparam:
       check-exported: true
     unused:
       field-writes-are-uses: false
     usestdlibvars:
-      http-method: true
-      http-status-code: true
       time-date-month: true
       time-weekday: true
       time-month: true
@@ -299,12 +254,6 @@ linters:
       tls-signature-scheme: true
       constant-kind: true
     usetesting:
-      context-background: false
-      context-todo: false
-      os-chdir: true
-      os-create-temp: true
-      os-mkdir-temp: true
-      os-setenv: true
       os-temp-dir: true
 
 formatters:
