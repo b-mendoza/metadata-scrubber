@@ -40,8 +40,8 @@ export default defineConfig(
       "simple-import-sort": simpleImportSort,
     },
     rules: {
-      "simple-import-sort/imports": "error",
       "simple-import-sort/exports": "error",
+      "simple-import-sort/imports": "error",
     },
   },
   // @ts-expect-error Type incompatibility between @typescript-eslint/utils re-exported types and defineConfig.
