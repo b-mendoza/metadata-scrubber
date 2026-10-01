@@ -7,9 +7,7 @@ import * as z from "zod";
 import { fixtureCases } from "./fixture-cases.ts";
 
 const FAILURE_EXIT_CODE = 1;
-const MISSING_JSON_START = -1;
 const NO_DIAGNOSTICS = 0;
-const NO_FILES = 0;
 const SUCCESS_EXIT_CODE = 0;
 
 const pluginDirectory = path.dirname(fileURLToPath(import.meta.url));
@@ -27,46 +25,17 @@ const oxlintJsonExactStringSchema = z.string();
 const oxlintJsonMessageSchema = z.object({
   code: oxlintJsonExactStringSchema.nullish(),
   message: oxlintJsonExactStringSchema,
-  ruleId: oxlintJsonExactStringSchema.nullish(),
 });
 
-const oxlintJsonResultSchema = z.object({
-  diagnostics: z.array(oxlintJsonMessageSchema).nullish(),
-  messages: z.array(oxlintJsonMessageSchema).nullish(),
-  number_of_files: z.number().nullish(),
+const oxlintJsonOutputSchema = z.object({
+  diagnostics: z.array(oxlintJsonMessageSchema),
+  number_of_files: z.number().positive(),
 });
 
-const oxlintJsonOutputSchema = z.union([
-  oxlintJsonResultSchema,
-  z.array(oxlintJsonResultSchema),
-]);
-
-type OxlintJsonMessage = z.infer<typeof oxlintJsonMessageSchema>;
-type OxlintJsonOutput = z.infer<typeof oxlintJsonOutputSchema>;
-
-const isRuleMessage = (message: OxlintJsonMessage, ruleId: string): boolean => {
-  const target = `metadata-scrubber/${ruleId}`;
-  return (
-    message.ruleId === target ||
-    message.code === target ||
-    message.code === `metadata-scrubber(${ruleId})`
-  );
-};
-
-const parseMessages = (
-  parsed: OxlintJsonOutput,
-): readonly OxlintJsonMessage[] =>
-  Array.isArray(parsed)
-    ? parsed.flatMap((result) => result.messages ?? result.diagnostics ?? [])
-    : (parsed.messages ?? parsed.diagnostics ?? []);
-
-interface FixtureLintResult {
-  readonly stderr: string;
-  readonly stdout: string;
-  readonly status: typeof FAILURE_EXIT_CODE | typeof SUCCESS_EXIT_CODE;
-}
-
-const runFixtureLint = (fixturePath: string): FixtureLintResult => {
+const getDiagnosticMessages = (
+  fixturePath: string,
+  ruleId: string,
+): readonly string[] => {
   const result = spawnSync(
     oxlintPath,
     [
@@ -93,94 +62,19 @@ const runFixtureLint = (fixturePath: string): FixtureLintResult => {
       `Oxlint failed for ${fixturePath} with exit code ${String(status)}. Stdout: ${stdout.trim()} Stderr: ${stderr.trim()}`,
     );
   }
-  return { status, stderr, stdout };
-};
-
-const hasNoLintedFiles = (parsed: OxlintJsonOutput): boolean =>
-  !Array.isArray(parsed) && parsed.number_of_files === NO_FILES;
-
-const getJsonStart = (stdout: string): number => {
-  const arrayStart = stdout.indexOf("[");
-  const objectStart = stdout.indexOf("{");
-  if (arrayStart === MISSING_JSON_START) return objectStart;
-  if (objectStart === MISSING_JSON_START) return arrayStart;
-  return Math.min(arrayStart, objectStart);
-};
-
-const getStderrSuffix = (stderr: string): string => {
-  const details = stderr.trim();
-  return details === "" ? "" : ` Stderr: ${details}`;
-};
-
-const parseFixtureJson = (
-  fixturePath: string,
-  stdout: string,
-  options: { jsonStart: number; stderrSuffix: string },
-): unknown => {
-  const { jsonStart, stderrSuffix } = options;
   try {
-    const parsedValue: unknown = JSON.parse(stdout.slice(jsonStart));
-    return parsedValue;
+    const parsedValue: unknown = JSON.parse(stdout);
+    const parsed = oxlintJsonOutputSchema.parse(parsedValue);
+    return parsed.diagnostics
+      .filter((message) => message.code === `metadata-scrubber(${ruleId})`)
+      .map((message) => message.message);
   } catch (error: unknown) {
     const details = error instanceof Error ? error.message : String(error);
     throw new Error(
-      `Oxlint JSON boundary failed for ${fixturePath}: malformed JSON in stdout. ${details}.${stderrSuffix}`,
+      `Oxlint JSON boundary failed for ${fixturePath}: ${details}. Exit code: ${String(status)}. Stdout: ${stdout} Stderr: ${stderr}`,
       { cause: error },
     );
   }
-};
-
-const validateFixtureJson = (
-  fixturePath: string,
-  parsedValue: unknown,
-  stderrSuffix: string,
-): OxlintJsonOutput => {
-  try {
-    return oxlintJsonOutputSchema.parse(parsedValue);
-  } catch (error: unknown) {
-    const details = error instanceof Error ? error.message : String(error);
-    throw new Error(
-      `Oxlint JSON boundary failed for ${fixturePath}: ${details}${stderrSuffix}`,
-      { cause: error },
-    );
-  }
-};
-
-const parseFixtureLintOutput = (
-  fixturePath: string,
-  result: FixtureLintResult,
-): OxlintJsonOutput => {
-  const jsonStart = getJsonStart(result.stdout);
-  const stderrSuffix = getStderrSuffix(result.stderr);
-  if (jsonStart === MISSING_JSON_START) {
-    throw new Error(
-      `Oxlint JSON boundary failed for ${fixturePath}: stdout has no JSON object or array. Exit code: ${String(result.status)}. Stdout: ${result.stdout.trim()}.${stderrSuffix}`,
-    );
-  }
-  const parsed = validateFixtureJson(
-    fixturePath,
-    parseFixtureJson(fixturePath, result.stdout, { jsonStart, stderrSuffix }),
-    stderrSuffix,
-  );
-  if (hasNoLintedFiles(parsed)) {
-    throw new Error(
-      `Oxlint JSON boundary failed for ${fixturePath}: number_of_files is 0.${stderrSuffix}`,
-    );
-  }
-  return parsed;
-};
-
-const getDiagnosticMessages = (
-  fixturePath: string,
-  ruleId: string,
-): readonly string[] => {
-  const parsed = parseFixtureLintOutput(
-    fixturePath,
-    runFixtureLint(fixturePath),
-  );
-  return parseMessages(parsed)
-    .filter((message) => isRuleMessage(message, ruleId))
-    .map((message) => message.message);
 };
 
 let hasFailure = false;
