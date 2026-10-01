@@ -375,13 +375,13 @@ export default defineConfig(
       // which comparison broke.
       "vitest/prefer-comparison-matcher": "error",
       "vitest/prefer-equality-matcher": "error",
-      "vitest/prefer-to-be": "error",
-      "vitest/prefer-to-contain": "error",
-      "vitest/prefer-to-have-length": "error",
 
       // Our addition: a `vi.mock` factory must import the module it replaces,
       // since Vitest hoists the factory above outer bindings.
       "vitest/prefer-import-in-mock": "error",
+      "vitest/prefer-to-be": "error",
+      "vitest/prefer-to-contain": "error",
+      "vitest/prefer-to-have-length": "error",
     },
   },
   {
