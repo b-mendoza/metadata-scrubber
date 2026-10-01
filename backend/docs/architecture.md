@@ -52,4 +52,4 @@ The delete route removes the source and all sanitized revisions for one file. Th
 - If the client cancels while the request waits, the server returns `408 Request Timeout`.
 - Dry-run returns the source's canonical unquoted ETag. The ETag grammar is exactly 32 lower-case hexadecimal characters. Scrub binds the reviewed source revision to both the conditional source read and the immutable sanitized object key.
 - The server applies a read-header timeout. It performs a graceful shutdown on SIGINT or SIGTERM.
-- `.golangci.yml` contains the stock lint configuration. The `go` directive in `go.mod` pins the required Go version.
+- The `go` directive in `go.mod` pins the required Go version.
