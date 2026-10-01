@@ -95,10 +95,10 @@ const getReferenceBinding = (
   return null;
 };
 
-const getImportedName = (specifier: ESTree.ImportSpecifier): string | null => {
+const getImportedName = (specifier: ESTree.ImportSpecifier): string => {
   const { imported } = specifier;
   if (imported.type === "Identifier") return imported.name;
-  return typeof imported.value === "string" ? imported.value : null;
+  return imported.value;
 };
 
 const isReactEffectImport = (definition: Definition): boolean =>
@@ -141,17 +141,13 @@ const isReactNamespace = (
   const binding = getReferenceBinding(expression, sourceCode);
   if (binding == null || visited.has(binding)) return false;
   visited.add(binding);
-  for (const definition of binding.defs) {
+  return binding.defs.some((definition) => {
     if (isReactNamespaceImport(definition)) return true;
     const initializer = getConstInitializer(definition);
-    if (
-      initializer != null &&
-      isReactNamespace(initializer, sourceCode, visited)
-    ) {
-      return true;
-    }
-  }
-  return false;
+    return (
+      initializer != null && isReactNamespace(initializer, sourceCode, visited)
+    );
+  });
 };
 
 const isTypeOnlyExport = (node: ESTree.Node): boolean =>
@@ -263,11 +259,7 @@ export default defineRule({
       Identifier(node) {
         const binding = getReferenceBinding(node, sourceCode);
         if (binding == null) return;
-        if (
-          binding.defs.every((definition) => !isReactEffectImport(definition))
-        ) {
-          return;
-        }
+        if (!binding.defs.some(isReactEffectImport)) return;
         if (
           binding.references.every(
             (reference) => reference.identifier !== node || !reference.isRead(),
@@ -279,8 +271,7 @@ export default defineRule({
       },
       MemberExpression(node) {
         const propertyName =
-          getStaticPropertyName(node) ??
-          (node.computed ? getStaticKeyValue(node.property) : null);
+          getStaticPropertyName(node) ?? getStaticKeyValue(node.property);
         if (
           propertyName !== "useEffect" ||
           !isReactNamespace(node.object, sourceCode, new Set<Variable>())
