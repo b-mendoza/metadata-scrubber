@@ -16,7 +16,7 @@
 | `task fix` | Apply stock `golangci-lint` auto-fixes. Then format the source with `gofumpt` and `gci`. Then run both backend analyzers on application packages. This target writes files. |
 | `task tidy` | Use `go mod tidy` to add missing module dependencies and remove unused module dependencies. |
 
-Both `task lint` and `task fix` run `go run ./lint/cmd/analyzers . ./internal/...`. The package list includes the service root and all packages under `internal/`. Add new application directories to the analyzer package list in both targets. Stock `golangci-lint` checks all packages, including analyzer code.
+Both `task lint` and `task fix` run `go run ./lint/cmd/analyzers . ./internal/...`. The package list includes the service root and all packages under `internal/`. Add new application directories to `APPLICATION_PACKAGES` in `Taskfile.yml`. Stock `golangci-lint` checks all packages, including analyzer code.
 
 ## Use tooling to update generated files
 
