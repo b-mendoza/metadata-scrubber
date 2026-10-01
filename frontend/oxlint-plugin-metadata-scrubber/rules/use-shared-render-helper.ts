@@ -1,10 +1,4 @@
-import type {
-  Definition,
-  ESTree,
-  Scope,
-  SourceCode,
-  Variable,
-} from "@oxlint/plugins";
+import type { ESTree, Scope, SourceCode, Variable } from "@oxlint/plugins";
 import { defineRule } from "@oxlint/plugins";
 
 import { getStaticPropertyName, isTestFile } from "../utilities.ts";
@@ -14,43 +8,26 @@ const TESTING_LIBRARY_SOURCES = new Set([
   "@testing-library/react/pure",
 ]);
 
-const getImportedName = (specifier: ESTree.ImportSpecifier): string | null => {
+const getImportedName = (specifier: ESTree.ImportSpecifier): string => {
   const { imported } = specifier;
   if (imported.type === "Identifier") return imported.name;
-  return typeof imported.value === "string" ? imported.value : null;
-};
-
-const isRuntimeRenderImportSpecifier = (
-  specifier: ESTree.ImportDeclaration["specifiers"][number],
-  declaration: ESTree.ImportDeclaration,
-): specifier is ESTree.ImportSpecifier =>
-  declaration.importKind !== "type" &&
-  specifier.type === "ImportSpecifier" &&
-  specifier.importKind !== "type" &&
-  getImportedName(specifier) === "render";
-
-const getTestingLibraryNamespaceImportSourceFromDefinition = (
-  definition: Definition,
-): string | null => {
-  if (
-    definition.type !== "ImportBinding" ||
-    definition.node.type !== "ImportNamespaceSpecifier" ||
-    definition.parent?.type !== "ImportDeclaration" ||
-    definition.parent.importKind === "type"
-  ) {
-    return null;
-  }
-  const source = definition.parent.source.value;
-  return TESTING_LIBRARY_SOURCES.has(source) ? source : null;
+  return imported.value;
 };
 
 const getTestingLibraryNamespaceImportSource = (
   variable: Variable,
 ): string | null => {
   for (const definition of variable.defs) {
-    const source =
-      getTestingLibraryNamespaceImportSourceFromDefinition(definition);
-    if (source != null) return source;
+    if (
+      definition.type !== "ImportBinding" ||
+      definition.node.type !== "ImportNamespaceSpecifier" ||
+      definition.parent?.type !== "ImportDeclaration" ||
+      definition.parent.importKind === "type"
+    ) {
+      continue;
+    }
+    const source = definition.parent.source.value;
+    if (TESTING_LIBRARY_SOURCES.has(source)) return source;
   }
   return null;
 };
@@ -87,8 +64,15 @@ export default defineRule({
     return {
       ImportDeclaration(node) {
         if (!TESTING_LIBRARY_SOURCES.has(node.source.value)) return;
+        if (node.importKind === "type") return;
         for (const specifier of node.specifiers) {
-          if (!isRuntimeRenderImportSpecifier(specifier, node)) continue;
+          if (
+            specifier.type !== "ImportSpecifier" ||
+            specifier.importKind === "type" ||
+            getImportedName(specifier) !== "render"
+          ) {
+            continue;
+          }
           context.report({
             node: specifier,
             messageId: "directTestingLibraryRender",
