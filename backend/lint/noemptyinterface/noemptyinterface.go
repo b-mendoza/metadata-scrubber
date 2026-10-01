@@ -14,10 +14,6 @@ const (
 	valueDiagnosticMessage         = "declare the specific type this code handles; the empty interface accepts every value and defers type errors to run time"
 )
 
-type diagnosticPolicy struct {
-	constraintTermPositions map[token.Pos]struct{}
-}
-
 // Analyzer reports empty interface types.
 var Analyzer = &analysis.Analyzer{
 	Name: "noemptyinterface",
@@ -26,13 +22,9 @@ var Analyzer = &analysis.Analyzer{
 }
 
 func run(pass *analysis.Pass) (any, error) {
-	universeAny := types.Universe.Lookup("any")
-
 	for _, file := range pass.Files {
-		policy := diagnosticPolicy{
-			constraintTermPositions: collectConstraintTermPositions(file),
-		}
-		reportEmptyInterfaces(pass, file, universeAny, policy)
+		constraintTerms := collectConstraintTermPositions(file)
+		reportEmptyInterfaces(pass, file, constraintTerms)
 	}
 
 	return nil, nil //nolint:nilnil // An analyzer without ResultType must return a nil result.
@@ -62,7 +54,7 @@ func appendConstraintTermPositions(positions map[token.Pos]struct{}, typeParamet
 
 func appendConstraintExpressionPositions(positions map[token.Pos]struct{}, expression ast.Expr) {
 	positions[typeParameterConstraintPosition(expression)] = struct{}{}
-	expression = unparenthesized(expression)
+	expression = ast.Unparen(expression)
 
 	if union, isUnion := expression.(*ast.BinaryExpr); isUnion && union.Op == token.OR {
 		appendConstraintExpressionPositions(positions, union.X)
@@ -72,16 +64,6 @@ func appendConstraintExpressionPositions(positions map[token.Pos]struct{}, expre
 
 	if interfaceType, isInterfaceType := expression.(*ast.InterfaceType); isInterfaceType {
 		appendEmbeddedConstraintPositions(positions, interfaceType)
-	}
-}
-
-func unparenthesized(expression ast.Expr) ast.Expr {
-	for {
-		parenthesized, isParenthesized := expression.(*ast.ParenExpr)
-		if !isParenthesized {
-			return expression
-		}
-		expression = parenthesized.X
 	}
 }
 
@@ -95,70 +77,27 @@ func appendEmbeddedConstraintPositions(positions map[token.Pos]struct{}, interfa
 
 func typeParameterConstraintPosition(expression ast.Expr) token.Pos {
 	for {
-		parenthesized, isParenthesized := expression.(*ast.ParenExpr)
-		if isParenthesized {
-			expression = parenthesized.X
-			continue
+		switch term := ast.Unparen(expression).(type) {
+		case *ast.IndexExpr:
+			expression = term.X
+		case *ast.IndexListExpr:
+			expression = term.X
+		case *ast.SelectorExpr:
+			return term.Sel.Pos()
+		default:
+			return term.Pos()
 		}
-		indexed, isIndexed := expression.(*ast.IndexExpr)
-		if isIndexed {
-			expression = indexed.X
-			continue
-		}
-		indexList, isIndexList := expression.(*ast.IndexListExpr)
-		if isIndexList {
-			expression = indexList.X
-			continue
-		}
-		break
 	}
-	selector, isSelector := expression.(*ast.SelectorExpr)
-	if isSelector {
-		return selector.Sel.Pos()
-	}
-	return expression.Pos()
 }
 
-func reportEmptyInterfaces(
-	pass *analysis.Pass,
-	root ast.Node,
-	universeAny types.Object,
-	policy diagnosticPolicy,
-) {
+func reportEmptyInterfaces(pass *analysis.Pass, root ast.Node, constraintTerms map[token.Pos]struct{}) {
 	for node := range ast.Preorder(root) {
-		if identifier, isIdentifier := node.(*ast.Ident); isIdentifier {
-			reportIdentifier(pass, identifier, universeAny, policy)
-			continue
+		if identifier, isIdentifier := node.(*ast.Ident); isIdentifier && denotesEmptyInterface(identifier, pass.TypesInfo) {
+			reportDiagnostic(pass, identifier.Pos(), constraintTerms)
 		}
-
-		if interfaceType, isInterfaceType := node.(*ast.InterfaceType); isInterfaceType {
-			reportInterfaceType(pass, interfaceType, policy)
+		if interfaceType, isInterfaceType := node.(*ast.InterfaceType); isInterfaceType && len(interfaceType.Methods.List) == 0 {
+			reportDiagnostic(pass, interfaceType.Interface, constraintTerms)
 		}
-	}
-}
-
-func reportIdentifier(
-	pass *analysis.Pass,
-	identifier *ast.Ident,
-	universeAny types.Object,
-	policy diagnosticPolicy,
-) {
-	if identifier.Name == "any" && pass.TypesInfo.Uses[identifier] == universeAny {
-		reportDiagnostic(pass, identifier.Pos(), policy)
-		return
-	}
-	if denotesEmptyInterface(identifier, pass.TypesInfo) {
-		reportDiagnostic(pass, identifier.Pos(), policy)
-	}
-}
-
-func reportInterfaceType(
-	pass *analysis.Pass,
-	interfaceType *ast.InterfaceType,
-	policy diagnosticPolicy,
-) {
-	if len(interfaceType.Methods.List) == 0 {
-		reportDiagnostic(pass, interfaceType.Interface, policy)
 	}
 }
 
@@ -181,9 +120,9 @@ func denotesEmptyInterface(identifier *ast.Ident, typeInfo *types.Info) bool {
 func reportDiagnostic(
 	pass *analysis.Pass,
 	position token.Pos,
-	policy diagnosticPolicy,
+	constraintTerms map[token.Pos]struct{},
 ) {
-	if _, isConstraintTerm := policy.constraintTermPositions[position]; isConstraintTerm {
+	if _, isConstraintTerm := constraintTerms[position]; isConstraintTerm {
 		pass.Reportf(position, typeParameterDiagnosticMessage)
 		return
 	}
