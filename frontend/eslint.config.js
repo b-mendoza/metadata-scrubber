@@ -257,8 +257,6 @@ export default defineConfig(
       "sonarjs/cognitive-complexity": ["error", MAX_COMPLEXITY],
       "sonarjs/no-commented-code": "error",
       "sonarjs/todo-tag": "error",
-      // Keep null legal because the project uses it as the one explicit absent value.
-      "unicorn/no-null": "off",
       /**
        * The project uses these established terms.
        * mod comes from the *.mod.ts file-name convention.
@@ -276,6 +274,8 @@ export default defineConfig(
           },
         },
       ],
+      // Keep null legal because the project uses it as the one explicit absent value.
+      "unicorn/no-null": "off",
       "unicorn/text-encoding-identifier-case": [
         "error",
         {
