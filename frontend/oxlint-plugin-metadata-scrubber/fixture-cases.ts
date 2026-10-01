@@ -71,6 +71,7 @@ export const fixtureCases: readonly FixtureCase[] = [
       "The `value === undefined` test prerequisite guard uses a bare `return` in `test`. This return makes the test pass without its behavior assertions. Replace the guard exit with `expect((value === undefined)).toBeFalsy()`. Then continue the test. Import `expect` from `vitest` when the test file does not import it.",
       "The `blocked` test prerequisite guard uses a bare `return` in `test`. This return makes the test pass without its behavior assertions. Replace the guard exit with `expect((blocked)).toBeFalsy()`. Then continue the test. Import `expect` from `vitest` when the test file does not import it.",
       "The `prepare(), blocked` test prerequisite guard uses a bare `return` in `test`. This return makes the test pass without its behavior assertions. Replace the guard exit with `expect((prepare(), blocked)).toBeFalsy()`. Then continue the test. Import `expect` from `vitest` when the test file does not import it.",
+      "The `!ready` test prerequisite guard uses a bare `return` in `test`. This return makes the test pass without its behavior assertions. Replace the guard exit with `expect(ready).toBeTruthy()`. Then continue the test. Import `expect` from `vitest` when the test file does not import it.",
     ],
   ],
   [
