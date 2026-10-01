@@ -10,7 +10,7 @@
 | `task run` | Run the service on the local machine with `go run .`. |
 | `task test` | Run the service and analyzer suites with the race detector and coverage by using `go test -race -cover ./...`. |
 | `task test:coverage` | Run the suite and write `coverage.out`, which Git ignores. Print the per-function coverage summary after the test run. |
-| `task test:watch` | This target re-runs the suite when Go sources change. It re-runs the suite when `testdata` fixtures or module files change. |
+| `task test:watch` | Run the suite at startup. Run it again when Go sources, `testdata` fixtures, or module files change. |
 | `task lint` | Run stock `golangci-lint` to check lint rules and formatting. Then run both backend analyzers on application packages. This target does not write files. |
 | `task security` | Use `govulncheck` to scan dependencies for known vulnerabilities. This target uses the network. |
 | `task fix` | Apply stock `golangci-lint` auto-fixes. Then format the source with `gofumpt` and `gci`. Then run both backend analyzers on application packages. This target writes files. |
