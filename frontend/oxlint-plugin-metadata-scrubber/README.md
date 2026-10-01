@@ -21,16 +21,15 @@ Run `pnpm run lint` from `frontend/` to run the service lint checks. Run `node o
 - `no-hardcoded-backend-host` requires environment fields instead of static HTTP service hosts outside tests and the validated environment module.
 - `no-mutable-module-state-in-server-code` rejects module-scope `let` and `var` declarations in server modules.
 - `no-silent-test-prerequisite` rejects `.skip` calls on Vitest test APIs, including chains such as `test.skip.each(...)`. It also rejects bare test prerequisite returns in test callbacks.
-- `use-shared-render-helper` requires the shared `renderComponent` helper for Testing Library rendering.
-
-- `use-effect-in-custom-hook` requires direct React `useEffect` calls inside the nearest named custom hook. It rejects runtime extraction of the Effect reference. Renamed imports, static React members, and immutable namespace aliases retain their React binding. Nested callbacks need their own valid owner. Type-only uses remain allowed.
 - `no-use-query` rejects runtime `useQuery` imports, source re-exports, static namespace members, and destructuring from `@tanstack/react-query`. It also rejects runtime wildcard exports from that package. Use `useSuspenseQuery` with an ancestor Suspense boundary and suitable error handling. Type-only uses and other Query APIs remain allowed.
 - `separate-type-imports` rejects inline `type` specifiers in import declarations. It reports once per declaration, including declarations with only inline type specifiers. Use a separate `import type` declaration. Keep runtime imports separate. Preserve aliases and required module side effects. Standalone named, default, and namespace type imports remain allowed. A runtime binding named `type` remains allowed.
+- `use-effect-in-custom-hook` requires direct React `useEffect` calls inside the nearest named custom hook. It rejects runtime extraction of the Effect reference. Renamed imports, static React members, and immutable namespace aliases retain their React binding. Nested callbacks need their own valid owner. Type-only uses remain allowed.
+- `use-shared-render-helper` requires the shared `renderComponent` helper for Testing Library rendering.
 
 ## How to contribute a rule
 
 1. Add a rule file under `rules/` and create the rule with `defineRule`.
-2. Export the rule from `index.ts`.
+2. Register the rule in `index.ts`.
 3. Enable the rule in `fixture.config.json` and `frontend/eslint.config.js`. Leave main Oxlint activation to the user's `.oxlintrc.json` update.
 4. Define message templates in `meta.messages`.
 5. Report with `messageId` and `{{ interpolation }}` data.
