@@ -53,7 +53,7 @@ Use this three-part structure:
 2. Give the reason that the code causes a problem.
 3. State the required fix with the exact import path or API when one applies.
 
-Each message must identify the problem, give the reason, and state the required fix. Name each known bypass. Forbid the bypass when it can preserve the violation. Use technical terms consistently. Do not use `Please`. Do not use vague words such as `similar` or `appropriate`.
+Name each known bypass. Forbid the bypass when it can preserve the violation. Use technical terms consistently. Do not use `Please`. Do not use vague words such as `similar` or `appropriate`.
 
 ## Known limitations
 
