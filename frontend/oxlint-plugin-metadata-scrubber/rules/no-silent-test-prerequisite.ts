@@ -165,8 +165,7 @@ export default defineRule({
         const ifStatement = consequent.parent;
         if (
           ifStatement.type !== "IfStatement" ||
-          ifStatement.consequent !== consequent ||
-          ifStatement.alternate != null
+          ifStatement.consequent !== consequent
         ) {
           return;
         }
