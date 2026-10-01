@@ -5,11 +5,6 @@ import { isTestFile, toProjectPath } from "../utilities.ts";
 
 const ENVIRONMENT_MODULE = "src/shared/config/env/environment.mod.server.ts";
 const NO_EXPRESSIONS = 0;
-const STATIC_HTTP_AUTHORITY = /^:\/\/[^\/?#\s]+/v;
-const STATIC_HTTP_AUTHORITY_AFTER_PROTOCOL_COLON = /^\/\/[^\/?#\s]+/v;
-const STATIC_HTTP_AUTHORITY_AFTER_PROTOCOL_COLON_WITH_BOUNDARY =
-  /^\/\/[^\/?#\s]+[\/?#]/v;
-const STATIC_HTTP_AUTHORITY_WITH_BOUNDARY = /^:\/\/[^\/?#\s]+[\/?#]/v;
 const STATIC_HTTP_HOST = /^https?:\/\/[^\/?#\s]+/iv;
 const STATIC_HTTP_HOST_WITH_AUTHORITY_BOUNDARY =
   /^https?:\/\/[^\/?#\s]+[\/?#]/iv;
@@ -24,12 +19,12 @@ const getFirstTemplateText = (
 };
 
 const hasStaticHostPrefix = (
-  node: ESTree.TemplateLiteral,
-  firstTemplateText: string,
+  text: string,
+  hasLaterExpression: boolean,
 ): boolean =>
-  node.expressions.length === NO_EXPRESSIONS
-    ? STATIC_HTTP_HOST.test(firstTemplateText)
-    : STATIC_HTTP_HOST_WITH_AUTHORITY_BOUNDARY.test(firstTemplateText);
+  hasLaterExpression
+    ? STATIC_HTTP_HOST_WITH_AUTHORITY_BOUNDARY.test(text)
+    : STATIC_HTTP_HOST.test(text);
 
 type TransparentExpression =
   | ESTree.ParenthesizedExpression
@@ -92,9 +87,9 @@ const getStaticHttpProtocol = (
   sourceCode: SourceCode,
 ): string | null => {
   const unwrappedExpression = unwrapTransparentExpressions(expression);
-  const literalProtocol = getHttpProtocolLiteral(unwrappedExpression);
-  if (literalProtocol != null) return literalProtocol;
-  if (unwrappedExpression.type !== "Identifier") return null;
+  if (unwrappedExpression.type !== "Identifier") {
+    return getHttpProtocolLiteral(unwrappedExpression);
+  }
 
   let scope: Scope | null = sourceCode.getScope(unwrappedExpression);
   while (scope != null) {
@@ -105,55 +100,20 @@ const getStaticHttpProtocol = (
   return null;
 };
 
-interface InterpolatedProtocolTemplate {
-  readonly firstExpression: ESTree.Expression;
-  readonly hasLaterExpression: boolean;
-  readonly nextTemplateText: string;
-}
-
-const getInterpolatedProtocolTemplate = (
-  node: ESTree.TemplateLiteral,
-): InterpolatedProtocolTemplate | undefined => {
-  const [, nextQuasi] = node.quasis;
-  if (getFirstTemplateText(node) !== "") return;
-  const [firstExpression, laterExpression] = node.expressions;
-  if (firstExpression == null) return;
-  if (nextQuasi == null) return;
-  return {
-    firstExpression,
-    hasLaterExpression: laterExpression != null,
-    nextTemplateText: nextQuasi.value.cooked ?? nextQuasi.value.raw,
-  };
-};
-
-const getStaticHttpAuthorityPattern = (
-  protocol: string,
-  hasLaterExpression: boolean,
-): RegExp => {
-  if (protocol.endsWith(":")) {
-    return hasLaterExpression
-      ? STATIC_HTTP_AUTHORITY_AFTER_PROTOCOL_COLON_WITH_BOUNDARY
-      : STATIC_HTTP_AUTHORITY_AFTER_PROTOCOL_COLON;
-  }
-  return hasLaterExpression
-    ? STATIC_HTTP_AUTHORITY_WITH_BOUNDARY
-    : STATIC_HTTP_AUTHORITY;
-};
-
 const getInterpolatedProtocolUrl = (
   node: ESTree.TemplateLiteral,
   sourceCode: SourceCode,
 ): string | undefined => {
-  const template = getInterpolatedProtocolTemplate(node);
-  if (template == null) return;
-  const protocol = getStaticHttpProtocol(template.firstExpression, sourceCode);
+  if (getFirstTemplateText(node) !== "") return;
+  const [firstExpression, laterExpression] = node.expressions;
+  const [, nextQuasi] = node.quasis;
+  if (firstExpression == null || nextQuasi == null) return;
+  const protocol = getStaticHttpProtocol(firstExpression, sourceCode);
   if (protocol == null) return;
-  const authorityPattern = getStaticHttpAuthorityPattern(
-    protocol,
-    template.hasLaterExpression,
-  );
-  if (!authorityPattern.test(template.nextTemplateText)) return;
-  return `${protocol}${template.nextTemplateText}`;
+  const nextTemplateText = nextQuasi.value.cooked ?? nextQuasi.value.raw;
+  const url = `${protocol}${nextTemplateText}`;
+  if (!hasStaticHostPrefix(url, laterExpression != null)) return;
+  return url;
 };
 
 export default defineRule({
@@ -192,7 +152,10 @@ export default defineRule({
         const firstTemplateText = getFirstTemplateText(node);
         const url =
           firstTemplateText != null &&
-          hasStaticHostPrefix(node, firstTemplateText)
+          hasStaticHostPrefix(
+            firstTemplateText,
+            node.expressions.length !== NO_EXPRESSIONS,
+          )
             ? firstTemplateText
             : getInterpolatedProtocolUrl(node, context.sourceCode);
         if (url == null) return;
