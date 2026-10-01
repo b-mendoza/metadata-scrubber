@@ -54,3 +54,26 @@ func nestedMethodConstraint[T interface{ M(any) }](value T) { // want "declare t
 var values = map[string]any{ // want "declare the specific type this code handles; the empty interface accepts every value and defers type errors to run time"
 	"answer": 42,
 }
+
+func parenConstraint[T ((any))](value T) { // want "declare an explicit type constraint; an unconstrained type parameter hides the declaration's real contract"
+}
+
+func parenLiteralConstraint[T ((interface{}))](value T) { // want "declare an explicit type constraint; an unconstrained type parameter hides the declaration's real contract"
+}
+
+func selectedLineConstraint[T noemptyinterfacealiases.
+	Dynamic2](value T) { // want "declare an explicit type constraint; an unconstrained type parameter hides the declaration's real contract"
+}
+
+type genericEmpty[T comparable] interface{} // want "declare the specific type this code handles; the empty interface accepts every value and defers type errors to run time"
+
+type genericEmptyPair[A comparable, B comparable] interface{} // want "declare the specific type this code handles; the empty interface accepts every value and defers type errors to run time"
+
+func indexedConstraint[T genericEmpty[int]](value T) { // want "declare an explicit type constraint; an unconstrained type parameter hides the declaration's real contract"
+}
+
+func indexListConstraint[T genericEmptyPair[int, string]](value T) { // want "declare an explicit type constraint; an unconstrained type parameter hides the declaration's real contract"
+}
+
+func parenIndexedConstraint[T ((genericEmpty[int]))](value T) { // want "declare an explicit type constraint; an unconstrained type parameter hides the declaration's real contract"
+}
