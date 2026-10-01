@@ -24,10 +24,10 @@ interface TestApiCallChain {
 const NO_DEFINITIONS = 0;
 const TEST_FUNCTION_NAMES = new Set<TestApi>(["it", "test"]);
 
-const getImportedName = (specifier: ESTree.ImportSpecifier): string | null => {
+const getImportedName = (specifier: ESTree.ImportSpecifier): string => {
   const { imported } = specifier;
   if (imported.type === "Identifier") return imported.name;
-  return typeof imported.value === "string" ? imported.value : null;
+  return imported.value;
 };
 
 const isTestApiName = (name: string): name is TestApi =>
@@ -43,34 +43,14 @@ const isRuntimeVitestImportDefinition = (
   definition.parent.importKind !== "type" &&
   definition.parent.source.value === "vitest";
 
-const getVitestTestApiImportDefinition = (
-  definition: Definition,
-): TestApi | null => {
-  if (!isRuntimeVitestImportDefinition(definition)) return null;
-  const importedName = getImportedName(definition.node);
-  return importedName != null && isTestApiName(importedName)
-    ? importedName
-    : null;
-};
-
 const getVitestTestApiImport = (variable: Variable): TestApi | null => {
   for (const definition of variable.defs) {
-    const testApi = getVitestTestApiImportDefinition(definition);
-    if (testApi != null) return testApi;
+    if (!isRuntimeVitestImportDefinition(definition)) continue;
+    const importedName = getImportedName(definition.node);
+    if (isTestApiName(importedName)) return importedName;
   }
   return null;
 };
-
-const getTestApiName = (name: string): TestApi | null =>
-  isTestApiName(name) ? name : null;
-
-const getVitestTestApiVariable = (
-  variable: Variable,
-  referencedName: string,
-): TestApi | null =>
-  variable.defs.length === NO_DEFINITIONS
-    ? getTestApiName(referencedName)
-    : getVitestTestApiImport(variable);
 
 const getVitestTestApiReference = (
   node: ESTree.IdentifierReference,
@@ -80,11 +60,12 @@ const getVitestTestApiReference = (
   while (scope != null) {
     const variable = scope.set.get(node.name);
     if (variable != null) {
-      return getVitestTestApiVariable(variable, node.name);
+      if (variable.defs.length === NO_DEFINITIONS) break;
+      return getVitestTestApiImport(variable);
     }
     scope = scope.upper;
   }
-  return getTestApiName(node.name);
+  return isTestApiName(node.name) ? node.name : null;
 };
 
 const getTestApiCallChain = (
@@ -124,20 +105,6 @@ const getEnclosingTestApi = (
     current = current.parent;
   }
   return null;
-};
-
-const getGuardIfStatement = (
-  node: ESTree.ReturnStatement,
-): ESTree.IfStatement | null => {
-  const { parent } = node;
-  if (parent.type === "IfStatement") {
-    return parent.consequent === node ? parent : null;
-  }
-  if (parent.type !== "BlockStatement") return null;
-  const ifStatement = parent.parent;
-  return ifStatement.type === "IfStatement" && ifStatement.consequent === parent
-    ? ifStatement
-    : null;
 };
 
 const getGuardAssertion = (
@@ -193,8 +160,16 @@ export default defineRule({
       },
       ReturnStatement(node) {
         if (node.argument != null) return;
-        const ifStatement = getGuardIfStatement(node);
-        if (ifStatement == null || ifStatement.alternate != null) return;
+        const consequent =
+          node.parent.type === "BlockStatement" ? node.parent : node;
+        const ifStatement = consequent.parent;
+        if (
+          ifStatement.type !== "IfStatement" ||
+          ifStatement.consequent !== consequent ||
+          ifStatement.alternate != null
+        ) {
+          return;
+        }
         const testApi = getEnclosingTestApi(node, testCallbacks);
         if (testApi == null) return;
         context.report({
