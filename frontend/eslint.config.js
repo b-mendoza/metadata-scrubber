@@ -360,6 +360,7 @@ export default defineConfig(
       // it matches nothing, so a test with no literal `expect` can still
       // assert something.
       "vitest/expect-expect": "off",
+      "vitest/no-disabled-tests": "error",
 
       // Error, and no autofix: we want a leftover `.only` visible in review,
       // and a fix would delete it while someone debugs.
@@ -369,7 +370,6 @@ export default defineConfig(
           fixable: false,
         },
       ],
-      "vitest/no-disabled-tests": "error",
 
       // Use the matcher that names the assertion, so the failure message says
       // which comparison broke.
