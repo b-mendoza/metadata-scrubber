@@ -4,22 +4,10 @@ package nohiddentestsignal
 import (
 	"go/ast"
 	"go/types"
-	"path/filepath"
 	"strings"
 
 	"golang.org/x/tools/go/analysis"
 )
-
-const (
-	testingPackagePath = "testing"
-	timePackagePath    = "time"
-)
-
-var forbiddenTestingMethods = map[string]string{
-	"Skip":    "remove t.Skip; make the test prerequisite explicit and fail when it is missing",
-	"Skipf":   "remove t.Skipf; make the test prerequisite explicit and fail when it is missing",
-	"SkipNow": "remove t.SkipNow; make the test prerequisite explicit and fail when it is missing",
-}
 
 // Analyzer reports test skips and sleeps in Go test files.
 var Analyzer = &analysis.Analyzer{
@@ -30,8 +18,7 @@ var Analyzer = &analysis.Analyzer{
 
 func run(pass *analysis.Pass) (any, error) {
 	for _, file := range pass.Files {
-		filename := pass.Fset.PositionFor(file.Pos(), false).Filename
-		if !isTestFilename(filename) {
+		if !strings.HasSuffix(pass.Fset.File(file.FileStart).Name(), "_test.go") {
 			continue
 		}
 
@@ -39,12 +26,6 @@ func run(pass *analysis.Pass) (any, error) {
 	}
 
 	return nil, nil //nolint:nilnil // An analyzer without ResultType must return a nil result.
-}
-
-func isTestFilename(filename string) bool {
-	baseName := filepath.Base(filename)
-
-	return baseName != "_test.go" && strings.HasSuffix(baseName, "_test.go")
 }
 
 func inspectTestFile(pass *analysis.Pass, file *ast.File) {
@@ -59,7 +40,7 @@ func inspectTestFile(pass *analysis.Pass, file *ast.File) {
 			continue
 		}
 
-		function := selectedFunction(pass, selector)
+		function, _ := pass.TypesInfo.ObjectOf(selector.Sel).(*types.Func)
 		if function == nil || function.Pkg() == nil {
 			continue
 		}
@@ -68,31 +49,11 @@ func inspectTestFile(pass *analysis.Pass, file *ast.File) {
 	}
 }
 
-func selectedFunction(pass *analysis.Pass, selector *ast.SelectorExpr) *types.Func {
-	selection := pass.TypesInfo.Selections[selector]
-	if selection != nil {
-		function, _ := selection.Obj().(*types.Func)
-
-		return function
-	}
-
-	function, _ := pass.TypesInfo.Uses[selector.Sel].(*types.Func)
-
-	return function
-}
-
 func reportForbiddenCall(pass *analysis.Pass, selector *ast.SelectorExpr, function *types.Func) {
-	packagePath := function.Pkg().Path()
-	if packagePath == testingPackagePath {
-		message, forbidden := forbiddenTestingMethods[function.Name()]
-		if forbidden {
-			pass.Reportf(selector.Sel.Pos(), "%s", message)
-		}
-
-		return
-	}
-
-	if packagePath == timePackagePath && function.Name() == "Sleep" {
+	switch function.Pkg().Path() + "." + function.Name() {
+	case "testing.Skip", "testing.Skipf", "testing.SkipNow":
+		pass.Reportf(selector.Sel.Pos(), "remove t.%s; make the test prerequisite explicit and fail when it is missing", function.Name())
+	case "time.Sleep":
 		pass.Reportf(selector.Sel.Pos(), "replace time.Sleep with synchronization on the condition that the test needs")
 	}
 }
