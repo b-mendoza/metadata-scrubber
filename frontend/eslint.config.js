@@ -183,6 +183,24 @@ export default defineConfig(
       // These rules can crash lint or change program behavior with an autofix.
       [`${PLUGIN_NAMES.SonarJS}/no-regex-spaces`]: SEVERITY_LEVELS.Off,
       [`${PLUGIN_NAMES.E18e}/prefer-array-to-spliced`]: SEVERITY_LEVELS.Off,
+
+      // Other enabled rules report the same code.
+      [`${PLUGIN_NAMES.ESLintReact}/error-boundaries`]: SEVERITY_LEVELS.Off,
+      [`${PLUGIN_NAMES.ESLintReact}/exhaustive-deps`]: SEVERITY_LEVELS.Off,
+      [`${PLUGIN_NAMES.ESLintReact}/purity`]: SEVERITY_LEVELS.Off,
+      [`${PLUGIN_NAMES.ESLintReact}/rules-of-hooks`]: SEVERITY_LEVELS.Off,
+      [`${PLUGIN_NAMES.ESLintReact}/set-state-in-render`]: SEVERITY_LEVELS.Off,
+      [`${PLUGIN_NAMES.ESLintReact}/static-components`]: SEVERITY_LEVELS.Off,
+      [`${PLUGIN_NAMES.ESLintReact}/unsupported-syntax`]: SEVERITY_LEVELS.Off,
+      [`${PLUGIN_NAMES.ESLintReact}/use-memo`]: SEVERITY_LEVELS.Off,
+      [`${PLUGIN_NAMES.ESLintReact}/no-leaked-conditional-rendering`]:
+        SEVERITY_LEVELS.Off,
+      [`${PLUGIN_NAMES.SonarJS}/jsx-no-leaked-render`]: SEVERITY_LEVELS.Off,
+      [`${PLUGIN_NAMES.SonarJS}/no-hook-setter-in-body`]: SEVERITY_LEVELS.Off,
+      [`${PLUGIN_NAMES.ESLintReact}/jsx-no-children-prop-with-children`]:
+        SEVERITY_LEVELS.Off,
+      [`${PLUGIN_NAMES.ESLintReact}/dom-no-dangerously-set-innerhtml-with-children`]:
+        SEVERITY_LEVELS.Off,
       // =======================================================================
 
       [`${PLUGIN_NAMES.ESLintCommunityComments}/disable-enable-pair`]:
