@@ -152,14 +152,11 @@ export default defineConfig(
     },
     rules: {
       /**
-       * A plugin-collision audit found these rule overlaps.
-       * Each disabled rule duplicates or conflicts with a rule that another
-       * plugin or oxlint already enforces.
-       * These rules are disabled because they duplicate enabled unicorn or
-       * typescript-eslint rules. `e18e/prefer-string-fromcharcode` and
-       * `e18e/prefer-array-fill` conflict with `unicorn/prefer-code-point` and
-       * `unicorn/no-array-from-fill`. `sonarjs/prefer-regexp-exec` conflicts with
-       * the enabled `.test()` rules.
+       * These rules duplicate enabled core, unicorn, or typescript-eslint rules.
+       * Core `prefer-object-has-own` covers `e18e/prefer-object-has-own`.
+       * `@typescript-eslint/prefer-regexp-exec` covers `sonarjs/prefer-regexp-exec`.
+       * `e18e/prefer-string-fromcharcode` and `e18e/prefer-array-fill` instead
+       * conflict with `unicorn/prefer-code-point` and `unicorn/no-array-from-fill`.
        */
       // =======================================================================
       [`${PLUGIN_NAMES.E18e}/prefer-array-at`]: SEVERITY_LEVELS.Off,
