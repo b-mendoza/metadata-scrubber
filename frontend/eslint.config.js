@@ -179,6 +179,10 @@ export default defineConfig(
       [`${PLUGIN_NAMES.Unicorn}/no-useless-boolean-cast`]: SEVERITY_LEVELS.Off,
       [`${PLUGIN_NAMES.TypescriptESLint}/non-nullable-type-assertion-style`]:
         SEVERITY_LEVELS.Off,
+
+      // These rules can crash lint or change program behavior with an autofix.
+      [`${PLUGIN_NAMES.SonarJS}/no-regex-spaces`]: SEVERITY_LEVELS.Off,
+      [`${PLUGIN_NAMES.E18e}/prefer-array-to-spliced`]: SEVERITY_LEVELS.Off,
       // =======================================================================
 
       [`${PLUGIN_NAMES.ESLintCommunityComments}/disable-enable-pair`]:
