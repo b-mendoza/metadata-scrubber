@@ -469,6 +469,11 @@ export default defineConfig(
     ...testingLibrary.configs["flat/react"],
     rules: {
       ...testingLibrary.configs["flat/react"].rules,
+      // The type-aware await rule already checks the real return type.
+      [`${PLUGIN_NAMES.TestingLibrary}/no-await-sync-queries`]:
+        SEVERITY_LEVELS.Off,
+      [`${PLUGIN_NAMES.TestingLibrary}/no-await-sync-events`]:
+        SEVERITY_LEVELS.Off,
       [`${PLUGIN_NAMES.TestingLibrary}/no-debugging-utils`]:
         SEVERITY_LEVELS.Error,
     },
