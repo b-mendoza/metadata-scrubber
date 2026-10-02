@@ -224,6 +224,15 @@ export default defineConfig(
       [`${PLUGIN_NAMES.TypescriptESLint}/require-array-sort-compare`]:
         SEVERITY_LEVELS.Off,
       [`${PLUGIN_NAMES.SonarJS}/no-alphabetical-sort`]: SEVERITY_LEVELS.Off,
+      [`${PLUGIN_NAMES.Promise}/no-return-wrap`]: SEVERITY_LEVELS.Off,
+      [`${PLUGIN_NAMES.Unicorn}/prefer-then-catch`]: SEVERITY_LEVELS.Off,
+      "no-new-wrappers": SEVERITY_LEVELS.Off,
+      "no-new-native-nonconstructor": SEVERITY_LEVELS.Off,
+      [`${PLUGIN_NAMES.SonarJS}/no-primitive-wrappers`]: SEVERITY_LEVELS.Off,
+      [`${PLUGIN_NAMES.Unicorn}/no-new-buffer`]: SEVERITY_LEVELS.Off,
+      [`${PLUGIN_NAMES.SonarJS}/deprecation`]: SEVERITY_LEVELS.Off,
+      [`${PLUGIN_NAMES.Unicorn}/no-magic-array-flat-depth`]:
+        SEVERITY_LEVELS.Off,
       // =======================================================================
 
       [`${PLUGIN_NAMES.ESLintCommunityComments}/disable-enable-pair`]:
