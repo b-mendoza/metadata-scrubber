@@ -40,6 +40,8 @@ const PLUGIN_NAMES = {
   Unicorn: "unicorn",
   Vitest: "vitest",
   TestingLibrary: "testing-library",
+  ESLintReact: "@eslint-react",
+  Promise: "promise",
 };
 
 const SEVERITY_LEVELS = Object.freeze({
