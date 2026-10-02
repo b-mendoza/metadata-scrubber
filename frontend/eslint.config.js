@@ -518,6 +518,10 @@ export default defineConfig(
       [`${PLUGIN_NAMES.Vitest}/prefer-to-be`]: SEVERITY_LEVELS.Error,
       [`${PLUGIN_NAMES.Vitest}/prefer-to-contain`]: SEVERITY_LEVELS.Error,
       [`${PLUGIN_NAMES.Vitest}/prefer-to-have-length`]: SEVERITY_LEVELS.Error,
+
+      // These rules conflict with query-only assertions and the test skip ban.
+      [`${PLUGIN_NAMES.SonarJS}/assertions-in-tests`]: SEVERITY_LEVELS.Off,
+      [`${PLUGIN_NAMES.SonarJS}/explicit-test-skip`]: SEVERITY_LEVELS.Off,
     },
   },
   {
