@@ -201,6 +201,16 @@ export default defineConfig(
         SEVERITY_LEVELS.Off,
       [`${PLUGIN_NAMES.ESLintReact}/dom-no-dangerously-set-innerhtml-with-children`]:
         SEVERITY_LEVELS.Off,
+      [`${PLUGIN_NAMES.TypescriptESLint}/no-import-type-side-effects`]:
+        SEVERITY_LEVELS.Off,
+      [`${PLUGIN_NAMES.SonarJS}/unused-import`]: SEVERITY_LEVELS.Off,
+      [`${PLUGIN_NAMES.SonarJS}/no-unused-vars`]: SEVERITY_LEVELS.Off,
+      [`${PLUGIN_NAMES.E18e}/prefer-regex-test`]: SEVERITY_LEVELS.Off,
+      [`${PLUGIN_NAMES.SonarJS}/prefer-native-lodash-alternative`]:
+        SEVERITY_LEVELS.Off,
+      [`${PLUGIN_NAMES.SonarJS}/no-undefined-argument`]: SEVERITY_LEVELS.Off,
+      [`${PLUGIN_NAMES.ESLintCommunityComments}/no-unused-enable`]:
+        SEVERITY_LEVELS.Off,
       // =======================================================================
 
       [`${PLUGIN_NAMES.ESLintCommunityComments}/disable-enable-pair`]:
