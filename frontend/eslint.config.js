@@ -236,6 +236,36 @@ export default defineConfig(
       "no-empty-character-class": SEVERITY_LEVELS.Off,
       "no-invalid-regexp": SEVERITY_LEVELS.Off,
       [`${PLUGIN_NAMES.Unicorn}/no-nested-ternary`]: SEVERITY_LEVELS.Off,
+      [`${PLUGIN_NAMES.SonarJS}/call-argument-line`]: SEVERITY_LEVELS.Off,
+      [`${PLUGIN_NAMES.SonarJS}/constructor-for-side-effects`]:
+        SEVERITY_LEVELS.Off,
+      [`${PLUGIN_NAMES.SonarJS}/no-unthrown-error`]: SEVERITY_LEVELS.Off,
+      [`${PLUGIN_NAMES.SonarJS}/function-inside-loop`]: SEVERITY_LEVELS.Off,
+      [`${PLUGIN_NAMES.SonarJS}/generator-without-yield`]: SEVERITY_LEVELS.Off,
+      [`${PLUGIN_NAMES.SonarJS}/no-labels`]: SEVERITY_LEVELS.Off,
+      [`${PLUGIN_NAMES.SonarJS}/no-array-delete`]: SEVERITY_LEVELS.Off,
+      [`${PLUGIN_NAMES.SonarJS}/no-collection-size-mischeck`]:
+        SEVERITY_LEVELS.Off,
+      [`${PLUGIN_NAMES.SonarJS}/no-dead-store`]: SEVERITY_LEVELS.Off,
+      [`${PLUGIN_NAMES.SonarJS}/no-delete-var`]: SEVERITY_LEVELS.Off,
+      [`${PLUGIN_NAMES.SonarJS}/no-duplicate-in-composite`]:
+        SEVERITY_LEVELS.Off,
+      [`${PLUGIN_NAMES.SonarJS}/no-extra-arguments`]: SEVERITY_LEVELS.Off,
+      [`${PLUGIN_NAMES.SonarJS}/no-global-this`]: SEVERITY_LEVELS.Off,
+      [`${PLUGIN_NAMES.SonarJS}/no-gratuitous-expressions`]:
+        SEVERITY_LEVELS.Off,
+      [`${PLUGIN_NAMES.SonarJS}/no-identical-conditions`]: SEVERITY_LEVELS.Off,
+      [`${PLUGIN_NAMES.SonarJS}/no-misleading-array-reverse`]:
+        SEVERITY_LEVELS.Off,
+      [`${PLUGIN_NAMES.SonarJS}/no-misleading-character-class`]:
+        SEVERITY_LEVELS.Off,
+      [`${PLUGIN_NAMES.SonarJS}/no-redundant-jump`]: SEVERITY_LEVELS.Off,
+      [`${PLUGIN_NAMES.SonarJS}/no-use-of-empty-return-value`]:
+        SEVERITY_LEVELS.Off,
+      [`${PLUGIN_NAMES.SonarJS}/no-useless-catch`]: SEVERITY_LEVELS.Off,
+      [`${PLUGIN_NAMES.SonarJS}/prefer-single-boolean-return`]:
+        SEVERITY_LEVELS.Off,
+      [`${PLUGIN_NAMES.SonarJS}/updated-const-var`]: SEVERITY_LEVELS.Off,
       // =======================================================================
 
       [`${PLUGIN_NAMES.ESLintCommunityComments}/disable-enable-pair`]:
