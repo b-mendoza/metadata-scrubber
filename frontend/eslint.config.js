@@ -522,6 +522,17 @@ export default defineConfig(
       // These rules conflict with query-only assertions and the test skip ban.
       [`${PLUGIN_NAMES.SonarJS}/assertions-in-tests`]: SEVERITY_LEVELS.Off,
       [`${PLUGIN_NAMES.SonarJS}/explicit-test-skip`]: SEVERITY_LEVELS.Off,
+
+      // The enabled Vitest rules already check these test errors.
+      [`${PLUGIN_NAMES.SonarJS}/no-exclusive-tests`]: SEVERITY_LEVELS.Off,
+      [`${PLUGIN_NAMES.SonarJS}/no-skipped-tests`]: SEVERITY_LEVELS.Off,
+      [`${PLUGIN_NAMES.SonarJS}/no-duplicate-test-title`]: SEVERITY_LEVELS.Off,
+      [`${PLUGIN_NAMES.SonarJS}/no-empty-test-title`]: SEVERITY_LEVELS.Off,
+      [`${PLUGIN_NAMES.SonarJS}/no-incomplete-assertions`]: SEVERITY_LEVELS.Off,
+      [`${PLUGIN_NAMES.SonarJS}/assertions-in-test-cases`]: SEVERITY_LEVELS.Off,
+      [`${PLUGIN_NAMES.SonarJS}/async-test-assertions`]: SEVERITY_LEVELS.Off,
+      [`${PLUGIN_NAMES.SonarJS}/prefer-specific-assertions`]:
+        SEVERITY_LEVELS.Off,
     },
   },
   {
