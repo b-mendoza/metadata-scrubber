@@ -211,6 +211,19 @@ export default defineConfig(
       [`${PLUGIN_NAMES.SonarJS}/no-undefined-argument`]: SEVERITY_LEVELS.Off,
       [`${PLUGIN_NAMES.ESLintCommunityComments}/no-unused-enable`]:
         SEVERITY_LEVELS.Off,
+      "operator-assignment": SEVERITY_LEVELS.Off,
+      [`${PLUGIN_NAMES.Unicorn}/no-useless-concat`]: SEVERITY_LEVELS.Off,
+      [`${PLUGIN_NAMES.Unicorn}/no-unnecessary-await`]: SEVERITY_LEVELS.Off,
+      [`${PLUGIN_NAMES.Unicorn}/no-this-assignment`]: SEVERITY_LEVELS.Off,
+      [`${PLUGIN_NAMES.Unicorn}/no-unnecessary-boolean-comparison`]:
+        SEVERITY_LEVELS.Off,
+      [`${PLUGIN_NAMES.Unicorn}/no-useless-coercion`]: SEVERITY_LEVELS.Off,
+      [`${PLUGIN_NAMES.TypescriptESLint}/prefer-for-of`]: SEVERITY_LEVELS.Off,
+      [`${PLUGIN_NAMES.Unicorn}/prefer-string-starts-ends-with`]:
+        SEVERITY_LEVELS.Off,
+      [`${PLUGIN_NAMES.TypescriptESLint}/require-array-sort-compare`]:
+        SEVERITY_LEVELS.Off,
+      [`${PLUGIN_NAMES.SonarJS}/no-alphabetical-sort`]: SEVERITY_LEVELS.Off,
       // =======================================================================
 
       [`${PLUGIN_NAMES.ESLintCommunityComments}/disable-enable-pair`]:
