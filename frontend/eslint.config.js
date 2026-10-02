@@ -233,6 +233,9 @@ export default defineConfig(
       [`${PLUGIN_NAMES.SonarJS}/deprecation`]: SEVERITY_LEVELS.Off,
       [`${PLUGIN_NAMES.Unicorn}/no-magic-array-flat-depth`]:
         SEVERITY_LEVELS.Off,
+      "no-empty-character-class": SEVERITY_LEVELS.Off,
+      "no-invalid-regexp": SEVERITY_LEVELS.Off,
+      [`${PLUGIN_NAMES.Unicorn}/no-nested-ternary`]: SEVERITY_LEVELS.Off,
       // =======================================================================
 
       [`${PLUGIN_NAMES.ESLintCommunityComments}/disable-enable-pair`]:
