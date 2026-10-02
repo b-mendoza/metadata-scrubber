@@ -171,6 +171,14 @@ export default defineConfig(
       [`${PLUGIN_NAMES.E18e}/prefer-spread-syntax`]: SEVERITY_LEVELS.Off,
       [`${PLUGIN_NAMES.E18e}/prefer-string-fromcharcode`]: SEVERITY_LEVELS.Off,
       [`${PLUGIN_NAMES.SonarJS}/prefer-regexp-exec`]: SEVERITY_LEVELS.Off,
+
+      // These rules prefer patterns that other enabled rules forbid.
+      [`${PLUGIN_NAMES.Unicorn}/prefer-switch`]: SEVERITY_LEVELS.Off,
+      [`${PLUGIN_NAMES.Unicorn}/no-typeof-undefined`]: SEVERITY_LEVELS.Off,
+      "no-extra-boolean-cast": SEVERITY_LEVELS.Off,
+      [`${PLUGIN_NAMES.Unicorn}/no-useless-boolean-cast`]: SEVERITY_LEVELS.Off,
+      [`${PLUGIN_NAMES.TypescriptESLint}/non-nullable-type-assertion-style`]:
+        SEVERITY_LEVELS.Off,
       // =======================================================================
 
       [`${PLUGIN_NAMES.ESLintCommunityComments}/disable-enable-pair`]:
