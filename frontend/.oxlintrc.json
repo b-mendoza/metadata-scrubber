@@ -302,7 +302,6 @@
         "initialized": "never"
       }
     ],
-    "operator-assignment": ["error", "always"],
     "prefer-arrow-callback": [
       "error",
       {
@@ -549,7 +548,6 @@
     "sonarjs/non-existent-operator": "error",
     "sonarjs/post-message": "error",
     "sonarjs/no-array-delete": "error",
-    "sonarjs/no-alphabetical-sort": "error",
     "sonarjs/no-fixed-wait-in-tests": "error",
     "sonarjs/no-incomplete-assertions": "error",
     "sonarjs/no-global-this": "error",
@@ -1105,12 +1103,6 @@
     "typescript/no-useless-empty-export": ["error"],
     "typescript/prefer-readonly": ["error"],
     "typescript/promise-function-async": ["error"],
-    "typescript/require-array-sort-compare": [
-      "error",
-      {
-        "ignoreStringArrays": true
-      }
-    ],
     "typescript/strict-boolean-expressions": [
       "error",
       {
