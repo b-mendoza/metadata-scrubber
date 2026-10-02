@@ -2401,9 +2401,14 @@
         "vitest/prefer-import-in-mock": "error",
         "vitest/prefer-to-be": "error",
         "vitest/prefer-to-contain": "error",
-        "vitest/prefer-to-have-length": "error"
+        "vitest/prefer-to-have-length": "error",
+        "sonarjs/assertions-in-tests": "off",
+        "sonarjs/no-incomplete-assertions": "off",
+        "sonarjs/assertions-in-test-cases": "off",
+        "sonarjs/async-test-assertions": "off",
+        "sonarjs/prefer-specific-assertions": "off"
       },
-      "jsPlugins": ["eslint-plugin-testing-library"],
+      "jsPlugins": ["eslint-plugin-testing-library", "eslint-plugin-sonarjs"],
       "plugins": ["vitest"]
     },
     {
