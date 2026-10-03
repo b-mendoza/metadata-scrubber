@@ -19,10 +19,9 @@ afterEach(() => {
 test("a hung fetch rejects as a Ky timeout at 3000 ms and fetch runs once", async () => {
   vi.useFakeTimers();
 
-  const fetchMock = vi.fn(async (): Promise<Response> => {
-    const hungResponse = await Promise.race<Response>([]);
-    return hungResponse;
-  });
+  const fetchMock = vi
+    .fn<typeof fetch>()
+    .mockReturnValue(Promise.race<Response>([]));
   vi.stubGlobal("fetch", fetchMock);
 
   const backendBaseUrl = new URL("https://backend.test/");
@@ -50,13 +49,14 @@ test("a hung fetch rejects as a Ky timeout at 3000 ms and fetch runs once", asyn
 test("a 502 response rejects as an HTTP error and fetch runs twice", async () => {
   vi.useFakeTimers();
 
-  const fetchMock = vi.fn(async (): Promise<Response> => {
-    const badGatewayResponse = new Response("Bad Gateway", {
-      status: BAD_GATEWAY_STATUS_CODE,
-    });
-    const resolvedResponse = await Promise.resolve(badGatewayResponse);
-    return resolvedResponse;
-  });
+  const fetchMock = vi
+    .fn<typeof fetch>()
+    .mockResolvedValueOnce(
+      new Response("Bad Gateway", { status: BAD_GATEWAY_STATUS_CODE }),
+    )
+    .mockResolvedValueOnce(
+      new Response("Bad Gateway", { status: BAD_GATEWAY_STATUS_CODE }),
+    );
   vi.stubGlobal("fetch", fetchMock);
 
   const backendBaseUrl = new URL("https://backend.test/");
