@@ -33,5 +33,5 @@
     "useDefineForClassFields": true,
     "verbatimModuleSyntax": true
   },
-  "include": ["lucide.d.ts", "src/**/*"]
+  "include": ["src/**/*"]
 }
