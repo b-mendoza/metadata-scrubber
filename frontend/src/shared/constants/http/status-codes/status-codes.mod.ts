@@ -17,12 +17,14 @@
  * Expect: 100-continue as a header in its initial request and receive a 100
  * Continue status code in response before sending the body. The response 417
  * Expectation Failed indicates the request should not be continued.
+ * @public
  */
 export const CONTINUE_STATUS_CODE = 100;
 
 /**
  * The requester has asked the server to switch protocols and the server has
  * agreed to do so.
+ * @public
  */
 export const SWITCHING_PROTOCOLS_STATUS_CODE = 101;
 
@@ -32,6 +34,7 @@ export const SWITCHING_PROTOCOLS_STATUS_CODE = 101;
  * server has received and is processing the request, but no response is
  * available yet. This prevents the client from timing out and assuming the
  * request was lost.
+ * @public
  */
 export const PROCESSING_STATUS_CODE = 102;
 
@@ -45,11 +48,13 @@ export const PROCESSING_STATUS_CODE = 102;
  * contain an entity corresponding to the requested resource. In a POST request,
  * the response will contain an entity describing or containing the result of
  * the action.
+ * @public
  */
 export const OK_STATUS_CODE = 200;
 
 /**
 The request has been fulfilled, resulting in the creation of a new resource.
+@public
 */
 export const CREATED_STATUS_CODE = 201;
 
@@ -57,18 +62,21 @@ export const CREATED_STATUS_CODE = 201;
  * The request has been accepted for processing, but the processing has not been
  * completed. The request might or might not be eventually acted upon, and may
  * be disallowed when processing occurs.
+ * @public
  */
 export const ACCEPTED_STATUS_CODE = 202;
 
 /**
  * SINCE HTTP/1.1 The server is a transforming proxy that received a 200 OK from
  * its origin, but is returning a modified version of the origin's response.
+ * @public
  */
 export const NON_AUTHORITATIVE_INFORMATION_STATUS_CODE = 203;
 
 /**
  * The server successfully processed the request and is not returning any
  * content.
+ * @public
  */
 export const NO_CONTENT_STATUS_CODE = 204;
 
@@ -76,6 +84,7 @@ export const NO_CONTENT_STATUS_CODE = 204;
  * The server successfully processed the request, but is not returning any
  * content. Unlike a 204 response, this response requires that the requester
  * reset the document view.
+ * @public
  */
 export const RESET_CONTENT_STATUS_CODE = 205;
 
@@ -84,18 +93,21 @@ export const RESET_CONTENT_STATUS_CODE = 205;
  * range header sent by the client. The range header is used by HTTP clients to
  * enable resuming of interrupted downloads, or split a download into multiple
  * simultaneous streams.
+ * @public
  */
 export const PARTIAL_CONTENT_STATUS_CODE = 206;
 
 /**
  * The message body that follows is an XML message and can contain a number of
  * separate response codes, depending on how many sub-requests were made.
+ * @public
  */
 export const MULTI_STATUS_STATUS_CODE = 207;
 
 /**
  * The members of a DAV binding have already been enumerated in a preceding part
  * of the (multistatus) response, and are not being included again.
+ * @public
  */
 export const ALREADY_REPORTED_STATUS_CODE = 208;
 
@@ -103,6 +115,7 @@ export const ALREADY_REPORTED_STATUS_CODE = 208;
  * The server has fulfilled a request for the resource, and the response is a
  * representation of the result of one or more instance-manipulations applied to
  * the current instance.
+ * @public
  */
 export const IM_USED_STATUS_CODE = 226;
 
@@ -115,11 +128,13 @@ export const IM_USED_STATUS_CODE = 226;
  * (via agent-driven content negotiation). For example, this code could be used
  * to present multiple video format options, to list files with different
  * filename extensions, or to suggest word-sense disambiguation.
+ * @public
  */
 export const MULTIPLE_CHOICES_STATUS_CODE = 300;
 
 /**
 This and all future requests should be directed to the given URI.
+@public
 */
 export const MOVED_PERMANENTLY_STATUS_CODE = 301;
 
@@ -131,6 +146,7 @@ export const MOVED_PERMANENTLY_STATUS_CODE = 301;
  * Therefore, HTTP/1.1 added status codes 303 and 307 to distinguish between the
  * two behaviours. However, some Web applications and frameworks use the 302
  * status code as if it were the 303.
+ * @public
  */
 export const FOUND_STATUS_CODE = 302;
 
@@ -139,6 +155,7 @@ export const FOUND_STATUS_CODE = 302;
  * using a GET method. When received in response to a POST (or PUT/DELETE), the
  * client should presume that the server has received the data and should issue
  * a redirect with a separate GET message.
+ * @public
  */
 export const SEE_OTHER_STATUS_CODE = 303;
 
@@ -147,6 +164,7 @@ export const SEE_OTHER_STATUS_CODE = 303;
  * by the request headers If-Modified-Since or If-None-Match. In such case,
  * there is no need to retransmit the resource since the client still has a
  * previously-downloaded copy.
+ * @public
  */
 export const NOT_MODIFIED_STATUS_CODE = 304;
 
@@ -155,12 +173,14 @@ export const NOT_MODIFIED_STATUS_CODE = 304;
  * address for which is provided in the response. Many HTTP clients (such as
  * Mozilla and Internet Explorer) do not correctly handle responses with this
  * status code, primarily for security reasons.
+ * @public
  */
 export const USE_PROXY_STATUS_CODE = 305;
 
 /**
  * No longer used. Originally meant "Subsequent requests should use the
  * specified proxy."
+ * @public
  */
 export const SWITCH_PROXY_STATUS_CODE = 306;
 
@@ -170,6 +190,7 @@ export const SWITCH_PROXY_STATUS_CODE = 306;
  * how 302 was historically implemented, the request method is not allowed to be
  * changed when reissuing the original request. For example, a POST request
  * should be repeated using another POST request.
+ * @public
  */
 export const TEMPORARY_REDIRECT_STATUS_CODE = 307;
 
@@ -178,6 +199,7 @@ export const TEMPORARY_REDIRECT_STATUS_CODE = 307;
  * and 308 parallel the behaviors of 302 and 301, but do not allow the HTTP
  * method to change. So, for example, submitting a form to a permanently
  * redirected resource may continue smoothly.
+ * @public
  */
 export const PERMANENT_REDIRECT_STATUS_CODE = 308;
 
@@ -199,6 +221,7 @@ export const BAD_REQUEST_STATUS_CODE = 400;
  * the requested resource. See Basic access authentication and Digest access
  * authentication. 401 semantically means "unauthenticated",i.e. the user does
  * not have the necessary credentials.
+ * @public
  */
 export const UNAUTHORIZED_STATUS_CODE = 401;
 
@@ -208,12 +231,14 @@ export const UNAUTHORIZED_STATUS_CODE = 401;
  * has not happened, and this code is not usually used. Google Developers API
  * uses this status if a particular developer has exceeded the daily limit on
  * requests.
+ * @public
  */
 export const PAYMENT_REQUIRED_STATUS_CODE = 402;
 
 /**
  * The request was valid, but the server is refusing action. The user might not
  * have the necessary permissions for a resource.
+ * @public
  */
 export const FORBIDDEN_STATUS_CODE = 403;
 
@@ -227,17 +252,20 @@ export const NOT_FOUND_STATUS_CODE = 404;
  * A request method is not supported for the requested resource; for example, a
  * GET request on a form that requires data to be presented via POST, or a PUT
  * request on a read-only resource.
+ * @public
  */
 export const METHOD_NOT_ALLOWED_STATUS_CODE = 405;
 
 /**
  * The requested resource is capable of generating only content not acceptable
  * according to the Accept headers sent in the request.
+ * @public
  */
 export const NOT_ACCEPTABLE_STATUS_CODE = 406;
 
 /**
 The client must first authenticate itself with the proxy.
+@public
 */
 export const PROXY_AUTHENTICATION_REQUIRED_STATUS_CODE = 407;
 
@@ -263,18 +291,21 @@ export const CONFLICT_STATUS_CODE = 409;
  * search engines should remove the resource from their indices. Most use cases
  * do not require clients and search engines to purge the resource, and a "404
  * Not Found" may be used instead.
+ * @public
  */
 export const GONE_STATUS_CODE = 410;
 
 /**
  * The request did not specify the length of its content, which is required by
  * the requested resource.
+ * @public
  */
 export const LENGTH_REQUIRED_STATUS_CODE = 411;
 
 /**
  * The server does not meet one of the preconditions that the requester put on
  * the request.
+ * @public
  */
 export const PRECONDITION_FAILED_STATUS_CODE = 412;
 
@@ -289,6 +320,7 @@ export const PAYLOAD_TOO_LARGE_STATUS_CODE = 413;
  * too much data being encoded as a query-string of a GET request, in which case
  * it should be converted to a POST request. Called "Request-URI Too Long"
  * previously.
+ * @public
  */
 export const URI_TOO_LONG_STATUS_CODE = 414;
 
@@ -304,11 +336,13 @@ export const UNSUPPORTED_MEDIA_TYPE_STATUS_CODE = 415;
  * cannot supply that portion. For example, if the client asked for a part of
  * the file that lies beyond the end of the file. Called "Requested Range Not
  * Satisfiable" previously.
+ * @public
  */
 export const RANGE_NOT_SATISFIABLE_STATUS_CODE = 416;
 
 /**
 The server cannot meet the requirements of the Expect request-header field.
+@public
 */
 export const EXPECTATION_FAILED_STATUS_CODE = 417;
 
@@ -318,12 +352,14 @@ export const EXPECTATION_FAILED_STATUS_CODE = 417;
  * expected to be implemented by actual HTTP servers. The RFC specifies this
  * code should be returned by teapots requested to brew coffee. This HTTP status
  * is used as an Easter egg in some websites, including Google.com.
+ * @public
  */
 export const I_AM_A_TEAPOT_STATUS_CODE = 418;
 
 /**
  * The request was directed at a server that is not able to produce a response
  * (for example because a connection reuse).
+ * @public
  */
 export const MISDIRECTED_REQUEST_STATUS_CODE = 421;
 
@@ -335,17 +371,20 @@ export const UNPROCESSABLE_ENTITY_STATUS_CODE = 422;
 
 /**
 The resource that is being accessed is locked.
+@public
 */
 export const LOCKED_STATUS_CODE = 423;
 
 /**
 The request failed due to failure of a previous request (e.g., a PROPPATCH).
+@public
 */
 export const FAILED_DEPENDENCY_STATUS_CODE = 424;
 
 /**
  * The client should switch to a different protocol such as TLS/1.0, given in
  * the Upgrade header field.
+ * @public
  */
 export const UPGRADE_REQUIRED_STATUS_CODE = 426;
 
@@ -354,6 +393,7 @@ export const UPGRADE_REQUIRED_STATUS_CODE = 426;
  * "the 'lost update' problem, where a client GETs a resource's state, modifies
  * it, and PUTs it back to the server, when meanwhile a third party has modified
  * the state on the server, leading to a conflict."
+ * @public
  */
 export const PRECONDITION_REQUIRED_STATUS_CODE = 428;
 
@@ -366,6 +406,7 @@ export const TOO_MANY_REQUESTS_STATUS_CODE = 429;
 /**
  * The server is unwilling to process the request because either an individual
  * header field, or all the header fields collectively, are too large.
+ * @public
  */
 export const REQUEST_HEADER_FIELDS_TOO_LARGE_STATUS_CODE = 431;
 
@@ -373,6 +414,7 @@ export const REQUEST_HEADER_FIELDS_TOO_LARGE_STATUS_CODE = 431;
  * A server operator has received a legal demand to deny access to a resource or
  * to a set of resources that includes the requested resource. The code 451 was
  * chosen as a reference to the novel Fahrenheit 451.
+ * @public
  */
 export const UNAVAILABLE_FOR_LEGAL_REASONS_STATUS_CODE = 451;
 
@@ -383,6 +425,7 @@ export const UNAVAILABLE_FOR_LEGAL_REASONS_STATUS_CODE = 451;
 /**
  * A generic error message, given when an unexpected condition was encountered
  * and no more specific message is suitable.
+ * @public
  */
 export const INTERNAL_SERVER_ERROR_STATUS_CODE = 500;
 
@@ -390,6 +433,7 @@ export const INTERNAL_SERVER_ERROR_STATUS_CODE = 500;
  * The server either does not recognize the request method, or it lacks the
  * ability to fulfill the request. Usually this implies future availability
  * (e.g., a new feature of a web-service API).
+ * @public
  */
 export const NOT_IMPLEMENTED_STATUS_CODE = 501;
 
@@ -408,33 +452,39 @@ export const SERVICE_UNAVAILABLE_STATUS_CODE = 503;
 /**
  * The server was acting as a gateway or proxy and did not receive a timely
  * response from the upstream server.
+ * @public
  */
 export const GATEWAY_TIMEOUT_STATUS_CODE = 504;
 
 /**
 The server does not support the HTTP protocol version used in the request
+@public
 */
 export const HTTP_VERSION_NOT_SUPPORTED_STATUS_CODE = 505;
 
 /**
  * Transparent content negotiation for the request results in a circular
  * reference.
+ * @public
  */
 export const VARIANT_ALSO_NEGOTIATES_STATUS_CODE = 506;
 
 /**
  * The server is unable to store the representation needed to complete the
  * request.
+ * @public
  */
 export const INSUFFICIENT_STORAGE_STATUS_CODE = 507;
 
 /**
 The server detected an infinite loop while processing the request.
+@public
 */
 export const LOOP_DETECTED_STATUS_CODE = 508;
 
 /**
 Further extensions to the request are required for the server to fulfill it.
+@public
 */
 export const NOT_EXTENDED_STATUS_CODE = 510;
 
@@ -443,5 +493,6 @@ export const NOT_EXTENDED_STATUS_CODE = 510;
  * intercepting proxies used to control access to the network (e.g., "captive
  * portals" used to require agreement to Terms of Service before granting full
  * Internet access via a Wi-Fi hotspot).
+ * @public
  */
 export const NETWORK_AUTHENTICATION_REQUIRED_STATUS_CODE = 511;
