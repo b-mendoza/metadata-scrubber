@@ -4,8 +4,6 @@ import * as z from "zod";
 
 import { SERVICE_UNAVAILABLE_STATUS_CODE } from "#/shared/constants/http/status-codes/status-codes.mod";
 
-export type WorkflowHTTPClient = KyInstance;
-
 export const WORKFLOW_CONFIG_TIMEOUT_MS = 10_000;
 export const WORKFLOW_ONE_SHOT_TIMEOUT_MS = 10_000;
 export const WORKFLOW_DRY_RUN_TIMEOUT_MS = 90_000;
@@ -68,7 +66,7 @@ export const WORKFLOW_SERVER_DIRECTED_RETRY_OPTIONS = {
   statusCodes: [SERVICE_UNAVAILABLE_STATUS_CODE],
 } satisfies RetryOptions;
 
-export const createWorkflowHttpClient = (baseUrl: URL): WorkflowHTTPClient => {
+export const createWorkflowHttpClient = (baseUrl: URL): KyInstance => {
   return ky.create({
     baseUrl,
     retry: WORKFLOW_NO_RETRY_OPTIONS,

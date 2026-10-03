@@ -1,17 +1,16 @@
 import { AsyncLocalStorage } from "node:async_hooks";
 
 import { createMiddleware, createServerOnlyFn } from "@tanstack/react-start";
+import type { KyInstance } from "ky";
 
 import { environmentSchema } from "#/shared/config/env/environment.mod.server";
-import type { HTTPClient } from "#/shared/libs/ky/http-client.mod.server";
 import { createHttpClient } from "#/shared/libs/ky/http-client.mod.server";
-import type { WorkflowHTTPClient } from "#/shared/libs/ky/workflow-http-client.mod.server";
 import { createWorkflowHttpClient } from "#/shared/libs/ky/workflow-http-client.mod.server";
 import { invariant } from "#/shared/utils/invariant/invariant.mod";
 
 interface AppBindingsValue {
-  httpClient: HTTPClient;
-  workflowHttpClient: WorkflowHTTPClient;
+  httpClient: KyInstance;
+  workflowHttpClient: KyInstance;
 }
 
 const AppBindingsStore = new AsyncLocalStorage<AppBindingsValue>();
