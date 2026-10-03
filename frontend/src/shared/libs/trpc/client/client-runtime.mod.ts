@@ -92,10 +92,8 @@ const initializeTRPCOptionsProxy = createIsomorphicFn()
 export function getRouterContext(trpcClient: TRPCClient<AppRouter>) {
   const queryClient = initializeQueryClient();
 
-  const trpcProxy = initializeTRPCOptionsProxy(queryClient, trpcClient);
-
   return {
     queryClient,
-    trpc: trpcProxy,
+    trpc: initializeTRPCOptionsProxy(queryClient, trpcClient),
   };
 }
