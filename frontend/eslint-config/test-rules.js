@@ -25,7 +25,7 @@ export const testRules = defineConfig(
     },
   },
   {
-    files: ["src/**/*.test.ts", "src/**/*.test.tsx"],
+    files: ["src/**/*.test.ts", "src/**/*.test.tsx", "scripts/**/*.test.ts"],
     ...vitest.configs.recommended,
     rules: {
       ...vitest.configs.recommended.rules,
@@ -75,8 +75,7 @@ export const testRules = defineConfig(
         SEVERITY_LEVELS.Error,
       [`${PLUGIN_NAMES.Vitest}/prefer-equality-matcher`]: SEVERITY_LEVELS.Error,
 
-      // Our addition: a `vi.mock` factory must import the module it replaces,
-      // since Vitest hoists the factory above outer bindings.
+      // Our addition: pass `import()` as the first `vi.mock` argument so TypeScript checks the module path and the factory type.
       [`${PLUGIN_NAMES.Vitest}/prefer-import-in-mock`]: SEVERITY_LEVELS.Error,
       [`${PLUGIN_NAMES.Vitest}/prefer-to-be`]: SEVERITY_LEVELS.Error,
       [`${PLUGIN_NAMES.Vitest}/prefer-to-contain`]: SEVERITY_LEVELS.Error,

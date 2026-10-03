@@ -8,7 +8,7 @@ import { parser } from "typescript-eslint";
 const TOOL_DIRECTIVE = /^(?:eslint|oxlint|react-doctor)(?:-[\w\-]+)?(?:\s|$)/v;
 const GLOBAL_DIRECTIVE = /^(?:exported|globals?)(?:\s|$)/v;
 const NEXT_LINE_EXCEPTION =
-  /^(?:eslint|react-doctor)-disable-next-line[\t ]+[\w@\/.\-]+(?:[\t ]*,[\t ]*[\w@\/.\-]+)*[\t ]+--[\t ]+\S.*$/v;
+  /^(?:eslint|react-doctor)-disable-next-line\s+[\w@][\w@\/.\-]*(?:\s*,\s*[\w@][\w@\/.\-]*)*\s+--\s+\S.*$/v;
 
 export function checkLintDirectives(source: string, file: string) {
   const linter = new Linter();
