@@ -1,4 +1,10 @@
-import type { ESTree, Scope, SourceCode, Variable } from "@oxlint/plugins";
+import type {
+  Definition,
+  ESTree,
+  Scope,
+  SourceCode,
+  Variable,
+} from "@oxlint/plugins";
 
 const API_ROUTE_PATH_PATTERN = /(?:^|\/)src\/routes\/api\/.*\.tsx?$/v;
 const DOMAIN_SERVER_MODULE_PATH_PATTERN =
@@ -25,6 +31,21 @@ export const getReferencedVariable = (
     scope = scope.upper;
   }
   return null;
+};
+
+export const getConstDeclaratorInitializer = (
+  definition: Definition,
+): ESTree.Expression | null => {
+  if (
+    definition.type !== "Variable" ||
+    definition.node.type !== "VariableDeclarator" ||
+    definition.node.id.type !== "Identifier" ||
+    definition.parent?.type !== "VariableDeclaration" ||
+    definition.parent.kind !== "const"
+  ) {
+    return null;
+  }
+  return definition.node.init;
 };
 
 export const getStaticPropertyName = (
