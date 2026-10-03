@@ -8,7 +8,7 @@
 
 ## Environment
 
-On each request, `environmentSchema` parses `process.env` in `src/shared/config/env/environment.mod.server.ts`. Set `BACKEND_URL` to an `http` or `https` URL. The schema requires this variable. This service has no `.env.example`. The schema file contains the current variable list.
+On each request, the app-bindings middleware in `src/shared/middlewares/app-bindings/app-bindings.mod.ts` parses `process.env` with `environmentSchema`. Set `BACKEND_URL` to an `http` or `https` URL. The schema requires this variable. This service has no `.env.example`. The schema file contains the current variable list.
 
 ## Core commands
 
@@ -22,7 +22,7 @@ On each request, `environmentSchema` parses `process.env` in `src/shared/config/
 - `pnpm run lint:policy` compares resolved ESLint rules with `scripts/lint-policy.snapshot`. It removes the `oxlint/*` bridge entries before it resolves each scope. It reports each added, removed, or changed rule.
 - `pnpm run policy:update` writes the policy snapshot. Run it only after a deliberate rule-set review. Neither `lint` nor `fix` updates the snapshot.
 - `pnpm run fix` runs this sequence: `eslint --fix`, `oxfmt --write`, and `oxlint --fix`.
-- `pnpm run lint:doctor` runs React Doctor on the full frontend. It disables telemetry, scoring, and the supply-chain scan. Warnings and errors fail the check. The lint pipeline and its CI job run this command.
+- `pnpm run lint:doctor` runs React Doctor on files changed since the `origin/main` merge base. It ignores findings in the Oxlint plugin. It sets `CI=1` to prevent an interactive report that waits for terminal input. Telemetry, scoring, and the supply-chain scan are off. Warnings and errors fail the check. In CI, the pull-request checkout has no branch to compare, so the lint job scans the full frontend.
 - The TanStack Router plugin rewrites `src/routeTree.gen.ts` during `pnpm run dev` and `pnpm run build`. The service has no separate route-generation script. Do not make manual changes to `src/routeTree.gen.ts`. After you add or rename a route file, run one of these commands to regenerate it.
 
 ## Cleaning
