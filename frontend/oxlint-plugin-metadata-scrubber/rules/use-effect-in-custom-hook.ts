@@ -2,6 +2,7 @@ import type { Definition, ESTree, SourceCode, Variable } from "@oxlint/plugins";
 import { defineRule } from "@oxlint/plugins";
 
 import {
+  getConstDeclaratorInitializer,
   getReferencedVariable,
   getStaticPropertyName,
   isFunction,
@@ -99,19 +100,6 @@ const isReactNamespaceImport = (definition: Definition): boolean =>
   (definition.node.type === "ImportDefaultSpecifier" ||
     definition.node.type === "ImportNamespaceSpecifier");
 
-const getConstInitializer = (definition: Definition): ESTree.Node | null => {
-  if (
-    definition.type !== "Variable" ||
-    definition.node.type !== "VariableDeclarator" ||
-    definition.node.id.type !== "Identifier" ||
-    definition.parent?.type !== "VariableDeclaration" ||
-    definition.parent.kind !== "const"
-  ) {
-    return null;
-  }
-  return definition.node.init;
-};
-
 const isReactNamespace = (
   node: ESTree.Node,
   sourceCode: SourceCode,
@@ -124,7 +112,7 @@ const isReactNamespace = (
   visited.add(binding);
   return binding.defs.some((definition) => {
     if (isReactNamespaceImport(definition)) return true;
-    const initializer = getConstInitializer(definition);
+    const initializer = getConstDeclaratorInitializer(definition);
     return (
       initializer != null && isReactNamespace(initializer, sourceCode, visited)
     );

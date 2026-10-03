@@ -2,6 +2,7 @@ import type { Definition, ESTree, SourceCode, Variable } from "@oxlint/plugins";
 import { defineRule } from "@oxlint/plugins";
 
 import {
+  getConstDeclaratorInitializer,
   getReferencedVariable,
   getStaticPropertyName,
   isFunction,
@@ -75,16 +76,8 @@ const getNamespaceAliasInitializer = (
   variable: Variable,
 ): ESTree.Expression | null => {
   const [definition] = variable.defs;
-  if (
-    definition?.type !== "Variable" ||
-    definition.node.type !== "VariableDeclarator" ||
-    definition.node.id.type !== "Identifier" ||
-    definition.parent?.type !== "VariableDeclaration" ||
-    definition.parent.kind !== "const"
-  ) {
-    return null;
-  }
-  return definition.node.init;
+  if (definition == null) return null;
+  return getConstDeclaratorInitializer(definition);
 };
 
 const isQueryNamespaceReference = (
