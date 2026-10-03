@@ -40,7 +40,7 @@ See the [architecture reference](./architecture.md) for the source layout under 
 ## Lint harness
 
 - `eslint.config.js` loads the policy modules in `eslint-config/`. Keep rule policy in these files.
-- `scripts/check-lint-directives.ts` checks comments without source-level suppression. ESLint selects the files through `lintFiles(["."])` with the real config. No separate ignore list can drift from that config.
-- `scripts/check-lint-directives.test.ts` tests the directive guard. The script test glob keeps this test next to the script without a change to the source test layout.
+- See the [commands reference](./commands.md#core-commands) for directive checks and policy snapshot review.
+- `scripts/check-lint-directives.test.ts` tests the directive guard.
 - `scripts/check-lint-policy.ts` resolves rules for ten real files. The files cover source, source tests, config modules, scripts, script tests, Vite, and the Oxlint plugin. Each sample must exist. ESLint must not ignore any sample.
-- `scripts/lint-policy.snapshot` groups the rules by scope and sample path. Each sorted rule has one line with its resolved severity and options. The JSON file stores each rule value as text from `node:util.inspect`. This format preserves `Infinity` in resolved defaults. Plain JSON would change it to `null`. The snapshot records policy without the `oxlint/*` bridge entries. Use `pnpm run policy:update` only after review.
+- `scripts/lint-policy.snapshot` groups the rules by scope and sample path. Each sorted rule has one line with its resolved severity and options. The JSON file stores each rule value as text from `node:util.inspect`. This format preserves `Infinity` in resolved defaults. Plain JSON would change it to `null`.
