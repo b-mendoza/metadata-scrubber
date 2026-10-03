@@ -16,6 +16,10 @@ This file contains long-lived guidance for TypeScript design in the frontend. Th
 
 Validate external input with Zod at each boundary.
 
+## Client context
+
+- In a component, get the tRPC options proxy with the `useTRPC` hook of the tRPC context. Get the tRPC client with the `useTRPCClient` hook of the tRPC context. Get the query client with `useQueryClient`. Do not pass these clients as props to feature components. Only the tRPC provider setup receives them as props. In a route loader, read the tRPC options proxy and the query client from the loader context.
+
 ## HTTP requests
 
 - Read the request-scoped Ky client from app bindings for backend calls.
