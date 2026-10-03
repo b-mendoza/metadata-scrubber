@@ -17,6 +17,7 @@ const samples = {
   "eslint.config.js": "eslint.config.js",
   "eslint-config .js": "eslint-config/test-rules.js",
   "scripts .ts": "scripts/check-lint-directives.ts",
+  "scripts test .ts": "scripts/check-lint-directives.test.ts",
   "vite.config.ts": "vite.config.ts",
   "oxlint plugin .ts": "oxlint-plugin-metadata-scrubber/index.ts",
 };
