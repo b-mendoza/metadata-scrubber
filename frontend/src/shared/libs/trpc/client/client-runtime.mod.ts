@@ -39,7 +39,7 @@ const browserQueryClient: { current: QueryClient | null } = { current: null };
 // The browser reuses one QueryClient so an initial render that suspends
 // does not create a new client.
 const initializeQueryClient = createIsomorphicFn()
-  .server(() => createQueryClient())
+  .server(createQueryClient)
   .client(() => {
     browserQueryClient.current ??= createQueryClient();
 
