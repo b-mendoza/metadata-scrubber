@@ -119,11 +119,11 @@ test("createUpload reports only the empty-name error for whitespace", async () =
 
   expect(error.code).toBe("BAD_REQUEST");
   expect(error.cause).toBeInstanceOf(z.ZodError);
-  if (error.cause instanceof z.ZodError) {
-    expect(error.cause.issues).toEqual([
+  expect(error.cause).toMatchObject({
+    issues: [
       expect.objectContaining({ message: "The file name must not be empty." }),
-    ]);
-  }
+    ],
+  });
   expect(fetchMock).not.toHaveBeenCalled();
 });
 
