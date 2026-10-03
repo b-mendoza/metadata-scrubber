@@ -1,0 +1,7 @@
+{
+  "$schema": "https://unpkg.com/knip@6/schema.json",
+  "entry": [
+    "oxlint-plugin-metadata-scrubber/check-fixtures.ts",
+    "oxlint-plugin-metadata-scrubber/fixtures/{positive,negative}/**/*.{ts,tsx}"
+  ]
+}
