@@ -38,11 +38,16 @@ test("keeps only reviewable next-line exceptions and ignores strings", () => {
     "// eslint-disable-next-line no-debugger -- Reason.",
     "/* eslint no-debugger: 0 */",
     "// eslint-disable-next-line -- -- Reason.",
+    "// note // react-doctor-disable-line react-doctor/no-array-index-as-key",
+    "/* note react-doctor-disable-next-line x -- r */",
+    "// eslint-disable-next-line no-debugger -- note // react-doctor-disable-line react-doctor/no-array-index-as-key",
+    'const doctorText = "// note // react-doctor-disable-line react-doctor/no-array-index-as-key";',
   ].join("\n");
 
   expect(
     checkLintDirectives(source, "directives.ts").map(({ line }) => ({ line })),
   ).toEqual([
+    { line: 3 },
     { line: 6 },
     { line: 7 },
     { line: 8 },
@@ -71,5 +76,8 @@ test("keeps only reviewable next-line exceptions and ignores strings", () => {
     { line: 33 },
     { line: 35 },
     { line: 36 },
+    { line: 37 },
+    { line: 38 },
+    { line: 39 },
   ]);
 });
