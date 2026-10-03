@@ -5,6 +5,7 @@ import { vi } from "vitest";
 import type { renderComponent } from "#/tests/utils/renderers/renderers.mod";
 
 const BROWSE_FILES_BUTTON_NAME = /browse files/iv;
+const EMPTY_REQUEST_COUNT = 0;
 const NO_HTTP_STATUS = 0;
 
 type TestAwsS3Options = AwsS3Options<
@@ -127,7 +128,7 @@ export const FakeXMLHttpRequest = Object.assign(fakeXMLHttpRequestConstructor, {
   requests,
   reset: () => {
     automaticResponse.current = null;
-    requests.length = NO_HTTP_STATUS;
+    requests.length = EMPTY_REQUEST_COUNT;
   },
   respondAutomaticallyWith: (response: FakeXMLHttpResponse) => {
     automaticResponse.current = response;
