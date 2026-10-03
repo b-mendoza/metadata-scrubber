@@ -10,7 +10,6 @@ import { createWorkflowHttpClient } from "#/shared/libs/ky/workflow-http-client.
 import { invariant } from "#/shared/utils/invariant/invariant.mod";
 
 interface AppBindingsValue {
-  // db: DrizzleDatabaseClient;
   httpClient: HTTPClient;
   workflowHttpClient: WorkflowHTTPClient;
 }
@@ -21,10 +20,6 @@ export const appBindingsMiddleware = createMiddleware({
   type: "request",
 }).server(async (options) => {
   const safeEnvironmentVariables = environmentSchema.parse(process.env);
-
-  // const databaseClient = createDrizzleDatabaseClient(
-  //   safeEnvironmentVariables.DATABASE_URL,
-  // );
 
   const httpClient = createHttpClient(safeEnvironmentVariables.BACKEND_URL);
   const workflowHttpClient = createWorkflowHttpClient(
