@@ -259,7 +259,11 @@ export default defineRule({
       Identifier(node) {
         const binding = getReferenceBinding(node, sourceCode);
         if (binding == null) return;
-        if (!binding.defs.some(isReactEffectImport)) return;
+        if (
+          binding.defs.every((definition) => !isReactEffectImport(definition))
+        ) {
+          return;
+        }
         if (
           binding.references.every(
             (reference) => reference.identifier !== node || !reference.isRead(),

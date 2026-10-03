@@ -1,6 +1,5 @@
 import { spawnSync } from "node:child_process";
 import path from "node:path";
-import { fileURLToPath } from "node:url";
 
 import * as z from "zod";
 
@@ -10,7 +9,7 @@ const FAILURE_EXIT_CODE = 1;
 const NO_DIAGNOSTICS = 0;
 const SUCCESS_EXIT_CODE = 0;
 
-const pluginDirectory = path.dirname(fileURLToPath(import.meta.url));
+const pluginDirectory = import.meta.dirname;
 const frontendDirectory = path.join(pluginDirectory, "..");
 const oxlintPath = path.join(
   frontendDirectory,
@@ -36,6 +35,7 @@ const getDiagnosticMessages = (
   fixturePath: string,
   ruleId: string,
 ): readonly string[] => {
+  // react-doctor-disable-next-line react-doctor/import-metadata-execution-risk -- Run local oxlint on trusted fixture paths to check lint rules.
   const result = spawnSync(
     oxlintPath,
     [

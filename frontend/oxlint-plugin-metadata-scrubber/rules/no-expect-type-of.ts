@@ -29,7 +29,9 @@ const isVitestExpectTypeOfImportDefinition = (
   getImportedName(definition.node) === "expectTypeOf";
 
 const isVitestExpectTypeOfImport = (variable: Variable): boolean =>
-  variable.defs.some(isVitestExpectTypeOfImportDefinition);
+  variable.defs.some((definition) =>
+    isVitestExpectTypeOfImportDefinition(definition),
+  );
 
 const isVitestExpectTypeOfReference = (
   node: ESTree.IdentifierReference,
