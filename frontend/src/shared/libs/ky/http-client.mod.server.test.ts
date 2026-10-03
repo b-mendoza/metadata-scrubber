@@ -64,8 +64,7 @@ test("a 502 response rejects as an HTTP error and fetch runs twice", async () =>
   const healthPath = "/api/health";
 
   const requestPromise = httpClient.get(healthPath);
-  const onReject = vi.fn((error: unknown) => error);
-  void requestPromise.catch(onReject);
+  void requestPromise.catch((error: unknown) => error);
   await vi.runAllTimersAsync();
 
   await expect(requestPromise).rejects.toBeInstanceOf(HTTPError);
