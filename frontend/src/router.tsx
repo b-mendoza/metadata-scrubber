@@ -11,16 +11,12 @@ import {
 import { routeTree } from "./routeTree.gen";
 
 export const getRouter = () => {
-  const trpcURL = getBaseTRPCURL();
-
-  const trpcClient = initializeTRPCClient(trpcURL);
+  const trpcClient = initializeTRPCClient(getBaseTRPCURL());
 
   const routerContext = getRouterContext(trpcClient);
 
   const router = createRouter({
-    context: {
-      ...routerContext,
-    },
+    context: routerContext,
     defaultPreload: "viewport",
     routeTree,
     scrollRestoration: true,
