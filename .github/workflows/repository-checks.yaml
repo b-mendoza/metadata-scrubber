@@ -1,0 +1,24 @@
+name: Repository Checks
+
+on:
+  pull_request:
+
+  push:
+    branches:
+      - main
+
+concurrency:
+  group: "${{ github.workflow }}-${{ github.ref }}"
+  cancel-in-progress: true
+
+jobs:
+  secret-scan:
+    name: Scan the repository for secrets
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Check secrets
+        uses: docker://secretlint/secretlint:v13.0.6@sha256:ea50c19f9c649154280dfa41fe91eeb95af88377172a953bbd480be8bcd9cb18
+        with:
+          args: secretlint --maskSecrets **/*
