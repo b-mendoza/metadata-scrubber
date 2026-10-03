@@ -15,5 +15,6 @@ export default defineConfig({
     include: ["./src/**/*.test.{ts,tsx}", "./scripts/**/*.test.ts"],
     restoreMocks: true,
     setupFiles: ["./src/tests/setup-test-environment.ts"],
+    unstubGlobals: true,
   },
 });
