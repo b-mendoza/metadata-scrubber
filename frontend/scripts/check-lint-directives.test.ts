@@ -37,6 +37,7 @@ test("keeps only reviewable next-line exceptions and ignores strings", () => {
     "// react-doctor-disable-file no-effect",
     "// eslint-disable-next-line no-debugger -- Reason.",
     "/* eslint no-debugger: 0 */",
+    "// eslint-disable-next-line -- -- Reason.",
   ].join("\n");
 
   expect(
@@ -69,5 +70,6 @@ test("keeps only reviewable next-line exceptions and ignores strings", () => {
     { line: 32 },
     { line: 33 },
     { line: 35 },
+    { line: 36 },
   ]);
 });
