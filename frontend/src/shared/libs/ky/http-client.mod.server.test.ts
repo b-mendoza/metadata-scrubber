@@ -32,7 +32,7 @@ test("a hung fetch rejects as a Ky timeout at 3000 ms and fetch runs once", asyn
 
   const requestPromise = httpClient.get(healthPath);
   const onSettle = vi.fn();
-  void requestPromise.then(onSettle, onSettle);
+  void requestPromise.then(onSettle).catch(onSettle);
 
   await vi.advanceTimersByTimeAsync(
     HTTP_CLIENT_ATTEMPT_TIMEOUT_MS - ONE_MILLISECOND_MS,
@@ -70,14 +70,9 @@ test("a 502 response rejects as an HTTP error and fetch runs twice", async () =>
   await vi.runAllTimersAsync();
 
   await expect(requestPromise).rejects.toBeInstanceOf(HTTPError);
-
-  const [error] = onReject.mock.lastCall ?? [];
-  if (!(error instanceof HTTPError)) {
-    expect.fail("the 502 response must reject with an HTTPError");
-  }
-
-  const { status } = error.response;
-  expect(status).toBe(BAD_GATEWAY_STATUS_CODE);
+  await expect(requestPromise).rejects.toMatchObject({
+    response: { status: BAD_GATEWAY_STATUS_CODE },
+  });
   expect(fetchMock).toHaveBeenCalledTimes(
     HTTP_CLIENT_RETRY_LIMIT + INITIAL_FETCH_ATTEMPT_COUNT,
   );
