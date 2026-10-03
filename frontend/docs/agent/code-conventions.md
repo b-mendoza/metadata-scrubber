@@ -18,7 +18,9 @@ Validate external input with Zod at each boundary.
 
 ## Client context
 
-- In a component, get the tRPC options proxy with the `useTRPC` hook of the tRPC context. Get the tRPC client with the `useTRPCClient` hook of the tRPC context. Get the query client with `useQueryClient`. Do not pass these clients as props to feature components. Only the tRPC provider setup receives them as props. In a route loader, read the tRPC options proxy and the query client from the loader context.
+- Read the tRPC options proxy and the query client from context in components. Do not pass them as props.
+- Pass the tRPC client and the query client as props only to the tRPC provider setup.
+- Read the tRPC options proxy and the query client from the loader context in route loaders.
 
 ## HTTP requests
 
