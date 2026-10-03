@@ -1,13 +1,11 @@
-import type {
-  Definition,
-  ESTree,
-  Scope,
-  SourceCode,
-  Variable,
-} from "@oxlint/plugins";
+import type { Definition, ESTree, SourceCode, Variable } from "@oxlint/plugins";
 import { defineRule } from "@oxlint/plugins";
 
-import { getStaticPropertyName, isFunction } from "../utilities.ts";
+import {
+  getReferencedVariable,
+  getStaticPropertyName,
+  isFunction,
+} from "../utilities.ts";
 
 const QUERY_SOURCE = "@tanstack/react-query";
 const NO_TEMPLATE_EXPRESSIONS = 0;
@@ -47,17 +45,7 @@ const getNamespaceBinding = (
   sourceCode: SourceCode,
 ): Variable | null => {
   if (node.type !== "Identifier") return null;
-  // A type-only declaration can shadow the name without shadowing its value.
-  // Switch discriminants can have their reference in an upper scope.
-  let scope: Scope | null = sourceCode.getScope(node);
-  while (scope != null) {
-    const reference = scope.references.find(
-      (candidate) => candidate.identifier === node,
-    );
-    if (reference != null) return reference.resolved;
-    ({ upper: scope } = scope);
-  }
-  return null;
+  return getReferencedVariable(node, sourceCode);
 };
 
 const getFixedKeyName = (node: ESTree.Node): string | null => {
