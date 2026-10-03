@@ -11,7 +11,7 @@ import {
 } from "#/shared/libs/trpc/utils/initializer/initializer.mod.server";
 import { getAppBindings } from "#/shared/middlewares/app-bindings/app-bindings.mod";
 
-export const PRODUCTS_RESPONSE_DELAY_MS = 5000;
+const PRODUCTS_RESPONSE_DELAY_MS = 5000;
 const SEED_PRODUCT_NAMES = ["Metadata Scrubber", "Privacy Audit Tool"];
 
 export const BACKEND_HEALTH_CHECK_FAILURE_MESSAGE =

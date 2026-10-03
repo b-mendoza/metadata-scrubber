@@ -22,7 +22,7 @@ export type ConfiguredAwsS3Options = TestAwsS3Options & {
   signRequest: AwsS3SignRequest;
 };
 
-export interface FakeXMLHttpResponse {
+interface FakeXMLHttpResponse {
   headers?: Record<string, string>;
   responseText?: string;
   status: number;
