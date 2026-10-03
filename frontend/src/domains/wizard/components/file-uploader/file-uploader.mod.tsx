@@ -15,6 +15,9 @@ import type {
 } from "#/shared/libs/trpc/client/client.mod";
 
 const BYTES_PER_MEBIBYTE = 1_048_576;
+const fileSizeFormatter = new Intl.NumberFormat("en-US", {
+  maximumFractionDigits: 2,
+});
 
 const uploadedFileMetadataSchema = z.strictObject({
   storageKey: z.string().trim().nonempty(),
@@ -103,9 +106,9 @@ export const FileUploader = (props: FileUploaderProps) => {
     onUploadComplete(uploadedFileMetadata);
   });
 
-  const maxFileSizeMebibytes = new Intl.NumberFormat("en-US", {
-    maximumFractionDigits: 2,
-  }).format(maxFileSizeBytes / BYTES_PER_MEBIBYTE);
+  const maxFileSizeMebibytes = fileSizeFormatter.format(
+    maxFileSizeBytes / BYTES_PER_MEBIBYTE,
+  );
 
   return (
     <Dashboard
