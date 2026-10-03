@@ -45,10 +45,7 @@ const shouldRetryServerDirectedWorkflowRequest = ({
   }
 
   const retryAfter = error.response.headers.get("Retry-After");
-  if (
-    retryAfter != null &&
-    retryAfterSecondsSchema.safeParse(retryAfter).success
-  ) {
+  if (retryAfter != null && retryAfterSecondsSchema.validate(retryAfter)) {
     // Ky 2.1.0 applies the server Retry-After delay and the maxRetryAfter cap only when shouldRetry returns undefined.
     // Returning true would replace the server-directed delay with Ky's own computed delay.
     return;
