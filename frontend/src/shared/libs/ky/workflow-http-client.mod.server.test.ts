@@ -297,7 +297,7 @@ test.each([
       totalTimeout: timeout,
     });
     const onSettle = vi.fn();
-    void responsePromise.then(onSettle, onSettle);
+    void responsePromise.then(onSettle).catch(onSettle);
 
     await vi.advanceTimersByTimeAsync(timeout - ONE_MILLISECOND_MS);
     expect(onSettle).not.toHaveBeenCalled();
