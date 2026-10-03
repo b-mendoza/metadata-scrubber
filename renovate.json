@@ -10,16 +10,6 @@
   },
   "packageRules": [
     {
-      "description": "ai and @ai-sdk/* share types across versions; they break when updated separately",
-      "groupName": "AI SDK packages",
-      "matchPackageNames": ["/^ai$/", "/^@ai-sdk\//"]
-    },
-    {
-      "description": "drizzle's beta tags confuse renovate into proposing downgrades",
-      "enabled": false,
-      "matchPackageNames": ["drizzle-kit", "drizzle-orm"]
-    },
-    {
       "description": "backend/go.mod and backend/Dockerfile declare one Go toolchain version; CI and the container build fail when the two update separately",
       "groupName": "Go Docker image and go.mod",
       "matchManagers": ["dockerfile", "gomod"],
