@@ -39,23 +39,19 @@ test("getMessage maps a rejected backend health request to BAD_GATEWAY", async (
     }),
   });
 
+  let failure: unknown = null;
   try {
     await createProductsCaller(createTRPCRequestContext(request), {
       signal: request.signal,
     }).getMessage();
   } catch (error) {
-    expect(error).toBeInstanceOf(TRPCError);
-    if (!(error instanceof TRPCError)) {
-      expect.fail("getMessage must reject with a TRPCError");
-    }
-
-    expect(error.code).toBe("BAD_GATEWAY");
-    expect(error.message).toBe(BACKEND_HEALTH_CHECK_FAILURE_MESSAGE);
-    expect(error.cause).toBe(backendHealthFailure);
-    return;
+    failure = error;
   }
 
-  expect.fail("getMessage must reject");
+  expect.assert(failure instanceof TRPCError);
+  expect(failure.code).toBe("BAD_GATEWAY");
+  expect(failure.message).toBe(BACKEND_HEALTH_CHECK_FAILURE_MESSAGE);
+  expect(failure.cause).toBe(backendHealthFailure);
 });
 
 test("getMessage returns the reachable backend health status", async () => {

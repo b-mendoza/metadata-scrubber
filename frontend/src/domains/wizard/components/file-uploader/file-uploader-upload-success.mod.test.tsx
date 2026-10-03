@@ -77,7 +77,9 @@ test("AWS S3 uses one presigned PUT mode without browser credentials", async () 
     key: file.id,
     method: "DELETE",
   };
-  await expect(options.signRequest(unsupportedRequest)).rejects.toThrow();
+  await expect(options.signRequest(unsupportedRequest)).rejects.toThrow(
+    "Only PUT upload requests are supported",
+  );
   expect(createUpload).not.toHaveBeenCalled();
 
   keyUppy.destroy();
