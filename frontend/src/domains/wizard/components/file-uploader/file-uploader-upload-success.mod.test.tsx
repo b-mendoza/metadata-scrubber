@@ -45,7 +45,7 @@ test("AWS S3 uses one presigned PUT mode without browser credentials", async () 
   );
 
   const awsS3Call = useSpy.mock.calls.find(([Plugin]) => Plugin === AwsS3);
-  const options: unknown = awsS3Call?.at(EXPECTED_SINGLE_COUNT);
+  const [, options]: unknown[] = awsS3Call ?? [];
   if (!isConfiguredAwsS3Options(options)) {
     throw new Error("The uploader did not configure AwsS3 signRequest mode");
   }
