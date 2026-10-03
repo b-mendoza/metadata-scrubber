@@ -14,7 +14,6 @@ const INITIAL_FETCH_ATTEMPT_COUNT = 1;
 
 afterEach(() => {
   vi.useRealTimers();
-  vi.unstubAllGlobals();
 });
 
 test("a hung fetch rejects as a Ky timeout at 3000 ms and fetch runs once", async () => {

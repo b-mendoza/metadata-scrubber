@@ -28,7 +28,6 @@ const TEST_MAX_FILE_SIZE_BYTES = 10_485_760;
 
 afterEach(() => {
   vi.useRealTimers();
-  vi.unstubAllGlobals();
   FakeXMLHttpRequest.reset();
 });
 

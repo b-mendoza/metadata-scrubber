@@ -1,6 +1,6 @@
 import { TRPCError } from "@trpc/server";
 import ky from "ky";
-import { afterEach, expect, test, vi } from "vitest";
+import { expect, test, vi } from "vitest";
 
 import {
   CONFLICT_STATUS_CODE,
@@ -62,10 +62,6 @@ const requireTRPCError = async (
   }
   expect.fail("the workflow procedure must reject with a TRPCError");
 };
-
-afterEach(() => {
-  vi.unstubAllGlobals();
-});
 
 test("scrubFile keeps missing source and revision conflict results distinct", async () => {
   const input: ScrubFileInput = {

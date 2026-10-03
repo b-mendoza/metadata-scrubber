@@ -64,7 +64,6 @@ const captureFailure = async (
 
 afterEach(() => {
   vi.useRealTimers();
-  vi.unstubAllGlobals();
 });
 
 test("an eligible 503 waits for the server Retry-After value before it retries", async () => {
