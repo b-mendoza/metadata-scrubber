@@ -1,6 +1,7 @@
 {
-  // Scan the full frontend, not only changed lines.
-  "scope": "full",
+  // Scan only files changed against the base branch.
+  // Pull-request CI uses a detached merge commit, so it scans the full frontend.
+  "scope": "files",
   // Fail CI on warnings and errors.
   "blocking": "warning",
   // Skip the remote score API.
@@ -12,11 +13,11 @@
     "react-doctor/require-pnpm-hardening": "off",
   },
   "ignore": {
-    // Mirror the existing ESLint globalIgnores list.
+    // Ignore findings in generated output and in the Oxlint plugin, which is Node tooling, not React code.
     "files": [
       ".output/**",
       "coverage/**",
-      "oxlint-plugin-metadata-scrubber/fixtures/**",
+      "oxlint-plugin-metadata-scrubber/**",
       "src/routeTree.gen.ts",
     ],
   },
