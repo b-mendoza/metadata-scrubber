@@ -8,21 +8,22 @@
 
 ## Environment
 
-On each request, `environmentSchema` parses `process.env` in `src/shared/config/env/environment.mod.server.ts`. Set `BACKEND_URL` to an `http` or `https` URL. The schema requires this variable. `DATABASE_URL` remains optional until developers connect the database client. This service has no `.env.example`. The schema file contains the current variable list.
+On each request, `environmentSchema` parses `process.env` in `src/shared/config/env/environment.mod.server.ts`. Set `BACKEND_URL` to an `http` or `https` URL. The schema requires this variable. This service has no `.env.example`. The schema file contains the current variable list.
 
 ## Core commands
 
 - `pnpm run dev` starts the development server.
 - `pnpm run build` runs the production build with `vite build`.
 - `pnpm run preview` previews the production build.
-- `pnpm run test` starts one test suite run with `vitest run`. The service has `test:watch` and `test:coverage` variants.
-- `pnpm run lint` runs `eslint`, `oxfmt --check`, `oxlint`, and `tsc --build` in parallel. The separate commands are `lint:eslint`, `lint:oxfmt`, `lint:oxlint`, and `lint:types`.
+- `pnpm run test` starts one test suite run with `vitest run`. The service has `test:watch` and `test:coverage` variants. The suite includes source tests and tests next to the scripts.
+- `pnpm run lint` runs every `lint:*` command in parallel. These commands check ESLint policy, lint directives, React Doctor findings, unused code, formatting, Oxlint rules, and TypeScript types.
+- `pnpm run lint:knip` runs `knip --no-progress`. It checks for unused files, dependencies, and exports.
+- `pnpm run lint:directives` checks the files selected by the real ESLint config. The guard parses comments with inline configuration disabled. It accepts only `// eslint-disable-next-line <rule ids> -- <reason>` and `// react-doctor-disable-next-line <rule ids> -- <reason>`. Each exception needs rule ids and a non-empty reason for review.
+- `pnpm run lint:policy` compares resolved ESLint rules with `scripts/lint-policy.snapshot`. It removes the `oxlint/*` bridge entries before it resolves each scope. It reports each added, removed, or changed rule.
+- `pnpm run policy:update` writes the policy snapshot. Run it only after a deliberate rule-set review. Neither `lint` nor `fix` updates the snapshot.
 - `pnpm run fix` runs this sequence: `eslint --fix`, `oxfmt --write`, and `oxlint --fix`.
+- `pnpm run lint:doctor` runs React Doctor on the full frontend. It disables telemetry, scoring, and the supply-chain scan. Warnings and errors fail the check. The lint pipeline and its CI job run this command.
 - The TanStack Router plugin rewrites `src/routeTree.gen.ts` during `pnpm run dev` and `pnpm run build`. The service has no separate route-generation script. Do not make manual changes to `src/routeTree.gen.ts`. After you add or rename a route file, run one of these commands to regenerate it.
-
-## Database
-
-- Use `pnpm run db:generate` and `pnpm run db:migrate` for Drizzle migrations. See the [architecture reference](./architecture.md).
 
 ## Cleaning
 

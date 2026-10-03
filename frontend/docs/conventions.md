@@ -32,8 +32,15 @@ Run the separate fixture check for these rules. Service lint alone does not run 
 
 - Use `*.mod.ts` and `*.mod.tsx` for module files. Use the `.tsx` extension when a module file contains JSX.
 - Use `*.mod.server.ts` for server-only modules such as environment parsing and tRPC routers. The `.server` suffix keeps server code out of client bundles.
-- Use `*.server.ts` for `database.constants.server.ts`, `database.relations.server.ts`, and `database.schema.server.ts` under `src/shared/database/`. These files omit the `.mod` segment. `database.mod.server.ts` follows the `*.mod.server.ts` pattern.
 - Use `*.test.ts` and `*.test.tsx` for test files.
-- Put each test file next to the module that it tests. `vitest.config.ts` includes `src/**/*.test.{ts,tsx}`. Keep test files out of `src/tests/`. Use that directory for setup and shared helpers.
+- Put each test file next to the module that it tests. `vitest.config.ts` includes `src/**/*.test.{ts,tsx}` and `scripts/**/*.test.ts`. Keep test files out of `src/tests/`. Use that directory for setup and shared helpers.
 
 See the [architecture reference](./architecture.md) for the source layout under `src/domains/`, `src/shared/`, and `src/routes/`.
+
+## Lint harness
+
+- `eslint.config.js` loads the policy modules in `eslint-config/`. Keep rule policy in these files.
+- `scripts/check-lint-directives.ts` checks comments without source-level suppression. ESLint selects the files through `lintFiles(["."])` with the real config. No separate ignore list can drift from that config.
+- `scripts/check-lint-directives.test.ts` tests the directive guard. The script test glob keeps this test next to the script without a change to the source test layout.
+- `scripts/check-lint-policy.ts` resolves rules for nine real files. The files cover source, source tests, config modules, scripts, Vite, and the Oxlint plugin. Each sample must exist and must not be ignored.
+- `scripts/lint-policy.snapshot` groups the rules by scope and sample path. Each sorted rule has one line with its resolved severity and options. The JSON file stores each rule value as text from `node:util.inspect`. This format preserves `Infinity` in resolved defaults. Plain JSON would change it to `null`. The snapshot records policy without the `oxlint/*` bridge entries. Use `pnpm run policy:update` only after review.

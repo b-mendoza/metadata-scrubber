@@ -10,14 +10,14 @@ Developers build the frontend with [TanStack Start](https://tanstack.com/start) 
 
 - Developers group feature code by domain under `src/domains/<domain>/`. The current domains include `wizard` and `products`.
 - The wizard domain contains the typed file-workflow tRPC router, its wire contracts, and its tests.
-- Developers keep cross-domain code under `src/shared/`. It contains `config`, `constants`, `database`, `libs` for tRPC and Ky, `middlewares`, and `utils`.
+- Developers keep cross-domain code under `src/shared/`. It contains `config`, `constants`, `libs` for tRPC and Ky, `middlewares`, and `utils`.
 - TanStack Router reads file-based routes from `src/routes/`. Developers keep API routes under `src/routes/api/`.
 - Developers keep test setup and shared render helpers under `src/tests/`. The render helpers are in `src/tests/utils/renderers/`.
 
 ## Server boundaries
 
 - Use route server handlers and server functions for small operations. Keep each operation direct and single-purpose. See `src/routes/api/trpc.$.ts`. Wrap server-only code with `createServerOnlyFn` from `@tanstack/react-start`.
-- Use tRPC procedures for database queries, business logic, and the small-JSON backend workflow.
+- Use tRPC procedures for business logic and the small-JSON backend workflow.
 - The root tRPC router registers the `products` and `wizard` routers.
 - The wizard router provides these procedures:
   - `getWorkflowConfig`
@@ -36,7 +36,6 @@ Developers build the frontend with [TanStack Start](https://tanstack.com/start) 
 - The `httpClient` binding is the request-scoped health-check Ky client.
 - The `workflowHttpClient` binding is the request-scoped file-workflow Ky client.
 - Both clients use the validated `BACKEND_URL` as `baseUrl`.
-- Developers added the `db` binding code but commented it out. Keep the code commented out until the application connects the database client.
 - On each request, the middleware calls `environmentSchema.parse(process.env)`. A validation error rejects the middleware request. The middleware provides the validated bindings to downstream code through `getAppBindings()`.
 
 ## Backend HTTP
@@ -78,12 +77,6 @@ The workflow schemas enforce these contracts:
 - A file name cannot start or end with whitespace. The schema rejects whitespace instead of changing the file name.
 - A download-grant expiry is an RFC 3339 whole-second timestamp.
 - Backend success and error objects reject unknown properties.
-
-## Database
-
-- Developers use PostgreSQL through Drizzle ORM. They keep Drizzle config in `drizzle.config.ts`. See the migration commands in the [commands reference](./commands.md).
-- Developers define the schema in `src/shared/database/database.schema.server.ts`. The current schema defines one `users` table.
-- App bindings do not contain the database client.
 
 ## File uploads
 
