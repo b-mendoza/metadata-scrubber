@@ -68,7 +68,6 @@ const onlyFetchRequest = (
 
 afterEach(() => {
   vi.useRealTimers();
-  vi.unstubAllGlobals();
 });
 
 test("getWorkflowConfig returns the exact backend-owned byte limit", async () => {

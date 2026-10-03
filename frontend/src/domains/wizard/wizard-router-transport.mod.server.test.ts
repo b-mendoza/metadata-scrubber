@@ -61,7 +61,6 @@ const requireTRPCError = async (
 
 afterEach(() => {
   vi.useRealTimers();
-  vi.unstubAllGlobals();
 });
 
 test("an unclassified transport failure maps to BAD_GATEWAY without public details", async () => {

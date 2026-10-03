@@ -1,6 +1,6 @@
 import { TRPCError } from "@trpc/server";
 import ky from "ky";
-import { afterEach, expect, test, vi } from "vitest";
+import { expect, test, vi } from "vitest";
 import * as z from "zod";
 
 import { createWorkflowHttpClient } from "#/shared/libs/ky/workflow-http-client.mod.server";
@@ -52,10 +52,6 @@ const requireTRPCError = async (
   }
   expect.fail("the workflow procedure must reject with a TRPCError");
 };
-
-afterEach(() => {
-  vi.unstubAllGlobals();
-});
 
 test.each([
   ["lower-case mixed hex", CANONICAL_ETAG, true],

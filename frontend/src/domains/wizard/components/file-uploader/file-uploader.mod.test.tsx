@@ -32,7 +32,6 @@ const TEST_FRACTIONAL_FILE_SIZE_BYTES = 1_572_864;
 
 afterEach(() => {
   vi.useRealTimers();
-  vi.unstubAllGlobals();
   vi.restoreAllMocks();
   FakeXMLHttpRequest.reset();
 });

@@ -1,6 +1,6 @@
 import { TRPCError } from "@trpc/server";
 import ky from "ky";
-import { afterEach, expect, test, vi } from "vitest";
+import { expect, test, vi } from "vitest";
 
 import {
   BAD_REQUEST_STATUS_CODE,
@@ -73,10 +73,6 @@ const requireTRPCError = async (
   }
   expect.fail("the workflow procedure must reject with a TRPCError");
 };
-
-afterEach(() => {
-  vi.unstubAllGlobals();
-});
 
 test("getWorkflowConfig rejects a malformed backend config body", async () => {
   const fetchMock = vi
