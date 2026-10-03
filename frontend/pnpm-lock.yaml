@@ -374,9 +374,6 @@ importers:
       react-doctor:
         specifier: 0.9.14
         version: 0.9.14(@opentelemetry/core@2.11.0(@opentelemetry/api@1.9.1))(eslint@10.11.0(jiti@2.7.0)(supports-color@7.2.0))(oxlint-tsgolint@7.0.2003)(react@19.3.0)(supports-color@7.2.0)
-      tailwindcss-react-aria-components:
-        specifier: 2.2.0
-        version: 2.2.0(tailwindcss@4.3.3)
       typescript:
         specifier: 6.0.3
         version: 6.0.3
@@ -4778,11 +4775,6 @@ packages:
     peerDependenciesMeta:
       '@eslint/css':
         optional: true
-
-  tailwindcss-react-aria-components@2.2.0:
-    resolution: {integrity: sha512-iNVDSQd6haXWiu4RakjaYnCUnLw/nOEFSFHEelFeIkT/0f8HSrJ23fwt59F93yNw4FrjjHDXIGHgEtqProNcmQ==}
-    peerDependencies:
-      tailwindcss: ^4.0.0
 
   tailwindcss@4.3.3:
     resolution: {integrity: sha512-gOhV3P7ufE62QDGg1zVaTgCR+EtPv92k2nIhVcVKcLmxT1sUBsQGhnZj175j+MqRt4zLF7ic+sCYjfhxMxj7YQ==}
@@ -9208,10 +9200,6 @@ snapshots:
   tagged-tag@1.0.0: {}
 
   tailwind-csstree@0.3.3: {}
-
-  tailwindcss-react-aria-components@2.2.0(tailwindcss@4.3.3):
-    dependencies:
-      tailwindcss: 4.3.3
 
   tailwindcss@4.3.3: {}
 
