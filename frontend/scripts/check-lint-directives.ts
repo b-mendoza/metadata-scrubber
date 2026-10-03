@@ -8,7 +8,7 @@ import { parser } from "typescript-eslint";
 const TOOL_DIRECTIVE = /^(?:eslint|oxlint|react-doctor)(?:-[\w\-]+)?(?:\s|$)/v;
 const GLOBAL_DIRECTIVE = /^(?:exported|globals?)(?:\s|$)/v;
 const NEXT_LINE_EXCEPTION =
-  /^(?:eslint|react-doctor)-disable-next-line\s+[\w@][\w@\/.\-]*(?:\s*,\s*[\w@][\w@\/.\-]*)*\s+--\s+\S.*$/v;
+  /^eslint-disable-next-line\s+[\w@][\w@\/.\-]*(?:\s*,\s*[\w@][\w@\/.\-]*)*\s+--\s+\S.*$/v;
 
 export function checkLintDirectives(source: string, file: string) {
   const linter = new Linter();
@@ -30,10 +30,19 @@ export function checkLintDirectives(source: string, file: string) {
   const comments = linter.getSourceCode().getAllComments();
   for (const comment of comments) {
     const value = comment.value.trim();
-    if (!TOOL_DIRECTIVE.test(value) && !GLOBAL_DIRECTIVE.test(value)) {
+    const isReactDoctorDirective = value.includes("react-doctor-disable");
+    if (
+      !isReactDoctorDirective &&
+      !TOOL_DIRECTIVE.test(value) &&
+      !GLOBAL_DIRECTIVE.test(value)
+    ) {
       continue;
     }
-    if (comment.type === "Line" && NEXT_LINE_EXCEPTION.test(value)) {
+    if (
+      !isReactDoctorDirective &&
+      comment.type === "Line" &&
+      NEXT_LINE_EXCEPTION.test(value)
+    ) {
       continue;
     }
     assert.ok(
@@ -43,7 +52,7 @@ export function checkLintDirectives(source: string, file: string) {
     const { line } = comment.loc.start;
     failures.push({
       line,
-      message: `${file}:${String(line)}: Forbidden or incomplete lint directive. Use only // eslint-disable-next-line <rule ids> -- <reason> or // react-doctor-disable-next-line <rule ids> -- <reason>. Name each rule and give a non-empty reason so each exception is reviewable.`,
+      message: `${file}:${String(line)}: Forbidden or incomplete lint directive. Use only // eslint-disable-next-line <rule ids> -- <reason>. Name each rule and give a non-empty reason so each exception is reviewable.`,
     });
   }
   return failures;
