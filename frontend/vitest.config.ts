@@ -12,7 +12,7 @@ export default defineConfig({
       provider: "istanbul",
     },
     environment: "happy-dom",
-    include: ["./src/**/*.test.{ts,tsx}"],
+    include: ["./src/**/*.test.{ts,tsx}", "./scripts/**/*.test.ts"],
     restoreMocks: true,
     setupFiles: ["./src/tests/setup-test-environment.ts"],
   },
