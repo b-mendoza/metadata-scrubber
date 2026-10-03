@@ -31,54 +31,49 @@ interface FileUploaderProps {
   onUploadComplete: (result: { storageKey: string }) => void;
 }
 
-const createUppy = (
-  createUpload: FileUploaderProps["createUpload"],
-  maxFileSizeBytes: FileUploaderProps["maxFileSizeBytes"],
-) => {
-  const uppy = new Uppy({
-    restrictions: {
-      allowedFileTypes: [UPLOADABLE_MIME_TYPES.PDF],
-      maxFileSize: maxFileSizeBytes,
-      maxNumberOfFiles: WIZARD_UPLOAD_FILE_COUNT,
-      minNumberOfFiles: WIZARD_UPLOAD_FILE_COUNT,
-    },
-    autoProceed: false,
-  });
-
-  uppy.use(AwsS3, {
-    generateObjectKey: (file) => file.id,
-    shouldUseMultipart: false,
-    signRequest: async (request) => {
-      if (request.method !== "PUT") {
-        throw new Error("Only PUT upload requests are supported");
-      }
-
-      const file = uppy.getFile(request.key);
-      if (file.size == null) {
-        throw new Error("The upload file size is not available");
-      }
-
-      const { storageKey, uploadUrl } = await createUpload({
-        fileName: file.name,
-        fileSizeBytes: file.size,
-      });
-
-      uppy.setFileMeta(file.id, { storageKey });
-
-      return { url: uploadUrl };
-    },
-  });
-
-  return uppy;
-};
-
 const useUppyInstance = (
   createUpload: FileUploaderProps["createUpload"],
   maxFileSizeBytes: FileUploaderProps["maxFileSizeBytes"],
-): ReturnType<typeof createUppy> => {
+) => {
   // The Uppy instance captures the initial `createUpload` and `maxFileSizeBytes` values.
   // A caller must remount this component to apply changed values.
-  const [uppy] = useState(() => createUppy(createUpload, maxFileSizeBytes));
+  const [uppy] = useState(() => {
+    const instance = new Uppy({
+      restrictions: {
+        allowedFileTypes: [UPLOADABLE_MIME_TYPES.PDF],
+        maxFileSize: maxFileSizeBytes,
+        maxNumberOfFiles: WIZARD_UPLOAD_FILE_COUNT,
+        minNumberOfFiles: WIZARD_UPLOAD_FILE_COUNT,
+      },
+      autoProceed: false,
+    });
+
+    instance.use(AwsS3, {
+      generateObjectKey: (file) => file.id,
+      shouldUseMultipart: false,
+      signRequest: async (request) => {
+        if (request.method !== "PUT") {
+          throw new Error("Only PUT upload requests are supported");
+        }
+
+        const file = instance.getFile(request.key);
+        if (file.size == null) {
+          throw new Error("The upload file size is not available");
+        }
+
+        const { storageKey, uploadUrl } = await createUpload({
+          fileName: file.name,
+          fileSizeBytes: file.size,
+        });
+
+        instance.setFileMeta(file.id, { storageKey });
+
+        return { url: uploadUrl };
+      },
+    });
+
+    return instance;
+  });
 
   useEffect(() => {
     return () => {
