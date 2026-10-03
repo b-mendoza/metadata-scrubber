@@ -1,7 +1,4 @@
 {
-  // Scan only files changed against the base branch.
-  // Pull-request CI uses a detached merge commit, so it scans the full frontend.
-  "scope": "files",
   // Fail CI on warnings and errors.
   "blocking": "warning",
   // Skip the remote score API.
