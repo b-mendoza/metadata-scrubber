@@ -15,8 +15,6 @@ import { createTRPCRequestContext } from "#/shared/libs/trpc/utils/initializer/i
 
 export const trpcContext = createTRPCContext<AppRouter>();
 
-// With SSR, we usually want to set some default staleTime
-// above 0 to avoid refetching immediately on the client
 const ONE_MINUTE_STALE_TIME = 60_000;
 
 const createQueryClient = () => {
@@ -37,22 +35,16 @@ const createQueryClient = () => {
 
 const browserQueryClient: { current: QueryClient | null } = { current: null };
 
+// The server creates one QueryClient for each request.
+// The browser reuses one QueryClient so an initial render that suspends
+// does not create a new client.
 const initializeQueryClient = createIsomorphicFn()
-  .server(
-    // Server: always make a new query client
-    () => createQueryClient(),
-  )
-  .client(
-    // Browser: make a new query client if we don't already have one
-    // This is very important, so we don't re-make a new client if React
-    // suspends during the initial render. This may not be needed if we
-    // have a suspense boundary BELOW the creation of the query client
-    () => {
-      browserQueryClient.current ??= createQueryClient();
+  .server(() => createQueryClient())
+  .client(() => {
+    browserQueryClient.current ??= createQueryClient();
 
-      return browserQueryClient.current;
-    },
-  );
+    return browserQueryClient.current;
+  });
 
 const TRPC_PATH = "/api/trpc";
 
