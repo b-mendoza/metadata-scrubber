@@ -1,15 +1,13 @@
 import type { KyInstance } from "ky";
 import ky from "ky";
 
-export type HTTPClient = KyInstance;
-
 export const HTTP_CLIENT_ATTEMPT_TIMEOUT_MS = 3000;
 const HTTP_CLIENT_TOTAL_TIMEOUT_MS = 5000;
 export const HTTP_CLIENT_RETRY_LIMIT = 1;
 const HTTP_CLIENT_RETRY_MAX_RETRY_AFTER_MS = 250;
 const HTTP_CLIENT_RETRY_BACKOFF_LIMIT_MS = 250;
 
-export const createHttpClient = (baseUrl: URL): HTTPClient => {
+export const createHttpClient = (baseUrl: URL): KyInstance => {
   return ky.create({
     baseUrl,
     retry: {
