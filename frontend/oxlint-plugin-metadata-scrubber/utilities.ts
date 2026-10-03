@@ -1,4 +1,4 @@
-import type { ESTree } from "@oxlint/plugins";
+import type { ESTree, Scope, SourceCode, Variable } from "@oxlint/plugins";
 
 const API_ROUTE_PATH_PATTERN = /(?:^|\/)src\/routes\/api\/.*\.tsx?$/v;
 const DOMAIN_SERVER_MODULE_PATH_PATTERN =
@@ -9,6 +9,23 @@ const SHARED_DATABASE_SERVER_PATH_PATTERN =
 const SHARED_MIDDLEWARE_PATH_PATTERN =
   /(?:^|\/)src\/shared\/middlewares\/.*\.tsx?$/v;
 const TEST_FILE_PATH_PATTERN = /\.test\.[cm]?[jt]sx?$/v;
+
+export const getReferencedVariable = (
+  node: Extract<ESTree.Node, { type: "Identifier" }>,
+  sourceCode: SourceCode,
+): Variable | null => {
+  // A type-only declaration can shadow the name without shadowing its value.
+  // Switch discriminants can have their reference in an upper scope.
+  let scope: Scope | null = sourceCode.getScope(node);
+  while (scope != null) {
+    const reference = scope.references.find(
+      (candidate) => candidate.identifier === node,
+    );
+    if (reference != null) return reference.resolved;
+    scope = scope.upper;
+  }
+  return null;
+};
 
 export const getStaticPropertyName = (
   node: ESTree.Node | null | undefined,

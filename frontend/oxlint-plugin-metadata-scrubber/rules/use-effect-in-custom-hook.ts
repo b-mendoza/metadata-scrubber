@@ -1,13 +1,11 @@
-import type {
-  Definition,
-  ESTree,
-  Scope,
-  SourceCode,
-  Variable,
-} from "@oxlint/plugins";
+import type { Definition, ESTree, SourceCode, Variable } from "@oxlint/plugins";
 import { defineRule } from "@oxlint/plugins";
 
-import { getStaticPropertyName, isFunction } from "../utilities.ts";
+import {
+  getReferencedVariable,
+  getStaticPropertyName,
+  isFunction,
+} from "../utilities.ts";
 
 const HOOK_NAME_PATTERN = /^use[A-Z0-9]/v;
 const NO_TEMPLATE_EXPRESSIONS = 0;
@@ -78,23 +76,6 @@ const isWriteOnlyTarget = (node: ESTree.Node): boolean => {
   );
 };
 
-const getReferenceBinding = (
-  node: Extract<ESTree.Node, { type: "Identifier" }>,
-  sourceCode: SourceCode,
-): Variable | null => {
-  // A type-only declaration can shadow the name without shadowing its value.
-  // Switch discriminants can have their reference in an upper scope.
-  let scope: Scope | null = sourceCode.getScope(node);
-  while (scope != null) {
-    const reference = scope.references.find(
-      (candidate) => candidate.identifier === node,
-    );
-    if (reference != null) return reference.resolved;
-    scope = scope.upper;
-  }
-  return null;
-};
-
 const getImportedName = (specifier: ESTree.ImportSpecifier): string => {
   const { imported } = specifier;
   if (imported.type === "Identifier") return imported.name;
@@ -138,7 +119,7 @@ const isReactNamespace = (
 ): boolean => {
   const expression = unwrapExpression(node);
   if (expression.type !== "Identifier") return false;
-  const binding = getReferenceBinding(expression, sourceCode);
+  const binding = getReferencedVariable(expression, sourceCode);
   if (binding == null || visited.has(binding)) return false;
   visited.add(binding);
   return binding.defs.some((definition) => {
@@ -257,7 +238,7 @@ export default defineRule({
 
     return {
       Identifier(node) {
-        const binding = getReferenceBinding(node, sourceCode);
+        const binding = getReferencedVariable(node, sourceCode);
         if (binding == null) return;
         if (
           binding.defs.every((definition) => !isReactEffectImport(definition))
