@@ -16,7 +16,10 @@
     "eslint-plugin-sonarjs",
     "./oxlint-plugin-metadata-scrubber/index.ts",
     "@tanstack/eslint-plugin-router",
-    "@tanstack/eslint-plugin-query"
+    "@tanstack/eslint-plugin-query",
+    "eslint-plugin-regexp",
+    "eslint-plugin-no-unsanitized",
+    "eslint-plugin-better-tailwindcss"
   ],
   "categories": {
     "correctness": "off"
@@ -29,8 +32,18 @@
     "es2026": true
   },
   "settings": {
+    "import-x/extensions": [".js", ".mjs", ".cjs", ".ts", ".tsx"],
+    "import-x/resolver-next": [
+      {
+        "interfaceVersion": 3,
+        "name": "eslint-plugin-import-x:node"
+      }
+    ],
     "react": {
       "version": "999.999.999"
+    },
+    "better-tailwindcss": {
+      "entryPoint": "src/app.css"
     }
   },
   "ignorePatterns": [
@@ -78,7 +91,12 @@
     "no-import-assign": ["error"],
     "no-irregular-whitespace": ["error"],
     "no-loss-of-precision": ["error"],
-    "no-misleading-character-class": ["error"],
+    "no-misleading-character-class": [
+      "error",
+      {
+        "allowEscape": false
+      }
+    ],
     "no-nonoctal-decimal-escape": ["error"],
     "no-obj-calls": ["error"],
     "no-prototype-builtins": ["error"],
@@ -157,13 +175,8 @@
     "@eslint-community/eslint-comments/disable-enable-pair": "error",
     "@eslint-community/eslint-comments/no-aggregating-enable": ["error"],
     "@eslint-community/eslint-comments/no-duplicate-disable": ["error"],
-    "@eslint-community/eslint-comments/no-unlimited-disable": ["error"],
-    "@eslint-community/eslint-comments/require-description": [
-      "error",
-      {
-        "ignore": ["eslint-enable", "eslint-env"]
-      }
-    ],
+    "@eslint-community/eslint-comments/no-unlimited-disable": "error",
+    "@eslint-community/eslint-comments/require-description": "error",
     "accessor-pairs": [
       "error",
       {
@@ -423,6 +436,7 @@
     "unicorn/prefer-event-target": "error",
     "unicorn/prefer-export-from": "error",
     "unicorn/prefer-global-this": "error",
+    "unicorn/prefer-import-meta-properties": "error",
     "unicorn/prefer-includes": "error",
     "unicorn/prefer-keyboard-event-key": "error",
     "unicorn/prefer-logical-operator-over-ternary": "error",
@@ -441,13 +455,13 @@
     "unicorn/prefer-prototype-methods": "error",
     "unicorn/prefer-query-selector": "error",
     "unicorn/prefer-reflect-apply": "error",
-    "unicorn/prefer-regexp-test": "error",
+    "unicorn/prefer-regexp-test": ["error"],
     "unicorn/prefer-response-static-json": "error",
     "unicorn/prefer-set-has": "error",
     "unicorn/prefer-set-size": "error",
     "unicorn/prefer-single-call": "error",
     "unicorn/prefer-spread": "error",
-    "unicorn/prefer-string-raw": "error",
+    "unicorn/prefer-string-raw": ["error"],
     "unicorn/prefer-string-replace-all": "error",
     "unicorn/prefer-string-slice": "error",
     "unicorn/prefer-string-trim-start-end": "error",
@@ -677,6 +691,37 @@
     "@tanstack/query/no-void-query-fn": "error",
     "@tanstack/query/mutation-property-order": "error",
     "@tanstack/query/prefer-query-options": "error",
+    "regexp/no-misleading-capturing-group": "error",
+    "regexp/no-useless-assertions": "error",
+    "regexp/no-missing-g-flag": "error",
+    "no-unsanitized/method": "error",
+    "no-unsanitized/property": "error",
+    "better-tailwindcss/no-unknown-classes": "error",
+    "better-tailwindcss/no-conflicting-classes": "error",
+    "better-tailwindcss/no-concatenated-classes": "error",
+    "no-implicit-coercion": [
+      "error",
+      {
+        "boolean": false,
+        "number": true,
+        "string": false
+      }
+    ],
+    "e18e/prefer-static-collator": "error",
+    "sonarjs/no-function-declaration-in-block": "error",
+    "sonarjs/no-for-in-iterable": "error",
+    "@eslint-community/eslint-comments/no-use": [
+      "error",
+      {
+        "allow": ["eslint-disable-next-line"],
+        "additionalDirectives": [
+          "oxlint-disable",
+          "oxlint-disable-line",
+          "oxlint-disable-next-line",
+          "oxlint-enable"
+        ]
+      }
+    ],
     "no-restricted-imports": [
       "error",
       {
@@ -722,6 +767,11 @@
         "typedefs": false
       }
     ],
+    "default-param-last": "error",
+    "no-shadow": "error",
+    "import/no-mutable-exports": "error",
+    "import/no-self-import": "error",
+    "import/no-cycle": "error",
     "import/first": "error",
     "import/no-absolute-path": [
       "error",
@@ -1092,7 +1142,6 @@
     {
       "files": ["**/*.ts", "**/*.tsx", "**/*.mts", "**/*.cts"],
       "rules": {
-        "getter-return": "off",
         "no-redeclare": "off",
         "no-setter-return": "off"
       }
@@ -2320,7 +2369,55 @@
       "jsPlugins": ["eslint-plugin-zod"]
     },
     {
-      "files": ["src/**/*.ts?(x)", "lucide.d.ts"],
+      "files": ["src/**/*.ts", "src/**/*.tsx"],
+      "rules": {
+        "zod/no-conflicting-checks": "error",
+        "zod/no-transform-in-record-key": "error",
+        "zod/no-unnecessary-readonly": "error",
+        "zod/prefer-validate": "error",
+        "react/capitalized-calls": "error"
+      },
+      "jsPlugins": ["eslint-plugin-zod"]
+    },
+    {
+      "files": ["src/**/*.tsx"],
+      "rules": {
+        "jsx-a11y/anchor-ambiguous-text": "error",
+        "jsx-a11y/control-has-associated-label": [
+          "error",
+          {
+            "labelAttributes": [],
+            "controlComponents": [],
+            "ignoreElements": [
+              "audio",
+              "canvas",
+              "embed",
+              "input",
+              "textarea",
+              "tr",
+              "video"
+            ],
+            "ignoreRoles": [
+              "grid",
+              "listbox",
+              "menu",
+              "menubar",
+              "radiogroup",
+              "row",
+              "tablist",
+              "toolbar",
+              "tree",
+              "treegrid"
+            ]
+          }
+        ],
+        "jsx-a11y/lang": "error",
+        "jsx-a11y/no-aria-hidden-on-focusable": "error",
+        "jsx-a11y/prefer-tag-over-role": "error"
+      }
+    },
+    {
+      "files": ["src/**/*.ts", "src/**/*.tsx"],
       "env": {
         "browser": true,
         "node": true
@@ -2328,19 +2425,20 @@
     },
     {
       "files": [
-        "drizzle.config.ts",
         "eslint.config.js",
+        "eslint-config/**/*.js",
         "scripts/**/*.ts",
         "vite.config.ts",
         "vitest.config.ts",
-        "oxlint-plugin-metadata-scrubber/**/*.ts?(x)"
+        "oxlint-plugin-metadata-scrubber/**/*.ts",
+        "oxlint-plugin-metadata-scrubber/**/*.tsx"
       ],
       "env": {
         "node": true
       }
     },
     {
-      "files": ["src/**/*.test.ts?(x)"],
+      "files": ["src/**/*.test.ts", "src/**/*.test.tsx"],
       "rules": {
         "testing-library/await-async-events": [
           "error",
@@ -2369,6 +2467,8 @@
         "testing-library/prefer-query-by-disappearance": "error",
         "testing-library/prefer-screen-queries": "error",
         "testing-library/render-result-naming-convention": "error",
+        "testing-library/prefer-user-event": "error",
+        "testing-library/prefer-user-event-setup": "error",
         "vitest/expect-expect": "off",
         "vitest/no-commented-out-tests": "error",
         "vitest/no-conditional-expect": "error",
@@ -2396,6 +2496,16 @@
         "vitest/valid-expect": "error",
         "vitest/valid-expect-in-promise": "error",
         "vitest/valid-title": "error",
+        "vitest/no-conditional-tests": "error",
+        "vitest/prefer-each": "error",
+        "vitest/warn-todo": "error",
+        "vitest/hoisted-apis-on-top": "error",
+        "vitest/prefer-mock-promise-shorthand": "error",
+        "vitest/prefer-spy-on": "error",
+        "vitest/require-hook": "error",
+        "vitest/prefer-expect-type-of": "error",
+        "vitest/prefer-to-have-been-called-times": "error",
+        "vitest/require-to-throw-message": "error",
         "vitest/prefer-comparison-matcher": "error",
         "vitest/prefer-equality-matcher": "error",
         "vitest/prefer-import-in-mock": "error",
