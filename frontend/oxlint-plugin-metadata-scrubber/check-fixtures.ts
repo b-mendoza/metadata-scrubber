@@ -35,7 +35,6 @@ const getDiagnosticMessages = (
   fixturePath: string,
   ruleId: string,
 ): readonly string[] => {
-  // react-doctor-disable-next-line react-doctor/import-metadata-execution-risk -- Run local oxlint on trusted fixture paths to check lint rules.
   const result = spawnSync(
     oxlintPath,
     [

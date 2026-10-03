@@ -51,7 +51,6 @@ const getNamespaceBinding = (
   // Switch discriminants can have their reference in an upper scope.
   let scope: Scope | null = sourceCode.getScope(node);
   while (scope != null) {
-    // react-doctor-disable-next-line react-doctor/js-index-maps -- Each iteration searches a different scope's references once.
     const reference = scope.references.find(
       (candidate) => candidate.identifier === node,
     );

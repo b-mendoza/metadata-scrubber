@@ -1,10 +1,4 @@
-import type {
-  Definition,
-  ESTree,
-  Scope,
-  SourceCode,
-  Variable,
-} from "@oxlint/plugins";
+import type { Definition, ESTree, Scope, SourceCode } from "@oxlint/plugins";
 import { defineRule } from "@oxlint/plugins";
 
 import { isTestFile } from "../utilities.ts";
@@ -28,11 +22,6 @@ const isVitestExpectTypeOfImportDefinition = (
   definition.parent.source.value === "vitest" &&
   getImportedName(definition.node) === "expectTypeOf";
 
-const isVitestExpectTypeOfImport = (variable: Variable): boolean =>
-  variable.defs.some((definition) =>
-    isVitestExpectTypeOfImportDefinition(definition),
-  );
-
 const isVitestExpectTypeOfReference = (
   node: ESTree.IdentifierReference,
   sourceCode: SourceCode,
@@ -43,7 +32,9 @@ const isVitestExpectTypeOfReference = (
     if (variable != null) {
       return variable.defs.length === NO_DEFINITIONS
         ? node.name === "expectTypeOf"
-        : isVitestExpectTypeOfImport(variable);
+        : variable.defs.some((definition) =>
+            isVitestExpectTypeOfImportDefinition(definition),
+          );
     }
     scope = scope.upper;
   }
