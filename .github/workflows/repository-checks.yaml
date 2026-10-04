@@ -24,6 +24,6 @@ jobs:
           persist-credentials: false
 
       - name: Check secrets
-        uses: docker://secretlint/secretlint:v13.0.6@sha256:ea50c19f9c649154280dfa41fe91eeb95af88377172a953bbd480be8bcd9cb18
+        uses: docker://secretlint/secretlint:v13.0.7@sha256:4e0d997d1c395992de2cce32442fd5ff8ad4f3460a765b681c02c38226476cb4
         with:
           args: secretlint --maskSecrets --no-gitignore **/*
