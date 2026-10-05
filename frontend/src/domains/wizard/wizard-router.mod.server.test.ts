@@ -97,19 +97,27 @@ test("createUpload sends only its typed small-JSON contract", async () => {
     storageKey: STORAGE_KEY,
     uploadUrl: "https://uploads.test/source.pdf",
   };
+  const backendRequests: Request[] = [];
+  const responsePromise = Promise.resolve(Response.json(response));
   const fetchMock = vi
     .fn<typeof fetch>()
-    .mockResolvedValue(Response.json(response));
+    .mockImplementation(async (fetchRequest) => {
+      expect.assert(fetchRequest instanceof Request);
+      backendRequests.push(fetchRequest.clone());
+      return responsePromise;
+    });
   vi.stubGlobal("fetch", fetchMock);
   const request = new Request(FRONTEND_URL);
 
   const result = await callerForRequest(request).createUpload(input);
 
   expect(result).toEqual(response);
-  const backendRequest = onlyFetchRequest(fetchMock);
+  expect(fetchMock).toHaveBeenCalledOnce();
+  const [backendRequest] = backendRequests;
+  expect.assert(typeof backendRequest !== "undefined");
   expect(backendRequest.method).toBe("POST");
   expect(backendRequest.url).toBe("https://backend.test/api/uploads");
-  await expect(backendRequest.clone().json()).resolves.toEqual(input);
+  await expect(backendRequest.json()).resolves.toEqual(input);
   expect(JSON.stringify(input)).not.toContain("fileBytes");
 });
 
@@ -127,19 +135,27 @@ test("dryRun sends the storage key and returns a canonical reviewed revision", a
       },
     ],
   };
+  const backendRequests: Request[] = [];
+  const responsePromise = Promise.resolve(Response.json(response));
   const fetchMock = vi
     .fn<typeof fetch>()
-    .mockResolvedValue(Response.json(response));
+    .mockImplementation(async (fetchRequest) => {
+      expect.assert(fetchRequest instanceof Request);
+      backendRequests.push(fetchRequest.clone());
+      return responsePromise;
+    });
   vi.stubGlobal("fetch", fetchMock);
   const request = new Request(FRONTEND_URL);
 
   const result = await callerForRequest(request).dryRun(input);
 
   expect(result).toEqual(response);
-  const backendRequest = onlyFetchRequest(fetchMock);
+  expect(fetchMock).toHaveBeenCalledOnce();
+  const [backendRequest] = backendRequests;
+  expect.assert(typeof backendRequest !== "undefined");
   expect(backendRequest.method).toBe("POST");
   expect(backendRequest.url).toBe("https://backend.test/api/files/dry-run");
-  await expect(backendRequest.clone().json()).resolves.toEqual(input);
+  await expect(backendRequest.json()).resolves.toEqual(input);
   expect(JSON.stringify(input)).not.toContain("fileBytes");
 });
 
@@ -152,19 +168,27 @@ test("scrubFile forwards the exact reviewed ETag without file bytes", async () =
     result: { downloadUrl: DOWNLOAD_URL },
     status: "done",
   };
+  const backendRequests: Request[] = [];
+  const responsePromise = Promise.resolve(Response.json(response));
   const fetchMock = vi
     .fn<typeof fetch>()
-    .mockResolvedValue(Response.json(response));
+    .mockImplementation(async (fetchRequest) => {
+      expect.assert(fetchRequest instanceof Request);
+      backendRequests.push(fetchRequest.clone());
+      return responsePromise;
+    });
   vi.stubGlobal("fetch", fetchMock);
   const request = new Request(FRONTEND_URL);
 
   const result = await callerForRequest(request).scrubFile(input);
 
   expect(result).toEqual(response);
-  const backendRequest = onlyFetchRequest(fetchMock);
+  expect(fetchMock).toHaveBeenCalledOnce();
+  const [backendRequest] = backendRequests;
+  expect.assert(typeof backendRequest !== "undefined");
   expect(backendRequest.method).toBe("POST");
   expect(backendRequest.url).toBe("https://backend.test/api/files/scrub");
-  await expect(backendRequest.clone().json()).resolves.toEqual(input);
+  await expect(backendRequest.json()).resolves.toEqual(input);
   expect(JSON.stringify(input)).not.toContain("fileBytes");
 });
 
@@ -177,40 +201,56 @@ test("refreshDownloadGrant targets one exact sanitized revision", async () => {
     downloadUrl: DOWNLOAD_URL,
     expiresAt: "2026-09-01T12:15:00Z",
   };
+  const backendRequests: Request[] = [];
+  const responsePromise = Promise.resolve(Response.json(response));
   const fetchMock = vi
     .fn<typeof fetch>()
-    .mockResolvedValue(Response.json(response));
+    .mockImplementation(async (fetchRequest) => {
+      expect.assert(fetchRequest instanceof Request);
+      backendRequests.push(fetchRequest.clone());
+      return responsePromise;
+    });
   vi.stubGlobal("fetch", fetchMock);
   const request = new Request(FRONTEND_URL);
 
   const result = await callerForRequest(request).refreshDownloadGrant(input);
 
   expect(result).toEqual(response);
-  const backendRequest = onlyFetchRequest(fetchMock);
+  expect(fetchMock).toHaveBeenCalledOnce();
+  const [backendRequest] = backendRequests;
+  expect.assert(typeof backendRequest !== "undefined");
   expect(backendRequest.method).toBe("POST");
   expect(backendRequest.url).toBe(
     "https://backend.test/api/files/download-grant",
   );
-  await expect(backendRequest.clone().json()).resolves.toEqual(input);
+  await expect(backendRequest.json()).resolves.toEqual(input);
   expect(JSON.stringify(input)).not.toContain("fileBytes");
 });
 
 test("confirmDelete sends one typed request and returns confirmed deletion", async () => {
   const input: ConfirmDeleteInput = { storageKey: STORAGE_KEY };
   const response: ConfirmDeleteResponse = { status: "deleted" };
+  const backendRequests: Request[] = [];
+  const responsePromise = Promise.resolve(Response.json(response));
   const fetchMock = vi
     .fn<typeof fetch>()
-    .mockResolvedValue(Response.json(response));
+    .mockImplementation(async (fetchRequest) => {
+      expect.assert(fetchRequest instanceof Request);
+      backendRequests.push(fetchRequest.clone());
+      return responsePromise;
+    });
   vi.stubGlobal("fetch", fetchMock);
   const request = new Request(FRONTEND_URL);
 
   const result = await callerForRequest(request).confirmDelete(input);
 
   expect(result).toEqual(response);
-  const backendRequest = onlyFetchRequest(fetchMock);
+  expect(fetchMock).toHaveBeenCalledOnce();
+  const [backendRequest] = backendRequests;
+  expect.assert(typeof backendRequest !== "undefined");
   expect(backendRequest.method).toBe("POST");
   expect(backendRequest.url).toBe("https://backend.test/api/files/delete");
-  await expect(backendRequest.clone().json()).resolves.toEqual(input);
+  await expect(backendRequest.json()).resolves.toEqual(input);
   expect(JSON.stringify(input)).not.toContain("fileBytes");
 });
 
