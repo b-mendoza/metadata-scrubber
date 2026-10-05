@@ -27,7 +27,7 @@ Vercel runs this service as a TanStack Start application. You do not control the
 Verify these short-lived references against the code.
 
 - [Architecture](docs/architecture.md) describes the framework, source layout, server boundaries, bindings, uploads, and testing status.
-- [File structure and conventions](docs/conventions.md) describes the path alias and file names.
+- [File structure and conventions](docs/conventions.md) describes the path alias and file names. It lists mistakes that agents repeated and the required fix.
 - [Commands](docs/commands.md) is the full service command reference.
 - [Known issues](docs/known-issues/README.md) describes dependency and tooling issues that affect builds and their workarounds.
 
