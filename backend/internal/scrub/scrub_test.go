@@ -553,6 +553,38 @@ func TestAnalyzePDFReleasesDecodedMetadataStreamCaches(t *testing.T) {
 	require.Equal(t, primedMetadataStreamCount, clearedMetadataStreamCount)
 }
 
+func TestInspectMetadataEntryReleasesDecodedCacheOnError(t *testing.T) {
+	metadataStream := types.StreamDict{
+		Dict:    types.Dict{"Type": types.Name("Metadata"), "Subtype": types.Name("XML")},
+		Content: []byte{0xff, 0xfe},
+	}
+	testCases := []struct {
+		name   string
+		object types.Object
+	}{
+		{name: "direct stream", object: metadataStream},
+		{name: "indirect stream", object: *types.NewIndirectRef(1, 0)},
+	}
+	for _, testCase := range testCases {
+		t.Run(testCase.name, func(t *testing.T) {
+			pdfContext := &model.Context{XRefTable: &model.XRefTable{Table: map[int]*model.XRefTableEntry{
+				1: model.NewXRefTableEntryGen0(metadataStream),
+			}}}
+			dictionary := types.Dict{"Metadata": testCase.object}
+			state := traversalState{context: pdfContext, analysis: &pdfAnalysis{}}
+
+			err := state.inspectMetadataEntry(dictionary, "Metadata", false)
+
+			require.ErrorContains(t, err, "PDF metadata stream is not valid UTF-8")
+			require.Empty(t, state.analysis.fields)
+			storedStream, _, err := pdfContext.DereferenceStreamDict(dictionary["Metadata"])
+			require.NoError(t, err)
+			require.NotNil(t, storedStream)
+			require.Nil(t, storedStream.Content)
+		})
+	}
+}
+
 func TestPDFByteAPIsEnforceAggregateInputLimit(t *testing.T) {
 	basePDF := func() []byte {
 		configuration := model.NewDefaultConfiguration()
