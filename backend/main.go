@@ -50,14 +50,7 @@ func run(ctx context.Context) error {
 	server := newServer(cfg, storage.NewR2(cfg), logger)
 
 	serverErr := make(chan error, 1)
-	go func() {
-		logger.Info("metadata-scrubber listening", "addr", server.Addr)
-		err := server.ListenAndServe()
-		if errors.Is(err, http.ErrServerClosed) {
-			err = nil
-		}
-		serverErr <- err
-	}()
+	go serveHTTPServer(server, logger, serverErr)
 
 	select {
 	case err := <-serverErr:
@@ -70,6 +63,15 @@ func run(ctx context.Context) error {
 		}
 		return <-serverErr
 	}
+}
+
+func serveHTTPServer(server *http.Server, logger *slog.Logger, serverErr chan error) {
+	logger.Info("metadata-scrubber listening", "addr", server.Addr)
+	err := server.ListenAndServe()
+	if errors.Is(err, http.ErrServerClosed) {
+		err = nil
+	}
+	serverErr <- err
 }
 
 func newServer(cfg config.Config, objectStorage storage.Storage, logger *slog.Logger) *http.Server {
