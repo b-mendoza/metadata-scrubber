@@ -21,8 +21,8 @@ export {
 export type * from "@tanstack/react-query";
 export type * as queryTypes from "@tanstack/react-query";
 export { useState as unrelatedExportQuery } from "react";
-export * from "neverthrow";
-export * as unrelatedExports from "neverthrow";
+export * from "ky";
+export * as unrelatedExports from "ky";
 export { useQuery };
 
 export type ImportedQueryFunction = typeof ImportedQuery;
