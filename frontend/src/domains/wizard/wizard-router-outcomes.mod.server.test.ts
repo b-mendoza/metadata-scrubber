@@ -52,15 +52,15 @@ const callerForRequest = (request: Request) => {
 const requireTRPCError = async (
   operation: Promise<unknown>,
 ): Promise<TRPCError> => {
+  let failure: unknown = null;
   try {
     await operation;
   } catch (error) {
-    expect(error).toBeInstanceOf(TRPCError);
-    if (error instanceof TRPCError) {
-      return error;
-    }
+    failure = error;
   }
-  expect.fail("the workflow procedure must reject with a TRPCError");
+
+  expect.assert(failure instanceof TRPCError);
+  return failure;
 };
 
 test("scrubFile keeps missing source and revision conflict results distinct", async () => {
