@@ -61,7 +61,7 @@ Developers build the frontend with [TanStack Start](https://tanstack.com/start) 
 - Backend status `400`, `404`, `408`, `409`, `413`, `415`, `422`, and `503` map to the matching safe tRPC error code.
 - A Ky timeout maps to `TIMEOUT`. Invalid backend success JSON and invalid backend error JSON map to `BAD_GATEWAY`. Other upstream failures also map to `BAD_GATEWAY`.
 - Public tRPC errors do not include backend error text, provider details, credentials, object keys, request IDs, or presigned URL details.
-- Outbound failure handling uses neverthrow. The frontend does not use Effect.
+- Outbound failure handling uses neverthrow.
 
 ## Validation
 
