@@ -251,15 +251,11 @@ func TestNewServerSharesOneCapacityTwoGateAcrossDryRunAndScrubMisses(t *testing.
 
 	responses := make(chan *httptest.ResponseRecorder, 3)
 	for _, body := range [][]byte{firstDryRunBody, secondDryRunBody} {
-		go func(requestBody []byte) {
-			responses <- serveServerJSON(server, "/api/files/dry-run", requestBody)
-		}(body)
+		go collectDryRunServerResponse(responses, server, body)
 	}
 	observer.waitForTwoDownloads(t)
 
-	go func() {
-		responses <- serveServerJSON(server, "/api/files/scrub", scrubBody)
-	}()
+	go collectScrubServerResponse(responses, scrubBody, server)
 	observer.waitForObservedScrubLookup(t)
 
 	select {
@@ -284,6 +280,14 @@ func TestNewServerSharesOneCapacityTwoGateAcrossDryRunAndScrubMisses(t *testing.
 		}
 	}
 	require.Equal(t, 2, observer.peakDownloads())
+}
+
+func collectDryRunServerResponse(responses chan *httptest.ResponseRecorder, server *http.Server, requestBody []byte) {
+	responses <- serveServerJSON(server, "/api/files/dry-run", requestBody)
+}
+
+func collectScrubServerResponse(responses chan *httptest.ResponseRecorder, scrubBody []byte, server *http.Server) {
+	responses <- serveServerJSON(server, "/api/files/scrub", scrubBody)
 }
 
 func newTestServer(logger *slog.Logger) *http.Server {
