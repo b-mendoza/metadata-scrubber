@@ -8,6 +8,10 @@ Use these principles in every service and language. Read each service's guides f
 - Test current behavior. Do not test possible future logic. If code passes a value through without a change, add a transformation test when the code adds that transformation.
 - Do not test a dependency's contracts or internals. The dependency's maintainers own those tests. Do not assert that code returns a value supplied by a mock when the code passes that value through without a change. That test checks a direct return instead of an application decision. Do not make test infrastructure copy a library's internal structure. Such tests break after an internal library change even when application behavior stays the same. Validate a configuration file for an external tool with that tool's validator or with the behavior that the configuration produces. The validator can be a lint, check, or dry-run command. Do not copy the configuration contents into a test.
 
+## Test environment
+
+- Run each test in the runtime that runs the code in production. A browser-like test environment replaces the server runtime's networking classes. This can hide a failure that occurs only on the server.
+
 ## Assertions
 
 - Import production constants when a test must verify the use of a specific constant. Do not duplicate the constant value in the test. An import prevents the production and test strings from becoming different. A change to the production constant makes the test fail by design.
