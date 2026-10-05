@@ -26,5 +26,6 @@ These short-lived references describe the current code. Verify them against the 
 
 - [Architecture](docs/architecture.md) describes the package layout and runtime wiring.
 - [Commands](docs/commands.md) lists all Task targets and explains how tooling manages generated files.
+- [Conventions](docs/conventions.md) lists mistakes that agents repeated in this service and the required fix. Read it before you change backend code.
 
 The [root agent guide](../AGENTS.md) contains the long-lived guidance for naming, code design, testing, workflow, and verification. Follow that guidance in this service.
