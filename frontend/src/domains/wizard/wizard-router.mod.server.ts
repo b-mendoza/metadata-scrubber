@@ -1,7 +1,7 @@
 import type { TRPC_ERROR_CODE_KEY } from "@trpc/server";
 import { TRPCError } from "@trpc/server";
 import { HTTPError, TimeoutError } from "ky";
-import { errAsync, Result, ResultAsync } from "neverthrow";
+import { errAsync, ResultAsync } from "neverthrow";
 
 import {
   BAD_REQUEST_STATUS_CODE,
@@ -61,24 +61,6 @@ type WorkflowFailureMessage =
   | typeof REFRESH_DOWNLOAD_GRANT_FAILURE_MESSAGE
   | typeof CONFIRM_DELETE_FAILURE_MESSAGE;
 
-const mapBackendErrorBodyFailure = (cause: unknown): Error =>
-  new Error("Could not parse the backend workflow error response.", { cause });
-
-const readBackendErrorBody = (
-  response: Response,
-): ResultAsync<unknown, Error> =>
-  ResultAsync.fromPromise(response.json(), mapBackendErrorBodyFailure);
-
-const cloneBackendErrorResponse = Result.fromThrowable(
-  (response: Response) => response.clone(),
-  mapBackendErrorBodyFailure,
-);
-
-const parseBackendErrorBody = (
-  response: Response,
-): ResultAsync<unknown, Error> =>
-  cloneBackendErrorResponse(response).asyncAndThen(readBackendErrorBody);
-
 const mapWorkflowRequestFailure =
   (message: WorkflowFailureMessage) =>
   (cause: unknown): TRPCError =>
@@ -96,19 +78,15 @@ const mapWorkflowBackendFailure = (
     return errAsync(error);
   }
 
-  return parseBackendErrorBody(cause.response)
-    .mapErr(() => error)
-    .andThen((body) => {
-      const errorBodyResult =
-        contracts.backendErrorResponseSchema.safeParse(body);
-      if (!errorBodyResult.success) {
-        return errAsync(error);
-      }
+  const errorBodyResult = contracts.backendErrorResponseSchema.safeParse(
+    cause.data,
+  );
+  if (!errorBodyResult.success) {
+    return errAsync(error);
+  }
 
-      const code =
-        backendStatusCodes.get(cause.response.status) ?? "BAD_GATEWAY";
-      return errAsync(new TRPCError({ cause, code, message }));
-    });
+  const code = backendStatusCodes.get(cause.response.status) ?? "BAD_GATEWAY";
+  return errAsync(new TRPCError({ cause, code, message }));
 };
 
 export const wizardRouter = createTRPCRouter({
