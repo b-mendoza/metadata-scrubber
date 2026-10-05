@@ -1,8 +1,10 @@
 import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
 import path from "node:path";
+import { inspect } from "node:util";
 
 import { ESLint, Linter } from "eslint";
+import { errAsync, fromThrowable, ResultAsync } from "neverthrow";
 import { parser } from "typescript-eslint";
 
 const TOOL_DIRECTIVE = /^(?:eslint|oxlint|react-doctor)(?:-[\w\-]+)?(?:\s|$)/v;
@@ -58,25 +60,92 @@ export function checkLintDirectives(source: string, file: string) {
   return failures;
 }
 
-if (import.meta.main) {
+const FAILURE_EXIT_CODE = 1;
+
+function shouldCheckRule() {
+  return false;
+}
+
+function createDirectiveESLint() {
   // ESLint owns file selection. Inline configuration cannot alter this guard.
-  const eslint = new ESLint({
+  return new ESLint({
     allowInlineConfig: false,
     cwd: path.resolve(import.meta.dirname, ".."),
-    ruleFilter: () => false,
+    ruleFilter: shouldCheckRule,
   });
-  const files = await eslint.lintFiles(["."]);
-  const results = await Promise.all(
-    files.map(async ({ filePath }) => {
-      const source = await readFile(filePath, "utf-8");
-      return checkLintDirectives(source, filePath);
+}
+
+function mapDirectiveSetupError(cause: unknown) {
+  return new Error("Could not set up the lint directive check.", { cause });
+}
+
+function mapFileSelectionError(cause: unknown) {
+  return new Error(
+    "ESLint could not select files for the lint directive check.",
+    {
+      cause,
+    },
+  );
+}
+
+async function inspectFileDirectives(filePath: string) {
+  const sourceResult = await ResultAsync.fromPromise(
+    readFile(filePath, "utf-8"),
+    (cause: unknown) =>
+      new Error(`Could not read ${filePath} for lint directives.`, { cause }),
+  );
+  if (sourceResult.isErr()) {
+    throw sourceResult.error;
+  }
+  const result = fromThrowable(
+    checkLintDirectives,
+    (cause: unknown) =>
+      new Error(`${filePath}: Could not inspect lint directives.`, { cause }),
+  )(sourceResult.value, filePath);
+  if (result.isErr()) {
+    throw result.error;
+  }
+  return result.value;
+}
+
+function mapDirectiveCheckError(cause: unknown) {
+  return new Error("Could not check files for lint directives.", { cause });
+}
+
+function checkFilesForLintDirectives() {
+  const eslintResult = fromThrowable(
+    createDirectiveESLint,
+    mapDirectiveSetupError,
+  )();
+  if (eslintResult.isErr()) {
+    return errAsync(eslintResult.error);
+  }
+  return ResultAsync.fromPromise(
+    eslintResult.value.lintFiles(["."]),
+    mapFileSelectionError,
+  ).andThen((files) =>
+    ResultAsync.fromPromise(
+      Promise.all(
+        files.map(async ({ filePath }) => inspectFileDirectives(filePath)),
+      ),
+      mapDirectiveCheckError,
+    ).map((results) => {
+      for (const { message } of results.flat()) {
+        process.stderr.write(`${message}\n`);
+        process.exitCode = FAILURE_EXIT_CODE;
+      }
+      process.stdout.write(
+        `Checked ${String(files.length)} files for lint directives.\n`,
+      );
+      return null;
     }),
   );
-  for (const { message } of results.flat()) {
-    process.stderr.write(`${message}\n`);
-    process.exitCode = 1;
+}
+
+if (import.meta.main) {
+  const result = await checkFilesForLintDirectives();
+  if (result.isErr()) {
+    process.stderr.write(`${inspect(result.error)}\n`);
+    process.exitCode = FAILURE_EXIT_CODE;
   }
-  process.stdout.write(
-    `Checked ${String(files.length)} files for lint directives.\n`,
-  );
 }
