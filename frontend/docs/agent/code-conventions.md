@@ -4,13 +4,23 @@ This file contains long-lived guidance for TypeScript design in the frontend. Th
 
 ## Mapped dependency failures
 
-- Use a `neverthrow` `Result` or `ResultAsync` for an asynchronous dependency operation when a server handler intentionally maps the failure.
-- Convert the dependency failure to a mapped error value at the operation.
-- Consume the `Result` at the route or tRPC boundary.
-- Throw the mapped error at that boundary.
-- Preserve the original failure in `cause`.
-- Let intentional Zod boundary validation throw outside a `Result` unless the handler maps that validation failure.
-- Review every `Result` consumption. The lint checks do not cover every consumption form.
+- Use result values for dependency failures only in server-only modules and frontend scripts. Browser code uses `async`/`await`, so the result library stays out of the client bundle.
+- Keep the lint plugin free of the result library so that plugin consumers do not need it.
+- Map each failure to a known error value at the operation. Keep the original failure in `cause`.
+- Await only a result value in server-only modules and frontend scripts. Branch on success or failure.
+- Throw the mapped error at the route or tRPC boundary.
+- Wrap a synchronous call that can throw so that it returns a mapped result.
+- Map application-owned validation failures in server code. Let a framework own validation only when it calls the schema and handles the failure.
+- Review every result consumption. Lint checks do not cover every consumption form.
+
+## Route data
+
+- Await only critical data in a route loader. Critical data is data that the page cannot render without.
+- Start non-critical queries without waiting. Render their data under a Suspense boundary with a fallback.
+- A loader that waits delays server rendering and client navigation.
+- Read query data through Suspense by default. Ask the owner before you use a non-suspending query read. Keep query loading UI in the parent Suspense fallback instead of loading flags or nullable-data branches in the component. Keep mutation pending state in the component because mutations do not suspend.
+- Pass the route's abort signal through to the query and the HTTP transport. A cancellation check after an `await` does not stop work that already started.
+- When the page becomes visible again, compare each time limit, such as a download-grant expiry, with the current clock. Browsers can stop timers in background tabs, so a timer alone can miss the limit.
 
 ## External input
 
