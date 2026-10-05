@@ -17,8 +17,8 @@ This file contains long-lived guidance for TypeScript design in the frontend. Th
 ## Route data
 
 - Await only critical data in a route loader. Critical data is data that the page cannot render without.
+- Treat data as non-critical unless evidence shows that the page cannot render without it. Each query that a loader awaits delays the time to first byte, the first contentful paint, and every client navigation to the page.
 - Start non-critical queries without waiting. Render their data under a Suspense boundary with a fallback.
-- A loader that waits delays server rendering and client navigation.
 - Read query data through Suspense by default. Ask the owner before you use a non-suspending query read. Keep query loading UI in the parent Suspense fallback instead of loading flags or nullable-data branches in the component. Keep mutation pending state in the component because mutations do not suspend.
 - Pass the route's abort signal through to the query and the HTTP transport. A cancellation check after an `await` does not stop work that already started.
 - When the page becomes visible again, compare each time limit, such as a download-grant expiry, with the current clock. Browsers can stop timers in background tabs, so a timer alone can miss the limit.
