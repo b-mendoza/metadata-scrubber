@@ -160,7 +160,7 @@ func analyzeObjectMetadata(context *model.Context, analysis *pdfAnalysis) error 
 	return nil
 }
 
-func (state *traversalState) inspectMetadataEntry(dictionary types.Dict, key string, nested bool) (resultErr error) {
+func (state *traversalState) inspectMetadataEntry(dictionary types.Dict, key string, nested bool) error {
 	streamObject := dictionary[key]
 	streamDictionary, _, err := state.context.DereferenceStreamDict(streamObject)
 	if err != nil {
@@ -169,16 +169,18 @@ func (state *traversalState) inspectMetadataEntry(dictionary types.Dict, key str
 	if streamDictionary == nil {
 		return errors.New("PDF metadata entry does not reference a stream")
 	}
-	defer func() {
-		streamDictionary.Content = nil
-		cleanupErr := storeMetadataStreamContent(state.context, metadataStreamContent{
-			dictionary: dictionary, key: key, streamObject: streamObject,
-		})
-		if cleanupErr != nil {
-			resultErr = errors.Join(resultErr, fmt.Errorf("release PDF metadata stream cache: %w", cleanupErr))
-		}
-	}()
+	bodyErr := state.analyzeMetadataStream(streamDictionary, dictionary, key, nested)
+	streamDictionary.Content = nil
+	cleanupErr := storeMetadataStreamContent(state.context, metadataStreamContent{
+		dictionary: dictionary, key: key, streamObject: streamObject,
+	})
+	if cleanupErr != nil {
+		return errors.Join(bodyErr, fmt.Errorf("release PDF metadata stream cache: %w", cleanupErr))
+	}
+	return bodyErr
+}
 
+func (state *traversalState) analyzeMetadataStream(streamDictionary *types.StreamDict, dictionary types.Dict, key string, nested bool) error {
 	content, err := decodeMetadataStreamWithinBudget(streamDictionary, state.analysis.remainingDecodedMetadataBytes(), "decode PDF metadata stream")
 	if err != nil {
 		return err
