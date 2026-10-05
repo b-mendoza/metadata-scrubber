@@ -57,6 +57,7 @@ return backendHealthStatusResult.value;
 
 Apply the following server rules only to non-test `.server` modules under `src/` and to `scripts/`:
 
+- Exempt `scripts/hard-clean.ts` and `scripts/soft-clean.ts` from result-library rules. They import only Node built-ins so both run without `node_modules`, which hard-clean deletes.
 - Wrap every asynchronous operation with `ResultAsync.fromPromise`. This includes an operation whose promise the code would otherwise return to the framework. Replace `try`/`catch`, `.then()`, `.catch()`, and raw-promise `await` with this wrapper and an explicit result check, as `getMessage` does in the example above.
 - Pass the asynchronous operation as the first argument to `ResultAsync.fromPromise(promise, toMappedError)`. Pass an error mapper as the second argument. Convert the unknown failure to a known error value and keep the original failure in `cause`, as `getMessage` does above.
 - Await only a `ResultAsync` to read its `Result`. Branch with `isErr()` or `isOk()`. Throw the mapped error at a route or tRPC boundary, as `getMessage` does above.
