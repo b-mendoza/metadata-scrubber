@@ -30,6 +30,7 @@ import ky, { HTTPError } from "ky";
 - Use `neverthrow` only in non-test server-only modules under `src/` with the `.server` suffix and in `scripts/`. Every other non-test file under `src/` can enter the client bundle, even when it contains a server callback. This includes a middleware `.server(...)` callback or a server route handler. Use `async`/`await` in those files. Do not import `neverthrow` in those files. Put server logic that needs `neverthrow` in a `.server` module. See `useUppyInstance` in `src/domains/wizard/components/file-uploader/file-uploader.mod.tsx` for `await createUpload(...)`. See `getMessage` in `src/domains/products/products-router.mod.server.ts` for the server pattern.
 - Do not import `neverthrow` in `oxlint-plugin-metadata-scrubber/`. Plugin consumers would need it as a peer dependency.
 - Use `async`/`await` in tests. Testing Library needs asynchronous operations.
+- Read a Ky error body from `HTTPError.data`, not from `HTTPError.response`. Ky reads the body before it throws. A second read fails in Node. happy-dom hid this failure. See `mapWorkflowBackendFailure` in `src/domains/wizard/wizard-router.mod.server.ts`.
 
 Use the mapped-failure pattern from `getMessage` in `src/domains/products/products-router.mod.server.ts`:
 
