@@ -1,5 +1,5 @@
 import react from "@vitejs/plugin-react";
-import { defineConfig } from "vitest/config";
+import { configDefaults, defineConfig } from "vitest/config";
 
 export default defineConfig({
   css: {
@@ -11,10 +11,27 @@ export default defineConfig({
       include: ["src/**/*.{ts,tsx}"],
       provider: "istanbul",
     },
-    environment: "happy-dom",
-    include: ["./src/**/*.test.{ts,tsx}", "./scripts/**/*.test.ts"],
+    projects: [
+      {
+        extends: true,
+        test: {
+          environment: "node",
+          include: ["./src/**/*.server.test.ts", "./scripts/**/*.test.ts"],
+          name: "server",
+        },
+      },
+      {
+        extends: true,
+        test: {
+          environment: "happy-dom",
+          exclude: [...configDefaults.exclude, "./src/**/*.server.test.ts"],
+          include: ["./src/**/*.test.{ts,tsx}"],
+          name: "client",
+          setupFiles: ["./src/tests/setup-test-environment.ts"],
+        },
+      },
+    ],
     restoreMocks: true,
-    setupFiles: ["./src/tests/setup-test-environment.ts"],
     unstubGlobals: true,
   },
 });
