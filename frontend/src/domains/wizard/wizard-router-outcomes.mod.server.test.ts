@@ -1,3 +1,5 @@
+// @vitest-environment node
+
 import { TRPCError } from "@trpc/server";
 import ky from "ky";
 import { expect, test, vi } from "vitest";
