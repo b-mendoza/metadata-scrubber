@@ -1,7 +1,7 @@
 import type { TRPC_ERROR_CODE_KEY } from "@trpc/server";
 import { TRPCError } from "@trpc/server";
 import { HTTPError, TimeoutError } from "ky";
-import { ResultAsync } from "neverthrow";
+import { errAsync, Result, ResultAsync } from "neverthrow";
 
 import {
   BAD_REQUEST_STATUS_CODE,
@@ -61,32 +61,54 @@ type WorkflowFailureMessage =
   | typeof REFRESH_DOWNLOAD_GRANT_FAILURE_MESSAGE
   | typeof CONFIRM_DELETE_FAILURE_MESSAGE;
 
-const parseBackendErrorBody = async (
+const mapBackendErrorBodyFailure = (cause: unknown): Error =>
+  new Error("Could not parse the backend workflow error response.", { cause });
+
+const readBackendErrorBody = (
   response: Response,
-): Promise<contracts.BackendErrorResponse> =>
-  contracts.backendErrorResponseSchema.parse(await response.clone().json());
+): ResultAsync<unknown, Error> =>
+  ResultAsync.fromPromise(response.json(), mapBackendErrorBodyFailure);
 
-const mapWorkflowRequestFailure = async (
-  cause: unknown,
-  message: WorkflowFailureMessage,
-): Promise<TRPCError> => {
-  if (cause instanceof TimeoutError) {
-    return new TRPCError({ cause, code: "TIMEOUT", message });
-  }
+const cloneBackendErrorResponse = Result.fromThrowable(
+  (response: Response) => response.clone(),
+  mapBackendErrorBodyFailure,
+);
+
+const parseBackendErrorBody = (
+  response: Response,
+): ResultAsync<unknown, Error> =>
+  cloneBackendErrorResponse(response).asyncAndThen(readBackendErrorBody);
+
+const mapWorkflowRequestFailure =
+  (message: WorkflowFailureMessage) =>
+  (cause: unknown): TRPCError =>
+    new TRPCError({
+      cause,
+      code: cause instanceof TimeoutError ? "TIMEOUT" : "BAD_GATEWAY",
+      message,
+    });
+
+const mapWorkflowBackendFailure = (
+  error: TRPCError,
+): ResultAsync<never, TRPCError> => {
+  const { cause, message } = error;
   if (!(cause instanceof HTTPError)) {
-    return new TRPCError({ cause, code: "BAD_GATEWAY", message });
+    return errAsync(error);
   }
 
-  const errorBodyResult = await ResultAsync.fromPromise(
-    parseBackendErrorBody(cause.response),
-    () => null,
-  );
-  if (errorBodyResult.isErr()) {
-    return new TRPCError({ cause, code: "BAD_GATEWAY", message });
-  }
+  return parseBackendErrorBody(cause.response)
+    .mapErr(() => error)
+    .andThen((body) => {
+      const errorBodyResult =
+        contracts.backendErrorResponseSchema.safeParse(body);
+      if (!errorBodyResult.success) {
+        return errAsync(error);
+      }
 
-  const code = backendStatusCodes.get(cause.response.status) ?? "BAD_GATEWAY";
-  return new TRPCError({ cause, code, message });
+      const code =
+        backendStatusCodes.get(cause.response.status) ?? "BAD_GATEWAY";
+      return errAsync(new TRPCError({ cause, code, message }));
+    });
 };
 
 export const wizardRouter = createTRPCRouter({
@@ -101,13 +123,10 @@ export const wizardRouter = createTRPCRouter({
           totalTimeout: WORKFLOW_CONFIG_TIMEOUT_MS,
         })
         .json(contracts.workflowConfigResponseSchema),
-      (cause: unknown) => cause,
-    );
+      mapWorkflowRequestFailure(WORKFLOW_CONFIG_FAILURE_MESSAGE),
+    ).orElse(mapWorkflowBackendFailure);
     if (responseResult.isErr()) {
-      throw await mapWorkflowRequestFailure(
-        responseResult.error,
-        WORKFLOW_CONFIG_FAILURE_MESSAGE,
-      );
+      throw responseResult.error;
     }
     return responseResult.value;
   }),
@@ -126,13 +145,10 @@ export const wizardRouter = createTRPCRouter({
             totalTimeout: WORKFLOW_ONE_SHOT_TIMEOUT_MS,
           })
           .json(contracts.uploadResponseSchema),
-        (cause: unknown) => cause,
-      );
+        mapWorkflowRequestFailure(CREATE_UPLOAD_FAILURE_MESSAGE),
+      ).orElse(mapWorkflowBackendFailure);
       if (responseResult.isErr()) {
-        throw await mapWorkflowRequestFailure(
-          responseResult.error,
-          CREATE_UPLOAD_FAILURE_MESSAGE,
-        );
+        throw responseResult.error;
       }
       return responseResult.value;
     }),
@@ -151,13 +167,10 @@ export const wizardRouter = createTRPCRouter({
             totalTimeout: WORKFLOW_DRY_RUN_TIMEOUT_MS,
           })
           .json(contracts.dryRunResponseSchema),
-        (cause: unknown) => cause,
-      );
+        mapWorkflowRequestFailure(DRY_RUN_FAILURE_MESSAGE),
+      ).orElse(mapWorkflowBackendFailure);
       if (responseResult.isErr()) {
-        throw await mapWorkflowRequestFailure(
-          responseResult.error,
-          DRY_RUN_FAILURE_MESSAGE,
-        );
+        throw responseResult.error;
       }
       return responseResult.value;
     }),
@@ -176,13 +189,10 @@ export const wizardRouter = createTRPCRouter({
             totalTimeout: WORKFLOW_SCRUB_TIMEOUT_MS,
           })
           .json(contracts.scrubFileResponseSchema),
-        (cause: unknown) => cause,
-      );
+        mapWorkflowRequestFailure(SCRUB_FILE_FAILURE_MESSAGE),
+      ).orElse(mapWorkflowBackendFailure);
       if (responseResult.isErr()) {
-        throw await mapWorkflowRequestFailure(
-          responseResult.error,
-          SCRUB_FILE_FAILURE_MESSAGE,
-        );
+        throw responseResult.error;
       }
       return responseResult.value;
     }),
@@ -201,13 +211,10 @@ export const wizardRouter = createTRPCRouter({
             totalTimeout: WORKFLOW_ONE_SHOT_TIMEOUT_MS,
           })
           .json(contracts.refreshDownloadGrantResponseSchema),
-        (cause: unknown) => cause,
-      );
+        mapWorkflowRequestFailure(REFRESH_DOWNLOAD_GRANT_FAILURE_MESSAGE),
+      ).orElse(mapWorkflowBackendFailure);
       if (responseResult.isErr()) {
-        throw await mapWorkflowRequestFailure(
-          responseResult.error,
-          REFRESH_DOWNLOAD_GRANT_FAILURE_MESSAGE,
-        );
+        throw responseResult.error;
       }
       return responseResult.value;
     }),
@@ -226,13 +233,10 @@ export const wizardRouter = createTRPCRouter({
             totalTimeout: WORKFLOW_ONE_SHOT_TIMEOUT_MS,
           })
           .json(contracts.confirmDeleteResponseSchema),
-        (cause: unknown) => cause,
-      );
+        mapWorkflowRequestFailure(CONFIRM_DELETE_FAILURE_MESSAGE),
+      ).orElse(mapWorkflowBackendFailure);
       if (responseResult.isErr()) {
-        throw await mapWorkflowRequestFailure(
-          responseResult.error,
-          CONFIRM_DELETE_FAILURE_MESSAGE,
-        );
+        throw responseResult.error;
       }
       return responseResult.value;
     }),
