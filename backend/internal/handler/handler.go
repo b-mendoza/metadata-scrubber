@@ -99,9 +99,6 @@ type Handler struct {
 
 // New constructs the JSON workflow handler around one server-owned admission gate.
 func New(logger *slog.Logger, permits chan struct{}) *Handler {
-	if logger == nil {
-		logger = slog.Default()
-	}
 	if permits == nil || cap(permits) != ProcessingPermitCount {
 		panic("handler admission gate must have capacity 2")
 	}
