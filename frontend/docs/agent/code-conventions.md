@@ -7,7 +7,7 @@ This file contains long-lived guidance for TypeScript design in the frontend. Th
 - Use result values for dependency failures only in server-only modules and frontend scripts. Browser code uses `async`/`await`, so the result library stays out of the client bundle.
 - Keep the lint plugin free of the result library so that plugin consumers do not need it.
 - Map each failure to a known error value at the operation. Keep the original failure in `cause`.
-- Await only a result value in server-only modules and frontend scripts. Branch on success or failure.
+- Await only a result value in server-only modules and frontend scripts, except scripts that delete installed dependencies or dependency caches. Branch on success or failure.
 - Use only runtime built-ins in scripts that delete installed dependencies or dependency caches so they can run without dependencies.
 - Throw the mapped error at the route or tRPC boundary.
 - Wrap a synchronous call that can throw so that it returns a mapped result.
