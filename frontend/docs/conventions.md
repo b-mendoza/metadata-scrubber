@@ -71,9 +71,7 @@ Apply the following server rules only to non-test `.server` modules under `src/`
 | `fromThrowable` / `Result.fromThrowable` | Wrap a synchronous call and map its failure. Keep the original failure in `cause`. Both names refer to the same function. | `scripts/check-lint-policy.ts`, `resolveScope` and `checkPolicySnapshot` |
 | `ResultAsync.fromPromise(Promise.all(...), toMappedError)` | Run independent asynchronous operations together and map the first rejection. | `scripts/check-lint-policy.ts`, `resolveScope` |
 | `.orElse` | Handle an error with another result-producing operation. | `src/domains/wizard/wizard-router.mod.server.ts`, `getWorkflowConfig` |
-| `.andThen` | Run the next result-producing operation only after success. | `src/domains/wizard/wizard-router.mod.server.ts`, `mapWorkflowBackendFailure` |
-| `.asyncAndThen` | Start a `ResultAsync` operation after a synchronous `Result` succeeds. | `src/domains/wizard/wizard-router.mod.server.ts`, `parseBackendErrorBody` |
-| `.mapErr` | Replace an error value, here with the original mapped request error. | `src/domains/wizard/wizard-router.mod.server.ts`, `mapWorkflowBackendFailure` |
+| `.andThen` | Run the next result-producing operation only after success. | `scripts/check-lint-directives.ts`, `checkFilesForLintDirectives` |
 | `errAsync` | Return an error through a `ResultAsync`. | `src/domains/wizard/wizard-router.mod.server.ts`, `mapWorkflowBackendFailure` |
 | `isErr()` | Check a result before reading its error or value. | `src/domains/products/products-router.mod.server.ts`, `getMessage` |
 | `safeParse` | Validate a value without throwing and branch on `success`. | `src/domains/wizard/wizard-router.mod.server.ts`, `mapWorkflowBackendFailure` |
