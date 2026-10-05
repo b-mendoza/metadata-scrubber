@@ -12,6 +12,7 @@ import {
 import { getAppBindings } from "#/shared/middlewares/app-bindings/app-bindings.mod";
 
 const PRODUCTS_RESPONSE_DELAY_MS = 5000;
+export const PRODUCTS_LOAD_FAILURE_MESSAGE = "Could not load the products.";
 const SEED_PRODUCT_NAMES = ["Metadata Scrubber", "Privacy Audit Tool"];
 
 export const BACKEND_HEALTH_CHECK_FAILURE_MESSAGE =
@@ -55,7 +56,21 @@ export const productsRouter = createTRPCRouter({
 
     return backendHealthStatusResult.value;
   }),
-  getProducts: publicProcedure.query(async () =>
-    setTimeout(PRODUCTS_RESPONSE_DELAY_MS, PRODUCTS),
-  ),
+  getProducts: publicProcedure.query(async () => {
+    const productsResult = await ResultAsync.fromPromise(
+      setTimeout(PRODUCTS_RESPONSE_DELAY_MS, PRODUCTS),
+      (cause: unknown) =>
+        new TRPCError({
+          cause,
+          code: "INTERNAL_SERVER_ERROR",
+          message: PRODUCTS_LOAD_FAILURE_MESSAGE,
+        }),
+    );
+
+    if (productsResult.isErr()) {
+      throw productsResult.error;
+    }
+
+    return productsResult.value;
+  }),
 });
