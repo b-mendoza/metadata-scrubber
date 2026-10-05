@@ -11,7 +11,7 @@ This file contains long-lived guidance for TypeScript design in the frontend. Th
 - Use only runtime built-ins in scripts that delete installed dependencies or dependency caches so they can run without dependencies.
 - Throw the mapped error at the route or tRPC boundary.
 - Wrap a synchronous call that can throw so that it returns a mapped result.
-- Map application-owned validation failures in server code. Let a framework own validation only when it calls the schema and handles the failure.
+- Map application-owned validation failures in server-only modules and scripts that use result values. Let a framework own validation only when it calls the schema and handles the failure.
 - Review every result consumption. Lint checks do not cover every consumption form.
 
 ## Route data
