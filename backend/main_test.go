@@ -105,19 +105,17 @@ func TestNewServerLogsRequests(t *testing.T) {
 	}
 
 	var completionRecord serverLogRecord
-	foundCompletionRecord := false
 	scanner := bufio.NewScanner(bytes.NewReader(logs.Bytes()))
 	for scanner.Scan() {
 		var record serverLogRecord
 		require.NoError(t, json.Unmarshal(scanner.Bytes(), &record))
 		if record.Message == "request completed" {
 			completionRecord = record
-			foundCompletionRecord = true
 			break
 		}
 	}
 	require.NoError(t, scanner.Err())
-	if !foundCompletionRecord {
+	if completionRecord.Message != "request completed" {
 		require.FailNow(t, "request completion log record not found")
 	}
 
