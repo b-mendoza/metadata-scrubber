@@ -10,10 +10,6 @@ export const Route = createFileRoute("/")({
     void queryClient
       .query(trpc.products.getMessage.queryOptions())
       .catch(() => null);
-
-    void queryClient
-      .query(trpc.products.getProducts.queryOptions())
-      .catch(() => null);
   },
   head() {
     return {
@@ -34,37 +30,9 @@ function IndexRoute() {
       <Suspense fallback={<div>Loading...</div>}>
         <Message />
       </Suspense>
-
-      <Suspense fallback={<div>Loading...</div>}>
-        <ProductList />
-      </Suspense>
     </>
   );
 }
-
-const ProductList = () => {
-  const { trpc } = Route.useRouteContext();
-
-  const productsQuery = useSuspenseQuery(
-    trpc.products.getProducts.queryOptions(),
-  );
-
-  const products = productsQuery.data;
-
-  return (
-    <>
-      <h1>Products</h1>
-
-      <hr />
-
-      <ul>
-        {products.map((product) => (
-          <li key={product.id}>{product.name}</li>
-        ))}
-      </ul>
-    </>
-  );
-};
 
 const Message = () => {
   const { trpc } = Route.useRouteContext();

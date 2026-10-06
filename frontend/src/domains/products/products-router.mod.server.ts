@@ -1,6 +1,3 @@
-import { randomUUID } from "node:crypto";
-import { setTimeout } from "node:timers/promises";
-
 import { TRPCError } from "@trpc/server";
 import { ResultAsync } from "neverthrow";
 import * as z from "zod";
@@ -11,17 +8,8 @@ import {
 } from "#/shared/libs/trpc/utils/initializer/initializer.mod.server";
 import { getAppBindings } from "#/shared/middlewares/app-bindings/app-bindings.mod";
 
-const PRODUCTS_RESPONSE_DELAY_MS = 5000;
-const PRODUCTS_LOAD_FAILURE_MESSAGE = "Could not load the products.";
-const SEED_PRODUCT_NAMES = ["Metadata Scrubber", "Privacy Audit Tool"];
-
 export const BACKEND_HEALTH_CHECK_FAILURE_MESSAGE =
   "The backend health check failed. Try again later.";
-
-const PRODUCTS = SEED_PRODUCT_NAMES.map((name) => ({
-  id: randomUUID(),
-  name,
-}));
 
 const messageResponseSchema = z.object({
   status: z.literal("reachable", {
@@ -55,22 +43,5 @@ export const productsRouter = createTRPCRouter({
     }
 
     return backendHealthStatusResult.value;
-  }),
-  getProducts: publicProcedure.query(async () => {
-    const productsResult = await ResultAsync.fromPromise(
-      setTimeout(PRODUCTS_RESPONSE_DELAY_MS, PRODUCTS),
-      (cause: unknown) =>
-        new TRPCError({
-          cause,
-          code: "INTERNAL_SERVER_ERROR",
-          message: PRODUCTS_LOAD_FAILURE_MESSAGE,
-        }),
-    );
-
-    if (productsResult.isErr()) {
-      throw productsResult.error;
-    }
-
-    return productsResult.value;
   }),
 });
