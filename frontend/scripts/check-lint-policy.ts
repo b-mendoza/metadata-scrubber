@@ -5,7 +5,7 @@ import path from "node:path";
 import { inspect, parseArgs } from "node:util";
 
 import { ESLint } from "eslint";
-import { errAsync, fromThrowable, ok, ResultAsync } from "neverthrow";
+import { errAsync, fromThrowable, ResultAsync } from "neverthrow";
 import * as z from "zod";
 
 import config from "../eslint.config.js";
@@ -91,7 +91,7 @@ async function resolveScope(scope: string, file: string, eslint: ESLint) {
   const filename = path.join(root, file);
   const resolvedConfig: Promise<unknown> =
     eslint.calculateConfigForFile(filename);
-  const dependenciesResult = await ResultAsync.fromPromise(
+  const result = await ResultAsync.fromPromise(
     Promise.all([
       stat(filename),
       eslint.isPathIgnored(filename),
@@ -101,18 +101,15 @@ async function resolveScope(scope: string, file: string, eslint: ESLint) {
       new Error(`${file}: Could not resolve the ESLint policy sample.`, {
         cause,
       }),
+  ).andThen(([metadata, ignored, resolved]) =>
+    fromThrowable(
+      validatePolicySample,
+      (cause: unknown) =>
+        new Error(`${file}: Could not validate the ESLint policy sample.`, {
+          cause,
+        }),
+    )(scope, file, { metadata, ignored, resolved }),
   );
-  if (dependenciesResult.isErr()) {
-    throw dependenciesResult.error;
-  }
-  const [metadata, ignored, resolved] = dependenciesResult.value;
-  const result = fromThrowable(
-    validatePolicySample,
-    (cause: unknown) =>
-      new Error(`${file}: Could not validate the ESLint policy sample.`, {
-        cause,
-      }),
-  )(scope, file, { metadata, ignored, resolved });
   if (result.isErr()) {
     throw result.error;
   }
@@ -170,30 +167,11 @@ function reportScopeChanges(
   }
 }
 
-async function checkPolicySnapshot(scopes: readonly PolicyScope[]) {
+function reportPolicyChanges(
+  scopes: readonly PolicyScope[],
+  previous: z.infer<typeof snapshotSchema>,
+) {
   const current = Object.fromEntries(scopes);
-  const previousResult = await ResultAsync.fromPromise(
-    readFile(snapshotPath, "utf-8"),
-    (cause: unknown) =>
-      new Error(`Could not read the ESLint policy snapshot ${snapshotPath}.`, {
-        cause,
-      }),
-  ).andThen(
-    fromThrowable(
-      parseSnapshot,
-      (cause: unknown) =>
-        new Error(
-          `Could not parse the ESLint policy snapshot ${snapshotPath}.`,
-          {
-            cause,
-          },
-        ),
-    ),
-  );
-  if (previousResult.isErr()) {
-    return previousResult;
-  }
-  const previous = previousResult.value;
   const scopeNames = new Set([
     ...Object.keys(previous),
     ...Object.keys(current),
@@ -210,7 +188,7 @@ async function checkPolicySnapshot(scopes: readonly PolicyScope[]) {
       "The ESLint rule set changed. Review each policy change. Update the snapshot deliberately with pnpm run policy:update after review.\n",
     );
   }
-  return ok(null);
+  return null;
 }
 
 function checkLintPolicy() {
@@ -236,10 +214,32 @@ function checkLintPolicy() {
       return updatePolicySnapshot(scopes);
     }
     return ResultAsync.fromPromise(
-      checkPolicySnapshot(scopes),
+      readFile(snapshotPath, "utf-8"),
       (cause: unknown) =>
-        new Error("Could not complete the ESLint policy check.", { cause }),
-    ).andThen((result) => result);
+        new Error(
+          `Could not read the ESLint policy snapshot ${snapshotPath}.`,
+          {
+            cause,
+          },
+        ),
+    )
+      .andThen(
+        fromThrowable(
+          parseSnapshot,
+          (cause: unknown) =>
+            new Error(
+              `Could not parse the ESLint policy snapshot ${snapshotPath}.`,
+              { cause },
+            ),
+        ),
+      )
+      .andThen((previous) =>
+        fromThrowable(
+          reportPolicyChanges,
+          (cause: unknown) =>
+            new Error("Could not complete the ESLint policy check.", { cause }),
+        )(scopes, previous),
+      );
   });
 }
 

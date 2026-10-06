@@ -63,13 +63,13 @@ Apply the following server rules only to non-test `.server` modules under `src/`
 - Pass the asynchronous operation as the first argument to `ResultAsync.fromPromise(promise, toMappedError)`. Pass an error mapper as the second argument. Convert the unknown failure to a known error value and keep the original failure in `cause`, as `getMessage` does above.
 - Await only a `ResultAsync` to read its `Result`. Branch with `isErr()` or `isOk()`. Throw the mapped error at a route or tRPC boundary, as `getMessage` does above.
 - Wrap a synchronous call that can throw with `fromThrowable(fn, toMappedError)` or `Result.fromThrowable(fn, toMappedError)`. Map the failure to a known error value with the original failure in `cause`, then branch with `isErr()` or `isOk()`. See how `resolveScope` wraps `validatePolicySample` in `scripts/check-lint-policy.ts`.
-- Wrap a direct synchronous Zod `schema.parse(...)` with `fromThrowable`. See how `checkPolicySnapshot` wraps `parseSnapshot` in `scripts/check-lint-policy.ts`. Alternatively, use `safeParse` and branch on `success`, as `mapWorkflowRequestFailure` does in `src/domains/wizard/wizard-router.mod.server.ts`. Keep framework-owned tRPC `.input(schema)` and Ky `.json(schema)` arguments unchanged because these APIs handle validation failures.
+- Wrap a direct synchronous Zod `schema.parse(...)` with `fromThrowable`. See how `checkLintPolicy` wraps `parseSnapshot` in `scripts/check-lint-policy.ts`. Alternatively, use `safeParse` and branch on `success`, as `mapWorkflowRequestFailure` does in `src/domains/wizard/wizard-router.mod.server.ts`. Keep framework-owned tRPC `.input(schema)` and Ky `.json(schema)` arguments unchanged because these APIs handle validation failures.
 - Mark a function `async` only where lint requires it. `typescript/promise-function-async` and `typescript/require-await` define these requirements; see `getMessage` above and `resolveScope` in `scripts/check-lint-policy.ts`.
 
 | API | Use it when | Example |
 | --- | --- | --- |
 | `ResultAsync.fromPromise` | Map a promise rejection to a known error value with the original failure in `cause`. | `src/domains/products/products-router.mod.server.ts`, `getMessage` |
-| `fromThrowable` / `Result.fromThrowable` | Wrap a synchronous call and map its failure. Keep the original failure in `cause`. Both names refer to the same function. | `scripts/check-lint-policy.ts`, `resolveScope` and `checkPolicySnapshot` |
+| `fromThrowable` / `Result.fromThrowable` | Wrap a synchronous call and map its failure. Keep the original failure in `cause`. Both names refer to the same function. | `scripts/check-lint-policy.ts`, `resolveScope` and `checkLintPolicy` |
 | `ResultAsync.fromPromise(Promise.all(...), toMappedError)` | Run independent asynchronous operations together and map the first rejection. | `scripts/check-lint-policy.ts`, `resolveScope` |
 | `.andThen` | Run the next result-producing operation only after success. | `scripts/check-lint-directives.ts`, `checkFilesForLintDirectives` |
 | `errAsync` | Return an error through a `ResultAsync`. | `scripts/check-lint-directives.ts`, `checkFilesForLintDirectives` |
