@@ -85,9 +85,7 @@ func analyzeInfoDictionary(context *model.Context, analysis *pdfAnalysis) error 
 
 	customFieldNumber := 0
 	for _, key := range keys {
-		customFieldNumber, err = analyzeInfoEntry(context, infoEntryAnalysis{
-			analysis: analysis, infoDictionary: infoDictionary, key: key, customFieldNumber: customFieldNumber,
-		})
+		customFieldNumber, err = analysis.analyzeInfoEntry(context, infoDictionary, key, customFieldNumber)
 		if err != nil {
 			return err
 		}
@@ -106,35 +104,28 @@ func dereferenceInfoDictionary(context *model.Context) (types.Dict, error) {
 	return infoDictionary, nil
 }
 
-type infoEntryAnalysis struct {
-	analysis          *pdfAnalysis
-	infoDictionary    types.Dict
-	key               dictionaryKey
-	customFieldNumber int
-}
-
-func analyzeInfoEntry(context *model.Context, entryAnalysis infoEntryAnalysis) (int, error) {
-	logicalValue, err := infoObjectValue(context, entryAnalysis.infoDictionary[entryAnalysis.key.encoded])
+func (analysis *pdfAnalysis) analyzeInfoEntry(context *model.Context, infoDictionary types.Dict, key dictionaryKey, customFieldNumber int) (int, error) {
+	logicalValue, err := infoObjectValue(context, infoDictionary[key.encoded])
 	if err != nil {
-		return entryAnalysis.customFieldNumber, fmt.Errorf("decode PDF Info field %q: %w", entryAnalysis.key.logical, err)
+		return customFieldNumber, fmt.Errorf("decode PDF Info field %q: %w", key.logical, err)
 	}
 
-	field, standard := standardInfoFields[entryAnalysis.key.logical]
+	field, standard := standardInfoFields[key.logical]
 	if !standard {
-		entryAnalysis.customFieldNumber++
+		customFieldNumber++
 		field = standardInfoFieldDescriptor{
-			name:   fmt.Sprintf("info.custom.%03d", entryAnalysis.customFieldNumber),
-			label:  fmt.Sprintf("Custom document property %d", entryAnalysis.customFieldNumber),
+			name:   fmt.Sprintf("info.custom.%03d", customFieldNumber),
+			label:  fmt.Sprintf("Custom document property %d", customFieldNumber),
 			action: ActionRemove,
 		}
 	}
-	if err := entryAnalysis.analysis.add(field.name, field.label, logicalValue, field.action); err != nil {
-		return entryAnalysis.customFieldNumber, err
+	if err := analysis.add(field.name, field.label, logicalValue, field.action); err != nil {
+		return customFieldNumber, err
 	}
-	entryAnalysis.analysis.infoTargets = append(entryAnalysis.analysis.infoTargets, dictionaryEntryTarget{
-		dictionary: entryAnalysis.infoDictionary, key: entryAnalysis.key.encoded,
+	analysis.infoTargets = append(analysis.infoTargets, dictionaryEntryTarget{
+		dictionary: infoDictionary, key: key.encoded,
 	})
-	return entryAnalysis.customFieldNumber, nil
+	return customFieldNumber, nil
 }
 
 func analyzeObjectMetadata(context *model.Context, analysis *pdfAnalysis) error {
