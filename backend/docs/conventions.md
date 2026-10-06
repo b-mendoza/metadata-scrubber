@@ -36,8 +36,8 @@ Read the [root agent guide](../../AGENTS.md) for shared principles and [Code des
 
 ## Tests
 
-- Build and serialize each endpoint's typed payload at the test call site. Keep each handler call explicit. For concurrent requests, use one named worker for each endpoint. Share each worker across the tests. Each worker must call its endpoint explicitly. Do not select payload types or handlers through an enum or a boolean. See `internal/handler/handler_admission_capacity_test.go`, `TestMixedWorkflowsPeakAtTwo`.
-- Test endpoint responses through the real handler with a typed request. Agents called `writeAdmissionFailure` directly to claim endpoint coverage. See `internal/handler/handler_admission_test.go`, `TestSaturatedEndpointUsesFreshWholeSecondJitter`.
+- Build and serialize each endpoint's typed payload at the test call site. Keep each handler call explicit. For concurrent requests, use one named worker for each endpoint. Share each worker across the tests. Each worker must call its endpoint explicitly. Do not select payload types or handlers through an enum or a boolean. See `internal/handler/handler_admission_capacity_test.go`, `TestScrubReleasesPermitBeforeUploadingSanitizedBytes`.
+- Test endpoint responses through the real handler with a typed request. Agents called `writeAdmissionFailure` directly to claim endpoint coverage. See `internal/handler/handler_admission_capacity_test.go`, `TestSaturatedAdmissionReturnsRetryable503WithoutDownloadingWaitingSource`.
 - Inject a short timeout and coordinate goroutines with channels. Agents used a wall-clock upper bound such as three seconds to test completion. See `internal/handler/handler_admission_capacity_test.go`, `TestSaturatedAdmissionReturnsRetryable503WithoutDownloadingWaitingSource`.
 - Assert required log records and the absence of false success records without comparing the complete ordered log slice. See `internal/handler/handler_pipeline_log_test.go`, `require.Contains` and `require.NotContains`.
 - Test public behavior. Do not assert which of several invalid inputs the code rejects first. Do not use reflection to check the field count or field names of a struct.
