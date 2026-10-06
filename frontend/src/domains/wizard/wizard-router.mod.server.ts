@@ -53,16 +53,8 @@ const backendStatusCodes = new Map<number, TRPC_ERROR_CODE_KEY>([
   [SERVICE_UNAVAILABLE_STATUS_CODE, "SERVICE_UNAVAILABLE"],
 ]);
 
-type WorkflowFailureMessage =
-  | typeof WORKFLOW_CONFIG_FAILURE_MESSAGE
-  | typeof CREATE_UPLOAD_FAILURE_MESSAGE
-  | typeof DRY_RUN_FAILURE_MESSAGE
-  | typeof SCRUB_FILE_FAILURE_MESSAGE
-  | typeof REFRESH_DOWNLOAD_GRANT_FAILURE_MESSAGE
-  | typeof CONFIRM_DELETE_FAILURE_MESSAGE;
-
 const mapWorkflowRequestFailure =
-  (message: WorkflowFailureMessage) =>
+  (message: string) =>
   (cause: unknown): TRPCError => {
     if (
       cause instanceof HTTPError &&
