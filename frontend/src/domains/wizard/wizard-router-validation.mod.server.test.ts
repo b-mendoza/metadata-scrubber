@@ -11,10 +11,7 @@ import {
 } from "#/shared/libs/trpc/utils/initializer/initializer.mod.server";
 import { getAppBindings } from "#/shared/middlewares/app-bindings/app-bindings.mod";
 
-import {
-  canonicalETagSchema,
-  scrubFileInputSchema,
-} from "./wizard-contracts.mod.server";
+import { scrubFileInputSchema } from "./wizard-contracts.mod.server";
 import { wizardRouter } from "./wizard-router.mod.server";
 
 vi.mock(import("#/shared/middlewares/app-bindings/app-bindings.mod"), () => ({
@@ -76,7 +73,9 @@ test.each([
   ["trailing space", `${CANONICAL_ETAG} `, false],
   ["opaque", "revision-1", false],
 ])("canonical ETag schema handles %s", (_name, value, expectedSuccess) => {
-  expect(canonicalETagSchema.safeParse(value).success).toBe(expectedSuccess);
+  expect(scrubFileInputSchema.shape.etag.safeParse(value).success).toBe(
+    expectedSuccess,
+  );
 });
 
 test.each([

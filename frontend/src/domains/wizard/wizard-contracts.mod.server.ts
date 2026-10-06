@@ -52,7 +52,7 @@ const storageKeySchema = z
   .string({ error: "The storage key must be a string." })
   .regex(STORAGE_KEY_PATTERN, { error: "The storage key is invalid." })
   .trim();
-export const canonicalETagSchema = z
+const canonicalETagSchema = z
   .string({ error: "The ETag must be a string." })
   .regex(CANONICAL_ETAG_PATTERN, { error: "The ETag is invalid." })
   .trim();
@@ -122,19 +122,4 @@ export const backendErrorResponseSchema = z.strictObject({
   error: z.string().trim().nonempty(),
 });
 
-export type WorkflowConfig = z.output<typeof workflowConfigResponseSchema>;
-export type DryRunInput = z.input<typeof dryRunInputSchema>;
-export type DryRunResponse = z.output<typeof dryRunResponseSchema>;
-export type ScrubFileInput = z.input<typeof scrubFileInputSchema>;
-export type ScrubFileResponse = z.output<typeof scrubFileResponseSchema>;
-export type RefreshDownloadGrantInput = z.input<
-  typeof refreshDownloadGrantInputSchema
->;
-export type RefreshDownloadGrantResponse = z.output<
-  typeof refreshDownloadGrantResponseSchema
->;
-export type ConfirmDeleteInput = z.input<typeof confirmDeleteInputSchema>;
-export type ConfirmDeleteResponse = z.output<
-  typeof confirmDeleteResponseSchema
->;
 export type BackendErrorResponse = z.output<typeof backendErrorResponseSchema>;
