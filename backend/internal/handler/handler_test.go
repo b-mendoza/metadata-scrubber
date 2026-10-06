@@ -14,44 +14,23 @@ import (
 )
 
 const (
-	fileIDOne                 = "00000000-0000-4000-8000-000000000001"
-	fileIDTwo                 = "00000000-0000-4000-8000-000000000002"
-	fileIDThree               = "00000000-0000-4000-8000-000000000003"
-	generatedFileID           = "00010203-0405-4607-8809-0a0b0c0d0e0f"
-	storageKeyDigestOne       = "77376c868b92"
-	storageKeyDigestTwo       = "8fb905d391d9"
-	generatedStorageKeyDigest = "1e8eaec2a78b"
-	canonicalETagOne          = "0123456789abcdef0123456789abcdef"
-	canonicalETagTwo          = "fedcba9876543210fedcba9876543210"
-	canonicalETagThree        = "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+	fileIDOne           = "00000000-0000-4000-8000-000000000001"
+	fileIDTwo           = "00000000-0000-4000-8000-000000000002"
+	fileIDThree         = "00000000-0000-4000-8000-000000000003"
+	generatedFileID     = "00010203-0405-4607-8809-0a0b0c0d0e0f"
+	storageKeyDigestOne = "77376c868b92"
+	storageKeyDigestTwo = "8fb905d391d9"
+	canonicalETagOne    = "0123456789abcdef0123456789abcdef"
+	canonicalETagTwo    = "fedcba9876543210fedcba9876543210"
+	canonicalETagThree  = "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
 )
 
-func newTestHandler(
-	t *testing.T,
-	inspect inspectPDFOperation,
-	clean cleanPDFOperation,
-	entropy entropyOperation,
-) *Handler {
+func newTestHandler(t *testing.T) *Handler {
 	t.Helper()
-	if inspect == nil {
-		inspect = func([]byte, scrub.InspectionOrigin) ([]scrub.Field, error) { return nil, nil }
-	}
-	if clean == nil {
-		clean = func(input []byte) ([]byte, error) { return bytes.Clone(input), nil }
-	}
-	if entropy == nil {
-		entropy = func(destination []byte) (int, error) {
-			for index := range destination {
-				destination[index] = byte(index)
-			}
-			return len(destination), nil
-		}
-	}
 	handler := New(slog.New(slog.DiscardHandler))
-	handler.inspect = inspect
-	handler.clean = clean
-	handler.entropy = entropy
-	handler.admissionJitter = func() (int, error) { return 0, nil }
+	handler.inspect = func([]byte) ([]scrub.Field, error) { return nil, nil }
+	handler.clean = func(input []byte) ([]byte, error) { return bytes.Clone(input), nil }
+	handler.admissionJitter = func() int { return 0 }
 	return handler
 }
 
@@ -68,16 +47,6 @@ func callOperations(calls []storage.FakeCall) []storage.FakeOperation {
 	operations := make([]storage.FakeOperation, 0, len(calls))
 	for _, call := range calls {
 		operations = append(operations, call.Operation)
-	}
-	return operations
-}
-
-func callOperationsFor(calls []storage.FakeCall, fileID string) []storage.FakeOperation {
-	var operations []storage.FakeOperation
-	for _, call := range calls {
-		if call.FileID == fileID {
-			operations = append(operations, call.Operation)
-		}
 	}
 	return operations
 }

@@ -22,16 +22,6 @@ func TestMain(m *testing.M) {
 	os.Exit(m.Run())
 }
 
-func TestInspectPDFRequiresKnownOrigin(t *testing.T) {
-	pdfContext := newSinglePagePDFContext(t)
-	inputBytes := writeTypedPDFFixture(t, pdfContext)
-
-	fields, err := InspectPDF(inputBytes, InspectionOrigin("unknown"))
-
-	require.Error(t, err)
-	require.Nil(t, fields)
-}
-
 func TestInspectPDFRejectsMalformedCandidatesWithoutSignedClassification(t *testing.T) {
 	testCases := []struct {
 		name       string
@@ -42,7 +32,7 @@ func TestInspectPDFRejectsMalformedCandidatesWithoutSignedClassification(t *test
 	}
 	for _, testCase := range testCases {
 		t.Run(testCase.name, func(t *testing.T) {
-			fields, inspectErr := InspectPDF(testCase.inputBytes, PublicInput)
+			fields, inspectErr := InspectPDF(testCase.inputBytes)
 			outputBytes, cleanErr := CleanPDF(testCase.inputBytes)
 
 			require.ErrorIs(t, inspectErr, ErrMalformedPDF)
@@ -55,18 +45,17 @@ func TestInspectPDFRejectsMalformedCandidatesWithoutSignedClassification(t *test
 	}
 }
 
-func TestInspectPDFPreservesUnderlyingErrorsForPostWriteVerification(t *testing.T) {
-	fields, err := InspectPDF([]byte("%PDF-1.7\n"), PostWriteVerification)
+func TestVerifyScrubbedPDFWireContractPreservesUnderlyingError(t *testing.T) {
+	err := verifyScrubbedPDF([]byte("%PDF-1.7\n"))
 
 	require.Error(t, err)
 	require.NotErrorIs(t, err, ErrMalformedPDF)
-	require.Nil(t, fields)
 }
 
 func TestInspectPDFEnumeratesDeepMetadataDeterministically(t *testing.T) {
 	pdfBytes := buildDeepMetadataPDFFixture(t)
 
-	fields, err := InspectPDF(pdfBytes, PublicInput)
+	fields, err := InspectPDF(pdfBytes)
 	require.NoError(t, err)
 
 	expectedFields := []Field{
@@ -110,7 +99,7 @@ func TestInspectPDFReturnsBoundedDecodedPreviews(t *testing.T) {
 			pdfContext.Info = infoReference
 			pdfBytes := writeTypedPDFFixture(t, pdfContext)
 
-			fields, err := InspectPDF(pdfBytes, PublicInput)
+			fields, err := InspectPDF(pdfBytes)
 
 			require.NoError(t, err)
 			require.Len(t, fields, 1)
@@ -141,19 +130,17 @@ func TestInspectPDFPreservesSharedCompressedMetadataReferences(t *testing.T) {
 	page.Insert("Metadata", *metadataReference)
 	inputBytes := writeTypedPDFFixture(t, pdfContext)
 
-	fields, err := InspectPDF(inputBytes, PublicInput)
+	fields, err := InspectPDF(inputBytes)
 	require.NoError(t, err)
 	require.Equal(t, []string{"metadata.catalog", "metadata.page.0001"}, fieldNames(fields))
 
 	outputBytes, err := CleanPDF(inputBytes)
 	require.NoError(t, err)
 	require.NotNil(t, outputBytes)
-	verificationFields, err := InspectPDF(outputBytes, PostWriteVerification)
-	require.NoError(t, err)
-	require.Empty(t, verificationFields)
+	require.NoError(t, verifyScrubbedPDF(outputBytes))
 }
 
-func TestInspectPDFKeepsEveryNeutralTrioNearMissVisible(t *testing.T) {
+func TestVerifyScrubbedPDFRejectsEveryNeutralTrioNearMiss(t *testing.T) {
 	neutralEntries := types.Dict{
 		"Producer":     types.StringLiteral("pdfcpu " + model.VersionStr),
 		"CreationDate": types.StringLiteral("D:20260102030405+00'00'"),
@@ -163,32 +150,22 @@ func TestInspectPDFKeepsEveryNeutralTrioNearMissVisible(t *testing.T) {
 		name            string
 		entries         types.Dict
 		catalogMetadata *types.StreamDict
-		expectedNames   []string
-		expectedActions []FieldAction
 	}{
 		{
-			name:            "partial trio",
-			entries:         types.Dict{"Producer": neutralEntries["Producer"], "CreationDate": neutralEntries["CreationDate"]},
-			expectedNames:   []string{"info.creation_date", "info.producer"},
-			expectedActions: []FieldAction{ActionReplace, ActionReplace},
+			name:    "partial trio",
+			entries: types.Dict{"Producer": neutralEntries["Producer"], "CreationDate": neutralEntries["CreationDate"]},
 		},
 		{
-			name:            "mismatched dates",
-			entries:         types.Dict{"Producer": neutralEntries["Producer"], "CreationDate": neutralEntries["CreationDate"], "ModDate": types.StringLiteral("D:20260102030406+00'00'")},
-			expectedNames:   []string{"info.creation_date", "info.mod_date", "info.producer"},
-			expectedActions: []FieldAction{ActionReplace, ActionReplace, ActionReplace},
+			name:    "mismatched dates",
+			entries: types.Dict{"Producer": neutralEntries["Producer"], "CreationDate": neutralEntries["CreationDate"], "ModDate": types.StringLiteral("D:20260102030406+00'00'")},
 		},
 		{
-			name:            "invalid dates",
-			entries:         types.Dict{"Producer": neutralEntries["Producer"], "CreationDate": types.StringLiteral("invalid"), "ModDate": types.StringLiteral("invalid")},
-			expectedNames:   []string{"info.creation_date", "info.mod_date", "info.producer"},
-			expectedActions: []FieldAction{ActionReplace, ActionReplace, ActionReplace},
+			name:    "invalid dates",
+			entries: types.Dict{"Producer": neutralEntries["Producer"], "CreationDate": types.StringLiteral("invalid"), "ModDate": types.StringLiteral("invalid")},
 		},
 		{
-			name:            "different producer",
-			entries:         types.Dict{"Producer": types.StringLiteral("another producer"), "CreationDate": neutralEntries["CreationDate"], "ModDate": neutralEntries["ModDate"]},
-			expectedNames:   []string{"info.creation_date", "info.mod_date", "info.producer"},
-			expectedActions: []FieldAction{ActionReplace, ActionReplace, ActionReplace},
+			name:    "different producer",
+			entries: types.Dict{"Producer": types.StringLiteral("another producer"), "CreationDate": neutralEntries["CreationDate"], "ModDate": neutralEntries["ModDate"]},
 		},
 		{
 			name:    "catalog metadata",
@@ -197,8 +174,6 @@ func TestInspectPDFKeepsEveryNeutralTrioNearMissVisible(t *testing.T) {
 				Dict:    types.Dict{"Type": types.Name("Metadata"), "Subtype": types.Name("XML")},
 				Content: []byte(`<x:xmpmeta xmlns:x="adobe:ns:meta/"><rdf:RDF xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"><rdf:Description rdf:about="" xmlns:synthetic="urn:synthetic" synthetic:marker="near-miss-metadata"/></rdf:RDF></x:xmpmeta>`),
 			},
-			expectedNames:   []string{"info.creation_date", "info.mod_date", "info.producer", "metadata.catalog"},
-			expectedActions: []FieldAction{ActionReplace, ActionReplace, ActionReplace, ActionRemove},
 		},
 	}
 	for _, testCase := range testCases {
@@ -217,13 +192,9 @@ func TestInspectPDFKeepsEveryNeutralTrioNearMissVisible(t *testing.T) {
 			}
 			pdfBytes := writeTypedPDFFixture(t, pdfContext)
 
-			fields, err := InspectPDF(pdfBytes, PostWriteVerification)
+			err = verifyScrubbedPDF(pdfBytes)
 
-			require.NoError(t, err)
-			require.Equal(t, testCase.expectedNames, fieldNames(fields))
-			for index, field := range fields {
-				require.Equal(t, testCase.expectedActions[index], field.Action, field.Name)
-			}
+			require.ErrorContains(t, err, "PDF metadata remained after scrub")
 		})
 	}
 }
@@ -255,7 +226,7 @@ func TestPDFPathsRejectUndecodableMetadataAtomically(t *testing.T) {
 	}
 	for _, testCase := range testCases {
 		t.Run(testCase.name, func(t *testing.T) {
-			fields, inspectErr := InspectPDF(testCase.pdfBytes, PublicInput)
+			fields, inspectErr := InspectPDF(testCase.pdfBytes)
 			outputBytes, scrubErr := CleanPDF(testCase.pdfBytes)
 
 			require.Error(t, inspectErr)
@@ -310,7 +281,7 @@ func TestSignedPDFWireContractsReturnErrSignedPDFAndNilOutput(t *testing.T) {
 			maps.Copy(objects, testCase.objects)
 			pdfBytes := buildPDF(t, pdfFixture{objects: objects, rootObjectNumber: 1})
 
-			fields, inspectErr := InspectPDF(pdfBytes, PublicInput)
+			fields, inspectErr := InspectPDF(pdfBytes)
 			outputBytes, scrubErr := CleanPDF(pdfBytes)
 
 			require.ErrorIs(t, inspectErr, ErrSignedPDF)
@@ -335,17 +306,43 @@ func TestUnsignedSignatureLikeWireContractIsAccepted(t *testing.T) {
 		infoObjectNumber: 6,
 	})
 
-	fields, err := InspectPDF(pdfBytes, PublicInput)
+	fields, err := InspectPDF(pdfBytes)
 
 	require.NotErrorIs(t, err, ErrSignedPDF, "unexpected signed-PDF classification: %v", err)
 	require.NoError(t, err)
 	require.NotEmpty(t, fields)
 }
 
-func runPDFByteAPIs(input []byte) concurrentPDFResult {
-	fields, inspectErr := InspectPDF(input, PublicInput)
-	output, cleanErr := CleanPDF(input)
-	return concurrentPDFResult{fields: fields, inspectErr: inspectErr, output: output, cleanErr: cleanErr}
+func TestPreflightMetadataEntryRejectsCachedContentOutsideBudget(t *testing.T) {
+	testCases := []struct {
+		name      string
+		content   []byte
+		remaining int64
+	}{
+		{name: "empty cache with no budget", content: []byte{}, remaining: 0},
+		{name: "cache above budget", content: []byte("xx"), remaining: 1},
+	}
+	for _, testCase := range testCases {
+		t.Run(testCase.name, func(t *testing.T) {
+			stream := types.StreamDict{Dict: types.NewDict(), Content: testCase.content}
+			for _, object := range []types.Object{stream, *types.NewIndirectRef(1, 0)} {
+				pdfContext := &model.Context{XRefTable: &model.XRefTable{Table: map[int]*model.XRefTableEntry{
+					1: model.NewXRefTableEntryGen0(stream),
+				}}}
+				dictionary := types.Dict{"Metadata": object}
+				snapshot := metadataEntrySnapshot{dictionary: dictionary, key: "Metadata", value: object}
+				decodedReferences := make(map[types.IndirectRef]struct{})
+
+				decodedBytes, err := preflightMetadataEntry(pdfContext, snapshot, testCase.remaining, decodedReferences)
+
+				require.ErrorIs(t, err, ErrInspectionLimit)
+				require.Zero(t, decodedBytes)
+				require.Empty(t, decodedReferences)
+				require.Equal(t, object, dictionary["Metadata"])
+				require.Equal(t, stream, pdfContext.Table[1].Object)
+			}
+		})
+	}
 }
 
 var metadataFixtureValues = struct {

@@ -41,7 +41,7 @@ func TestUploadValidatesIntakeAndCreatesOpaqueGrant(t *testing.T) {
 	for _, testCase := range tests {
 		t.Run(testCase.name, func(t *testing.T) {
 			fake := storage.NewFake()
-			handler := newTestHandler(t, nil, nil, nil)
+			handler := newTestHandler(t)
 			body, err := json.Marshal(uploadRequest{FileName: testCase.fileName, FileSizeBytes: testCase.size})
 			require.NoError(t, err)
 			request := httptest.NewRequest(http.MethodPost, "/api/files/upload", bytes.NewReader(body))
@@ -56,21 +56,19 @@ func TestUploadValidatesIntakeAndCreatesOpaqueGrant(t *testing.T) {
 				return
 			}
 
-			var response map[string]json.RawMessage
+			var responseProperties map[string]json.RawMessage
+			require.NoError(t, json.Unmarshal(recorder.Body.Bytes(), &responseProperties))
+			require.ElementsMatch(t, []string{"storageKey", "uploadUrl"}, slices.Collect(maps.Keys(responseProperties)))
+			var response uploadResponse
 			require.NoError(t, json.Unmarshal(recorder.Body.Bytes(), &response))
-			require.ElementsMatch(t, []string{"storageKey", "uploadUrl"}, slices.Collect(maps.Keys(response)))
-			var storageKey, uploadURL string
-			require.NoError(t, json.Unmarshal(response["storageKey"], &storageKey))
-			require.NoError(t, json.Unmarshal(response["uploadUrl"], &uploadURL))
-			fileID, ok := parseStorageKey(storageKey)
-			require.True(t, ok)
-			require.Equal(t, generatedFileID, fileID)
-			require.NotEmpty(t, uploadURL)
+			fileID, ok := parseStorageKey(response.StorageKey)
+			require.True(t, ok, "storage key must use uploads/ and a lowercase UUIDv4")
+			require.NotEmpty(t, response.UploadURL)
 
 			calls := fake.Calls()
 			require.Len(t, calls, 1)
 			require.Equal(t, storage.FakePresignSourceUpload, calls[0].Operation)
-			require.Equal(t, generatedFileID, calls[0].FileID)
+			require.Equal(t, fileID, calls[0].FileID)
 			require.Equal(t, testCase.size, calls[0].SizeBytes)
 			require.Equal(t, uploadGrantExpiry, calls[0].Expiry)
 		})
@@ -79,7 +77,7 @@ func TestUploadValidatesIntakeAndCreatesOpaqueGrant(t *testing.T) {
 
 func TestUploadRejectsInvalidUTF8FilenameBeforeStorage(t *testing.T) {
 	fake := storage.NewFake()
-	handler := newTestHandler(t, nil, nil, nil)
+	handler := newTestHandler(t)
 	body := `{"fileName":"` + string([]byte{0xff}) + `","fileSizeBytes":1}`
 
 	request := httptest.NewRequest(http.MethodPost, "/api/files/upload", strings.NewReader(body))
@@ -91,28 +89,10 @@ func TestUploadRejectsInvalidUTF8FilenameBeforeStorage(t *testing.T) {
 	require.Empty(t, fake.Calls())
 }
 
-func TestUploadStopsBeforeStorageWhenEntropyFails(t *testing.T) {
-	fake := storage.NewFake()
-	handler := newTestHandler(t, nil, nil, func([]byte) (int, error) {
-		return 0, errors.New("entropy-secret")
-	})
-	body, err := json.Marshal(uploadRequest{FileName: "report.pdf", FileSizeBytes: 1})
-	require.NoError(t, err)
-	request := httptest.NewRequest(http.MethodPost, "/api/files/upload", bytes.NewReader(body))
-	request.Header.Set(header.ContentType, mediatype.JSON)
-	recorder := httptest.NewRecorder()
-	bindings.Inject(bindings.Bindings{Storage: fake})(http.HandlerFunc(handler.Upload)).ServeHTTP(recorder, request)
-
-	require.Equal(t, http.StatusInternalServerError, recorder.Code)
-	require.Equal(t, "could not create upload", errorMessage(t, recorder))
-	require.NotContains(t, recorder.Body.String(), "entropy-secret")
-	require.Empty(t, fake.Calls())
-}
-
 func TestUploadPresignFailureIsSanitized(t *testing.T) {
 	fake := storage.NewFake()
 	fake.SetFailure(storage.FakePresignSourceUpload, errors.New("provider-secret"))
-	handler := newTestHandler(t, nil, nil, nil)
+	handler := newTestHandler(t)
 	body, err := json.Marshal(uploadRequest{FileName: "report.pdf", FileSizeBytes: 1})
 	require.NoError(t, err)
 	request := httptest.NewRequest(http.MethodPost, "/api/files/upload", bytes.NewReader(body))

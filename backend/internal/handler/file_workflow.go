@@ -96,7 +96,7 @@ func (handler *Handler) inspectSource(inspectWorkflow inspectWorkflowRequest) (s
 	}
 	handler.logStage(pipelineLogEvent{ctx: inspectWorkflow.request.Context(), stage: pipelineStageSniffed, storageKey: inspectWorkflow.storageKey, outcome: pipelineOutcomeAccepted, startedAt: inspectWorkflow.startedAt})
 
-	fields, err := handler.inspect(source.PDFBytes, scrub.PublicInput)
+	fields, err := handler.inspect(source.PDFBytes)
 	if err != nil {
 		return "", nil, err
 	}

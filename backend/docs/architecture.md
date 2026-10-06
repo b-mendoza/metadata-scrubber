@@ -34,7 +34,7 @@ The server registers these routes:
 - `POST /api/files/download-grant`
 - `POST /api/files/delete`
 
-The config route returns the backend-owned maximum file size of `10_485_760` bytes. The workflow POST routes accept small JSON contracts, not file bytes.
+The config route returns the backend-owned maximum file size of `10_485_760` bytes. The workflow POST routes accept small JSON contracts, not file bytes. Upload uses `uuid.NewV4().String()` to create each lowercase UUIDv4 storage key with the `uploads/` prefix.
 
 The download-grant route checks one exact sanitized revision. It returns a fresh 15-minute grant and a UTC RFC 3339 whole-second expiry. It does not download the source or process PDF bytes.
 
@@ -48,7 +48,7 @@ The delete route removes the source and all sanitized revisions for one file. Th
 - Dry-run acquires the shared permit before source download. It holds the permit through the intake check and PDF inspection.
 - Scrub checks that the source exists before it checks the sanitized revision cache. A missing source returns `404 Not Found`. A source-check failure stops later storage and PDF work.
 - Scrub acquires the shared permit before source download on a cache miss. It holds the permit through the intake check and PDF cleaning. It releases the permit before sanitized upload. An exact-revision cache hit does not acquire the permit or download the source.
-- If a request cannot acquire a permit within two seconds, the server returns `503 Service Unavailable`. Each rejection gets a new whole-second `Retry-After` value. The value uses a two-second base plus random jitter of zero, one, or two seconds. A random-source failure uses two seconds. The value has a one-second minimum.
+- If a request cannot acquire a permit within two seconds, the server returns `503 Service Unavailable`. Each rejection gets a new whole-second `Retry-After` value. The value uses a two-second base plus uniform random jitter of zero, one, or two seconds. `randomAdmissionJitter` reads one byte with `crypto/rand.Read`. It takes the low two bits and rejects three.
 - If the client cancels while the request waits, the server returns `408 Request Timeout`.
 - Dry-run returns the source's canonical unquoted ETag. The ETag grammar is exactly 32 lower-case hexadecimal characters. Scrub binds the reviewed source revision to both the conditional source read and the immutable sanitized object key.
 - The server applies a read-header timeout. It performs a graceful shutdown on SIGINT or SIGTERM.

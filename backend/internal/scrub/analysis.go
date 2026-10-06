@@ -17,12 +17,12 @@ type dictionaryEntryTarget struct {
 	key        string
 }
 
-// pdfAnalysis embeds the summaryBuilder so that the inspected field list has a
-// single owner from the first append through to the sorted result.
 type pdfAnalysis struct {
-	summaryBuilder
-	infoTargets     []dictionaryEntryTarget
-	metadataTargets []dictionaryEntryTarget
+	fields               []Field
+	totalBytes           int
+	decodedMetadataBytes int64
+	infoDictionary       types.Dict
+	metadataTargets      []dictionaryEntryTarget
 }
 
 type standardInfoFieldDescriptor struct {
@@ -43,7 +43,7 @@ var standardInfoFields = map[string]standardInfoFieldDescriptor{
 	"Trapped":      {name: "info.trapped", label: "Trapped", action: ActionRemove},
 }
 
-func analyzePDF(context *model.Context, origin InspectionOrigin) (*pdfAnalysis, error) {
+func analyzePDF(context *model.Context) (*pdfAnalysis, error) {
 	if pdfHasCachedSignature(context) {
 		return nil, ErrSignedPDF
 	}
@@ -57,11 +57,6 @@ func analyzePDF(context *model.Context, origin InspectionOrigin) (*pdfAnalysis, 
 		return nil, err
 	}
 
-	if origin == PostWriteVerification && hasNeutralPDFCPUTrio(context, analysis) {
-		analysis.discardFields()
-		return analysis, nil
-	}
-
 	slices.SortStableFunc(analysis.fields, func(firstField Field, secondField Field) int {
 		return cmp.Or(
 			cmp.Compare(firstField.Name, secondField.Name),
@@ -73,59 +68,42 @@ func analyzePDF(context *model.Context, origin InspectionOrigin) (*pdfAnalysis, 
 }
 
 func analyzeInfoDictionary(context *model.Context, analysis *pdfAnalysis) error {
-	infoDictionary, err := dereferenceInfoDictionary(context)
-	if err != nil || infoDictionary == nil {
-		return err
+	if context.Info == nil {
+		return nil
 	}
-
+	infoDictionary, err := context.DereferenceDict(*context.Info)
+	if err != nil {
+		return fmt.Errorf("dereference PDF Info dictionary: %w", err)
+	}
+	analysis.infoDictionary = infoDictionary
 	keys, err := sortedDictionaryKeys(infoDictionary)
 	if err != nil {
 		return err
 	}
+	return analyzeInfoFields(context, analysis, keys)
+}
 
+func analyzeInfoFields(context *model.Context, analysis *pdfAnalysis, keys []dictionaryKey) error {
 	customFieldNumber := 0
 	for _, key := range keys {
-		customFieldNumber, err = analysis.analyzeInfoEntry(context, infoDictionary, key, customFieldNumber)
+		logicalValue, err := infoObjectValue(context, analysis.infoDictionary[key.encoded])
 		if err != nil {
+			return fmt.Errorf("decode PDF Info field %q: %w", key.logical, err)
+		}
+		field, standard := standardInfoFields[key.logical]
+		if !standard {
+			customFieldNumber++
+			field = standardInfoFieldDescriptor{
+				name:   fmt.Sprintf("info.custom.%03d", customFieldNumber),
+				label:  fmt.Sprintf("Custom document property %d", customFieldNumber),
+				action: ActionRemove,
+			}
+		}
+		if err := analysis.add(field.name, field.label, logicalValue, field.action); err != nil {
 			return err
 		}
 	}
 	return nil
-}
-
-func dereferenceInfoDictionary(context *model.Context) (types.Dict, error) {
-	if context.Info == nil {
-		return types.Dict{}, nil
-	}
-	infoDictionary, err := context.DereferenceDict(*context.Info)
-	if err != nil {
-		return nil, fmt.Errorf("dereference PDF Info dictionary: %w", err)
-	}
-	return infoDictionary, nil
-}
-
-func (analysis *pdfAnalysis) analyzeInfoEntry(context *model.Context, infoDictionary types.Dict, key dictionaryKey, customFieldNumber int) (int, error) {
-	logicalValue, err := infoObjectValue(context, infoDictionary[key.encoded])
-	if err != nil {
-		return customFieldNumber, fmt.Errorf("decode PDF Info field %q: %w", key.logical, err)
-	}
-
-	field, standard := standardInfoFields[key.logical]
-	if !standard {
-		customFieldNumber++
-		field = standardInfoFieldDescriptor{
-			name:   fmt.Sprintf("info.custom.%03d", customFieldNumber),
-			label:  fmt.Sprintf("Custom document property %d", customFieldNumber),
-			action: ActionRemove,
-		}
-	}
-	if err := analysis.add(field.name, field.label, logicalValue, field.action); err != nil {
-		return customFieldNumber, err
-	}
-	analysis.infoTargets = append(analysis.infoTargets, dictionaryEntryTarget{
-		dictionary: infoDictionary, key: key.encoded,
-	})
-	return customFieldNumber, nil
 }
 
 func analyzeObjectMetadata(context *model.Context, analysis *pdfAnalysis) error {
@@ -163,7 +141,7 @@ func (state *traversalState) inspectMetadataEntry(dictionary types.Dict, key str
 	snapshot := metadataEntrySnapshot{dictionary: dictionary, key: key, value: streamObject}
 	bodyErr := state.analyzeMetadataStream(streamDictionary, dictionary, key, nested)
 	streamDictionary.Content = nil
-	cleanupErr := storeMetadataStreamContent(state.context, snapshot, nil)
+	cleanupErr := releaseMetadataStreamCache(state.context, snapshot)
 	if cleanupErr != nil {
 		return errors.Join(bodyErr, fmt.Errorf("release PDF metadata stream cache: %w", cleanupErr))
 	}
@@ -180,7 +158,7 @@ func (state *traversalState) analyzeMetadataStream(streamDictionary *types.Strea
 	}
 
 	name, label := state.metadataIdentity(nested)
-	if err := state.analysis.addMetadataBytes(name, label, content, ActionRemove); err != nil {
+	if err := state.analysis.addMetadataBytes(name, label, content); err != nil {
 		return err
 	}
 	state.analysis.metadataTargets = append(state.analysis.metadataTargets, dictionaryEntryTarget{dictionary: dictionary, key: key})

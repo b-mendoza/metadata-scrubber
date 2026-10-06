@@ -5,7 +5,6 @@ import (
 	"crypto/rand"
 	"errors"
 	"log/slog"
-	"math/big"
 	"net/http"
 	"regexp"
 	"time"
@@ -17,12 +16,6 @@ type (
 	pipelineStage     string
 	pipelineOutcome   string
 	publicFieldAction string
-
-	inspectPDFOperation      func([]byte, scrub.InspectionOrigin) ([]scrub.Field, error)
-	cleanPDFOperation        func([]byte) ([]byte, error)
-	entropyOperation         func([]byte) (int, error)
-	admissionJitterOperation func() (int, error)
-	clockOperation           func() time.Time
 )
 
 const (
@@ -33,18 +26,14 @@ const (
 	maxJSONBodyBytes = 4 << 10
 	maxFileNameBytes = 255
 
-	uuidVersionMask = 0x0f
-	uuidVersionFour = 0x40
-	uuidVariantMask = 0x3f
-	uuidVariantRFC  = 0x80
-
 	storageKeyPrefix = "uploads/"
 
 	uploadGrantExpiry         = 5 * time.Minute
 	downloadGrantExpiry       = 15 * time.Minute
 	defaultAdmissionTimeout   = 2 * time.Second
 	admissionRetryBaseSeconds = 2
-	admissionJitterValues     = 3
+	admissionJitterMask       = 0b11
+	admissionJitterRejected   = 3
 
 	admissionTimeoutMessage = "processing capacity temporarily unavailable"
 	cancellationMessage     = "request canceled"
@@ -86,38 +75,35 @@ type Handler struct {
 	// An empty channel means every permit was returned.
 	// A length of ProcessingPermitCount means the admission gate is saturated.
 	permits          chan struct{}
-	inspect          inspectPDFOperation
-	clean            cleanPDFOperation
-	entropy          entropyOperation
-	admissionJitter  admissionJitterOperation
-	now              clockOperation
+	inspect          func([]byte) ([]scrub.Field, error)
+	clean            func([]byte) ([]byte, error)
+	admissionJitter  func() int
+	now              func() time.Time
 	admissionTimeout time.Duration
-	// beforeAcquireSelect must stay a non-nil no-op in production: acquirePermit calls it
-	// unconditionally, and only a test replaces it to observe the admission select.
-	beforeAcquireSelect func()
 }
 
 // New constructs the JSON workflow handler around one server-owned admission gate.
 func New(logger *slog.Logger) *Handler {
 	return &Handler{
-		logger:              logger,
-		permits:             make(chan struct{}, ProcessingPermitCount),
-		inspect:             scrub.InspectPDF,
-		clean:               scrub.CleanPDF,
-		entropy:             rand.Read,
-		admissionJitter:     randomAdmissionJitter,
-		now:                 time.Now,
-		admissionTimeout:    defaultAdmissionTimeout,
-		beforeAcquireSelect: func() {},
+		logger:           logger,
+		permits:          make(chan struct{}, ProcessingPermitCount),
+		inspect:          scrub.InspectPDF,
+		clean:            scrub.CleanPDF,
+		admissionJitter:  randomAdmissionJitter,
+		now:              time.Now,
+		admissionTimeout: defaultAdmissionTimeout,
 	}
 }
 
-func randomAdmissionJitter() (int, error) {
-	value, err := rand.Int(rand.Reader, big.NewInt(admissionJitterValues))
-	if err != nil {
-		return 0, err
+func randomAdmissionJitter() int {
+	var randomByte [1]byte
+	for {
+		rand.Read(randomByte[:])
+		value := randomByte[0] & admissionJitterMask
+		if value != admissionJitterRejected {
+			return int(value)
+		}
 	}
-	return int(value.Int64()), nil
 }
 
 // Reachability gives callers a cheap way to verify the backend HTTP API is reachable.

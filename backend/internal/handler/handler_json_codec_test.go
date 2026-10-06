@@ -116,14 +116,7 @@ func TestUploadWireContractRejectsInvalidJSONBeforeWork(t *testing.T) {
 func testUploadWireContract(t *testing.T, contentType string, body string, wantStatus int) {
 	t.Helper()
 	fake := storage.NewFake()
-	entropyCalls := 0
-	handler := newTestHandler(t, nil, nil, func(destination []byte) (int, error) {
-		entropyCalls++
-		for index := range destination {
-			destination[index] = byte(index)
-		}
-		return len(destination), nil
-	})
+	handler := newTestHandler(t)
 	request := httptest.NewRequest(http.MethodPost, "/api/files/upload", strings.NewReader(body))
 	if contentType != "" {
 		request.Header.Set(header.ContentType, contentType)
@@ -134,22 +127,16 @@ func testUploadWireContract(t *testing.T, contentType string, body string, wantS
 	require.Equal(t, wantStatus, recorder.Code, recorder.Body.String())
 	require.Equal(t, mediatype.JSON, recorder.Header().Get(header.ContentType))
 	if wantStatus == http.StatusOK {
-		require.Equal(t, 1, entropyCalls)
 		require.Equal(t, []storage.FakeOperation{storage.FakePresignSourceUpload}, callOperations(fake.Calls()))
 		return
 	}
 	require.NotEmpty(t, errorMessage(t, recorder))
-	require.Zero(t, entropyCalls)
 	require.Empty(t, fake.Calls())
 }
 
 func TestUploadValidatesRequiredFieldsBeforeWork(t *testing.T) {
 	fake := storage.NewFake()
-	entropyCalls := 0
-	handler := newTestHandler(t, nil, nil, func([]byte) (int, error) {
-		entropyCalls++
-		return 0, nil
-	})
+	handler := newTestHandler(t)
 	body, err := json.Marshal(uploadRequest{FileName: "", FileSizeBytes: 1})
 	require.NoError(t, err)
 	request := httptest.NewRequest(http.MethodPost, "/api/files/upload", bytes.NewReader(body))
@@ -159,17 +146,17 @@ func TestUploadValidatesRequiredFieldsBeforeWork(t *testing.T) {
 
 	require.Equal(t, http.StatusBadRequest, recorder.Code)
 	require.Equal(t, "invalid upload request", errorMessage(t, recorder))
-	require.Zero(t, entropyCalls)
 	require.Empty(t, fake.Calls())
 }
 
 func TestDryRunValidatesRequiredFieldsBeforeWork(t *testing.T) {
 	fake := storage.NewFake()
 	inspectCalls := 0
-	handler := newTestHandler(t, func([]byte, scrub.InspectionOrigin) ([]scrub.Field, error) {
+	handler := newTestHandler(t)
+	handler.inspect = func([]byte) ([]scrub.Field, error) {
 		inspectCalls++
 		return nil, nil
-	}, nil, nil)
+	}
 	body, err := json.Marshal(dryRunRequest{StorageKey: ""})
 	require.NoError(t, err)
 	request := httptest.NewRequest(http.MethodPost, "/api/files/dry-run", bytes.NewReader(body))
@@ -186,11 +173,12 @@ func TestDryRunValidatesRequiredFieldsBeforeWork(t *testing.T) {
 func TestScrubValidatesRequiredFieldsBeforeWork(t *testing.T) {
 	fake := storage.NewFake()
 	cleanCalls := 0
-	handler := newTestHandler(t, nil, func([]byte) ([]byte, error) {
+	handler := newTestHandler(t)
+	handler.clean = func([]byte) ([]byte, error) {
 		cleanCalls++
 		return nil, nil
-	}, nil)
-	body, err := json.Marshal(scrubRequest{StorageKey: formatStorageKey(fileIDOne), ETag: ""})
+	}
+	body, err := json.Marshal(scrubRequest{StorageKey: storageKeyPrefix + fileIDOne, ETag: ""})
 	require.NoError(t, err)
 	request := httptest.NewRequest(http.MethodPost, "/api/files/scrub", bytes.NewReader(body))
 	request.Header.Set(header.ContentType, mediatype.JSON)
@@ -205,8 +193,8 @@ func TestScrubValidatesRequiredFieldsBeforeWork(t *testing.T) {
 
 func TestDownloadGrantValidatesRequiredFieldsBeforeWork(t *testing.T) {
 	fake := storage.NewFake()
-	handler := newTestHandler(t, nil, nil, nil)
-	body, err := json.Marshal(downloadGrantRequest{StorageKey: formatStorageKey(fileIDOne), ETag: ""})
+	handler := newTestHandler(t)
+	body, err := json.Marshal(downloadGrantRequest{StorageKey: storageKeyPrefix + fileIDOne, ETag: ""})
 	require.NoError(t, err)
 	request := httptest.NewRequest(http.MethodPost, "/api/files/download-grant", bytes.NewReader(body))
 	request.Header.Set(header.ContentType, mediatype.JSON)
@@ -220,7 +208,7 @@ func TestDownloadGrantValidatesRequiredFieldsBeforeWork(t *testing.T) {
 
 func TestDeleteFlowValidatesRequiredFieldsBeforeWork(t *testing.T) {
 	fake := storage.NewFake()
-	handler := newTestHandler(t, nil, nil, nil)
+	handler := newTestHandler(t)
 	body, err := json.Marshal(deleteRequest{StorageKey: ""})
 	require.NoError(t, err)
 	request := httptest.NewRequest(http.MethodPost, "/api/files/delete", bytes.NewReader(body))
