@@ -72,19 +72,17 @@ function createDirectiveESLint() {
 }
 
 async function inspectFileDirectives(filePath: string) {
-  const sourceResult = await ResultAsync.fromPromise(
+  const result = await ResultAsync.fromPromise(
     readFile(filePath, "utf-8"),
     (cause: unknown) =>
       new Error(`Could not read ${filePath} for lint directives.`, { cause }),
+  ).andThen((source) =>
+    fromThrowable(
+      checkLintDirectives,
+      (cause: unknown) =>
+        new Error(`${filePath}: Could not inspect lint directives.`, { cause }),
+    )(source, filePath),
   );
-  if (sourceResult.isErr()) {
-    throw sourceResult.error;
-  }
-  const result = fromThrowable(
-    checkLintDirectives,
-    (cause: unknown) =>
-      new Error(`${filePath}: Could not inspect lint directives.`, { cause }),
-  )(sourceResult.value, filePath);
   if (result.isErr()) {
     throw result.error;
   }
