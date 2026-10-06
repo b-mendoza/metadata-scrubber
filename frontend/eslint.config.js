@@ -96,7 +96,12 @@ export default defineConfig(
       // Stable module boundaries prevent cycles and shared mutable exports.
       [`${PLUGIN_NAMES.ImportX}/no-mutable-exports`]: SEVERITY_LEVELS.Error,
       [`${PLUGIN_NAMES.ImportX}/no-self-import`]: SEVERITY_LEVELS.Error,
-      [`${PLUGIN_NAMES.ImportX}/no-cycle`]: SEVERITY_LEVELS.Error,
+      [`${PLUGIN_NAMES.ImportX}/no-cycle`]: [
+        SEVERITY_LEVELS.Error,
+        {
+          ignoreExternal: true,
+        },
+      ],
       [`${PLUGIN_NAMES.ImportX}/no-useless-path-segments`]:
         SEVERITY_LEVELS.Error,
       [`${PLUGIN_NAMES.ImportX}/export`]: SEVERITY_LEVELS.Error,
