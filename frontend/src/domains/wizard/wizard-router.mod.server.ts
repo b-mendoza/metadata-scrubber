@@ -1,7 +1,7 @@
 import type { TRPC_ERROR_CODE_KEY } from "@trpc/server";
 import { TRPCError } from "@trpc/server";
 import { HTTPError, TimeoutError } from "ky";
-import { errAsync, ResultAsync } from "neverthrow";
+import { ResultAsync } from "neverthrow";
 
 import {
   BAD_REQUEST_STATUS_CODE,
@@ -63,31 +63,23 @@ type WorkflowFailureMessage =
 
 const mapWorkflowRequestFailure =
   (message: WorkflowFailureMessage) =>
-  (cause: unknown): TRPCError =>
-    new TRPCError({
+  (cause: unknown): TRPCError => {
+    if (
+      cause instanceof HTTPError &&
+      contracts.backendErrorResponseSchema.safeParse(cause.data).success
+    ) {
+      return new TRPCError({
+        cause,
+        code: backendStatusCodes.get(cause.response.status) ?? "BAD_GATEWAY",
+        message,
+      });
+    }
+    return new TRPCError({
       cause,
       code: cause instanceof TimeoutError ? "TIMEOUT" : "BAD_GATEWAY",
       message,
     });
-
-const mapWorkflowBackendFailure = (
-  error: TRPCError,
-): ResultAsync<never, TRPCError> => {
-  const { cause, message } = error;
-  if (!(cause instanceof HTTPError)) {
-    return errAsync(error);
-  }
-
-  const errorBodyResult = contracts.backendErrorResponseSchema.safeParse(
-    cause.data,
-  );
-  if (!errorBodyResult.success) {
-    return errAsync(error);
-  }
-
-  const code = backendStatusCodes.get(cause.response.status) ?? "BAD_GATEWAY";
-  return errAsync(new TRPCError({ cause, code, message }));
-};
+  };
 
 export const wizardRouter = createTRPCRouter({
   getWorkflowConfig: publicProcedure.query(async ({ signal }) => {
@@ -102,7 +94,7 @@ export const wizardRouter = createTRPCRouter({
         })
         .json(contracts.workflowConfigResponseSchema),
       mapWorkflowRequestFailure(WORKFLOW_CONFIG_FAILURE_MESSAGE),
-    ).orElse(mapWorkflowBackendFailure);
+    );
     if (responseResult.isErr()) {
       throw responseResult.error;
     }
@@ -124,7 +116,7 @@ export const wizardRouter = createTRPCRouter({
           })
           .json(contracts.uploadResponseSchema),
         mapWorkflowRequestFailure(CREATE_UPLOAD_FAILURE_MESSAGE),
-      ).orElse(mapWorkflowBackendFailure);
+      );
       if (responseResult.isErr()) {
         throw responseResult.error;
       }
@@ -146,7 +138,7 @@ export const wizardRouter = createTRPCRouter({
           })
           .json(contracts.dryRunResponseSchema),
         mapWorkflowRequestFailure(DRY_RUN_FAILURE_MESSAGE),
-      ).orElse(mapWorkflowBackendFailure);
+      );
       if (responseResult.isErr()) {
         throw responseResult.error;
       }
@@ -168,7 +160,7 @@ export const wizardRouter = createTRPCRouter({
           })
           .json(contracts.scrubFileResponseSchema),
         mapWorkflowRequestFailure(SCRUB_FILE_FAILURE_MESSAGE),
-      ).orElse(mapWorkflowBackendFailure);
+      );
       if (responseResult.isErr()) {
         throw responseResult.error;
       }
@@ -190,7 +182,7 @@ export const wizardRouter = createTRPCRouter({
           })
           .json(contracts.refreshDownloadGrantResponseSchema),
         mapWorkflowRequestFailure(REFRESH_DOWNLOAD_GRANT_FAILURE_MESSAGE),
-      ).orElse(mapWorkflowBackendFailure);
+      );
       if (responseResult.isErr()) {
         throw responseResult.error;
       }
@@ -212,7 +204,7 @@ export const wizardRouter = createTRPCRouter({
           })
           .json(contracts.confirmDeleteResponseSchema),
         mapWorkflowRequestFailure(CONFIRM_DELETE_FAILURE_MESSAGE),
-      ).orElse(mapWorkflowBackendFailure);
+      );
       if (responseResult.isErr()) {
         throw responseResult.error;
       }
