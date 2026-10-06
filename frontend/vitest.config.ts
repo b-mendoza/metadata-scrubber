@@ -1,11 +1,6 @@
-import react from "@vitejs/plugin-react";
 import { configDefaults, defineConfig } from "vitest/config";
 
 export default defineConfig({
-  css: {
-    transformer: "lightningcss",
-  },
-  plugins: [react()],
   test: {
     coverage: {
       include: ["src/**/*.{ts,tsx}"],
@@ -13,7 +8,6 @@ export default defineConfig({
     },
     projects: [
       {
-        extends: true,
         test: {
           environment: "node",
           include: ["./src/**/*.server.test.ts", "./scripts/**/*.test.ts"],
@@ -21,7 +15,6 @@ export default defineConfig({
         },
       },
       {
-        extends: true,
         test: {
           environment: "happy-dom",
           exclude: [...configDefaults.exclude, "./src/**/*.server.test.ts"],
