@@ -172,11 +172,21 @@
     ],
     "simple-import-sort/exports": "error",
     "simple-import-sort/imports": "error",
-    "@eslint-community/eslint-comments/disable-enable-pair": "error",
+    "@eslint-community/eslint-comments/disable-enable-pair": [
+      "error",
+      {
+        "allowWholeFile": true
+      }
+    ],
     "@eslint-community/eslint-comments/no-aggregating-enable": ["error"],
     "@eslint-community/eslint-comments/no-duplicate-disable": ["error"],
-    "@eslint-community/eslint-comments/no-unlimited-disable": "error",
-    "@eslint-community/eslint-comments/require-description": "error",
+    "@eslint-community/eslint-comments/no-unlimited-disable": ["error"],
+    "@eslint-community/eslint-comments/require-description": [
+      "error",
+      {
+        "ignore": ["eslint-enable", "eslint-env"]
+      }
+    ],
     "accessor-pairs": [
       "error",
       {
@@ -2389,7 +2399,11 @@
         "zod/prefer-validate": "error",
         "react/capitalized-calls": "error"
       },
-      "jsPlugins": ["eslint-plugin-zod"]
+      "jsPlugins": ["eslint-plugin-zod"],
+      "env": {
+        "browser": true,
+        "node": true
+      }
     },
     {
       "files": ["src/**/*.tsx"],
@@ -2426,13 +2440,6 @@
         "jsx-a11y/lang": "error",
         "jsx-a11y/no-aria-hidden-on-focusable": "error",
         "jsx-a11y/prefer-tag-over-role": "error"
-      }
-    },
-    {
-      "files": ["src/**/*.ts", "src/**/*.tsx"],
-      "env": {
-        "browser": true,
-        "node": true
       }
     },
     {
