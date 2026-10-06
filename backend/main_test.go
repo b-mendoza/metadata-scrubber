@@ -253,7 +253,7 @@ func TestNewServerSharesOneCapacityTwoGateAcrossDryRunAndScrubMisses(t *testing.
 	}
 	observer.waitForTwoDownloads(t)
 
-	go collectScrubServerResponse(responses, scrubBody, server)
+	go collectScrubServerResponse(responses, server, scrubBody)
 	observer.waitForObservedScrubLookup(t)
 
 	select {
@@ -284,7 +284,7 @@ func collectDryRunServerResponse(responses chan *httptest.ResponseRecorder, serv
 	responses <- serveServerJSON(server, "/api/files/dry-run", requestBody)
 }
 
-func collectScrubServerResponse(responses chan *httptest.ResponseRecorder, scrubBody []byte, server *http.Server) {
+func collectScrubServerResponse(responses chan *httptest.ResponseRecorder, server *http.Server, scrubBody []byte) {
 	responses <- serveServerJSON(server, "/api/files/scrub", scrubBody)
 }
 
