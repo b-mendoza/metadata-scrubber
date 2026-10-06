@@ -5,7 +5,7 @@ import path from "node:path";
 import { inspect, parseArgs } from "node:util";
 
 import { ESLint } from "eslint";
-import { err, errAsync, fromThrowable, ok, ResultAsync } from "neverthrow";
+import { errAsync, fromThrowable, ok, ResultAsync } from "neverthrow";
 import * as z from "zod";
 
 import config from "../eslint.config.js";
@@ -48,10 +48,6 @@ function createPolicyInputs() {
     overrideConfig: policyConfig,
   });
   return { values, eslint };
-}
-
-function mapPolicySetupError(cause: unknown) {
-  return new Error("Could not set up the ESLint policy check.", { cause });
 }
 
 function inspectRule([rule, options]: [string, unknown[]]) {
@@ -123,45 +119,32 @@ async function resolveScope(scope: string, file: string, eslint: ESLint) {
   return result.value;
 }
 
-function formatScope([scope, rules]: PolicyScope) {
-  const lines = Object.keys(rules)
-    .toSorted(collator.compare)
-    .map(
-      (rule) => `    ${JSON.stringify(rule)}: ${JSON.stringify(rules[rule])}`,
-    );
-  return `  ${JSON.stringify(scope)}: {\n${lines.join(",\n")}\n  }`;
-}
-
-function reportSnapshotUpdate() {
-  process.stdout.write(
-    `Updated ${snapshotPath}. Review each rule-set change before you accept this snapshot.\n`,
-  );
-  return null;
-}
-
 function updatePolicySnapshot(scopes: readonly PolicyScope[]) {
-  const groups = scopes.map(([scope, rules]) => formatScope([scope, rules]));
+  const groups = scopes.map(([scope, rules]) => {
+    const lines = Object.keys(rules)
+      .toSorted(collator.compare)
+      .map(
+        (rule) => `    ${JSON.stringify(rule)}: ${JSON.stringify(rules[rule])}`,
+      );
+    return `  ${JSON.stringify(scope)}: {\n${lines.join(",\n")}\n  }`;
+  });
   return ResultAsync.fromPromise(
     writeFile(snapshotPath, `{\n${groups.join(",\n")}\n}\n`, "utf-8"),
     (cause: unknown) =>
       new Error(`Could not write the ESLint policy snapshot ${snapshotPath}.`, {
         cause,
       }),
-  ).map(() => reportSnapshotUpdate());
+  ).map(() => {
+    process.stdout.write(
+      `Updated ${snapshotPath}. Review each rule-set change before you accept this snapshot.\n`,
+    );
+    return null;
+  });
 }
 
 function parseSnapshot(source: string) {
   const parsedValue: unknown = JSON.parse(source);
   return snapshotSchema.parse(parsedValue);
-}
-
-function mapSnapshotParseError(cause: unknown) {
-  return new Error(
-    `Could not parse the ESLint policy snapshot ${snapshotPath}.`,
-    {
-      cause,
-    },
-  );
 }
 
 function reportScopeChanges(
@@ -189,22 +172,26 @@ function reportScopeChanges(
 
 async function checkPolicySnapshot(scopes: readonly PolicyScope[]) {
   const current = Object.fromEntries(scopes);
-  const readResult = await ResultAsync.fromPromise(
+  const previousResult = await ResultAsync.fromPromise(
     readFile(snapshotPath, "utf-8"),
     (cause: unknown) =>
       new Error(`Could not read the ESLint policy snapshot ${snapshotPath}.`, {
         cause,
       }),
+  ).andThen(
+    fromThrowable(
+      parseSnapshot,
+      (cause: unknown) =>
+        new Error(
+          `Could not parse the ESLint policy snapshot ${snapshotPath}.`,
+          {
+            cause,
+          },
+        ),
+    ),
   );
-  if (readResult.isErr()) {
-    return err(readResult.error);
-  }
-  const previousResult = fromThrowable(
-    parseSnapshot,
-    mapSnapshotParseError,
-  )(readResult.value);
   if (previousResult.isErr()) {
-    return err(previousResult.error);
+    return previousResult;
   }
   const previous = previousResult.value;
   const scopeNames = new Set([
@@ -226,12 +213,12 @@ async function checkPolicySnapshot(scopes: readonly PolicyScope[]) {
   return ok(null);
 }
 
-function mapPolicyCheckError(cause: unknown) {
-  return new Error("Could not complete the ESLint policy check.", { cause });
-}
-
 function checkLintPolicy() {
-  const inputsResult = fromThrowable(createPolicyInputs, mapPolicySetupError)();
+  const inputsResult = fromThrowable(
+    createPolicyInputs,
+    (cause: unknown) =>
+      new Error("Could not set up the ESLint policy check.", { cause }),
+  )();
   if (inputsResult.isErr()) {
     return errAsync(inputsResult.error);
   }
@@ -242,14 +229,16 @@ function checkLintPolicy() {
         resolveScope(scope, file, eslint),
       ),
     ),
-    mapPolicyCheckError,
+    (cause: unknown) =>
+      new Error("Could not complete the ESLint policy check.", { cause }),
   ).andThen((scopes) => {
     if (values.update) {
       return updatePolicySnapshot(scopes);
     }
     return ResultAsync.fromPromise(
       checkPolicySnapshot(scopes),
-      mapPolicyCheckError,
+      (cause: unknown) =>
+        new Error("Could not complete the ESLint policy check.", { cause }),
     ).andThen((result) => result);
   });
 }
