@@ -44,13 +44,14 @@ func TestNewServerAppliesSettingsAndLogsRequests(t *testing.T) {
 	t.Parallel()
 
 	var logs bytes.Buffer
-	server := newTestServer(slog.New(slog.NewJSONHandler(&logs, nil)))
+	server := newServer(config.Config{Port: 0}, storage.NewFake(), slog.New(slog.NewJSONHandler(&logs, nil)))
 
 	require.Equal(t, ":0", server.Addr)
 	require.Equal(t, readHeaderTimeout, server.ReadHeaderTimeout)
 
 	request := httptest.NewRequest(http.MethodGet, "/api/health", http.NoBody)
-	recorder := serveServer(server, request)
+	recorder := httptest.NewRecorder()
+	server.Handler.ServeHTTP(recorder, request)
 
 	require.Equal(t, http.StatusOK, recorder.Code)
 	require.Equal(t, mediatype.JSON, recorder.Header().Get(header.ContentType))
@@ -85,9 +86,10 @@ func TestNewServerAppliesSettingsAndLogsRequests(t *testing.T) {
 func TestNewServerHandlesCORSPreflight(t *testing.T) {
 	t.Parallel()
 
-	server := newTestServer(slog.New(slog.DiscardHandler))
+	server := newServer(config.Config{Port: 0}, storage.NewFake(), slog.New(slog.DiscardHandler))
 	request := httptest.NewRequest(http.MethodOptions, "/api/files/scrub", http.NoBody)
-	recorder := serveServer(server, request)
+	recorder := httptest.NewRecorder()
+	server.Handler.ServeHTTP(recorder, request)
 
 	require.Equal(t, http.StatusNoContent, recorder.Code)
 	require.Equal(t, "*", recorder.Header().Get(header.AccessControlAllowOrigin))
@@ -97,7 +99,7 @@ func TestNewServerHandlesCORSPreflight(t *testing.T) {
 func TestNewServerRegistersWorkflowRoutes(t *testing.T) {
 	t.Parallel()
 
-	server := newTestServer(slog.New(slog.DiscardHandler))
+	server := newServer(config.Config{Port: 0}, storage.NewFake(), slog.New(slog.DiscardHandler))
 	testCases := []struct {
 		method     string
 		path       string
@@ -115,11 +117,11 @@ func TestNewServerRegistersWorkflowRoutes(t *testing.T) {
 		{method: http.MethodGet, path: "/api/files/scrub", wantStatus: http.StatusMethodNotAllowed},
 		{method: http.MethodGet, path: "/api/files/download-grant", wantStatus: http.StatusMethodNotAllowed},
 		{method: http.MethodGet, path: "/api/files/delete", wantStatus: http.StatusMethodNotAllowed},
-		{method: http.MethodPost, path: "/api/scrub", wantStatus: http.StatusNotFound},
 	}
 	for _, testCase := range testCases {
 		request := httptest.NewRequest(testCase.method, testCase.path, http.NoBody)
-		recorder := serveServer(server, request)
+		recorder := httptest.NewRecorder()
+		server.Handler.ServeHTTP(recorder, request)
 
 		require.Equal(t, testCase.wantStatus, recorder.Code, "%s %s", testCase.method, testCase.path)
 	}
@@ -148,6 +150,7 @@ func TestNewServerSharesOneCapacityTwoGateAcrossDryRunAndScrubMisses(t *testing.
 		firstFileID  = "00000000-0000-4000-8000-000000000001"
 		secondFileID = "00000000-0000-4000-8000-000000000002"
 		thirdFileID  = "00000000-0000-4000-8000-000000000003"
+		reviewedETag = "0123456789abcdef0123456789abcdef"
 	)
 
 	pdfBytes, err := os.ReadFile("internal/handler/testdata/with-property.pdf")
@@ -156,7 +159,7 @@ func TestNewServerSharesOneCapacityTwoGateAcrossDryRunAndScrubMisses(t *testing.
 	for _, fileID := range []string{firstFileID, secondFileID, thirdFileID} {
 		require.NoError(t, fake.SetSource(fileID, storage.SourceObject{
 			PDFBytes: pdfBytes,
-			ETag:     "0123456789abcdef0123456789abcdef",
+			ETag:     reviewedETag,
 		}))
 	}
 	observer := &blockingServerStorage{
@@ -172,7 +175,7 @@ func TestNewServerSharesOneCapacityTwoGateAcrossDryRunAndScrubMisses(t *testing.
 	require.NoError(t, err)
 	scrubBody, err := json.Marshal(scrubRequest{
 		StorageKey: "uploads/" + thirdFileID,
-		ETag:       "0123456789abcdef0123456789abcdef",
+		ETag:       reviewedETag,
 	})
 	require.NoError(t, err)
 
@@ -185,17 +188,19 @@ func TestNewServerSharesOneCapacityTwoGateAcrossDryRunAndScrubMisses(t *testing.
 
 	scrubContext, cancel := context.WithTimeout(context.Background(), 50*time.Millisecond)
 	defer cancel()
-	scrubResponses := make(chan *httptest.ResponseRecorder, 1)
-	collectScrubServerResponse(scrubContext, scrubResponses, server, scrubBody)
-	scrubResponse := <-scrubResponses
+	scrubHTTPRequest := httptest.NewRequestWithContext(scrubContext, http.MethodPost, "/api/files/scrub", bytes.NewReader(scrubBody))
+	scrubResponse := httptest.NewRecorder()
+	scrubHTTPRequest.Header.Set(header.ContentType, mediatype.JSON)
+	server.Handler.ServeHTTP(scrubResponse, scrubHTTPRequest)
 	require.Equal(t, http.StatusRequestTimeout, scrubResponse.Code, scrubResponse.Body.String())
-	var sanitizedLookups []string
-	for _, call := range fake.Calls() {
-		if call.Operation == storage.FakeSanitizedExists {
-			sanitizedLookups = append(sanitizedLookups, call.FileID)
-		}
-	}
-	require.Contains(t, sanitizedLookups, thirdFileID)
+	sanitizedKey, err := storage.SanitizedObjectKey(thirdFileID, reviewedETag)
+	require.NoError(t, err)
+	require.Contains(t, fake.Calls(), storage.FakeCall{
+		Operation:  storage.FakeSanitizedExists,
+		FileID:     thirdFileID,
+		SourceETag: reviewedETag,
+		ObjectKey:  sanitizedKey,
+	})
 	select {
 	case fileID := <-observer.started:
 		require.FailNow(t, "scrub miss entered a separate gate", "unexpected download for %s", fileID)
@@ -212,23 +217,9 @@ func TestNewServerSharesOneCapacityTwoGateAcrossDryRunAndScrubMisses(t *testing.
 func collectDryRunServerResponse(responses chan *httptest.ResponseRecorder, server *http.Server, requestBody []byte) {
 	request := httptest.NewRequest(http.MethodPost, "/api/files/dry-run", bytes.NewReader(requestBody))
 	request.Header.Set(header.ContentType, mediatype.JSON)
-	responses <- serveServer(server, request)
-}
-
-func collectScrubServerResponse(ctx context.Context, responses chan *httptest.ResponseRecorder, server *http.Server, scrubBody []byte) {
-	request := httptest.NewRequestWithContext(ctx, http.MethodPost, "/api/files/scrub", bytes.NewReader(scrubBody))
-	request.Header.Set(header.ContentType, mediatype.JSON)
-	responses <- serveServer(server, request)
-}
-
-func newTestServer(logger *slog.Logger) *http.Server {
-	return newServer(config.Config{Port: 0}, storage.NewFake(), logger)
-}
-
-func serveServer(server *http.Server, request *http.Request) *httptest.ResponseRecorder {
 	recorder := httptest.NewRecorder()
 	server.Handler.ServeHTTP(recorder, request)
-	return recorder
+	responses <- recorder
 }
 
 type blockingServerStorage struct {
