@@ -8,9 +8,9 @@ This plugin encodes the project's coding standards as enforceable Oxlint rules. 
 
 ## Registration and commands
 
-`index.ts` registers nine `metadata-scrubber/...` rules. `fixture.config.json` enables all nine at error severity. `frontend/eslint.config.js` also loads this plugin and enables all nine at error severity.
+`index.ts` registers eight `metadata-scrubber/...` rules. `fixture.config.json` enables all eight at error severity. `frontend/eslint.config.js` also loads this plugin and enables all eight at error severity.
 
-The main `frontend/.oxlintrc.json` loads this plugin and enables all nine custom rules at error severity. Agents must leave it unchanged. All nine custom rules remain active in ESLint after the Oxlint bridge.
+The main `frontend/.oxlintrc.json` loads this plugin and enables all eight custom rules at error severity. Agents must leave it unchanged. All eight custom rules remain active in ESLint after the Oxlint bridge.
 
 Run `pnpm run lint` from `frontend/` to run the service lint checks. Run `node oxlint-plugin-metadata-scrubber/check-fixtures.ts` from `frontend/` to run the fixture check. It uses `fixture.config.json`, not the main Oxlint config. It checks positive counts and exact ordered negative messages. The fixture check is separate from `pnpm run lint`.
 
@@ -21,10 +21,13 @@ Run `pnpm run lint` from `frontend/` to run the service lint checks. Run `node o
 - `no-hardcoded-backend-host` requires environment fields instead of static HTTP service hosts outside tests and the validated environment module.
 - `no-mutable-module-state-in-server-code` rejects module-scope `let` and `var` declarations in server modules.
 - `no-silent-test-prerequisite` rejects `.skip` calls on Vitest test APIs, including chains such as `test.skip.each(...)`. It also rejects bare test prerequisite returns in test callbacks.
-- `no-use-query` rejects runtime `useQuery` imports, source re-exports, static namespace members, and destructuring from `@tanstack/react-query`. It also rejects runtime wildcard exports from that package. Use `useSuspenseQuery` with an ancestor Suspense boundary and suitable error handling. Type-only uses and other Query APIs remain allowed.
 - `separate-type-imports` rejects inline `type` specifiers in import declarations. It reports once per declaration, including declarations with only inline type specifiers. Use a separate `import type` declaration. Keep runtime imports separate. Preserve aliases and required module side effects. Standalone named, default, and namespace type imports remain allowed. A runtime binding named `type` remains allowed.
 - `use-effect-in-custom-hook` requires direct React `useEffect` calls inside the nearest named custom hook. It rejects runtime extraction of the Effect reference. Renamed imports, static React members, and immutable namespace aliases retain their React binding. Nested callbacks need their own valid owner. Type-only uses remain allowed.
 - `use-shared-render-helper` requires the shared `renderComponent` helper for Testing Library rendering.
+
+## Core Query import restrictions
+
+The core `no-restricted-imports` entries reject runtime `useQuery` imports and source re-exports from `@tanstack/react-query`. They also reject runtime namespace imports and wildcard exports from that package. Type-only imports and exports remain allowed. The ESLint `no-restricted-syntax` entry rejects dynamic imports with that literal source. Use named `useSuspenseQuery` imports with an ancestor Suspense boundary and suitable error handling.
 
 ## How to contribute a rule
 
@@ -57,9 +60,9 @@ Name each known bypass. Forbid the bypass when it can preserve the violation. Us
 
 ## Known limitations
 
-- The Effect and Query rules track static member names and immutable namespace aliases. They do not evaluate dynamic keys, follow mutable namespace aliases, or prove arbitrary runtime data flow.
+- The Effect rule tracks static member names and immutable namespace aliases. It does not evaluate dynamic keys, follow mutable namespace aliases, or prove arbitrary runtime data flow.
 - The Effect rule checks the nearest function owner. It cannot prove that external synchronization is necessary or that the hook name describes its purpose. A name such as `useMount` passes the name pattern but still needs review.
-- The Query rule does not check actual Suspense or error-boundary ancestry. It does not decide route data criticality, loader use, server or client execution, streaming, or retry behavior. Review these properties in the application. A boundary can live in another file. Not every component needs a loader.
+- The core Query import restrictions do not check actual Suspense or error-boundary ancestry. They do not decide route data criticality, loader use, server or client execution, streaming, or retry behavior. Review these properties in the application. A boundary can live in another file. Not every component needs a loader.
 - The type-import rule does not decide whether a module needs a side-effect import. Review module initialization before removing the last runtime import.
 - Namespace Vitest calls such as `vitest.expectTypeOf(...)` and `vitest.test.skip(...)` are not resolved.
 - Disabled Vitest calls through `test.todo(...)` and `test.skipIf(true)(...)` are not reported.

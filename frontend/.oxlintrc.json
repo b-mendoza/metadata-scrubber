@@ -677,7 +677,6 @@
     "metadata-scrubber/no-hardcoded-backend-host": "error",
     "metadata-scrubber/no-mutable-module-state-in-server-code": "error",
     "metadata-scrubber/no-silent-test-prerequisite": "error",
-    "metadata-scrubber/no-use-query": "error",
     "metadata-scrubber/separate-type-imports": "error",
     "metadata-scrubber/use-effect-in-custom-hook": "error",
     "metadata-scrubber/use-shared-render-helper": "error",
@@ -725,6 +724,14 @@
     "no-restricted-imports": [
       "error",
       {
+        "paths": [
+          {
+            "name": "@tanstack/react-query",
+            "importNames": ["useQuery"],
+            "allowTypeImports": true,
+            "message": "Runtime useQuery does not suspend for pending data. Use named useSuspenseQuery imports with an ancestor Suspense boundary and suitable error handling. Replace namespace imports and wildcard exports with explicit allowed APIs."
+          }
+        ],
         "patterns": [
           {
             "group": ["zod/**"],
