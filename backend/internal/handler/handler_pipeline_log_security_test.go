@@ -29,12 +29,10 @@ func TestPipelineLogsExcludeSeededSensitiveValues(t *testing.T) {
 	}))
 	objectStorage := &sensitiveGrantStorage{Storage: fake}
 	var logs bytes.Buffer
-	handler := newTestHandlerWithLogger(t, testHandlerOptions{
-		logger: slog.New(slog.NewJSONHandler(&logs, nil)),
-		inspect: func([]byte, scrub.InspectionOrigin) ([]scrub.Field, error) {
-			return []scrub.Field{{Name: "title", Preview: "metadata-preview-secret", Action: scrub.ActionRemove}}, nil
-		},
-	})
+	handler := newTestHandler(t, func([]byte, scrub.InspectionOrigin) ([]scrub.Field, error) {
+		return []scrub.Field{{Name: "title", Preview: "metadata-preview-secret", Action: scrub.ActionRemove}}, nil
+	}, nil, nil)
+	handler.logger = slog.New(slog.NewJSONHandler(&logs, nil))
 
 	uploadBody, err := json.Marshal(uploadRequest{FileName: "request-name-secret.pdf", FileSizeBytes: 1})
 	require.NoError(t, err)
