@@ -26,8 +26,7 @@ func TestDownloadGrantRefreshesExactSanitizedRevisionFromOneOperationTime(t *tes
 	inspectCalls, cleanCalls := 0, 0
 	operationTime := time.Date(2026, time.September, 1, 12, 34, 56, 987_000_000, time.UTC)
 	handler := newTestHandlerWithLogger(t, testHandlerOptions{
-		permits: make(chan struct{}, ProcessingPermitCount),
-		logger:  slog.New(slog.NewTextHandler(io.Discard, nil)),
+		logger: slog.New(slog.NewTextHandler(io.Discard, nil)),
 		inspect: func([]byte, scrub.InspectionOrigin) ([]scrub.Field, error) {
 			inspectCalls++
 			return nil, nil

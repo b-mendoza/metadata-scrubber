@@ -36,7 +36,6 @@ func newTestHandler(
 ) *Handler {
 	t.Helper()
 	return newTestHandlerWithLogger(t, testHandlerOptions{
-		permits: make(chan struct{}, ProcessingPermitCount),
 		logger:  slog.New(slog.NewTextHandler(io.Discard, nil)),
 		inspect: inspect,
 		clean:   clean,
@@ -45,7 +44,6 @@ func newTestHandler(
 }
 
 type testHandlerOptions struct {
-	permits         chan struct{}
 	logger          *slog.Logger
 	inspect         inspectPDFOperation
 	clean           cleanPDFOperation
@@ -76,7 +74,7 @@ func newTestHandlerWithLogger(t *testing.T, options testHandlerOptions) *Handler
 	if options.now == nil {
 		options.now = time.Now
 	}
-	handler := New(options.logger, options.permits)
+	handler := New(options.logger)
 	handler.inspect = options.inspect
 	handler.clean = options.clean
 	handler.entropy = options.entropy

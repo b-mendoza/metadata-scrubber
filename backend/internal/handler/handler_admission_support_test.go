@@ -1,6 +1,7 @@
 package handler
 
 import (
+	"bytes"
 	"context"
 	"net/http"
 	"net/http/httptest"
@@ -10,6 +11,9 @@ import (
 
 	"github.com/stretchr/testify/require"
 
+	"metadata-scrubber/internal/bindings"
+	"metadata-scrubber/internal/httpx/header"
+	"metadata-scrubber/internal/httpx/mediatype"
 	"metadata-scrubber/internal/storage"
 )
 
@@ -153,4 +157,20 @@ func requireResponsesSuccess(
 			require.FailNow(t, timeoutMessage)
 		}
 	}
+}
+
+func serveAdmissionDryRun(body []byte, handler *Handler, observer *blockingStorage, responses chan *httptest.ResponseRecorder) {
+	request := httptest.NewRequest(http.MethodPost, "/api/files/dry-run", bytes.NewReader(body))
+	request.Header.Set(header.ContentType, mediatype.JSON)
+	recorder := httptest.NewRecorder()
+	bindings.Inject(bindings.Bindings{Storage: observer})(http.HandlerFunc(handler.DryRun)).ServeHTTP(recorder, request)
+	responses <- recorder
+}
+
+func serveAdmissionScrub(body []byte, handler *Handler, observer *blockingStorage, responses chan *httptest.ResponseRecorder) {
+	request := httptest.NewRequest(http.MethodPost, "/api/files/scrub", bytes.NewReader(body))
+	request.Header.Set(header.ContentType, mediatype.JSON)
+	recorder := httptest.NewRecorder()
+	bindings.Inject(bindings.Bindings{Storage: observer})(http.HandlerFunc(handler.Scrub)).ServeHTTP(recorder, request)
+	responses <- recorder
 }
