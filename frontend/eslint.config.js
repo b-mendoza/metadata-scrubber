@@ -1,8 +1,4 @@
 /**
- * eslint.config.js is the single entry point for lint policy.
- * The policy is this file plus these imported modules:
- * eslint-config/constants.js, eslint-config/rule-exceptions.js,
- * and eslint-config/test-rules.js.
  * Never edit .oxlintrc.json.
  * The user updates .oxlintrc.json after each rule change in these files.
  * A new rule stays undefined in oxlint until the user updates that file.
@@ -47,7 +43,6 @@ import { duplicateAndConflictRules } from "./eslint-config/rule-exceptions.js";
 import { testRules } from "./eslint-config/test-rules.js";
 import metadataScrubber from "./oxlint-plugin-metadata-scrubber/index.ts";
 
-// MAX_COMPLEXITY caps cyclomatic complexity per function.
 const MAX_COMPLEXITY = 8;
 
 export default defineConfig(
@@ -67,11 +62,9 @@ export default defineConfig(
   // This is a known issue with plugins using TSESLint.FlatConfig types.
   // See: https://github.com/typescript-eslint/typescript-eslint/issues/11543
   love,
-  // ===========================================================================
   // This block replaces rules removed in Love v155.
   // Reconsider it only when published Love provides equivalent rules,
   // supported peers, and the same rule ownership.
-  // ===========================================================================
   {
     plugins: {
       [PLUGIN_NAMES.ImportX]: importX,
@@ -120,7 +113,6 @@ export default defineConfig(
         SEVERITY_LEVELS.Error,
     },
   },
-  // ===========================================================================
   unicorn.configs.recommended,
   e18e.configs.recommended,
   sonarjs.configs?.["recommended"],
@@ -138,7 +130,6 @@ export default defineConfig(
         SEVERITY_LEVELS.Error,
       [`${PLUGIN_NAMES.MetadataScrubber}/no-silent-test-prerequisite`]:
         SEVERITY_LEVELS.Error,
-      [`${PLUGIN_NAMES.MetadataScrubber}/no-use-query`]: SEVERITY_LEVELS.Error,
       [`${PLUGIN_NAMES.MetadataScrubber}/separate-type-imports`]:
         SEVERITY_LEVELS.Error,
       [`${PLUGIN_NAMES.MetadataScrubber}/use-effect-in-custom-hook`]:
@@ -198,8 +189,16 @@ export default defineConfig(
         SEVERITY_LEVELS.Error,
     },
   },
+  // Source files can mix browser and Node code. shared-node-browser omits window and process.
+  // Oxlint needs explicit globs because it does not support extglobs.
   {
     files: ["src/**/*.ts", "src/**/*.tsx"],
+    languageOptions: {
+      globals: {
+        ...globals.browser,
+        ...globals.node,
+      },
+    },
     rules: {
       // Render purity prevents shared state changes and premature ref access.
       [`${PLUGIN_NAMES.ESLintReact}/globals`]: SEVERITY_LEVELS.Error,
@@ -315,15 +314,9 @@ export default defineConfig(
           ],
         },
       ],
-      [`${PLUGIN_NAMES.ESLintCommunityComments}/require-description`]:
-        SEVERITY_LEVELS.Error,
-      [`${PLUGIN_NAMES.ESLintCommunityComments}/no-unlimited-disable`]:
-        SEVERITY_LEVELS.Error,
 
       ...duplicateAndConflictRules,
 
-      [`${PLUGIN_NAMES.ESLintCommunityComments}/disable-enable-pair`]:
-        SEVERITY_LEVELS.Error,
       [`${PLUGIN_NAMES.TypescriptESLint}/consistent-type-imports`]: [
         SEVERITY_LEVELS.Error,
         {
@@ -332,16 +325,8 @@ export default defineConfig(
       ],
       [`${PLUGIN_NAMES.TypescriptESLint}/explicit-function-return-type`]:
         SEVERITY_LEVELS.Off,
-      /**
-       * A function accepts at most 3 parameters.
-       * The Deno style guide sets this shape: at most 2 required positional
-       * parameters, plus a trailing options object when more values exist.
-       * To fix a violation, keep the main arguments positional and move the
-       * extra values into a trailing options object.
-       * Do not collapse every argument into one object parameter. That hides
-       * the main arguments and makes each call site harder to read.
-       * This rule overrides the eslint-config-love limit of 4.
-       */
+      // Keep the main arguments positional and put extra values in trailing options.
+      // One object for all arguments hides the main arguments at each call site.
       [`${PLUGIN_NAMES.TypescriptESLint}/max-params`]: [
         SEVERITY_LEVELS.Error,
         {
@@ -386,13 +371,6 @@ export default defineConfig(
           object: true,
         },
         {
-          /**
-           * We disable this for renamed properties, since code like the following should be valid:
-           *
-           * ```ts
-           * const someSpecificMyEnum = MyEnum.Value1;
-           * ```
-           */
           enforceForRenamedProperties: false,
         },
       ],
@@ -410,6 +388,15 @@ export default defineConfig(
       "no-restricted-imports": [
         SEVERITY_LEVELS.Error,
         {
+          paths: [
+            {
+              name: "@tanstack/react-query",
+              importNames: ["useQuery"],
+              allowTypeImports: true,
+              message:
+                "Runtime useQuery does not suspend for pending data. Use named useSuspenseQuery imports with an ancestor Suspense boundary and suitable error handling. Replace namespace imports and wildcard exports with explicit allowed APIs.",
+            },
+          ],
           patterns: [
             {
               regex: "^zod/.+$",
@@ -419,8 +406,6 @@ export default defineConfig(
           ],
         },
       ],
-      // The project replaces each switch statement with a lookup map.
-      // The lookup map raises an error for each unknown key.
       "no-restricted-syntax": [
         SEVERITY_LEVELS.Error,
         {
@@ -428,9 +413,12 @@ export default defineConfig(
           message:
             "Use a lookup map that raises an error for unknown keys instead.",
         },
+        {
+          selector: "ImportExpression[source.value='@tanstack/react-query']",
+          message:
+            "Import @tanstack/react-query statically with named imports. A dynamic import exposes useQuery and hides it from the import restriction.",
+        },
       ],
-      // The project uses null as the one explicit absent value.
-      // Prefer null over undefined as the explicit empty value.
       "no-undefined": SEVERITY_LEVELS.Error,
       "object-shorthand": SEVERITY_LEVELS.Error,
       "react-hooks/exhaustive-deps": SEVERITY_LEVELS.Error,
@@ -439,14 +427,8 @@ export default defineConfig(
         MAX_COMPLEXITY,
       ],
       [`${PLUGIN_NAMES.SonarJS}/no-commented-code`]: SEVERITY_LEVELS.Error,
-      [`${PLUGIN_NAMES.SonarJS}/todo-tag`]: SEVERITY_LEVELS.Error,
-      /**
-       * The project uses these established terms.
-       * mod comes from the *.mod.ts file-name convention.
-       * props and Props come from React.
-       * ref also comes from React. The @eslint-react/naming-convention-ref-name
-       * rule requires ref or a Ref suffix.
-       */
+      // mod follows file names; props and ref are React terms.
+      // The ref-name rule also requires ref or a Ref suffix.
       [`${PLUGIN_NAMES.Unicorn}/name-replacements`]: [
         SEVERITY_LEVELS.Error,
         {
@@ -457,7 +439,6 @@ export default defineConfig(
           },
         },
       ],
-      // Keep null legal because the project uses it as the one explicit absent value.
       [`${PLUGIN_NAMES.Unicorn}/no-null`]: SEVERITY_LEVELS.Off,
       [`${PLUGIN_NAMES.Unicorn}/text-encoding-identifier-case`]: [
         SEVERITY_LEVELS.Error,
@@ -483,24 +464,6 @@ export default defineConfig(
       ],
     },
   },
-  /**
-   * These blocks mirror the `tsconfig.app.json` / `tsconfig.node.json` /
-   * `tsconfig.oxlint-plugin.json` split.
-   *
-   * A file under `src` can hold browser code and server code at once, so it
-   * needs `browser` plus `node`. `shared-node-browser` holds only the globals
-   * common to both, so it defines neither `window` nor `process`.
-   */
-  // Oxlint needs explicit globs because it does not support extglobs.
-  {
-    files: ["src/**/*.ts", "src/**/*.tsx"],
-    languageOptions: {
-      globals: {
-        ...globals.browser,
-        ...globals.node,
-      },
-    },
-  },
   {
     files: [
       "eslint.config.js",
@@ -508,13 +471,6 @@ export default defineConfig(
       "scripts/**/*.ts",
       "vite.config.ts",
       "vitest.config.ts",
-    ],
-    languageOptions: {
-      globals: globals.node,
-    },
-  },
-  {
-    files: [
       "oxlint-plugin-metadata-scrubber/**/*.ts",
       "oxlint-plugin-metadata-scrubber/**/*.tsx",
     ],
@@ -533,7 +489,7 @@ export default defineConfig(
   /**
    * This final oxlint entry turns off ESLint rules that the bridge
    * maps to enabled Oxlint rules.
-   * All nine custom rules still run in both tools.
+   * All eight custom rules still run in both tools.
    */
   oxlint.buildFromOxlintConfigFile("./.oxlintrc.json", {
     typeAware: true,

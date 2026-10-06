@@ -5,7 +5,6 @@ import noExpectTypeOf from "./rules/no-expect-type-of.ts";
 import noHardcodedBackendHost from "./rules/no-hardcoded-backend-host.ts";
 import noMutableModuleStateInServerCode from "./rules/no-mutable-module-state-in-server-code.ts";
 import noSilentTestPrerequisite from "./rules/no-silent-test-prerequisite.ts";
-import noUseQuery from "./rules/no-use-query.ts";
 import separateTypeImports from "./rules/separate-type-imports.ts";
 import useEffectInCustomHook from "./rules/use-effect-in-custom-hook.ts";
 import useSharedRenderHelper from "./rules/use-shared-render-helper.ts";
@@ -20,7 +19,6 @@ export default definePlugin({
     "no-hardcoded-backend-host": noHardcodedBackendHost,
     "no-mutable-module-state-in-server-code": noMutableModuleStateInServerCode,
     "no-silent-test-prerequisite": noSilentTestPrerequisite,
-    "no-use-query": noUseQuery,
     "separate-type-imports": separateTypeImports,
     "use-effect-in-custom-hook": useEffectInCustomHook,
     "use-shared-render-helper": useSharedRenderHelper,
