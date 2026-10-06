@@ -62,7 +62,7 @@ func TestRunRejectsIncompleteOrInvalidR2ConfigurationBeforeStartingServer(t *tes
 			t.Setenv("R2_BUCKET", startupR2Bucket)
 			testCase.configureFail(t)
 
-			err := run(context.Background())
+			err := run(context.Background(), slog.New(slog.DiscardHandler))
 
 			require.Error(t, err)
 			require.ErrorContains(t, err, "invalid configuration")

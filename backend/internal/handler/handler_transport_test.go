@@ -45,8 +45,7 @@ func TestReachabilityLogsResponseWriteFailure(t *testing.T) {
 	writer := &failingResponseWriter{header: make(http.Header), err: responseWriteErr}
 	var logs bytes.Buffer
 	handler := newTestHandlerWithLogger(t, testHandlerOptions{
-		permits: make(chan struct{}, ProcessingPermitCount),
-		logger:  slog.New(slog.NewJSONHandler(&logs, nil)),
+		logger: slog.New(slog.NewJSONHandler(&logs, nil)),
 	})
 	request := httptest.NewRequest(http.MethodGet, "/api/health", http.NoBody)
 

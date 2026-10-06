@@ -30,8 +30,7 @@ func TestPipelineLogsExcludeSeededSensitiveValues(t *testing.T) {
 	objectStorage := &sensitiveGrantStorage{Storage: fake}
 	var logs bytes.Buffer
 	handler := newTestHandlerWithLogger(t, testHandlerOptions{
-		permits: make(chan struct{}, ProcessingPermitCount),
-		logger:  slog.New(slog.NewJSONHandler(&logs, nil)),
+		logger: slog.New(slog.NewJSONHandler(&logs, nil)),
 		inspect: func([]byte, scrub.InspectionOrigin) ([]scrub.Field, error) {
 			return []scrub.Field{{Name: "title", Preview: "metadata-preview-secret", Action: scrub.ActionRemove}}, nil
 		},

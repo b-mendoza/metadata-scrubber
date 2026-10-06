@@ -69,15 +69,15 @@ func TestScrubSourceLookupFailureStopsBeforeLaterWork(t *testing.T) {
 func TestScrubCacheMissBindsEveryOperationToReviewedRevision(t *testing.T) {
 	fake := storage.NewFake()
 	require.NoError(t, fake.SetSource(fileIDOne, storage.SourceObject{PDFBytes: []byte("%PDF-source"), ETag: "0123456789abcdef0123456789abcdef"}))
-	permits := make(chan struct{}, ProcessingPermitCount)
 	cleaned := []byte("%PDF-cleaned")
 	cleanCalls := 0
-	handler := newTestHandlerWithLogger(t, testHandlerOptions{permits: permits, logger: slog.New(slog.NewTextHandler(io.Discard, nil)), clean: func(input []byte) ([]byte, error) {
+	handler := newTestHandlerWithLogger(t, testHandlerOptions{logger: slog.New(slog.NewTextHandler(io.Discard, nil))})
+	handler.clean = func(input []byte) ([]byte, error) {
 		cleanCalls++
-		require.Len(t, permits, 1, "clean must run while admitted")
+		require.Len(t, handler.permits, 1, "clean must run while admitted")
 		require.Equal(t, []byte("%PDF-source"), input)
 		return cleaned, nil
-	}})
+	}
 	body, err := json.Marshal(scrubRequest{StorageKey: formatStorageKey(fileIDOne), ETag: "0123456789abcdef0123456789abcdef"})
 	require.NoError(t, err)
 	request := httptest.NewRequest(http.MethodPost, "/api/files/scrub", bytes.NewReader(body))
@@ -87,7 +87,7 @@ func TestScrubCacheMissBindsEveryOperationToReviewedRevision(t *testing.T) {
 
 	require.Equal(t, http.StatusOK, recorder.Code, recorder.Body.String())
 	require.Equal(t, 1, cleanCalls)
-	require.Empty(t, permits)
+	require.Empty(t, handler.permits)
 	calls := fake.Calls()
 	require.Equal(t, []storage.FakeOperation{
 		storage.FakeSourceExists,

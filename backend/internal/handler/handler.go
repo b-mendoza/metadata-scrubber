@@ -98,14 +98,10 @@ type Handler struct {
 }
 
 // New constructs the JSON workflow handler around one server-owned admission gate.
-func New(logger *slog.Logger, permits chan struct{}) *Handler {
-	if permits == nil || cap(permits) != ProcessingPermitCount {
-		panic("handler admission gate must have capacity 2")
-	}
-
+func New(logger *slog.Logger) *Handler {
 	return &Handler{
 		logger:              logger,
-		permits:             permits,
+		permits:             make(chan struct{}, ProcessingPermitCount),
 		inspect:             scrub.InspectPDF,
 		clean:               scrub.CleanPDF,
 		entropy:             rand.Read,

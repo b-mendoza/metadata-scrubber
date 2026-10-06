@@ -31,22 +31,21 @@ func main() {
 	scrub.DisableConfigDir()
 
 	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
-	if err := run(ctx); err != nil {
-		stop()
+	err := run(ctx, logger)
+	stop()
+	if err != nil {
 		logger.Error("metadata-scrubber stopped", "error", err)
 		os.Exit(1)
 	}
-	stop()
 }
 
 // run returns the first ready listener result or the result of graceful shutdown after cancellation.
-func run(ctx context.Context) error {
+func run(ctx context.Context, logger *slog.Logger) error {
 	cfg, err := config.Load()
 	if err != nil {
 		return err
 	}
 
-	logger := slog.Default()
 	server := newServer(cfg, storage.NewR2(cfg), logger)
 
 	serverErr := make(chan error, 1)
@@ -76,7 +75,7 @@ func serveHTTPServer(server *http.Server, logger *slog.Logger, serverErr chan er
 
 func newServer(cfg config.Config, objectStorage storage.Storage, logger *slog.Logger) *http.Server {
 	mux := http.NewServeMux()
-	workflow := handler.New(logger, make(chan struct{}, handler.ProcessingPermitCount))
+	workflow := handler.New(logger)
 
 	mux.HandleFunc("GET /api/health", workflow.Reachability)
 	mux.HandleFunc("GET /api/files/config", workflow.WorkflowConfig)
