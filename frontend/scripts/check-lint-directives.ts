@@ -62,30 +62,13 @@ export function checkLintDirectives(source: string, file: string) {
 
 const FAILURE_EXIT_CODE = 1;
 
-function shouldCheckRule() {
-  return false;
-}
-
 function createDirectiveESLint() {
   // ESLint owns file selection. Inline configuration cannot alter this guard.
   return new ESLint({
     allowInlineConfig: false,
     cwd: path.resolve(import.meta.dirname, ".."),
-    ruleFilter: shouldCheckRule,
+    ruleFilter: () => false,
   });
-}
-
-function mapDirectiveSetupError(cause: unknown) {
-  return new Error("Could not set up the lint directive check.", { cause });
-}
-
-function mapFileSelectionError(cause: unknown) {
-  return new Error(
-    "ESLint could not select files for the lint directive check.",
-    {
-      cause,
-    },
-  );
 }
 
 async function inspectFileDirectives(filePath: string) {
@@ -108,27 +91,28 @@ async function inspectFileDirectives(filePath: string) {
   return result.value;
 }
 
-function mapDirectiveCheckError(cause: unknown) {
-  return new Error("Could not check files for lint directives.", { cause });
-}
-
 function checkFilesForLintDirectives() {
   const eslintResult = fromThrowable(
     createDirectiveESLint,
-    mapDirectiveSetupError,
+    (cause: unknown) =>
+      new Error("Could not set up the lint directive check.", { cause }),
   )();
   if (eslintResult.isErr()) {
     return errAsync(eslintResult.error);
   }
   return ResultAsync.fromPromise(
     eslintResult.value.lintFiles(["."]),
-    mapFileSelectionError,
+    (cause: unknown) =>
+      new Error("ESLint could not select files for the lint directive check.", {
+        cause,
+      }),
   ).andThen((files) =>
     ResultAsync.fromPromise(
       Promise.all(
         files.map(async ({ filePath }) => inspectFileDirectives(filePath)),
       ),
-      mapDirectiveCheckError,
+      (cause: unknown) =>
+        new Error("Could not check files for lint directives.", { cause }),
     ).map((results) => {
       for (const { message } of results.flat()) {
         process.stderr.write(`${message}\n`);
