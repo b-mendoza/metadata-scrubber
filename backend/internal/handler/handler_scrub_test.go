@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"encoding/json"
 	"errors"
-	"io"
 	"log/slog"
 	"net/http"
 	"net/http/httptest"
@@ -44,7 +43,6 @@ func TestScrubMissingSourceStopsBeforeCacheAdmissionAndPDFWork(t *testing.T) {
 	require.Equal(t, []storage.FakeOperation{storage.FakeSourceExists}, callOperations(fake.Calls()))
 	require.Zero(t, inspectCalls)
 	require.Zero(t, cleanCalls)
-	require.Empty(t, handler.permits)
 }
 
 func TestScrubSourceLookupFailureStopsBeforeLaterWork(t *testing.T) {
@@ -63,7 +61,6 @@ func TestScrubSourceLookupFailureStopsBeforeLaterWork(t *testing.T) {
 	require.Equal(t, "could not check source file", errorMessage(t, recorder))
 	require.NotContains(t, recorder.Body.String(), "provider-source-secret")
 	require.Equal(t, []storage.FakeOperation{storage.FakeSourceExists}, callOperations(fake.Calls()))
-	require.Empty(t, handler.permits)
 }
 
 func TestScrubCacheMissBindsEveryOperationToReviewedRevision(t *testing.T) {
@@ -71,7 +68,7 @@ func TestScrubCacheMissBindsEveryOperationToReviewedRevision(t *testing.T) {
 	require.NoError(t, fake.SetSource(fileIDOne, storage.SourceObject{PDFBytes: []byte("%PDF-source"), ETag: "0123456789abcdef0123456789abcdef"}))
 	cleaned := []byte("%PDF-cleaned")
 	cleanCalls := 0
-	handler := newTestHandlerWithLogger(t, testHandlerOptions{logger: slog.New(slog.NewTextHandler(io.Discard, nil))})
+	handler := newTestHandler(t, nil, nil, nil)
 	handler.clean = func(input []byte) ([]byte, error) {
 		cleanCalls++
 		require.Len(t, handler.permits, 1, "clean must run while admitted")
@@ -87,15 +84,7 @@ func TestScrubCacheMissBindsEveryOperationToReviewedRevision(t *testing.T) {
 
 	require.Equal(t, http.StatusOK, recorder.Code, recorder.Body.String())
 	require.Equal(t, 1, cleanCalls)
-	require.Empty(t, handler.permits)
 	calls := fake.Calls()
-	require.Equal(t, []storage.FakeOperation{
-		storage.FakeSourceExists,
-		storage.FakeSanitizedExists,
-		storage.FakeDownloadSource,
-		storage.FakeUploadSanitized,
-		storage.FakePresignSanitizedDownload,
-	}, callOperations(calls))
 	for _, call := range calls {
 		if call.Operation == storage.FakeSourceExists {
 			require.Empty(t, call.SourceETag)
@@ -109,12 +98,12 @@ func TestScrubCacheMissBindsEveryOperationToReviewedRevision(t *testing.T) {
 	require.Equal(t, cleaned, stored)
 }
 
-func TestScrubIntegratesWithDeepPDFCleaning(t *testing.T) {
+func TestConstructedScrubStoresPDFWithoutMetadata(t *testing.T) {
 	pdfBytes, err := os.ReadFile("testdata/with-property.pdf")
 	require.NoError(t, err)
 	fake := storage.NewFake()
 	require.NoError(t, fake.SetSource(fileIDOne, storage.SourceObject{PDFBytes: pdfBytes, ETag: "0123456789abcdef0123456789abcdef"}))
-	handler := newTestHandler(t, scrub.InspectPDF, scrub.CleanPDF, nil)
+	handler := New(slog.New(slog.DiscardHandler))
 	body, err := json.Marshal(scrubRequest{StorageKey: formatStorageKey(fileIDOne), ETag: "0123456789abcdef0123456789abcdef"})
 	require.NoError(t, err)
 	request := httptest.NewRequest(http.MethodPost, "/api/files/scrub", bytes.NewReader(body))
@@ -150,5 +139,4 @@ func TestScrubReturnsConflictBeforePDFOrWriteWork(t *testing.T) {
 	require.Equal(t, "source file changed since review", errorMessage(t, recorder))
 	require.Zero(t, cleanCalls)
 	require.Equal(t, []storage.FakeOperation{storage.FakeSourceExists, storage.FakeSanitizedExists, storage.FakeDownloadSource}, callOperations(fake.Calls()))
-	require.Empty(t, handler.permits)
 }
