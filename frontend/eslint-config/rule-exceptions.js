@@ -8,7 +8,6 @@ export const duplicateAndConflictRules = {
    * `e18e/prefer-string-fromcharcode` and `e18e/prefer-array-fill` instead
    * conflict with `unicorn/prefer-code-point` and `unicorn/no-array-from-fill`.
    */
-  // =======================================================================
   [`${PLUGIN_NAMES.E18e}/prefer-array-at`]: SEVERITY_LEVELS.Off,
   [`${PLUGIN_NAMES.E18e}/prefer-array-fill`]: SEVERITY_LEVELS.Off,
   [`${PLUGIN_NAMES.E18e}/prefer-array-some`]: SEVERITY_LEVELS.Off,
@@ -108,5 +107,4 @@ export const duplicateAndConflictRules = {
   [`${PLUGIN_NAMES.SonarJS}/no-useless-catch`]: SEVERITY_LEVELS.Off,
   [`${PLUGIN_NAMES.SonarJS}/prefer-single-boolean-return`]: SEVERITY_LEVELS.Off,
   [`${PLUGIN_NAMES.SonarJS}/updated-const-var`]: SEVERITY_LEVELS.Off,
-  // =======================================================================
 };
