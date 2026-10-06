@@ -24,9 +24,8 @@ func TestPipelineLogsRecordRequiredSuccessFacts(t *testing.T) {
 	require.NoError(t, fake.SetSource(fileIDOne, storage.SourceObject{PDFBytes: []byte("%PDF-one"), ETag: canonicalETagOne}))
 	require.NoError(t, fake.SetSource(fileIDTwo, storage.SourceObject{PDFBytes: []byte("%PDF-two"), ETag: canonicalETagTwo}))
 	var logs bytes.Buffer
-	handler := newTestHandlerWithLogger(t, testHandlerOptions{
-		logger: slog.New(slog.NewJSONHandler(&logs, nil)),
-	})
+	handler := newTestHandler(t, nil, nil, nil)
+	handler.logger = slog.New(slog.NewJSONHandler(&logs, nil))
 
 	uploadBody, err := json.Marshal(uploadRequest{FileName: "report.pdf", FileSizeBytes: 1})
 	require.NoError(t, err)
@@ -66,9 +65,8 @@ func TestPipelineLogsRecordFailureCacheHitAndShortCircuitFacts(t *testing.T) {
 		fake := storage.NewFake()
 		fake.SetFailure(storage.FakePresignSourceUpload, errors.New("upload failure"))
 		var logs bytes.Buffer
-		handler := newTestHandlerWithLogger(t, testHandlerOptions{
-			logger: slog.New(slog.NewJSONHandler(&logs, nil)),
-		})
+		handler := newTestHandler(t, nil, nil, nil)
+		handler.logger = slog.New(slog.NewJSONHandler(&logs, nil))
 		body, err := json.Marshal(uploadRequest{FileName: "report.pdf", FileSizeBytes: 1})
 		require.NoError(t, err)
 		request := httptest.NewRequest(http.MethodPost, "/api/files/upload", bytes.NewReader(body))
@@ -85,9 +83,8 @@ func TestPipelineLogsRecordFailureCacheHitAndShortCircuitFacts(t *testing.T) {
 		fake := storage.NewFake()
 		require.NoError(t, fake.SetSource(fileIDOne, storage.SourceObject{PDFBytes: []byte("not-pdf"), ETag: canonicalETagOne}))
 		var logs bytes.Buffer
-		handler := newTestHandlerWithLogger(t, testHandlerOptions{
-			logger: slog.New(slog.NewJSONHandler(&logs, nil)),
-		})
+		handler := newTestHandler(t, nil, nil, nil)
+		handler.logger = slog.New(slog.NewJSONHandler(&logs, nil))
 		body, err := json.Marshal(dryRunRequest{StorageKey: formatStorageKey(fileIDOne)})
 		require.NoError(t, err)
 		request := httptest.NewRequest(http.MethodPost, "/api/files/dry-run", bytes.NewReader(body))
@@ -106,12 +103,10 @@ func TestPipelineLogsRecordFailureCacheHitAndShortCircuitFacts(t *testing.T) {
 		fake := storage.NewFake()
 		require.NoError(t, fake.SetSource(fileIDOne, storage.SourceObject{PDFBytes: []byte("%PDF-one"), ETag: canonicalETagOne}))
 		var logs bytes.Buffer
-		handler := newTestHandlerWithLogger(t, testHandlerOptions{
-			logger: slog.New(slog.NewJSONHandler(&logs, nil)),
-			inspect: func([]byte, scrub.InspectionOrigin) ([]scrub.Field, error) {
-				return nil, errors.New("inspect failed")
-			},
-		})
+		handler := newTestHandler(t, func([]byte, scrub.InspectionOrigin) ([]scrub.Field, error) {
+			return nil, errors.New("inspect failed")
+		}, nil, nil)
+		handler.logger = slog.New(slog.NewJSONHandler(&logs, nil))
 		body, err := json.Marshal(dryRunRequest{StorageKey: formatStorageKey(fileIDOne)})
 		require.NoError(t, err)
 		request := httptest.NewRequest(http.MethodPost, "/api/files/dry-run", bytes.NewReader(body))
@@ -130,10 +125,10 @@ func TestPipelineLogsRecordFailureCacheHitAndShortCircuitFacts(t *testing.T) {
 		fake := storage.NewFake()
 		require.NoError(t, fake.SetSource(fileIDOne, storage.SourceObject{PDFBytes: []byte("%PDF-one"), ETag: canonicalETagOne}))
 		var logs bytes.Buffer
-		handler := newTestHandlerWithLogger(t, testHandlerOptions{
-			logger: slog.New(slog.NewJSONHandler(&logs, nil)),
-			clean:  func([]byte) ([]byte, error) { return nil, errors.New("clean failed") },
-		})
+		handler := newTestHandler(t, nil, func([]byte) ([]byte, error) {
+			return nil, errors.New("clean failed")
+		}, nil)
+		handler.logger = slog.New(slog.NewJSONHandler(&logs, nil))
 		body, err := json.Marshal(scrubRequest{StorageKey: formatStorageKey(fileIDOne), ETag: canonicalETagOne})
 		require.NoError(t, err)
 		request := httptest.NewRequest(http.MethodPost, "/api/files/scrub", bytes.NewReader(body))
@@ -153,9 +148,8 @@ func TestPipelineLogsRecordFailureCacheHitAndShortCircuitFacts(t *testing.T) {
 		require.NoError(t, fake.SetSource(fileIDOne, storage.SourceObject{PDFBytes: []byte("%PDF-one"), ETag: canonicalETagOne}))
 		fake.SetFailure(storage.FakeUploadSanitized, errors.New("upload failed"))
 		var logs bytes.Buffer
-		handler := newTestHandlerWithLogger(t, testHandlerOptions{
-			logger: slog.New(slog.NewJSONHandler(&logs, nil)),
-		})
+		handler := newTestHandler(t, nil, nil, nil)
+		handler.logger = slog.New(slog.NewJSONHandler(&logs, nil))
 		body, err := json.Marshal(scrubRequest{StorageKey: formatStorageKey(fileIDOne), ETag: canonicalETagOne})
 		require.NoError(t, err)
 		request := httptest.NewRequest(http.MethodPost, "/api/files/scrub", bytes.NewReader(body))
@@ -174,9 +168,8 @@ func TestPipelineLogsRecordFailureCacheHitAndShortCircuitFacts(t *testing.T) {
 		require.NoError(t, fake.SetSource(fileIDOne, storage.SourceObject{PDFBytes: []byte("%PDF-one"), ETag: canonicalETagOne}))
 		fake.SetFailure(storage.FakePresignSanitizedDownload, errors.New("presign failed"))
 		var logs bytes.Buffer
-		handler := newTestHandlerWithLogger(t, testHandlerOptions{
-			logger: slog.New(slog.NewJSONHandler(&logs, nil)),
-		})
+		handler := newTestHandler(t, nil, nil, nil)
+		handler.logger = slog.New(slog.NewJSONHandler(&logs, nil))
 		body, err := json.Marshal(scrubRequest{StorageKey: formatStorageKey(fileIDOne), ETag: canonicalETagOne})
 		require.NoError(t, err)
 		request := httptest.NewRequest(http.MethodPost, "/api/files/scrub", bytes.NewReader(body))
@@ -195,9 +188,8 @@ func TestPipelineLogsRecordFailureCacheHitAndShortCircuitFacts(t *testing.T) {
 		require.NoError(t, fake.SetSource(fileIDOne, storage.SourceObject{PDFBytes: []byte("%PDF-one"), ETag: canonicalETagOne}))
 		require.NoError(t, fake.SetSanitized(fileIDOne, canonicalETagOne, []byte("clean")))
 		var logs bytes.Buffer
-		handler := newTestHandlerWithLogger(t, testHandlerOptions{
-			logger: slog.New(slog.NewJSONHandler(&logs, nil)),
-		})
+		handler := newTestHandler(t, nil, nil, nil)
+		handler.logger = slog.New(slog.NewJSONHandler(&logs, nil))
 		body, err := json.Marshal(scrubRequest{StorageKey: formatStorageKey(fileIDOne), ETag: canonicalETagOne})
 		require.NoError(t, err)
 		request := httptest.NewRequest(http.MethodPost, "/api/files/scrub", bytes.NewReader(body))
