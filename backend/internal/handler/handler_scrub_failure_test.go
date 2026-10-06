@@ -96,14 +96,15 @@ func (testCase scrubFailureTestCase) testFailureStopsAtFailedStage(t *testing.T)
 		fake.SetFailure(testCase.failureOp, errors.New("provider-secret"))
 	}
 	cleanCalls := 0
-	handler := newTestHandler(t, nil, func(input []byte) ([]byte, error) {
+	handler := newTestHandler(t)
+	handler.clean = func(input []byte) ([]byte, error) {
 		cleanCalls++
 		if testCase.cleanErr != nil {
 			return nil, testCase.cleanErr
 		}
 		return bytes.Clone(input), nil
-	}, nil)
-	body, err := json.Marshal(scrubRequest{StorageKey: formatStorageKey(fileIDOne), ETag: canonicalETagOne})
+	}
+	body, err := json.Marshal(scrubRequest{StorageKey: storageKeyPrefix + fileIDOne, ETag: canonicalETagOne})
 	require.NoError(t, err)
 	request := httptest.NewRequest(http.MethodPost, "/api/files/scrub", bytes.NewReader(body))
 	request.Header.Set(header.ContentType, mediatype.JSON)

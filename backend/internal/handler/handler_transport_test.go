@@ -21,7 +21,7 @@ func TestWorkflowConfigReturnsBackendOwnedFileSize(t *testing.T) {
 	recorder := httptest.NewRecorder()
 	request := httptest.NewRequest(http.MethodGet, "/api/files/config", http.NoBody)
 
-	newTestHandler(t, nil, nil, nil).WorkflowConfig(recorder, request)
+	newTestHandler(t).WorkflowConfig(recorder, request)
 
 	require.Equal(t, http.StatusOK, recorder.Code)
 	require.Equal(t, mediatype.JSON, recorder.Header().Get(header.ContentType))
@@ -34,7 +34,7 @@ func TestReachabilityLogsResponseWriteFailure(t *testing.T) {
 	responseWriteErr := errors.New("response write failure sentinel")
 	writer := &failingResponseWriter{ResponseRecorder: httptest.NewRecorder(), err: responseWriteErr}
 	var logs bytes.Buffer
-	handler := newTestHandler(t, nil, nil, nil)
+	handler := newTestHandler(t)
 	handler.logger = slog.New(slog.NewJSONHandler(&logs, nil))
 	request := httptest.NewRequest(http.MethodGet, "/api/health", http.NoBody)
 
@@ -61,8 +61,8 @@ func (writer *failingResponseWriter) Write([]byte) (int, error) {
 }
 
 func TestHandlersWithoutBindingsReturnSafeServerFailure(t *testing.T) {
-	handler := newTestHandler(t, nil, nil, nil)
-	body, err := json.Marshal(dryRunRequest{StorageKey: formatStorageKey(fileIDOne)})
+	handler := newTestHandler(t)
+	body, err := json.Marshal(dryRunRequest{StorageKey: storageKeyPrefix + fileIDOne})
 	require.NoError(t, err)
 	request := httptest.NewRequest(http.MethodPost, "/api/files/dry-run", strings.NewReader(string(body)))
 	request.Header.Set(header.ContentType, mediatype.JSON)

@@ -3,6 +3,7 @@ package handler
 import (
 	"net/http"
 	"time"
+	"uuid"
 
 	"metadata-scrubber/internal/httpx"
 	"metadata-scrubber/internal/storage"
@@ -19,14 +20,8 @@ func (handler *Handler) Upload(w http.ResponseWriter, request *http.Request) {
 		return
 	}
 
-	fileID, ok := handler.newFileID()
-	if !ok {
-		if err := httpx.WriteError(w, http.StatusInternalServerError, "could not create upload"); err != nil {
-			handler.logger.ErrorContext(request.Context(), "could not write JSON response", "error", err)
-		}
-		return
-	}
-	storageKey := formatStorageKey(fileID)
+	fileID := uuid.NewV4().String()
+	storageKey := storageKeyPrefix + fileID
 	objectStorage := handler.storageFromRequest(w, request)
 	if objectStorage == nil {
 		return

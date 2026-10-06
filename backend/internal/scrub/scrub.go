@@ -23,17 +23,6 @@ const (
 	maxDecodedMetadataBytes = 20_000_000
 )
 
-// InspectionOrigin identifies whether PDF bytes came from public input or from
-// this package's just-completed write path.
-type InspectionOrigin string
-
-const (
-	// PublicInput inspects untrusted uploaded PDF bytes.
-	PublicInput InspectionOrigin = "public-input"
-	// PostWriteVerification inspects bytes just written by CleanPDF.
-	PostWriteVerification InspectionOrigin = "post-write-verification"
-)
-
 // FieldAction describes how CleanPDF handles an inspected metadata field.
 type FieldAction string
 
@@ -64,70 +53,51 @@ var (
 	ErrMalformedPDF = errors.New("malformed PDF")
 )
 
-type cleanPDFOperations struct {
-	remove func(*model.Context, *pdfAnalysis)
-	write  func(*model.Context, io.Writer) error
-	verify func([]byte) error
-}
-
 // DisableConfigDir prevents pdfcpu from creating or reading a per-user config
 // directory. Call once at startup before any PDF inspection or scrub.
 func DisableConfigDir() {
 	api.DisableConfigDir()
 }
 
-func (action FieldAction) valid() bool {
-	return action == ActionRemove || action == ActionReplace
-}
-
 // InspectPDF returns bounded descriptions of all supported PDF metadata fields.
-func InspectPDF(inputBytes []byte, origin InspectionOrigin) ([]Field, error) {
-	if origin != PublicInput && origin != PostWriteVerification {
-		return nil, fmt.Errorf("invalid inspection origin %q", origin)
-	}
-
-	_, analysis, err := readAndAnalyzePDF(inputBytes, origin)
+func InspectPDF(inputBytes []byte) ([]Field, error) {
+	_, analysis, err := readAndAnalyzePDF(inputBytes)
 	if err != nil {
-		return nil, err
+		return nil, classifyPublicPDFError(err)
 	}
 	return analysis.fields, nil
 }
 
 // CleanPDF removes supported metadata from PDF bytes.
 func CleanPDF(inputBytes []byte) ([]byte, error) {
-	return cleanPDF(inputBytes, cleanPDFOperations{
-		remove: removeAnalyzedMetadata,
-		write:  api.WriteContext,
-		verify: verifyScrubbedPDF,
-	})
+	return cleanPDF(inputBytes, api.WriteContext)
 }
 
-func cleanPDF(inputBytes []byte, operations cleanPDFOperations) ([]byte, error) {
-	context, analysis, err := readAndAnalyzePDF(inputBytes, PublicInput)
+func cleanPDF(inputBytes []byte, write func(*model.Context, io.Writer) error) ([]byte, error) {
+	context, analysis, err := readAndAnalyzePDF(inputBytes)
 	if err != nil {
-		return nil, err
+		return nil, classifyPublicPDFError(err)
 	}
 	if len(analysis.fields) == 0 {
 		return inputBytes, nil
 	}
 
-	operations.remove(context, analysis)
+	removeAnalyzedMetadata(context, analysis)
 	var output bytes.Buffer
-	if err := operations.write(context, &output); err != nil {
+	if err := write(context, &output); err != nil {
 		return nil, err
 	}
 
 	outputBytes := output.Bytes()
-	if err := operations.verify(outputBytes); err != nil {
+	if err := verifyScrubbedPDF(outputBytes); err != nil {
 		return nil, err
 	}
 
 	return outputBytes, nil
 }
 
-func classifyPDFError(err error, origin InspectionOrigin) error {
-	if origin == PostWriteVerification ||
-		errors.Is(err, ErrInputTooLarge) ||
+func classifyPublicPDFError(err error) error {
+	if errors.Is(err, ErrInputTooLarge) ||
 		errors.Is(err, ErrSignedPDF) ||
 		errors.Is(err, ErrInspectionLimit) {
 		return err
@@ -136,14 +106,14 @@ func classifyPDFError(err error, origin InspectionOrigin) error {
 	return fmt.Errorf("%w: %w", ErrMalformedPDF, err)
 }
 
-func readAndAnalyzePDF(inputBytes []byte, origin InspectionOrigin) (*model.Context, *pdfAnalysis, error) {
+func readAndAnalyzePDF(inputBytes []byte) (*model.Context, *pdfAnalysis, error) {
 	context, err := readPDFWithValidator(inputBytes, api.ValidateContext)
 	if err != nil {
-		return nil, nil, classifyPDFError(err, origin)
+		return nil, nil, err
 	}
-	analysis, err := analyzePDF(context, origin)
+	analysis, err := analyzePDF(context)
 	if err != nil {
-		return nil, nil, classifyPDFError(err, origin)
+		return nil, nil, err
 	}
 	return context, analysis, nil
 }

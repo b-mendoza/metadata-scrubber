@@ -24,7 +24,7 @@ func TestPublicStorageKeysAndETagsAreValidatedBeforeStorage(t *testing.T) {
 	for _, invalidKey := range invalidKeys {
 		t.Run("key "+invalidKey, func(t *testing.T) {
 			fake := storage.NewFake()
-			handler := newTestHandler(t, nil, nil, nil)
+			handler := newTestHandler(t)
 			body, err := json.Marshal(dryRunRequest{StorageKey: invalidKey})
 			require.NoError(t, err)
 			request := httptest.NewRequest(http.MethodPost, "/api/files/dry-run", bytes.NewReader(body))
@@ -63,9 +63,9 @@ func TestPublicStorageKeysAndETagsAreValidatedBeforeStorage(t *testing.T) {
 	for _, invalidETag := range invalidETags {
 		t.Run("scrub ETag "+invalidETag.name, func(t *testing.T) {
 			fake := storage.NewFake()
-			handler := newTestHandler(t, nil, nil, nil)
+			handler := newTestHandler(t)
 			body, err := json.Marshal(scrubRequest{
-				StorageKey: formatStorageKey(fileIDOne),
+				StorageKey: storageKeyPrefix + fileIDOne,
 				ETag:       invalidETag.value,
 			})
 			require.NoError(t, err)
@@ -80,9 +80,9 @@ func TestPublicStorageKeysAndETagsAreValidatedBeforeStorage(t *testing.T) {
 		})
 		t.Run("download grant ETag "+invalidETag.name, func(t *testing.T) {
 			fake := storage.NewFake()
-			handler := newTestHandler(t, nil, nil, nil)
+			handler := newTestHandler(t)
 			body, err := json.Marshal(downloadGrantRequest{
-				StorageKey: formatStorageKey(fileIDOne),
+				StorageKey: storageKeyPrefix + fileIDOne,
 				ETag:       invalidETag.value,
 			})
 			require.NoError(t, err)

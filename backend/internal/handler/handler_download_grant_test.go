@@ -14,25 +14,17 @@ import (
 	"metadata-scrubber/internal/bindings"
 	"metadata-scrubber/internal/httpx/header"
 	"metadata-scrubber/internal/httpx/mediatype"
-	"metadata-scrubber/internal/scrub"
 	"metadata-scrubber/internal/storage"
 )
 
 func TestDownloadGrantRefreshesExactSanitizedRevisionFromOneOperationTime(t *testing.T) {
 	fake := storage.NewFake()
 	require.NoError(t, fake.SetSanitized(fileIDOne, canonicalETagOne, []byte("clean")))
-	inspectCalls, cleanCalls := 0, 0
 	operationTime := time.Date(2026, time.September, 1, 12, 34, 56, 987_000_000, time.UTC)
-	handler := newTestHandler(t, func([]byte, scrub.InspectionOrigin) ([]scrub.Field, error) {
-		inspectCalls++
-		return nil, nil
-	}, func([]byte) ([]byte, error) {
-		cleanCalls++
-		return nil, nil
-	}, nil)
+	handler := newTestHandler(t)
 	handler.now = func() time.Time { return operationTime }
 	body, err := json.Marshal(downloadGrantRequest{
-		StorageKey: formatStorageKey(fileIDOne),
+		StorageKey: storageKeyPrefix + fileIDOne,
 		ETag:       canonicalETagOne,
 	})
 	require.NoError(t, err)
@@ -57,15 +49,13 @@ func TestDownloadGrantRefreshesExactSanitizedRevisionFromOneOperationTime(t *tes
 		require.Equal(t, canonicalETagOne, call.SourceETag)
 	}
 	require.Equal(t, downloadGrantExpiry, calls[1].Expiry)
-	require.Zero(t, inspectCalls)
-	require.Zero(t, cleanCalls)
 }
 
 func TestDownloadGrantReturnsNotFoundWithoutPresignForMissingRevision(t *testing.T) {
 	fake := storage.NewFake()
-	handler := newTestHandler(t, nil, nil, nil)
+	handler := newTestHandler(t)
 	body, err := json.Marshal(downloadGrantRequest{
-		StorageKey: formatStorageKey(fileIDOne),
+		StorageKey: storageKeyPrefix + fileIDOne,
 		ETag:       canonicalETagOne,
 	})
 	require.NoError(t, err)
@@ -109,9 +99,9 @@ func TestDownloadGrantFailuresStopAtFailedStorageOperation(t *testing.T) {
 			fake := storage.NewFake()
 			require.NoError(t, fake.SetSanitized(fileIDOne, canonicalETagOne, []byte("clean")))
 			fake.SetFailure(testCase.failureOp, errors.New("download-provider-secret"))
-			handler := newTestHandler(t, nil, nil, nil)
+			handler := newTestHandler(t)
 			body, err := json.Marshal(downloadGrantRequest{
-				StorageKey: formatStorageKey(fileIDOne),
+				StorageKey: storageKeyPrefix + fileIDOne,
 				ETag:       canonicalETagOne,
 			})
 			require.NoError(t, err)

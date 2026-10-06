@@ -29,9 +29,10 @@ func TestPipelineLogsExcludeSeededSensitiveValues(t *testing.T) {
 	}))
 	objectStorage := &sensitiveGrantStorage{Storage: fake}
 	var logs bytes.Buffer
-	handler := newTestHandler(t, func([]byte, scrub.InspectionOrigin) ([]scrub.Field, error) {
+	handler := newTestHandler(t)
+	handler.inspect = func([]byte) ([]scrub.Field, error) {
 		return []scrub.Field{{Name: "title", Preview: "metadata-preview-secret", Action: scrub.ActionRemove}}, nil
-	}, nil, nil)
+	}
 	handler.logger = slog.New(slog.NewJSONHandler(&logs, nil))
 
 	uploadBody, err := json.Marshal(uploadRequest{FileName: "request-name-secret.pdf", FileSizeBytes: 1})
@@ -40,14 +41,14 @@ func TestPipelineLogsExcludeSeededSensitiveValues(t *testing.T) {
 	uploadRequest.Header.Set(header.ContentType, mediatype.JSON)
 	uploadRecorder := httptest.NewRecorder()
 	bindings.Inject(bindings.Bindings{Storage: objectStorage})(http.HandlerFunc(handler.Upload)).ServeHTTP(uploadRecorder, uploadRequest)
-	dryRunBody, err := json.Marshal(dryRunRequest{StorageKey: formatStorageKey(fileIDOne)})
+	dryRunBody, err := json.Marshal(dryRunRequest{StorageKey: storageKeyPrefix + fileIDOne})
 	require.NoError(t, err)
 	dryRunHTTPRequest := httptest.NewRequest(http.MethodPost, "/api/files/dry-run", bytes.NewReader(dryRunBody))
 	dryRunHTTPRequest.Header.Set(header.ContentType, mediatype.JSON)
 	dryRunRecorder := httptest.NewRecorder()
 	bindings.Inject(bindings.Bindings{Storage: objectStorage})(http.HandlerFunc(handler.DryRun)).ServeHTTP(dryRunRecorder, dryRunHTTPRequest)
 	fake.SetFailure(storage.FakeDownloadSource, errors.New("dependency-error-sensitive-marker"))
-	dependencyFailureBody, err := json.Marshal(dryRunRequest{StorageKey: formatStorageKey(fileIDTwo)})
+	dependencyFailureBody, err := json.Marshal(dryRunRequest{StorageKey: storageKeyPrefix + fileIDTwo})
 	require.NoError(t, err)
 	dependencyFailureRequest := httptest.NewRequest(http.MethodPost, "/api/files/dry-run", bytes.NewReader(dependencyFailureBody))
 	dependencyFailureRequest.Header.Set(header.ContentType, mediatype.JSON)
@@ -55,14 +56,16 @@ func TestPipelineLogsExcludeSeededSensitiveValues(t *testing.T) {
 	bindings.Inject(bindings.Bindings{Storage: objectStorage})(http.HandlerFunc(handler.DryRun)).ServeHTTP(dependencyFailureRecorder, dependencyFailureRequest)
 
 	require.Equal(t, http.StatusOK, uploadRecorder.Code, uploadRecorder.Body.String())
+	var grantedUpload uploadResponse
+	require.NoError(t, json.Unmarshal(uploadRecorder.Body.Bytes(), &grantedUpload))
 	require.Equal(t, http.StatusOK, dryRunRecorder.Code, dryRunRecorder.Body.String())
 	require.Equal(t, http.StatusInternalServerError, dependencyFailureRecorder.Code, dependencyFailureRecorder.Body.String())
 	rawLogs := logs.String()
 	require.Contains(t, rawLogs, `"storage_key_digest":"`+storageKeyDigestOne+`"`)
 	for _, secret := range []string{
-		formatStorageKey(generatedFileID),
-		formatStorageKey(fileIDOne),
-		formatStorageKey(fileIDTwo),
+		grantedUpload.StorageKey,
+		storageKeyPrefix + fileIDOne,
+		storageKeyPrefix + fileIDTwo,
 		"source-bytes-secret",
 		"private-object-marker",
 		"private-metadata-marker",

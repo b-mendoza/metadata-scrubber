@@ -22,8 +22,8 @@ func TestConfirmedDeleteCallsOneFlowOperationAndReturnsFixedSuccess(t *testing.T
 	require.NoError(t, fake.SetSource(fileIDOne, storage.SourceObject{PDFBytes: []byte("%PDF-one"), ETag: canonicalETagOne}))
 	require.NoError(t, fake.SetSanitized(fileIDOne, canonicalETagOne, []byte("clean-one")))
 	require.NoError(t, fake.SetSanitized(fileIDOne, canonicalETagTwo, []byte("clean-two")))
-	handler := newTestHandler(t, nil, nil, nil)
-	body, err := json.Marshal(deleteRequest{StorageKey: formatStorageKey(fileIDOne)})
+	handler := newTestHandler(t)
+	body, err := json.Marshal(deleteRequest{StorageKey: storageKeyPrefix + fileIDOne})
 	require.NoError(t, err)
 
 	request := httptest.NewRequest(http.MethodPost, "/api/files/delete", bytes.NewReader(body))
@@ -46,8 +46,8 @@ func TestConfirmedDeleteCallsOneFlowOperationAndReturnsFixedSuccess(t *testing.T
 
 func TestConfirmedDeleteTreatsAlreadyEmptyFlowAsSuccess(t *testing.T) {
 	fake := storage.NewFake()
-	handler := newTestHandler(t, nil, nil, nil)
-	body, err := json.Marshal(deleteRequest{StorageKey: formatStorageKey(fileIDOne)})
+	handler := newTestHandler(t)
+	body, err := json.Marshal(deleteRequest{StorageKey: storageKeyPrefix + fileIDOne})
 	require.NoError(t, err)
 
 	request := httptest.NewRequest(http.MethodPost, "/api/files/delete", bytes.NewReader(body))
@@ -87,8 +87,8 @@ func TestConfirmedDeleteMapsRemainingAndDependencyFailuresSafely(t *testing.T) {
 		t.Run(testCase.name, func(t *testing.T) {
 			fake := storage.NewFake()
 			fake.SetFailure(storage.FakeDeleteFlow, testCase.storageErr)
-			handler := newTestHandler(t, nil, nil, nil)
-			body, err := json.Marshal(deleteRequest{StorageKey: formatStorageKey(fileIDOne)})
+			handler := newTestHandler(t)
+			body, err := json.Marshal(deleteRequest{StorageKey: storageKeyPrefix + fileIDOne})
 			require.NoError(t, err)
 
 			request := httptest.NewRequest(http.MethodPost, "/api/files/delete", bytes.NewReader(body))
@@ -106,8 +106,8 @@ func TestConfirmedDeleteMapsRemainingAndDependencyFailuresSafely(t *testing.T) {
 
 func TestConfirmedDeleteMapsCancellationWithoutRetrySignal(t *testing.T) {
 	fake := storage.NewFake()
-	handler := newTestHandler(t, nil, nil, nil)
-	body, err := json.Marshal(deleteRequest{StorageKey: formatStorageKey(fileIDOne)})
+	handler := newTestHandler(t)
+	body, err := json.Marshal(deleteRequest{StorageKey: storageKeyPrefix + fileIDOne})
 	require.NoError(t, err)
 	ctx, cancel := context.WithCancel(context.Background())
 	cancel()

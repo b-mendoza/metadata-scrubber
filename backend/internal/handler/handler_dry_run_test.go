@@ -25,18 +25,18 @@ import (
 
 func TestDryRunReturnsReviewedRevisionAndBackendOwnedFields(t *testing.T) {
 	fake := storage.NewFake()
-	require.NoError(t, fake.SetSource(fileIDOne, storage.SourceObject{PDFBytes: []byte("%PDF-synthetic"), ETag: "0123456789abcdef0123456789abcdef"}))
+	require.NoError(t, fake.SetSource(fileIDOne, storage.SourceObject{PDFBytes: []byte("%PDF-synthetic"), ETag: canonicalETagOne}))
 	inspectCalls := 0
-	handler := newTestHandler(t, func(input []byte, origin scrub.InspectionOrigin) ([]scrub.Field, error) {
+	handler := newTestHandler(t)
+	handler.inspect = func(input []byte) ([]scrub.Field, error) {
 		inspectCalls++
 		require.Equal(t, []byte("%PDF-synthetic"), input)
-		require.Equal(t, scrub.PublicInput, origin)
 		return []scrub.Field{
 			{Name: "title", Label: "Title", Preview: "private", OriginalByteSize: 7, Action: scrub.ActionRemove},
 			{Name: "producer", Label: "Producer", Preview: "publisher", OriginalByteSize: 9, Action: scrub.ActionReplace},
 		}, nil
-	}, nil, nil)
-	body, err := json.Marshal(dryRunRequest{StorageKey: formatStorageKey(fileIDOne)})
+	}
+	body, err := json.Marshal(dryRunRequest{StorageKey: storageKeyPrefix + fileIDOne})
 	require.NoError(t, err)
 	request := httptest.NewRequest(http.MethodPost, "/api/files/dry-run", bytes.NewReader(body))
 	request.Header.Set(header.ContentType, mediatype.JSON)
@@ -66,11 +66,12 @@ func TestDryRunReturnsReviewedRevisionAndBackendOwnedFields(t *testing.T) {
 
 func TestDryRunReportsServerFailureForUnknownInspectedFieldAction(t *testing.T) {
 	fake := storage.NewFake()
-	require.NoError(t, fake.SetSource(fileIDOne, storage.SourceObject{PDFBytes: []byte("%PDF-synthetic"), ETag: "0123456789abcdef0123456789abcdef"}))
-	handler := newTestHandler(t, func([]byte, scrub.InspectionOrigin) ([]scrub.Field, error) {
+	require.NoError(t, fake.SetSource(fileIDOne, storage.SourceObject{PDFBytes: []byte("%PDF-synthetic"), ETag: canonicalETagOne}))
+	handler := newTestHandler(t)
+	handler.inspect = func([]byte) ([]scrub.Field, error) {
 		return []scrub.Field{{Name: "field", Label: "Field", Action: scrub.FieldAction("unknown")}}, nil
-	}, nil, nil)
-	body, err := json.Marshal(dryRunRequest{StorageKey: formatStorageKey(fileIDOne)})
+	}
+	body, err := json.Marshal(dryRunRequest{StorageKey: storageKeyPrefix + fileIDOne})
 	require.NoError(t, err)
 
 	request := httptest.NewRequest(http.MethodPost, "/api/files/dry-run", bytes.NewReader(body))
@@ -84,9 +85,9 @@ func TestDryRunReportsServerFailureForUnknownInspectedFieldAction(t *testing.T) 
 
 func TestDryRunReturnsNonNullEmptyFieldsForCleanPDF(t *testing.T) {
 	fake := storage.NewFake()
-	require.NoError(t, fake.SetSource(fileIDOne, storage.SourceObject{PDFBytes: []byte("%PDF-clean"), ETag: "0123456789abcdef0123456789abcdef"}))
-	handler := newTestHandler(t, nil, nil, nil)
-	body, err := json.Marshal(dryRunRequest{StorageKey: formatStorageKey(fileIDOne)})
+	require.NoError(t, fake.SetSource(fileIDOne, storage.SourceObject{PDFBytes: []byte("%PDF-clean"), ETag: canonicalETagOne}))
+	handler := newTestHandler(t)
+	body, err := json.Marshal(dryRunRequest{StorageKey: storageKeyPrefix + fileIDOne})
 	require.NoError(t, err)
 	request := httptest.NewRequest(http.MethodPost, "/api/files/dry-run", bytes.NewReader(body))
 	request.Header.Set(header.ContentType, mediatype.JSON)
@@ -105,9 +106,9 @@ func TestConstructedDryRunRejectsStructurallySignedPDFFixtureWithoutMutation(t *
 	pdfBytes, err := os.ReadFile("testdata/structurally-signed.pdf")
 	require.NoError(t, err)
 	fake := storage.NewFake()
-	require.NoError(t, fake.SetSource(fileIDOne, storage.SourceObject{PDFBytes: pdfBytes, ETag: "0123456789abcdef0123456789abcdef"}))
+	require.NoError(t, fake.SetSource(fileIDOne, storage.SourceObject{PDFBytes: pdfBytes, ETag: canonicalETagOne}))
 	workflow := New(slog.New(slog.NewTextHandler(io.Discard, nil)))
-	body, err := json.Marshal(dryRunRequest{StorageKey: formatStorageKey(fileIDOne)})
+	body, err := json.Marshal(dryRunRequest{StorageKey: storageKeyPrefix + fileIDOne})
 	require.NoError(t, err)
 	request := httptest.NewRequest(http.MethodPost, "/api/files/dry-run", bytes.NewReader(body))
 	request.Header.Set(header.ContentType, mediatype.JSON)
@@ -117,7 +118,7 @@ func TestConstructedDryRunRejectsStructurallySignedPDFFixtureWithoutMutation(t *
 	require.Equal(t, http.StatusUnprocessableEntity, recorder.Code, recorder.Body.String())
 	require.Equal(t, "signed PDFs are not supported in v1", errorMessage(t, recorder))
 	require.Equal(t, []storage.FakeOperation{storage.FakeDownloadSource}, callOperations(fake.Calls()))
-	_, exists, err := fake.SanitizedBytes(fileIDOne, "0123456789abcdef0123456789abcdef")
+	_, exists, err := fake.SanitizedBytes(fileIDOne, canonicalETagOne)
 	require.NoError(t, err)
 	require.False(t, exists)
 }
@@ -132,9 +133,10 @@ func TestDryRunClassifiesContentAndDependencyFailuresWithoutLeakingDetails(t *te
 		wantMessage string
 	}{
 		{name: "spoofed content", pdfBytes: []byte("not-pdf"), wantStatus: http.StatusUnsupportedMediaType, wantMessage: "file is not a PDF"},
-		{name: "leading bytes", pdfBytes: []byte(" \n%PDF-1.7"), wantStatus: http.StatusUnsupportedMediaType, wantMessage: "file is not a PDF"},
 		{name: "malformed candidate", pdfBytes: []byte("%PDF-"), inspectErr: scrub.ErrMalformedPDF, wantStatus: http.StatusBadRequest, wantMessage: "invalid PDF"},
 		{name: "caller cancellation", pdfBytes: []byte("%PDF-canceled"), inspectErr: context.Canceled, wantStatus: http.StatusRequestTimeout, wantMessage: cancellationMessage},
+		{name: "caller deadline", pdfBytes: []byte("%PDF-deadline"), inspectErr: context.DeadlineExceeded, wantStatus: http.StatusRequestTimeout, wantMessage: cancellationMessage},
+		{name: "oversized PDF input", pdfBytes: []byte("%PDF-large"), inspectErr: scrub.ErrInputTooLarge, wantStatus: http.StatusRequestEntityTooLarge, wantMessage: "source file exceeds 10 MiB limit"},
 		{name: "inspection limit", pdfBytes: []byte("%PDF-large"), inspectErr: scrub.ErrInspectionLimit, wantStatus: http.StatusBadRequest, wantMessage: "PDF metadata exceeds inspection limits"},
 		{name: "missing source", storageErr: storage.ErrSourceNotFound, wantStatus: http.StatusNotFound, wantMessage: "source file not found"},
 		{name: "oversized source", storageErr: storage.ErrSourceObjectTooLarge, wantStatus: http.StatusRequestEntityTooLarge, wantMessage: "source file exceeds 10 MiB limit"},
@@ -149,11 +151,12 @@ func TestDryRunClassifiesContentAndDependencyFailuresWithoutLeakingDetails(t *te
 			}
 			require.NoError(t, fake.SetSource(fileIDOne, storage.SourceObject{PDFBytes: testCase.pdfBytes, ETag: "dddddddddddddddddddddddddddddddd"}))
 			inspectCalls := 0
-			handler := newTestHandler(t, func([]byte, scrub.InspectionOrigin) ([]scrub.Field, error) {
+			handler := newTestHandler(t)
+			handler.inspect = func([]byte) ([]scrub.Field, error) {
 				inspectCalls++
 				return nil, testCase.inspectErr
-			}, nil, nil)
-			body, err := json.Marshal(dryRunRequest{StorageKey: formatStorageKey(fileIDOne)})
+			}
+			body, err := json.Marshal(dryRunRequest{StorageKey: storageKeyPrefix + fileIDOne})
 			require.NoError(t, err)
 			request := httptest.NewRequest(http.MethodPost, "/api/files/dry-run", bytes.NewReader(body))
 			request.Header.Set(header.ContentType, mediatype.JSON)

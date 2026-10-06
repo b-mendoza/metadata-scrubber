@@ -108,99 +108,71 @@ func preflightMetadataEntry(
 	remainingDecodeBytes int64,
 	decodedIndirectObjects map[types.IndirectRef]struct{},
 ) (int64, error) {
-	indirectReference, indirect := snapshot.value.(types.IndirectRef)
-	if indirect {
-		if _, decoded := decodedIndirectObjects[indirectReference]; decoded {
-			return 0, nil
+	switch stream := snapshot.value.(type) {
+	case types.IndirectRef:
+		return preflightIndirectMetadataStream(context, stream, remainingDecodeBytes, decodedIndirectObjects)
+	case types.StreamDict:
+		content, err := decodeMetadataStreamWithinBudget(&stream, remainingDecodeBytes, "preflight PDF metadata stream")
+		if err != nil {
+			return 0, err
 		}
-	}
-
-	streamDictionary := metadataStreamForPreflight(context, snapshot.value)
-	if streamDictionary == nil {
+		if int64(len(content)) > remainingDecodeBytes {
+			return 0, ErrInspectionLimit
+		}
+		stream.Content = content
+		snapshot.dictionary[snapshot.key] = stream
+		return int64(len(content)), nil
+	default:
 		return 0, nil
 	}
-	content, err := decodeMetadataStreamForPreflight(streamDictionary, remainingDecodeBytes)
+}
+
+func preflightIndirectMetadataStream(
+	context *model.Context,
+	reference types.IndirectRef,
+	remainingDecodeBytes int64,
+	decodedIndirectObjects map[types.IndirectRef]struct{},
+) (int64, error) {
+	if _, decoded := decodedIndirectObjects[reference]; decoded {
+		return 0, nil
+	}
+	entry, found := context.FindTableEntry(reference.ObjectNumber.Value(), reference.GenerationNumber.Value())
+	if !found || entry.Free || entry.Object == nil {
+		return 0, nil
+	}
+	stream, ok := entry.Object.(types.StreamDict)
+	if !ok {
+		return 0, nil
+	}
+	content, err := decodeMetadataStreamWithinBudget(&stream, remainingDecodeBytes, "preflight PDF metadata stream")
 	if err != nil {
 		return 0, err
 	}
-	if err := storeMetadataStreamContent(context, snapshot, content); err != nil {
-		return 0, err
+	if int64(len(content)) > remainingDecodeBytes {
+		return 0, ErrInspectionLimit
 	}
-	if indirect {
-		decodedIndirectObjects[indirectReference] = struct{}{}
-	}
+	stream.Content = content
+	entry.Object = stream
+	decodedIndirectObjects[reference] = struct{}{}
 	return int64(len(content)), nil
 }
 
-// metadataStreamForPreflight returns a pointer to a copy of the value held by
-// the xref-table entry or the parent dictionary, so a write through it never
-// reaches that owner. storeMetadataStreamContent must re-resolve the entry to
-// cache decoded content.
-func metadataStreamForPreflight(context *model.Context, object types.Object) *types.StreamDict {
-	if indirectReference, indirect := object.(types.IndirectRef); indirect {
-		entry, streamDictionary, found := resolveIndirectMetadataStream(context, indirectReference)
-		if !found || entry.Free {
-			return nil
-		}
-		return &streamDictionary
-	}
-
-	streamDictionary, stream := object.(types.StreamDict)
-	if !stream {
-		return nil
-	}
-	return &streamDictionary
-}
-
-func decodeMetadataStreamForPreflight(streamDictionary *types.StreamDict, remainingDecodeBytes int64) ([]byte, error) {
-	if remainingDecodeBytes <= 0 {
-		return nil, ErrInspectionLimit
-	}
-
-	content := streamDictionary.Content
-	if content == nil {
-		var err error
-		content, err = decodeMetadataStreamWithinBudget(streamDictionary, remainingDecodeBytes, "preflight PDF metadata stream")
-		if err != nil {
-			return nil, err
-		}
-	}
-	if int64(len(content)) > remainingDecodeBytes {
-		return nil, ErrInspectionLimit
-	}
-	return content, nil
-}
-
-func resolveIndirectMetadataStream(
-	context *model.Context,
-	indirectReference types.IndirectRef,
-) (*model.XRefTableEntry, types.StreamDict, bool) {
-	entry, found := context.FindTableEntry(
-		indirectReference.ObjectNumber.Value(),
-		indirectReference.GenerationNumber.Value(),
-	)
-	if !found || entry.Object == nil {
-		return nil, types.StreamDict{}, false
-	}
-	streamDictionary, stream := entry.Object.(types.StreamDict)
-	if !stream {
-		return nil, types.StreamDict{}, false
-	}
-	return entry, streamDictionary, true
-}
-
-func storeMetadataStreamContent(context *model.Context, snapshot metadataEntrySnapshot, content []byte) error {
+func releaseMetadataStreamCache(context *model.Context, snapshot metadataEntrySnapshot) error {
 	switch stream := snapshot.value.(type) {
 	case types.IndirectRef:
-		entry, storedStream, found := resolveIndirectMetadataStream(context, stream)
-		if !found {
+		entry, found := context.FindTableEntry(stream.ObjectNumber.Value(), stream.GenerationNumber.Value())
+		if !found || entry.Object == nil {
 			return nil
 		}
-		storedStream.Content = content
+		storedStream, ok := entry.Object.(types.StreamDict)
+		if !ok {
+			return nil
+		}
+		storedStream.Content = nil
 		entry.Object = storedStream
 		return nil
 	case types.StreamDict:
-		stream.Content = content
+		stream.Content = nil
 		snapshot.dictionary[snapshot.key] = stream
 		return nil
 	default:

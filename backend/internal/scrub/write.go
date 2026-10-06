@@ -8,19 +8,19 @@ import (
 )
 
 func verifyScrubbedPDF(outputBytes []byte) error {
-	fields, err := InspectPDF(outputBytes, PostWriteVerification)
+	context, analysis, err := readAndAnalyzePDF(outputBytes)
 	if err != nil {
 		return err
 	}
-	if len(fields) != 0 {
+	if len(analysis.fields) != 0 && !hasNeutralPDFCPUTrio(context, analysis) {
 		return errors.New("PDF metadata remained after scrub")
 	}
 	return nil
 }
 
 func removeAnalyzedMetadata(context *model.Context, analysis *pdfAnalysis) {
-	for _, target := range analysis.infoTargets {
-		delete(target.dictionary, target.key)
+	for key := range analysis.infoDictionary {
+		delete(analysis.infoDictionary, key)
 	}
 	for _, target := range analysis.metadataTargets {
 		delete(target.dictionary, target.key)
@@ -46,15 +46,11 @@ type neutralPDFCPUInfo struct {
 }
 
 func hasNeutralPDFCPUTrio(context *model.Context, analysis *pdfAnalysis) bool {
-	if len(analysis.metadataTargets) != 0 || len(analysis.infoTargets) != 3 {
-		return false
-	}
-	infoDictionary, err := dereferenceInfoDictionary(context)
-	if err != nil || len(infoDictionary) != 3 {
+	if len(analysis.metadataTargets) != 0 || len(analysis.infoDictionary) != 3 {
 		return false
 	}
 
-	trio, ok := readNeutralPDFCPUInfo(context, infoDictionary)
+	trio, ok := readNeutralPDFCPUInfo(context, analysis.infoDictionary)
 	if !ok || trio.producer != "pdfcpu "+model.VersionStr || trio.creationDate != trio.modDate {
 		return false
 	}
