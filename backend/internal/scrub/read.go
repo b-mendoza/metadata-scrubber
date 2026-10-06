@@ -123,9 +123,7 @@ func preflightMetadataEntry(
 	if err != nil {
 		return 0, err
 	}
-	if err := storeMetadataStreamContent(context, metadataStreamContent{
-		dictionary: snapshot.dictionary, key: snapshot.key, streamObject: snapshot.value, content: content,
-	}); err != nil {
+	if err := storeMetadataStreamContent(context, snapshot, content); err != nil {
 		return 0, err
 	}
 	if indirect {
@@ -191,29 +189,22 @@ func resolveIndirectMetadataStream(
 	return entry, streamDictionary, true
 }
 
-type metadataStreamContent struct {
-	dictionary   types.Dict
-	key          string
-	streamObject types.Object
-	content      []byte
-}
-
-func storeMetadataStreamContent(context *model.Context, streamContent metadataStreamContent) error {
-	switch stream := streamContent.streamObject.(type) {
+func storeMetadataStreamContent(context *model.Context, snapshot metadataEntrySnapshot, content []byte) error {
+	switch stream := snapshot.value.(type) {
 	case types.IndirectRef:
 		entry, storedStream, found := resolveIndirectMetadataStream(context, stream)
 		if !found {
 			return nil
 		}
-		storedStream.Content = streamContent.content
+		storedStream.Content = content
 		entry.Object = storedStream
 		return nil
 	case types.StreamDict:
-		stream.Content = streamContent.content
-		streamContent.dictionary[streamContent.key] = stream
+		stream.Content = content
+		snapshot.dictionary[snapshot.key] = stream
 		return nil
 	default:
-		return fmt.Errorf("unsupported metadata stream type %T", streamContent.streamObject)
+		return fmt.Errorf("unsupported metadata stream type %T", snapshot.value)
 	}
 }
 
