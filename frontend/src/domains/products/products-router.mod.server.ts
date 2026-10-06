@@ -12,7 +12,7 @@ import {
 import { getAppBindings } from "#/shared/middlewares/app-bindings/app-bindings.mod";
 
 const PRODUCTS_RESPONSE_DELAY_MS = 5000;
-export const PRODUCTS_LOAD_FAILURE_MESSAGE = "Could not load the products.";
+const PRODUCTS_LOAD_FAILURE_MESSAGE = "Could not load the products.";
 const SEED_PRODUCT_NAMES = ["Metadata Scrubber", "Privacy Audit Tool"];
 
 export const BACKEND_HEALTH_CHECK_FAILURE_MESSAGE =
