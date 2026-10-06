@@ -105,7 +105,7 @@ This query rule leaves mutation pending state in the component because mutations
 
 - Name a test for server code `*.server.test.ts` so that it runs in Node. `vitest.config.ts` runs `./src/**/*.server.test.ts` and `./scripts/**/*.test.ts` in the `server` project with the `node` environment and no setup file. It runs other `./src/**/*.test.{ts,tsx}` files in the `client` project with `happy-dom` and `src/tests/setup-test-environment.ts`.
 - Read or clone a request inside the fetch mock. Ky consumes the request body. A later read fails in Node. See the procedure tests in `src/domains/wizard/wizard-router.mod.server.test.ts`.
-- Build request payloads from production input types and response payloads from production output types. Export a schema-derived type next to its schema when a test needs it. `src/domains/wizard/wizard-router-outcomes.mod.server.test.ts` builds its error fixtures from `BackendErrorResponse`.
+- Build request payloads from production input types and response payloads from production output types. Export a schema-derived type next to its schema when a test needs it. `src/domains/wizard/wizard-router-response-validation.mod.server.test.ts` builds its error fixtures from `BackendErrorResponse`.
 - Test a tRPC procedure through `createCallerFactory` with the real router type, as `src/domains/wizard/wizard-router.mod.server.test.ts` does. Do not rebuild the caller through reflection.
 - Capture an error rejection. Narrow it once with `expect.assert`. Then run each assertion unconditionally. Do not assert inside a `catch` or `instanceof` branch, even in a helper. `vitest/no-conditional-expect` does not check a helper outside a test callback. See `src/domains/products/products-router.mod.server.test.ts`.
 
