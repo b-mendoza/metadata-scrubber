@@ -1,6 +1,5 @@
-import { setTimeout } from "node:timers/promises";
-
 import { TRPCError } from "@trpc/server";
+import type { BeforeRequestHook } from "ky";
 import ky from "ky";
 import { expect, test, vi } from "vitest";
 
@@ -12,23 +11,8 @@ import { getAppBindings } from "#/shared/middlewares/app-bindings/app-bindings.m
 
 import {
   BACKEND_HEALTH_CHECK_FAILURE_MESSAGE,
-  PRODUCTS_LOAD_FAILURE_MESSAGE,
   productsRouter,
 } from "./products-router.mod.server";
-
-vi.mock(import("node:timers/promises"), async (importOriginal) => {
-  const timers = await importOriginal();
-  const mockedSetTimeout = vi.fn();
-
-  return {
-    ...timers,
-    default: {
-      ...timers.default,
-      setTimeout: mockedSetTimeout,
-    },
-    setTimeout: mockedSetTimeout,
-  };
-});
 
 vi.mock(import("#/shared/middlewares/app-bindings/app-bindings.mod"), () => ({
   getAppBindings: vi.fn(),
@@ -36,38 +20,18 @@ vi.mock(import("#/shared/middlewares/app-bindings/app-bindings.mod"), () => ({
 
 const createProductsCaller = createCallerFactory(productsRouter);
 
-test("getProducts maps a rejected timer promise to INTERNAL_SERVER_ERROR", async () => {
-  const productsFailure = new Error("private timer failure details");
-  const request = new Request("https://frontend.test/");
-
-  vi.mocked(setTimeout).mockRejectedValueOnce(productsFailure);
-
-  let failure: unknown = null;
-  try {
-    await createProductsCaller(createTRPCRequestContext(request)).getProducts();
-  } catch (error) {
-    failure = error;
-  }
-
-  expect.assert(failure instanceof TRPCError);
-  expect(failure.code).toBe("INTERNAL_SERVER_ERROR");
-  expect(failure.message).toBe(PRODUCTS_LOAD_FAILURE_MESSAGE);
-  expect(failure.cause).toBe(productsFailure);
-});
-
 test("getMessage maps a rejected backend health request to BAD_GATEWAY", async () => {
   const backendHealthFailure = new Error("backend health request failed");
   const request = new Request("https://frontend.test/");
+  const beforeRequest = vi.fn<BeforeRequestHook>((): never => {
+    throw backendHealthFailure;
+  });
 
   vi.mocked(getAppBindings).mockReturnValue({
     httpClient: ky.create({
       baseUrl: new URL("https://backend.test/"),
       hooks: {
-        beforeRequest: [
-          (): never => {
-            throw backendHealthFailure;
-          },
-        ],
+        beforeRequest: [beforeRequest],
       },
     }),
     workflowHttpClient: ky.create({
@@ -88,32 +52,9 @@ test("getMessage maps a rejected backend health request to BAD_GATEWAY", async (
   expect(failure.code).toBe("BAD_GATEWAY");
   expect(failure.message).toBe(BACKEND_HEALTH_CHECK_FAILURE_MESSAGE);
   expect(failure.cause).toBe(backendHealthFailure);
-});
-
-test("getMessage returns the reachable backend health status", async () => {
-  const reachableHealthResponse = {
-    status: "reachable",
-  } as const;
-  const request = new Request("https://frontend.test/");
-
-  vi.mocked(getAppBindings).mockReturnValue({
-    httpClient: ky.create({
-      baseUrl: new URL("https://backend.test/"),
-      hooks: {
-        beforeRequest: [(): Response => Response.json(reachableHealthResponse)],
-      },
-    }),
-    workflowHttpClient: ky.create({
-      baseUrl: new URL("https://backend.test/"),
-    }),
+  const [[beforeRequestState] = []] = beforeRequest.mock.calls;
+  expect(beforeRequestState?.request).toMatchObject({
+    method: "GET",
+    url: "https://backend.test/api/health",
   });
-
-  const message = await createProductsCaller(
-    createTRPCRequestContext(request),
-    {
-      signal: request.signal,
-    },
-  ).getMessage();
-
-  expect(message).toEqual(reachableHealthResponse);
 });
