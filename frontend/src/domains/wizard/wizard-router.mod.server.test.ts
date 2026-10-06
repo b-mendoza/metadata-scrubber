@@ -38,32 +38,14 @@ const DOWNLOAD_URL = "https://downloads.test/sanitized.pdf";
 
 const createWizardCaller = createCallerFactory(wizardRouter);
 
-const setAppBindings = () => {
+const callerForRequest = (request: Request) => {
   vi.mocked(getAppBindings).mockReturnValue({
     httpClient: ky.create({ baseUrl: BACKEND_BASE_URL }),
     workflowHttpClient: createWorkflowHttpClient(BACKEND_BASE_URL),
   });
-};
-
-const callerForRequest = (request: Request) => {
-  setAppBindings();
   return createWizardCaller(createTRPCRequestContext(request), {
     signal: request.signal,
   });
-};
-
-const onlyFetchRequest = (
-  fetchMock: ReturnType<typeof vi.fn<typeof fetch>>,
-): Request => {
-  expect(fetchMock).toHaveBeenCalledOnce();
-  const [firstFetchCall] = fetchMock.mock.calls;
-  expect(firstFetchCall).toBeDefined();
-  const [request] = firstFetchCall ?? [];
-  expect(request).toBeInstanceOf(Request);
-  if (!(request instanceof Request)) {
-    expect.fail("Ky must call fetch with a Request");
-  }
-  return request;
 };
 
 afterEach(() => {
@@ -83,7 +65,9 @@ test("getWorkflowConfig returns the exact backend-owned byte limit", async () =>
   const result = await callerForRequest(request).getWorkflowConfig();
 
   expect(result).toEqual(response);
-  const backendRequest = onlyFetchRequest(fetchMock);
+  expect(fetchMock).toHaveBeenCalledOnce();
+  const [[backendRequest] = []] = fetchMock.mock.calls;
+  expect.assert(backendRequest instanceof Request);
   expect(backendRequest.method).toBe("GET");
   expect(backendRequest.url).toBe("https://backend.test/api/files/config");
 });
@@ -118,7 +102,6 @@ test("createUpload sends only its typed small-JSON contract", async () => {
   expect(backendRequest.method).toBe("POST");
   expect(backendRequest.url).toBe("https://backend.test/api/uploads");
   await expect(backendRequest.json()).resolves.toEqual(input);
-  expect(JSON.stringify(input)).not.toContain("fileBytes");
 });
 
 test("dryRun sends the storage key and returns a canonical reviewed revision", async () => {
@@ -156,7 +139,6 @@ test("dryRun sends the storage key and returns a canonical reviewed revision", a
   expect(backendRequest.method).toBe("POST");
   expect(backendRequest.url).toBe("https://backend.test/api/files/dry-run");
   await expect(backendRequest.json()).resolves.toEqual(input);
-  expect(JSON.stringify(input)).not.toContain("fileBytes");
 });
 
 test("scrubFile forwards the exact reviewed ETag without file bytes", async () => {
@@ -189,7 +171,6 @@ test("scrubFile forwards the exact reviewed ETag without file bytes", async () =
   expect(backendRequest.method).toBe("POST");
   expect(backendRequest.url).toBe("https://backend.test/api/files/scrub");
   await expect(backendRequest.json()).resolves.toEqual(input);
-  expect(JSON.stringify(input)).not.toContain("fileBytes");
 });
 
 test("refreshDownloadGrant targets one exact sanitized revision", async () => {
@@ -224,7 +205,6 @@ test("refreshDownloadGrant targets one exact sanitized revision", async () => {
     "https://backend.test/api/files/download-grant",
   );
   await expect(backendRequest.json()).resolves.toEqual(input);
-  expect(JSON.stringify(input)).not.toContain("fileBytes");
 });
 
 test("confirmDelete sends one typed request and returns confirmed deletion", async () => {
@@ -251,7 +231,6 @@ test("confirmDelete sends one typed request and returns confirmed deletion", asy
   expect(backendRequest.method).toBe("POST");
   expect(backendRequest.url).toBe("https://backend.test/api/files/delete");
   await expect(backendRequest.json()).resolves.toEqual(input);
-  expect(JSON.stringify(input)).not.toContain("fileBytes");
 });
 
 test("the root application router registers the wizard router", async () => {
@@ -262,7 +241,10 @@ test("the root application router registers the wizard router", async () => {
     .fn<typeof fetch>()
     .mockResolvedValue(Response.json(response));
   vi.stubGlobal("fetch", fetchMock);
-  setAppBindings();
+  vi.mocked(getAppBindings).mockReturnValue({
+    httpClient: ky.create({ baseUrl: BACKEND_BASE_URL }),
+    workflowHttpClient: createWorkflowHttpClient(BACKEND_BASE_URL),
+  });
   const request = new Request(FRONTEND_URL);
   const createAppCaller = createCallerFactory(appRouter);
 
