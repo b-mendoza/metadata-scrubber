@@ -12,10 +12,6 @@ import {
 } from "#/shared/libs/trpc/utils/initializer/initializer.mod.server";
 import { getAppBindings } from "#/shared/middlewares/app-bindings/app-bindings.mod";
 
-import type {
-  DryRunInput,
-  RefreshDownloadGrantInput,
-} from "./wizard-contracts.mod.server";
 import {
   CREATE_UPLOAD_FAILURE_MESSAGE,
   DRY_RUN_FAILURE_MESSAGE,
@@ -87,7 +83,7 @@ test("an unclassified transport failure maps to BAD_GATEWAY without public detai
 
 test("a workflow client timeout maps to TIMEOUT without a retry", async () => {
   vi.useFakeTimers();
-  const input: RefreshDownloadGrantInput = {
+  const input: RouterInputs["wizard"]["refreshDownloadGrant"] = {
     etag: CANONICAL_ETAG,
     storageKey: STORAGE_KEY,
   };
@@ -109,7 +105,7 @@ test("a workflow client timeout maps to TIMEOUT without a retry", async () => {
 });
 
 test("caller cancellation maps safely and starts no extra fetch", async () => {
-  const input: DryRunInput = { storageKey: STORAGE_KEY };
+  const input: RouterInputs["wizard"]["dryRun"] = { storageKey: STORAGE_KEY };
   const fetchMock = vi.fn<typeof fetch>(
     async (fetchInput): Promise<Response> => {
       const backendRequest =
