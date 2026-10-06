@@ -3,11 +3,9 @@ package handler
 import (
 	"bytes"
 	"encoding/json"
-	"io"
 	"log/slog"
 	"net/http/httptest"
 	"testing"
-	"time"
 
 	"github.com/stretchr/testify/require"
 
@@ -35,51 +33,25 @@ func newTestHandler(
 	entropy entropyOperation,
 ) *Handler {
 	t.Helper()
-	return newTestHandlerWithLogger(t, testHandlerOptions{
-		logger:  slog.New(slog.NewTextHandler(io.Discard, nil)),
-		inspect: inspect,
-		clean:   clean,
-		entropy: entropy,
-	})
-}
-
-type testHandlerOptions struct {
-	logger          *slog.Logger
-	inspect         inspectPDFOperation
-	clean           cleanPDFOperation
-	entropy         entropyOperation
-	admissionJitter admissionJitterOperation
-	now             clockOperation
-}
-
-func newTestHandlerWithLogger(t *testing.T, options testHandlerOptions) *Handler {
-	t.Helper()
-	if options.inspect == nil {
-		options.inspect = func([]byte, scrub.InspectionOrigin) ([]scrub.Field, error) { return nil, nil }
+	if inspect == nil {
+		inspect = func([]byte, scrub.InspectionOrigin) ([]scrub.Field, error) { return nil, nil }
 	}
-	if options.clean == nil {
-		options.clean = func(input []byte) ([]byte, error) { return bytes.Clone(input), nil }
+	if clean == nil {
+		clean = func(input []byte) ([]byte, error) { return bytes.Clone(input), nil }
 	}
-	if options.entropy == nil {
-		options.entropy = func(destination []byte) (int, error) {
+	if entropy == nil {
+		entropy = func(destination []byte) (int, error) {
 			for index := range destination {
 				destination[index] = byte(index)
 			}
 			return len(destination), nil
 		}
 	}
-	if options.admissionJitter == nil {
-		options.admissionJitter = func() (int, error) { return 0, nil }
-	}
-	if options.now == nil {
-		options.now = time.Now
-	}
-	handler := New(options.logger)
-	handler.inspect = options.inspect
-	handler.clean = options.clean
-	handler.entropy = options.entropy
-	handler.admissionJitter = options.admissionJitter
-	handler.now = options.now
+	handler := New(slog.New(slog.DiscardHandler))
+	handler.inspect = inspect
+	handler.clean = clean
+	handler.entropy = entropy
+	handler.admissionJitter = func() (int, error) { return 0, nil }
 	return handler
 }
 
@@ -108,10 +80,4 @@ func callOperationsFor(calls []storage.FakeCall, fileID string) []storage.FakeOp
 		}
 	}
 	return operations
-}
-
-var canonicalETagsByFileID = map[string]string{
-	fileIDOne:   canonicalETagOne,
-	fileIDTwo:   canonicalETagTwo,
-	fileIDThree: canonicalETagThree,
 }
