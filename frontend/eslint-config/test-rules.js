@@ -47,13 +47,6 @@ export const testRules = defineConfig(
       [`${PLUGIN_NAMES.Vitest}/require-to-throw-message`]:
         SEVERITY_LEVELS.Error,
 
-      // Additive on top of the `recommended` rules spread above. We omit any
-      // rule that `recommended` already sets to the same severity.
-      //
-      // We copied this list from `@epicweb-dev/config`, whose vitest block
-      // replaced `recommended` instead of extending it. That package dropped
-      // ESLint support, so the list is ours now.
-
       // Upstream turned this off because a testing-library query throws when
       // it matches nothing, so a test with no literal `expect` can still
       // assert something.
