@@ -8,11 +8,11 @@ Read the [root agent guide](../../AGENTS.md) for shared principles and [Code des
 
 - Return an error for an unknown value or state, not `false`, a zero value, or success. Agents turned an unknown action into a successful empty-string report and treated an undecodable signature name as `false`. See `internal/handler/workflow_support.go`, `convertPublicFieldAction`.
 - Keep storage failure causes distinct with `ErrSourceNotFound` for a missing source in `internal/storage/storage.go`. Read caller cancellation from the caller's context, not a provider timeout, as in `internal/storage/r2_source_download.go`, `classifySourceDownloadError`. Classify malformed PDF bytes as public input errors only for client-supplied bytes, not server-produced bytes.
-- Return the response-write error from the writer and log it in the handler; see `internal/handler/json.go`, `writeJSON`.
+- Return the response-write error from the writer. Log the error in the handler. See `internal/handler/json.go`, `writeJSON`.
 
 ## Private data in responses and logs
 
-- Return fixed public error text instead of parser or provider error text. Keep raw storage keys and panic values out of logs. Use `internal/handler/workflow_support.go`, `storageKeyDigest`, and test that raw keys stay out of logs with `internal/handler/handler_pipeline_log_security_test.go`, `TestPipelineLogsExcludeSeededSensitiveValues`.
+- Return fixed public error text instead of parser or provider error text. Keep raw storage keys and panic values out of logs. Use `internal/handler/workflow_support.go`, `storageKeyDigest`. Test that raw keys stay out of logs with `internal/handler/handler_pipeline_log_security_test.go`, `TestPipelineLogsExcludeSeededSensitiveValues`.
 
 ## Storage and resource limits
 
@@ -36,9 +36,9 @@ Read the [root agent guide](../../AGENTS.md) for shared principles and [Code des
 
 ## Tests
 
-- Build and serialize each endpoint's typed payload at the test call site. Keep each handler call explicit. For concurrent requests, use a separate named worker for each test use case. Share only endpoint-neutral synchronization. Do not select payload types or handlers through an enum or a boolean. See `internal/handler/handler_admission_capacity_test.go`, `TestMixedWorkflowsPeakAtTwo`.
+- Build and serialize each endpoint's typed payload at the test call site. Keep each handler call explicit. For concurrent requests, use one named worker for each endpoint. Share each worker across the tests. Each worker must call its endpoint explicitly. Do not select payload types or handlers through an enum or a boolean. See `internal/handler/handler_admission_capacity_test.go`, `TestMixedWorkflowsPeakAtTwo`.
 - Test endpoint responses through the real handler with a typed request. Agents called `writeAdmissionFailure` directly to claim endpoint coverage. See `internal/handler/handler_admission_test.go`, `TestSaturatedEndpointUsesFreshWholeSecondJitter`.
 - Inject a short timeout and coordinate goroutines with channels. Agents used a wall-clock upper bound such as three seconds to test completion. See `internal/handler/handler_admission_capacity_test.go`, `TestSaturatedAdmissionReturnsRetryable503WithoutDownloadingWaitingSource`.
 - Assert required log records and the absence of false success records without comparing the complete ordered log slice. See `internal/handler/handler_pipeline_log_test.go`, `require.Contains` and `require.NotContains`.
 - Test public behavior. Do not assert which of several invalid inputs the code rejects first. Do not use reflection to check the field count or field names of a struct.
-- Build PDF test fixtures from typed pdfcpu objects such as `types.Dict`, `types.StringLiteral`, and `types.StreamDict`, and check each error. Use raw PDF text only in dedicated PDF wire-contract tests. See `internal/scrub/scrub_test.go`, `TestInspectPDFPreservesSharedCompressedMetadataReferences`.
+- Build PDF test fixtures from typed pdfcpu objects such as `types.Dict`, `types.StringLiteral`, and `types.StreamDict`. Check each error. Use raw PDF text only in dedicated PDF wire-contract tests. See `internal/scrub/scrub_test.go`, `TestInspectPDFPreservesSharedCompressedMetadataReferences`.
