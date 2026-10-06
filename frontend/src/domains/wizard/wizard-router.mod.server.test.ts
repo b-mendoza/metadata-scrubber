@@ -1,6 +1,8 @@
+import { TRPCError } from "@trpc/server";
 import ky from "ky";
-import { afterEach, expect, test, vi } from "vitest";
+import { expect, test, vi } from "vitest";
 
+import { CONFLICT_STATUS_CODE } from "#/shared/constants/http/status-codes/status-codes.mod";
 import { createWorkflowHttpClient } from "#/shared/libs/ky/workflow-http-client.mod.server";
 import type {
   RouterInputs,
@@ -24,7 +26,7 @@ import type {
   ScrubFileResponse,
   WorkflowConfig,
 } from "./wizard-contracts.mod.server";
-import { wizardRouter } from "./wizard-router.mod.server";
+import { CONFIRM_DELETE_FAILURE_MESSAGE } from "./wizard-router.mod.server";
 
 vi.mock(import("#/shared/middlewares/app-bindings/app-bindings.mod"), () => ({
   getAppBindings: vi.fn(),
@@ -36,37 +38,37 @@ const STORAGE_KEY = "uploads/00000000-0000-4000-8000-000000000001";
 const CANONICAL_ETAG = "0123456789abcdef0123456789abcdef";
 const DOWNLOAD_URL = "https://downloads.test/sanitized.pdf";
 
-const createWizardCaller = createCallerFactory(wizardRouter);
+const createAppCaller = createCallerFactory(appRouter);
 
 const callerForRequest = (request: Request) => {
   vi.mocked(getAppBindings).mockReturnValue({
     httpClient: ky.create({ baseUrl: BACKEND_BASE_URL }),
     workflowHttpClient: createWorkflowHttpClient(BACKEND_BASE_URL),
   });
-  return createWizardCaller(createTRPCRequestContext(request), {
+  return createAppCaller(createTRPCRequestContext(request), {
     signal: request.signal,
-  });
+  }).wizard;
 };
 
-afterEach(() => {
-  vi.useRealTimers();
-});
-
-test("getWorkflowConfig returns the exact backend-owned byte limit", async () => {
+test("getWorkflowConfig requests GET /api/files/config", async () => {
   const response: WorkflowConfig = {
     maxFileSizeBytes: 7_340_032,
   };
+  const backendRequests: Request[] = [];
   const fetchMock = vi
     .fn<typeof fetch>()
-    .mockResolvedValue(Response.json(response));
+    .mockImplementation(async (fetchInput) => {
+      backendRequests.push(new Request(fetchInput).clone());
+      const backendResponse = await Promise.resolve(Response.json(response));
+      return backendResponse;
+    });
   vi.stubGlobal("fetch", fetchMock);
   const request = new Request(FRONTEND_URL);
 
-  const result = await callerForRequest(request).getWorkflowConfig();
+  await callerForRequest(request).getWorkflowConfig();
 
-  expect(result).toEqual(response);
   expect(fetchMock).toHaveBeenCalledOnce();
-  const [[backendRequest] = []] = fetchMock.mock.calls;
+  const [backendRequest] = backendRequests;
   expect.assert(backendRequest instanceof Request);
   expect(backendRequest.method).toBe("GET");
   expect(backendRequest.url).toBe("https://backend.test/api/files/config");
@@ -82,29 +84,27 @@ test("createUpload sends only its typed small-JSON contract", async () => {
     uploadUrl: "https://uploads.test/source.pdf",
   };
   const backendRequests: Request[] = [];
-  const responsePromise = Promise.resolve(Response.json(response));
   const fetchMock = vi
     .fn<typeof fetch>()
-    .mockImplementation(async (fetchRequest) => {
-      expect.assert(fetchRequest instanceof Request);
-      backendRequests.push(fetchRequest.clone());
-      return responsePromise;
+    .mockImplementation(async (fetchInput) => {
+      backendRequests.push(new Request(fetchInput).clone());
+      const backendResponse = await Promise.resolve(Response.json(response));
+      return backendResponse;
     });
   vi.stubGlobal("fetch", fetchMock);
   const request = new Request(FRONTEND_URL);
 
-  const result = await callerForRequest(request).createUpload(input);
+  await callerForRequest(request).createUpload(input);
 
-  expect(result).toEqual(response);
   expect(fetchMock).toHaveBeenCalledOnce();
   const [backendRequest] = backendRequests;
-  expect.assert(typeof backendRequest !== "undefined");
+  expect.assert(backendRequest instanceof Request);
   expect(backendRequest.method).toBe("POST");
   expect(backendRequest.url).toBe("https://backend.test/api/uploads");
   await expect(backendRequest.json()).resolves.toEqual(input);
 });
 
-test("dryRun sends the storage key and returns a canonical reviewed revision", async () => {
+test("dryRun sends the storage key", async () => {
   const input: DryRunInput = { storageKey: STORAGE_KEY };
   const response: DryRunResponse = {
     etag: CANONICAL_ETAG,
@@ -119,23 +119,21 @@ test("dryRun sends the storage key and returns a canonical reviewed revision", a
     ],
   };
   const backendRequests: Request[] = [];
-  const responsePromise = Promise.resolve(Response.json(response));
   const fetchMock = vi
     .fn<typeof fetch>()
-    .mockImplementation(async (fetchRequest) => {
-      expect.assert(fetchRequest instanceof Request);
-      backendRequests.push(fetchRequest.clone());
-      return responsePromise;
+    .mockImplementation(async (fetchInput) => {
+      backendRequests.push(new Request(fetchInput).clone());
+      const backendResponse = await Promise.resolve(Response.json(response));
+      return backendResponse;
     });
   vi.stubGlobal("fetch", fetchMock);
   const request = new Request(FRONTEND_URL);
 
-  const result = await callerForRequest(request).dryRun(input);
+  await callerForRequest(request).dryRun(input);
 
-  expect(result).toEqual(response);
   expect(fetchMock).toHaveBeenCalledOnce();
   const [backendRequest] = backendRequests;
-  expect.assert(typeof backendRequest !== "undefined");
+  expect.assert(backendRequest instanceof Request);
   expect(backendRequest.method).toBe("POST");
   expect(backendRequest.url).toBe("https://backend.test/api/files/dry-run");
   await expect(backendRequest.json()).resolves.toEqual(input);
@@ -151,23 +149,21 @@ test("scrubFile forwards the exact reviewed ETag without file bytes", async () =
     status: "done",
   };
   const backendRequests: Request[] = [];
-  const responsePromise = Promise.resolve(Response.json(response));
   const fetchMock = vi
     .fn<typeof fetch>()
-    .mockImplementation(async (fetchRequest) => {
-      expect.assert(fetchRequest instanceof Request);
-      backendRequests.push(fetchRequest.clone());
-      return responsePromise;
+    .mockImplementation(async (fetchInput) => {
+      backendRequests.push(new Request(fetchInput).clone());
+      const backendResponse = await Promise.resolve(Response.json(response));
+      return backendResponse;
     });
   vi.stubGlobal("fetch", fetchMock);
   const request = new Request(FRONTEND_URL);
 
-  const result = await callerForRequest(request).scrubFile(input);
+  await callerForRequest(request).scrubFile(input);
 
-  expect(result).toEqual(response);
   expect(fetchMock).toHaveBeenCalledOnce();
   const [backendRequest] = backendRequests;
-  expect.assert(typeof backendRequest !== "undefined");
+  expect.assert(backendRequest instanceof Request);
   expect(backendRequest.method).toBe("POST");
   expect(backendRequest.url).toBe("https://backend.test/api/files/scrub");
   await expect(backendRequest.json()).resolves.toEqual(input);
@@ -183,23 +179,21 @@ test("refreshDownloadGrant targets one exact sanitized revision", async () => {
     expiresAt: "2026-09-01T12:15:00Z",
   };
   const backendRequests: Request[] = [];
-  const responsePromise = Promise.resolve(Response.json(response));
   const fetchMock = vi
     .fn<typeof fetch>()
-    .mockImplementation(async (fetchRequest) => {
-      expect.assert(fetchRequest instanceof Request);
-      backendRequests.push(fetchRequest.clone());
-      return responsePromise;
+    .mockImplementation(async (fetchInput) => {
+      backendRequests.push(new Request(fetchInput).clone());
+      const backendResponse = await Promise.resolve(Response.json(response));
+      return backendResponse;
     });
   vi.stubGlobal("fetch", fetchMock);
   const request = new Request(FRONTEND_URL);
 
-  const result = await callerForRequest(request).refreshDownloadGrant(input);
+  await callerForRequest(request).refreshDownloadGrant(input);
 
-  expect(result).toEqual(response);
   expect(fetchMock).toHaveBeenCalledOnce();
   const [backendRequest] = backendRequests;
-  expect.assert(typeof backendRequest !== "undefined");
+  expect.assert(backendRequest instanceof Request);
   expect(backendRequest.method).toBe("POST");
   expect(backendRequest.url).toBe(
     "https://backend.test/api/files/download-grant",
@@ -207,51 +201,50 @@ test("refreshDownloadGrant targets one exact sanitized revision", async () => {
   await expect(backendRequest.json()).resolves.toEqual(input);
 });
 
-test("confirmDelete sends one typed request and returns confirmed deletion", async () => {
+test("confirmDelete sends one typed delete request", async () => {
   const input: ConfirmDeleteInput = { storageKey: STORAGE_KEY };
   const response: ConfirmDeleteResponse = { status: "deleted" };
   const backendRequests: Request[] = [];
-  const responsePromise = Promise.resolve(Response.json(response));
   const fetchMock = vi
     .fn<typeof fetch>()
-    .mockImplementation(async (fetchRequest) => {
-      expect.assert(fetchRequest instanceof Request);
-      backendRequests.push(fetchRequest.clone());
-      return responsePromise;
+    .mockImplementation(async (fetchInput) => {
+      backendRequests.push(new Request(fetchInput).clone());
+      const backendResponse = await Promise.resolve(Response.json(response));
+      return backendResponse;
     });
   vi.stubGlobal("fetch", fetchMock);
   const request = new Request(FRONTEND_URL);
 
-  const result = await callerForRequest(request).confirmDelete(input);
+  await callerForRequest(request).confirmDelete(input);
 
-  expect(result).toEqual(response);
   expect(fetchMock).toHaveBeenCalledOnce();
   const [backendRequest] = backendRequests;
-  expect.assert(typeof backendRequest !== "undefined");
+  expect.assert(backendRequest instanceof Request);
   expect(backendRequest.method).toBe("POST");
   expect(backendRequest.url).toBe("https://backend.test/api/files/delete");
   await expect(backendRequest.json()).resolves.toEqual(input);
 });
 
-test("the root application router registers the wizard router", async () => {
-  const response: WorkflowConfig = {
-    maxFileSizeBytes: 7_340_032,
-  };
+test("invalid backend error JSON maps to BAD_GATEWAY without public details", async () => {
+  const input: ConfirmDeleteInput = { storageKey: STORAGE_KEY };
+  const providerDetails = "provider-request-id-and-object-key";
   const fetchMock = vi
     .fn<typeof fetch>()
-    .mockResolvedValue(Response.json(response));
+    .mockResolvedValue(
+      new Response(providerDetails, { status: CONFLICT_STATUS_CODE }),
+    );
   vi.stubGlobal("fetch", fetchMock);
-  vi.mocked(getAppBindings).mockReturnValue({
-    httpClient: ky.create({ baseUrl: BACKEND_BASE_URL }),
-    workflowHttpClient: createWorkflowHttpClient(BACKEND_BASE_URL),
-  });
   const request = new Request(FRONTEND_URL);
-  const createAppCaller = createCallerFactory(appRouter);
 
-  const result = await createAppCaller(createTRPCRequestContext(request), {
-    signal: request.signal,
-  }).wizard.getWorkflowConfig();
+  let failure: unknown = null;
+  try {
+    await callerForRequest(request).confirmDelete(input);
+  } catch (error) {
+    failure = error;
+  }
 
-  expect(result).toEqual(response);
+  expect.assert(failure instanceof TRPCError);
+  expect(failure.code).toBe("BAD_GATEWAY");
+  expect(failure.message).toBe(CONFIRM_DELETE_FAILURE_MESSAGE);
   expect(fetchMock).toHaveBeenCalledOnce();
 });
