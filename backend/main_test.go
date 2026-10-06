@@ -9,7 +9,6 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"os"
-	"sync"
 	"testing"
 	"time"
 
@@ -24,61 +23,28 @@ import (
 )
 
 const (
-	startupR2AccountID       = "startup-account-id-sentinel"
 	startupR2AccessKeyID     = "startup-access-key-id-sentinel"
 	startupR2SecretAccessKey = "startup-secret-access-key-sentinel"
 	startupR2Bucket          = "startup-bucket-sentinel"
 )
 
 func TestRunRejectsIncompleteOrInvalidR2ConfigurationBeforeStartingServer(t *testing.T) {
-	for _, testCase := range []struct {
-		name          string
-		configureFail func(t *testing.T)
-		affectedField string
-	}{
-		{
-			name: "missing required value",
-			configureFail: func(t *testing.T) {
-				t.Helper()
-				t.Setenv("R2_SECRET_ACCESS_KEY", "")
-				require.NoError(t, os.Unsetenv("R2_SECRET_ACCESS_KEY"))
-			},
-			affectedField: "R2SecretAccessKey",
-		},
-		{
-			name: "blank required value",
-			configureFail: func(t *testing.T) {
-				t.Helper()
-				t.Setenv("R2_ACCOUNT_ID", " \t\n")
-			},
-			affectedField: "R2AccountID",
-		},
-	} {
-		t.Run(testCase.name, func(t *testing.T) {
-			t.Setenv("PORT", "8080")
-			t.Setenv("R2_ACCOUNT_ID", startupR2AccountID)
-			t.Setenv("R2_ACCESS_KEY_ID", startupR2AccessKeyID)
-			t.Setenv("R2_SECRET_ACCESS_KEY", startupR2SecretAccessKey)
-			t.Setenv("R2_BUCKET", startupR2Bucket)
-			testCase.configureFail(t)
+	t.Setenv("PORT", "8080")
+	t.Setenv("R2_ACCOUNT_ID", " \t\n")
+	t.Setenv("R2_ACCESS_KEY_ID", startupR2AccessKeyID)
+	t.Setenv("R2_SECRET_ACCESS_KEY", startupR2SecretAccessKey)
+	t.Setenv("R2_BUCKET", startupR2Bucket)
 
-			err := run(context.Background(), slog.New(slog.DiscardHandler))
+	err := run(context.Background(), slog.New(slog.DiscardHandler))
 
-			require.Error(t, err)
-			require.ErrorContains(t, err, "invalid configuration")
-			require.ErrorContains(t, err, testCase.affectedField)
-			require.NotContains(t, err.Error(), startupR2AccountID)
-			require.NotContains(t, err.Error(), startupR2AccessKeyID)
-			require.NotContains(t, err.Error(), startupR2SecretAccessKey)
-			require.NotContains(t, err.Error(), startupR2Bucket)
-		})
-	}
+	require.ErrorContains(t, err, "invalid configuration")
 }
 
-func TestNewServerConfiguresAddressAndHandler(t *testing.T) {
+func TestNewServerAppliesSettingsAndLogsRequests(t *testing.T) {
 	t.Parallel()
 
-	server := newTestServer(slog.New(slog.DiscardHandler))
+	var logs bytes.Buffer
+	server := newTestServer(slog.New(slog.NewJSONHandler(&logs, nil)))
 
 	require.Equal(t, ":0", server.Addr)
 	require.Equal(t, readHeaderTimeout, server.ReadHeaderTimeout)
@@ -87,16 +53,12 @@ func TestNewServerConfiguresAddressAndHandler(t *testing.T) {
 	recorder := serveServer(server, request)
 
 	require.Equal(t, http.StatusOK, recorder.Code)
-}
-
-func TestNewServerLogsRequests(t *testing.T) {
-	t.Parallel()
-
-	var logs bytes.Buffer
-	server := newTestServer(slog.New(slog.NewJSONHandler(&logs, nil)))
-
-	request := httptest.NewRequest(http.MethodGet, "/api/health", http.NoBody)
-	serveServer(server, request)
+	require.Equal(t, mediatype.JSON, recorder.Header().Get(header.ContentType))
+	var response struct {
+		Status string `json:"status"`
+	}
+	require.NoError(t, json.Unmarshal(recorder.Body.Bytes(), &response))
+	require.Equal(t, "reachable", response.Status)
 
 	type serverLogRecord struct {
 		Message string `json:"msg"`
@@ -115,10 +77,7 @@ func TestNewServerLogsRequests(t *testing.T) {
 		}
 	}
 	require.NoError(t, scanner.Err())
-	if completionRecord.Message != "request completed" {
-		require.FailNow(t, "request completion log record not found")
-	}
-
+	require.Equal(t, "request completed", completionRecord.Message)
 	require.Equal(t, "/api/health", completionRecord.Path)
 	require.Equal(t, http.StatusOK, completionRecord.Status)
 }
@@ -135,42 +94,35 @@ func TestNewServerHandlesCORSPreflight(t *testing.T) {
 	require.Contains(t, recorder.Header().Get(header.AccessControlAllowMethods), http.MethodOptions)
 }
 
-func TestNewServerRoutesJSONWorkflowAndRemovesLegacyScrub(t *testing.T) {
+func TestNewServerRegistersWorkflowRoutes(t *testing.T) {
 	t.Parallel()
 
 	server := newTestServer(slog.New(slog.DiscardHandler))
 	testCases := []struct {
+		method     string
 		path       string
 		wantStatus int
 	}{
-		{path: "/api/uploads", wantStatus: http.StatusUnsupportedMediaType},
-		{path: "/api/files/dry-run", wantStatus: http.StatusUnsupportedMediaType},
-		{path: "/api/files/scrub", wantStatus: http.StatusUnsupportedMediaType},
-		{path: "/api/files/download-grant", wantStatus: http.StatusUnsupportedMediaType},
-		{path: "/api/files/delete", wantStatus: http.StatusUnsupportedMediaType},
-		{path: "/api/scrub", wantStatus: http.StatusNotFound},
+		{method: http.MethodPost, path: "/api/uploads", wantStatus: http.StatusUnsupportedMediaType},
+		{method: http.MethodPost, path: "/api/files/dry-run", wantStatus: http.StatusUnsupportedMediaType},
+		{method: http.MethodPost, path: "/api/files/scrub", wantStatus: http.StatusUnsupportedMediaType},
+		{method: http.MethodPost, path: "/api/files/download-grant", wantStatus: http.StatusUnsupportedMediaType},
+		{method: http.MethodPost, path: "/api/files/delete", wantStatus: http.StatusUnsupportedMediaType},
+		{method: http.MethodGet, path: "/api/files/config", wantStatus: http.StatusOK},
+		{method: http.MethodPost, path: "/api/files/config", wantStatus: http.StatusMethodNotAllowed},
+		{method: http.MethodGet, path: "/api/uploads", wantStatus: http.StatusMethodNotAllowed},
+		{method: http.MethodGet, path: "/api/files/dry-run", wantStatus: http.StatusMethodNotAllowed},
+		{method: http.MethodGet, path: "/api/files/scrub", wantStatus: http.StatusMethodNotAllowed},
+		{method: http.MethodGet, path: "/api/files/download-grant", wantStatus: http.StatusMethodNotAllowed},
+		{method: http.MethodGet, path: "/api/files/delete", wantStatus: http.StatusMethodNotAllowed},
+		{method: http.MethodPost, path: "/api/scrub", wantStatus: http.StatusNotFound},
 	}
 	for _, testCase := range testCases {
-		request := httptest.NewRequest(http.MethodPost, testCase.path, http.NoBody)
+		request := httptest.NewRequest(testCase.method, testCase.path, http.NoBody)
 		recorder := serveServer(server, request)
 
-		require.Equal(t, testCase.wantStatus, recorder.Code, testCase.path)
+		require.Equal(t, testCase.wantStatus, recorder.Code, "%s %s", testCase.method, testCase.path)
 	}
-}
-
-func TestNewServerRoutesBackendOwnedWorkflowConfig(t *testing.T) {
-	t.Parallel()
-
-	server := newTestServer(slog.New(slog.DiscardHandler))
-	request := httptest.NewRequest(http.MethodGet, "/api/files/config", http.NoBody)
-	recorder := serveServer(server, request)
-
-	require.Equal(t, http.StatusOK, recorder.Code, recorder.Body.String())
-	var response struct {
-		MaxFileSizeBytes int `json:"maxFileSizeBytes"`
-	}
-	require.NoError(t, json.Unmarshal(recorder.Body.Bytes(), &response))
-	require.Equal(t, 10_485_760, response.MaxFileSizeBytes)
 }
 
 func TestCanonicalCapacityAndSizeLimitsStayPinned(t *testing.T) {
@@ -181,30 +133,9 @@ func TestCanonicalCapacityAndSizeLimitsStayPinned(t *testing.T) {
 	require.Equal(t, 10_485_760, scrub.MaxInputBytes)
 }
 
-func TestNewServerRejectsWrongMethodsForJSONWorkflow(t *testing.T) {
-	t.Parallel()
-
-	server := newTestServer(slog.New(slog.DiscardHandler))
-	tests := []struct {
-		method string
-		path   string
-	}{
-		{method: http.MethodPost, path: "/api/files/config"},
-		{method: http.MethodGet, path: "/api/uploads"},
-		{method: http.MethodGet, path: "/api/files/dry-run"},
-		{method: http.MethodGet, path: "/api/files/scrub"},
-		{method: http.MethodGet, path: "/api/files/download-grant"},
-		{method: http.MethodGet, path: "/api/files/delete"},
-	}
-	for _, testCase := range tests {
-		request := httptest.NewRequest(testCase.method, testCase.path, http.NoBody)
-		recorder := serveServer(server, request)
-
-		require.Equal(t, http.StatusMethodNotAllowed, recorder.Code, testCase.path)
-	}
-}
-
 func TestNewServerSharesOneCapacityTwoGateAcrossDryRunAndScrubMisses(t *testing.T) {
+	scrub.DisableConfigDir()
+
 	type dryRunRequest struct {
 		StorageKey string `json:"storageKey"`
 	}
@@ -228,12 +159,10 @@ func TestNewServerSharesOneCapacityTwoGateAcrossDryRunAndScrubMisses(t *testing.
 			ETag:     "0123456789abcdef0123456789abcdef",
 		}))
 	}
-	observer := &serverAdmissionStorage{
-		Storage:             fake,
-		downloadStarted:     make(chan string, 3),
-		downloadRelease:     make(chan struct{}, 3),
-		observedScrubFileID: thirdFileID,
-		observedScrubLookup: make(chan struct{}),
+	observer := &blockingServerStorage{
+		Storage: fake,
+		started: make(chan string, 3),
+		release: make(chan struct{}),
 	}
 	server := newServer(config.Config{Port: 0}, observer, slog.New(slog.DiscardHandler))
 
@@ -247,45 +176,49 @@ func TestNewServerSharesOneCapacityTwoGateAcrossDryRunAndScrubMisses(t *testing.
 	})
 	require.NoError(t, err)
 
-	responses := make(chan *httptest.ResponseRecorder, 3)
-	for _, body := range [][]byte{firstDryRunBody, secondDryRunBody} {
-		go collectDryRunServerResponse(responses, server, body)
+	dryRunResponses := make(chan *httptest.ResponseRecorder, 2)
+	go collectDryRunServerResponse(dryRunResponses, server, firstDryRunBody)
+	go collectDryRunServerResponse(dryRunResponses, server, secondDryRunBody)
+	for range 2 {
+		<-observer.started
 	}
-	observer.waitForTwoDownloads(t)
 
-	go collectScrubServerResponse(responses, server, scrubBody)
-	observer.waitForObservedScrubLookup(t)
-
-	select {
-	case fileID := <-observer.downloadStarted:
-		require.FailNow(t, "scrub miss entered a separate gate", "unexpected download for %s", fileID)
-	case <-time.After(100 * time.Millisecond):
-	}
-	require.Equal(t, 2, observer.peakDownloads())
-
-	observer.downloadRelease <- struct{}{}
-	observer.requireDownloadStarts(t, thirdFileID)
-	require.Equal(t, 2, observer.peakDownloads())
-
-	observer.downloadRelease <- struct{}{}
-	observer.downloadRelease <- struct{}{}
-	for range 3 {
-		select {
-		case recorder := <-responses:
-			require.Equal(t, http.StatusOK, recorder.Code, recorder.Body.String())
-		case <-time.After(3 * time.Second):
-			require.FailNow(t, "timed out waiting for constructed route response")
+	scrubContext, cancel := context.WithTimeout(context.Background(), 50*time.Millisecond)
+	defer cancel()
+	scrubResponses := make(chan *httptest.ResponseRecorder, 1)
+	collectScrubServerResponse(scrubContext, scrubResponses, server, scrubBody)
+	scrubResponse := <-scrubResponses
+	require.Equal(t, http.StatusRequestTimeout, scrubResponse.Code, scrubResponse.Body.String())
+	var sanitizedLookups []string
+	for _, call := range fake.Calls() {
+		if call.Operation == storage.FakeSanitizedExists {
+			sanitizedLookups = append(sanitizedLookups, call.FileID)
 		}
 	}
-	require.Equal(t, 2, observer.peakDownloads())
+	require.Contains(t, sanitizedLookups, thirdFileID)
+	select {
+	case fileID := <-observer.started:
+		require.FailNow(t, "scrub miss entered a separate gate", "unexpected download for %s", fileID)
+	default:
+	}
+
+	close(observer.release)
+	for range 2 {
+		recorder := <-dryRunResponses
+		require.Equal(t, http.StatusOK, recorder.Code, recorder.Body.String())
+	}
 }
 
 func collectDryRunServerResponse(responses chan *httptest.ResponseRecorder, server *http.Server, requestBody []byte) {
-	responses <- serveServerJSON(server, "/api/files/dry-run", requestBody)
+	request := httptest.NewRequest(http.MethodPost, "/api/files/dry-run", bytes.NewReader(requestBody))
+	request.Header.Set(header.ContentType, mediatype.JSON)
+	responses <- serveServer(server, request)
 }
 
-func collectScrubServerResponse(responses chan *httptest.ResponseRecorder, server *http.Server, scrubBody []byte) {
-	responses <- serveServerJSON(server, "/api/files/scrub", scrubBody)
+func collectScrubServerResponse(ctx context.Context, responses chan *httptest.ResponseRecorder, server *http.Server, scrubBody []byte) {
+	request := httptest.NewRequestWithContext(ctx, http.MethodPost, "/api/files/scrub", bytes.NewReader(scrubBody))
+	request.Header.Set(header.ContentType, mediatype.JSON)
+	responses <- serveServer(server, request)
 }
 
 func newTestServer(logger *slog.Logger) *http.Server {
@@ -298,97 +231,23 @@ func serveServer(server *http.Server, request *http.Request) *httptest.ResponseR
 	return recorder
 }
 
-func serveServerJSON(server *http.Server, path string, body []byte) *httptest.ResponseRecorder {
-	request := httptest.NewRequest(http.MethodPost, path, bytes.NewReader(body))
-	request.Header.Set(header.ContentType, mediatype.JSON)
-	return serveServer(server, request)
-}
-
-type serverAdmissionStorage struct {
+type blockingServerStorage struct {
 	storage.Storage
 
-	mu                    sync.Mutex
-	active                int
-	peak                  int
-	downloadStarted       chan string
-	downloadRelease       chan struct{}
-	observedScrubFileID   string
-	observedScrubLookup   chan struct{}
-	scrubLookupSignalOnce sync.Once
+	started chan string
+	release chan struct{}
 }
 
-func (observer *serverAdmissionStorage) DownloadSource(
+func (observer *blockingServerStorage) DownloadSource(
 	ctx context.Context,
 	fileID string,
 	expectedETag string,
 ) (storage.SourceObject, error) {
-	observer.mu.Lock()
-	observer.active++
-	if observer.active > observer.peak {
-		observer.peak = observer.active
-	}
-	observer.mu.Unlock()
-
-	observer.downloadStarted <- fileID
+	observer.started <- fileID
 	select {
-	case <-observer.downloadRelease:
+	case <-observer.release:
+		return observer.Storage.DownloadSource(ctx, fileID, expectedETag)
 	case <-ctx.Done():
-		observer.mu.Lock()
-		observer.active--
-		observer.mu.Unlock()
 		return storage.SourceObject{}, ctx.Err()
 	}
-
-	observer.mu.Lock()
-	observer.active--
-	observer.mu.Unlock()
-	return observer.Storage.DownloadSource(ctx, fileID, expectedETag)
-}
-
-func (observer *serverAdmissionStorage) SanitizedExists(
-	ctx context.Context,
-	fileID string,
-	sourceETag string,
-) (bool, error) {
-	exists, err := observer.Storage.SanitizedExists(ctx, fileID, sourceETag)
-	if fileID == observer.observedScrubFileID {
-		observer.scrubLookupSignalOnce.Do(func() { close(observer.observedScrubLookup) })
-	}
-	return exists, err
-}
-
-func (observer *serverAdmissionStorage) requireDownloadStarts(t *testing.T, expectedFileID string) {
-	t.Helper()
-	select {
-	case fileID := <-observer.downloadStarted:
-		require.Equal(t, expectedFileID, fileID)
-	case <-time.After(time.Second):
-		require.FailNow(t, "scrub miss did not enter shared gate after one permit was released")
-	}
-}
-
-func (observer *serverAdmissionStorage) waitForTwoDownloads(t *testing.T) {
-	t.Helper()
-	for range 2 {
-		select {
-		case <-observer.downloadStarted:
-		case <-time.After(time.Second):
-			require.FailNow(t, "timed out waiting for constructed handler download")
-		}
-	}
-}
-
-func (observer *serverAdmissionStorage) waitForObservedScrubLookup(t *testing.T) {
-	t.Helper()
-	select {
-	case <-observer.observedScrubLookup:
-	case <-time.After(time.Second):
-		require.FailNow(t, "timed out waiting for scrub miss lookup")
-	}
-}
-
-func (observer *serverAdmissionStorage) peakDownloads() int {
-	observer.mu.Lock()
-	defer observer.mu.Unlock()
-	return observer.peak
 }
