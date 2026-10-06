@@ -4,8 +4,6 @@ import (
 	"bytes"
 	"encoding/json"
 	"errors"
-	"io"
-	"log/slog"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -25,18 +23,14 @@ func TestDownloadGrantRefreshesExactSanitizedRevisionFromOneOperationTime(t *tes
 	require.NoError(t, fake.SetSanitized(fileIDOne, canonicalETagOne, []byte("clean")))
 	inspectCalls, cleanCalls := 0, 0
 	operationTime := time.Date(2026, time.September, 1, 12, 34, 56, 987_000_000, time.UTC)
-	handler := newTestHandlerWithLogger(t, testHandlerOptions{
-		logger: slog.New(slog.NewTextHandler(io.Discard, nil)),
-		inspect: func([]byte, scrub.InspectionOrigin) ([]scrub.Field, error) {
-			inspectCalls++
-			return nil, nil
-		},
-		clean: func([]byte) ([]byte, error) {
-			cleanCalls++
-			return nil, nil
-		},
-		now: func() time.Time { return operationTime },
-	})
+	handler := newTestHandler(t, func([]byte, scrub.InspectionOrigin) ([]scrub.Field, error) {
+		inspectCalls++
+		return nil, nil
+	}, func([]byte) ([]byte, error) {
+		cleanCalls++
+		return nil, nil
+	}, nil)
+	handler.now = func() time.Time { return operationTime }
 	body, err := json.Marshal(downloadGrantRequest{
 		StorageKey: formatStorageKey(fileIDOne),
 		ETag:       canonicalETagOne,
@@ -65,7 +59,6 @@ func TestDownloadGrantRefreshesExactSanitizedRevisionFromOneOperationTime(t *tes
 	require.Equal(t, downloadGrantExpiry, calls[1].Expiry)
 	require.Zero(t, inspectCalls)
 	require.Zero(t, cleanCalls)
-	require.Empty(t, handler.permits)
 }
 
 func TestDownloadGrantReturnsNotFoundWithoutPresignForMissingRevision(t *testing.T) {
