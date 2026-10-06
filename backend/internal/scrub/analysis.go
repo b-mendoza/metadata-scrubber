@@ -160,11 +160,10 @@ func (state *traversalState) inspectMetadataEntry(dictionary types.Dict, key str
 	if streamDictionary == nil {
 		return errors.New("PDF metadata entry does not reference a stream")
 	}
+	snapshot := metadataEntrySnapshot{dictionary: dictionary, key: key, value: streamObject}
 	bodyErr := state.analyzeMetadataStream(streamDictionary, dictionary, key, nested)
 	streamDictionary.Content = nil
-	cleanupErr := storeMetadataStreamContent(state.context, metadataStreamContent{
-		dictionary: dictionary, key: key, streamObject: streamObject,
-	})
+	cleanupErr := storeMetadataStreamContent(state.context, snapshot, nil)
 	if cleanupErr != nil {
 		return errors.Join(bodyErr, fmt.Errorf("release PDF metadata stream cache: %w", cleanupErr))
 	}
