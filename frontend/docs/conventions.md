@@ -30,7 +30,7 @@ import ky, { HTTPError } from "ky";
 - Use `neverthrow` only in non-test server-only modules under `src/` with the `.server` suffix and in `scripts/`. Every other non-test file under `src/` can enter the client bundle, even when it contains a server callback. This includes a middleware `.server(...)` callback or a server route handler. Use `async`/`await` in those files. Do not import `neverthrow` in those files. Put server logic that needs `neverthrow` in a `.server` module. See `useUppyInstance` in `src/domains/wizard/components/file-uploader/file-uploader.mod.tsx` for `await createUpload(...)`. See `getMessage` in `src/domains/products/products-router.mod.server.ts` for the server pattern.
 - Do not import `neverthrow` in `oxlint-plugin-metadata-scrubber/`. Plugin consumers would need it as a peer dependency.
 - Use `async`/`await` in tests. Testing Library needs asynchronous operations.
-- Read a Ky error body from `HTTPError.data`, not from `HTTPError.response`. Ky reads the body before it throws. A second read fails in Node. happy-dom hid this failure. See `mapWorkflowBackendFailure` in `src/domains/wizard/wizard-router.mod.server.ts`.
+- Read a Ky error body from `HTTPError.data`, not from `HTTPError.response`. Ky reads the body before it throws. A second read fails in Node. happy-dom hid this failure. See `mapWorkflowRequestFailure` in `src/domains/wizard/wizard-router.mod.server.ts`.
 
 Use the mapped-failure pattern from `getMessage` in `src/domains/products/products-router.mod.server.ts`:
 
@@ -63,7 +63,7 @@ Apply the following server rules only to non-test `.server` modules under `src/`
 - Pass the asynchronous operation as the first argument to `ResultAsync.fromPromise(promise, toMappedError)`. Pass an error mapper as the second argument. Convert the unknown failure to a known error value and keep the original failure in `cause`, as `getMessage` does above.
 - Await only a `ResultAsync` to read its `Result`. Branch with `isErr()` or `isOk()`. Throw the mapped error at a route or tRPC boundary, as `getMessage` does above.
 - Wrap a synchronous call that can throw with `fromThrowable(fn, toMappedError)` or `Result.fromThrowable(fn, toMappedError)`. Map the failure to a known error value with the original failure in `cause`, then branch with `isErr()` or `isOk()`. See how `resolveScope` wraps `validatePolicySample` in `scripts/check-lint-policy.ts`.
-- Wrap a direct synchronous Zod `schema.parse(...)` with `fromThrowable`. See how `checkPolicySnapshot` wraps `parseSnapshot` in `scripts/check-lint-policy.ts`. Alternatively, use `safeParse` and branch on `success`, as `mapWorkflowBackendFailure` does in `src/domains/wizard/wizard-router.mod.server.ts`. Keep framework-owned tRPC `.input(schema)` and Ky `.json(schema)` arguments unchanged because these APIs handle validation failures.
+- Wrap a direct synchronous Zod `schema.parse(...)` with `fromThrowable`. See how `checkPolicySnapshot` wraps `parseSnapshot` in `scripts/check-lint-policy.ts`. Alternatively, use `safeParse` and branch on `success`, as `mapWorkflowRequestFailure` does in `src/domains/wizard/wizard-router.mod.server.ts`. Keep framework-owned tRPC `.input(schema)` and Ky `.json(schema)` arguments unchanged because these APIs handle validation failures.
 - Mark a function `async` only where lint requires it. `typescript/promise-function-async` and `typescript/require-await` define these requirements; see `getMessage` above and `resolveScope` in `scripts/check-lint-policy.ts`.
 
 | API | Use it when | Example |
@@ -71,11 +71,10 @@ Apply the following server rules only to non-test `.server` modules under `src/`
 | `ResultAsync.fromPromise` | Map a promise rejection to a known error value with the original failure in `cause`. | `src/domains/products/products-router.mod.server.ts`, `getMessage` |
 | `fromThrowable` / `Result.fromThrowable` | Wrap a synchronous call and map its failure. Keep the original failure in `cause`. Both names refer to the same function. | `scripts/check-lint-policy.ts`, `resolveScope` and `checkPolicySnapshot` |
 | `ResultAsync.fromPromise(Promise.all(...), toMappedError)` | Run independent asynchronous operations together and map the first rejection. | `scripts/check-lint-policy.ts`, `resolveScope` |
-| `.orElse` | Handle an error with another result-producing operation. | `src/domains/wizard/wizard-router.mod.server.ts`, `getWorkflowConfig` |
 | `.andThen` | Run the next result-producing operation only after success. | `scripts/check-lint-directives.ts`, `checkFilesForLintDirectives` |
-| `errAsync` | Return an error through a `ResultAsync`. | `src/domains/wizard/wizard-router.mod.server.ts`, `mapWorkflowBackendFailure` |
+| `errAsync` | Return an error through a `ResultAsync`. | `scripts/check-lint-directives.ts`, `checkFilesForLintDirectives` |
 | `isErr()` | Check a result before reading its error or value. | `src/domains/products/products-router.mod.server.ts`, `getMessage` |
-| `safeParse` | Validate a value without throwing and branch on `success`. | `src/domains/wizard/wizard-router.mod.server.ts`, `mapWorkflowBackendFailure` |
+| `safeParse` | Validate a value without throwing and branch on `success`. | `src/domains/wizard/wizard-router.mod.server.ts`, `mapWorkflowRequestFailure` |
 
 - Use `ResultAsync.fromPromise` for asynchronous operations. Do not use `ResultAsync.fromThrowable` or `fromAsyncThrowable`. For independent operations, wrap `Promise.all` with `ResultAsync.fromPromise`, as `resolveScope` does in `scripts/check-lint-policy.ts`. Do not use `ResultAsync.combine`. It waits for all inputs and selects errors in input order. Branch with `isErr()` or `isOk()`. Do not use `.match()` or the unwrap methods.
 
