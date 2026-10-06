@@ -771,7 +771,12 @@
     "no-shadow": "error",
     "import/no-mutable-exports": "error",
     "import/no-self-import": "error",
-    "import/no-cycle": "error",
+    "import/no-cycle": [
+      "error",
+      {
+        "ignoreExternal": true
+      }
+    ],
     "import/first": "error",
     "import/no-absolute-path": [
       "error",
@@ -2468,7 +2473,17 @@
         "testing-library/prefer-screen-queries": "error",
         "testing-library/render-result-naming-convention": "error",
         "testing-library/prefer-user-event": "error",
-        "testing-library/prefer-user-event-setup": "error",
+        "testing-library/prefer-user-event-setup": "error"
+      },
+      "jsPlugins": ["eslint-plugin-testing-library"]
+    },
+    {
+      "files": [
+        "src/**/*.test.ts",
+        "src/**/*.test.tsx",
+        "scripts/**/*.test.ts"
+      ],
+      "rules": {
         "vitest/expect-expect": "off",
         "vitest/no-commented-out-tests": "error",
         "vitest/no-conditional-expect": "error",
@@ -2523,7 +2538,7 @@
         "sonarjs/async-test-assertions": "off",
         "sonarjs/prefer-specific-assertions": "off"
       },
-      "jsPlugins": ["eslint-plugin-testing-library", "eslint-plugin-sonarjs"],
+      "jsPlugins": ["eslint-plugin-sonarjs"],
       "plugins": ["vitest"]
     },
     {
