@@ -20,13 +20,7 @@ import {
 } from "#/shared/libs/trpc/utils/initializer/initializer.mod.server";
 import { getAppBindings } from "#/shared/middlewares/app-bindings/app-bindings.mod";
 
-import type {
-  BackendErrorResponse,
-  ConfirmDeleteInput,
-  DryRunInput,
-  RefreshDownloadGrantInput,
-  ScrubFileInput,
-} from "./wizard-contracts.mod.server";
+import type { BackendErrorResponse } from "./wizard-contracts.mod.server";
 import {
   CONFIRM_DELETE_FAILURE_MESSAGE,
   CREATE_UPLOAD_FAILURE_MESSAGE,
@@ -137,7 +131,7 @@ test("createUpload maps an oversize backend response to PAYLOAD_TOO_LARGE", asyn
 });
 
 test("dryRun rejects an invalid backend ETag", async () => {
-  const input: DryRunInput = { storageKey: STORAGE_KEY };
+  const input: RouterInputs["wizard"]["dryRun"] = { storageKey: STORAGE_KEY };
   const fetchMock = vi
     .fn<typeof fetch>()
     .mockResolvedValue(
@@ -153,7 +147,7 @@ test("dryRun rejects an invalid backend ETag", async () => {
 });
 
 test("scrubFile rejects an invalid backend success payload", async () => {
-  const input: ScrubFileInput = {
+  const input: RouterInputs["wizard"]["scrubFile"] = {
     etag: CANONICAL_ETAG,
     storageKey: STORAGE_KEY,
   };
@@ -175,7 +169,7 @@ test("scrubFile rejects an invalid backend success payload", async () => {
 });
 
 test("refreshDownloadGrant rejects an invalid backend timestamp", async () => {
-  const input: RefreshDownloadGrantInput = {
+  const input: RouterInputs["wizard"]["refreshDownloadGrant"] = {
     etag: CANONICAL_ETAG,
     storageKey: STORAGE_KEY,
   };
@@ -196,7 +190,9 @@ test("refreshDownloadGrant rejects an invalid backend timestamp", async () => {
 });
 
 test("confirmDelete rejects an unconfirmed backend success payload", async () => {
-  const input: ConfirmDeleteInput = { storageKey: STORAGE_KEY };
+  const input: RouterInputs["wizard"]["confirmDelete"] = {
+    storageKey: STORAGE_KEY,
+  };
   const fetchMock = vi
     .fn<typeof fetch>()
     .mockResolvedValue(Response.json({ status: "pending" }));
@@ -221,7 +217,7 @@ test.each([
   [UNPROCESSABLE_ENTITY_STATUS_CODE, "UNPROCESSABLE_CONTENT"],
   [SERVICE_UNAVAILABLE_STATUS_CODE, "SERVICE_UNAVAILABLE"],
 ] as const)("dryRun maps backend HTTP %i to %s", async (status, code) => {
-  const input: DryRunInput = { storageKey: STORAGE_KEY };
+  const input: RouterInputs["wizard"]["dryRun"] = { storageKey: STORAGE_KEY };
   const response: BackendErrorResponse = {
     error: "safe backend error",
   };
