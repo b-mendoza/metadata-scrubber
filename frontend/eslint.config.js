@@ -23,26 +23,32 @@ import pluginRouter from "@tanstack/eslint-plugin-router";
 import pluginStart from "@tanstack/eslint-plugin-start";
 import { defineConfig, globalIgnores } from "eslint/config";
 import love from "eslint-config-love";
-import betterTailwindcss from "eslint-plugin-better-tailwindcss";
-import { createNodeResolver, importX } from "eslint-plugin-import-x";
-import jsxA11yX from "eslint-plugin-jsx-a11y-x";
 import noUnsanitized from "eslint-plugin-no-unsanitized";
 import oxlint from "eslint-plugin-oxlint";
 import reactHooks from "eslint-plugin-react-hooks";
 import reactYouMightNotNeedAnEffect from "eslint-plugin-react-you-might-not-need-an-effect";
-import regexp from "eslint-plugin-regexp";
-import simpleImportSort from "eslint-plugin-simple-import-sort";
 import sonarjs from "eslint-plugin-sonarjs";
 import unicorn from "eslint-plugin-unicorn";
 import eslintPluginZod from "eslint-plugin-zod";
-import globals from "globals";
 import tseslint from "typescript-eslint";
 
 import { PLUGIN_NAMES, SEVERITY_LEVELS } from "./eslint-config/constants.js";
 import { directiveCommentRules } from "./eslint-config/directive-comment-rules.js";
+import { importRestrictionRules } from "./eslint-config/import-restriction-rules.js";
+import { importXRules } from "./eslint-config/import-x-rules.js";
+import { jsxA11yRules } from "./eslint-config/jsx-a11y-rules.js";
+import { metadataScrubberRules } from "./eslint-config/metadata-scrubber-rules.js";
+import { reactRules } from "./eslint-config/react-rules.js";
+import { regexpRules } from "./eslint-config/regexp-rules.js";
 import { duplicateAndConflictRules } from "./eslint-config/rule-exceptions.js";
+import { simpleImportSortRules } from "./eslint-config/simple-import-sort-rules.js";
+import { sourceRules } from "./eslint-config/source-rules.js";
+import { syntaxRules } from "./eslint-config/syntax-rules.js";
+import { tailwindcssRules } from "./eslint-config/tailwindcss-rules.js";
 import { testRules } from "./eslint-config/test-rules.js";
-import metadataScrubber from "./oxlint-plugin-metadata-scrubber/index.ts";
+import { toolingRules } from "./eslint-config/tooling-rules.js";
+import { typescriptRules } from "./eslint-config/typescript-rules.js";
+import { unicornRules } from "./eslint-config/unicorn-rules.js";
 
 const MAX_COMPLEXITY = 8;
 
@@ -50,219 +56,38 @@ export default defineConfig(
   eslint.configs.recommended,
   ...tseslint.configs.strictTypeChecked,
   ...tseslint.configs.stylisticTypeChecked,
-  {
-    plugins: {
-      [PLUGIN_NAMES.SimpleImportSort]: simpleImportSort,
-    },
-    rules: {
-      [`${PLUGIN_NAMES.SimpleImportSort}/exports`]: SEVERITY_LEVELS.Error,
-      [`${PLUGIN_NAMES.SimpleImportSort}/imports`]: SEVERITY_LEVELS.Error,
-    },
-  },
+  ...simpleImportSortRules,
   // @ts-expect-error Type incompatibility between @typescript-eslint/utils re-exported types and defineConfig.
   // This is a known issue with plugins using TSESLint.FlatConfig types.
   // See: https://github.com/typescript-eslint/typescript-eslint/issues/11543
   love,
-  // This block replaces rules removed in Love v155.
-  // Reconsider it only when published Love provides equivalent rules,
-  // supported peers, and the same rule ownership.
-  {
-    plugins: {
-      [PLUGIN_NAMES.ImportX]: importX,
-    },
-    settings: {
-      // TypeScript modules need both resolution and inspection for cycle checks.
-      [`${PLUGIN_NAMES.ImportX}/extensions`]: [
-        ".js",
-        ".mjs",
-        ".cjs",
-        ".ts",
-        ".tsx",
-      ],
-      // The Node resolver reads #/* from package imports without another dependency.
-      [`${PLUGIN_NAMES.ImportX}/resolver-next`]: [
-        createNodeResolver({
-          extensions: [".ts", ".tsx", ".mjs", ".cjs", ".js", ".json", ".node"],
-        }),
-      ],
-    },
-    rules: {
-      // Stable module boundaries prevent cycles and shared mutable exports.
-      [`${PLUGIN_NAMES.ImportX}/no-mutable-exports`]: SEVERITY_LEVELS.Error,
-      [`${PLUGIN_NAMES.ImportX}/no-self-import`]: SEVERITY_LEVELS.Error,
-      [`${PLUGIN_NAMES.ImportX}/no-cycle`]: [
-        SEVERITY_LEVELS.Error,
-        {
-          ignoreExternal: true,
-        },
-      ],
-      [`${PLUGIN_NAMES.ImportX}/no-useless-path-segments`]:
-        SEVERITY_LEVELS.Error,
-      [`${PLUGIN_NAMES.ImportX}/export`]: SEVERITY_LEVELS.Error,
-      [`${PLUGIN_NAMES.ImportX}/first`]: SEVERITY_LEVELS.Error,
-      [`${PLUGIN_NAMES.ImportX}/no-absolute-path`]: [
-        SEVERITY_LEVELS.Error,
-        {
-          amd: false,
-          commonjs: true,
-          esmodule: true,
-        },
-      ],
-      [`${PLUGIN_NAMES.ImportX}/no-duplicates`]: SEVERITY_LEVELS.Error,
-      [`${PLUGIN_NAMES.ImportX}/no-named-default`]: SEVERITY_LEVELS.Error,
-      [`${PLUGIN_NAMES.ImportX}/no-webpack-loader-syntax`]:
-        SEVERITY_LEVELS.Error,
-    },
-  },
+  ...importXRules,
   unicorn.configs.recommended,
   e18e.configs.recommended,
   sonarjs.configs?.["recommended"],
-  {
-    plugins: {
-      [PLUGIN_NAMES.MetadataScrubber]: metadataScrubber,
-    },
-    rules: {
-      [`${PLUGIN_NAMES.MetadataScrubber}/no-classes`]: SEVERITY_LEVELS.Error,
-      [`${PLUGIN_NAMES.MetadataScrubber}/no-expect-type-of`]:
-        SEVERITY_LEVELS.Error,
-      [`${PLUGIN_NAMES.MetadataScrubber}/no-hardcoded-backend-host`]:
-        SEVERITY_LEVELS.Error,
-      [`${PLUGIN_NAMES.MetadataScrubber}/no-mutable-module-state-in-server-code`]:
-        SEVERITY_LEVELS.Error,
-      [`${PLUGIN_NAMES.MetadataScrubber}/no-silent-test-prerequisite`]:
-        SEVERITY_LEVELS.Error,
-      [`${PLUGIN_NAMES.MetadataScrubber}/separate-type-imports`]:
-        SEVERITY_LEVELS.Error,
-      [`${PLUGIN_NAMES.MetadataScrubber}/use-effect-in-custom-hook`]:
-        SEVERITY_LEVELS.Error,
-      [`${PLUGIN_NAMES.MetadataScrubber}/use-shared-render-helper`]:
-        SEVERITY_LEVELS.Error,
-    },
-  },
+  ...metadataScrubberRules,
   eslintReact.configs["strict-type-checked"],
   reactHooks.configs.flat["recommended-latest"],
   reactYouMightNotNeedAnEffect.configs.strict,
-  {
-    plugins: {
-      [PLUGIN_NAMES.JSXA11yX]: jsxA11yX,
-    },
-    rules: {
-      ...jsxA11yX.configs.strict.rules,
-      [`${PLUGIN_NAMES.JSXA11yX}/anchor-has-content`]: [
-        SEVERITY_LEVELS.Error,
-        {
-          components: ["Link", "NavLink"],
-        },
-      ],
-    },
-  },
+  ...jsxA11yRules,
   pluginRouter.configs["flat/recommended"],
   pluginStart.configs["flat/recommended"],
   pluginQuery.configs["flat/recommended-strict"],
   eslintPluginZod.configs.recommended,
+  ...regexpRules,
   {
     plugins: {
-      [PLUGIN_NAMES.Regexp]: regexp,
       [PLUGIN_NAMES.NoUnsanitized]: noUnsanitized,
-      [PLUGIN_NAMES.BetterTailwindcss]: betterTailwindcss,
-    },
-    settings: {
-      [PLUGIN_NAMES.BetterTailwindcss]: {
-        // Tailwind v4 reads the theme and plugins from the CSS entry point.
-        entryPoint: "src/app.css",
-      },
     },
     rules: {
-      // These checks prevent misleading captures and ineffective regex operations.
-      [`${PLUGIN_NAMES.Regexp}/no-misleading-capturing-group`]:
-        SEVERITY_LEVELS.Error,
-      [`${PLUGIN_NAMES.Regexp}/no-useless-assertions`]: SEVERITY_LEVELS.Error,
-      [`${PLUGIN_NAMES.Regexp}/no-missing-g-flag`]: SEVERITY_LEVELS.Error,
       // HTML sinks need sanitized values to prevent injection.
       [`${PLUGIN_NAMES.NoUnsanitized}/method`]: SEVERITY_LEVELS.Error,
       [`${PLUGIN_NAMES.NoUnsanitized}/property`]: SEVERITY_LEVELS.Error,
-      // Invalid, conflicting, or partial classes can leave the UI without its styles.
-      [`${PLUGIN_NAMES.BetterTailwindcss}/no-unknown-classes`]:
-        SEVERITY_LEVELS.Error,
-      [`${PLUGIN_NAMES.BetterTailwindcss}/no-conflicting-classes`]:
-        SEVERITY_LEVELS.Error,
-      [`${PLUGIN_NAMES.BetterTailwindcss}/no-concatenated-classes`]:
-        SEVERITY_LEVELS.Error,
     },
   },
-  // Source files can mix browser and Node code. shared-node-browser omits window and process.
-  // Oxlint needs explicit globs because it does not support extglobs.
-  {
-    files: ["src/**/*.ts", "src/**/*.tsx"],
-    languageOptions: {
-      globals: {
-        ...globals.browser,
-        ...globals.node,
-      },
-    },
-    rules: {
-      // Render purity prevents shared state changes and premature ref access.
-      [`${PLUGIN_NAMES.ESLintReact}/globals`]: SEVERITY_LEVELS.Error,
-      [`${PLUGIN_NAMES.ESLintReact}/immutability`]: SEVERITY_LEVELS.Error,
-      [`${PLUGIN_NAMES.ESLintReact}/refs`]: SEVERITY_LEVELS.Error,
-      [`${PLUGIN_NAMES.ReactHooks}/capitalized-calls`]: SEVERITY_LEVELS.Error,
-      // Context names make component diagnostics useful.
-      [`${PLUGIN_NAMES.ESLintReact}/no-missing-context-display-name`]:
-        SEVERITY_LEVELS.Error,
-      // Schema checks must allow valid data without hidden key changes.
-      [`${PLUGIN_NAMES.Zod}/no-conflicting-checks`]: SEVERITY_LEVELS.Error,
-      [`${PLUGIN_NAMES.Zod}/no-transform-in-record-key`]: SEVERITY_LEVELS.Error,
-      [`${PLUGIN_NAMES.Zod}/no-unnecessary-readonly`]: SEVERITY_LEVELS.Error,
-      [`${PLUGIN_NAMES.Zod}/prefer-validate`]: SEVERITY_LEVELS.Error,
-    },
-  },
-  {
-    files: ["src/**/*.tsx"],
-    rules: {
-      // Explicit keys, refs, and names make component identity clear.
-      [`${PLUGIN_NAMES.ESLintReact}/no-duplicate-key`]: SEVERITY_LEVELS.Error,
-      [`${PLUGIN_NAMES.ESLintReact}/no-implicit-key`]: SEVERITY_LEVELS.Error,
-      [`${PLUGIN_NAMES.ESLintReact}/no-implicit-ref`]: SEVERITY_LEVELS.Error,
-      [`${PLUGIN_NAMES.ESLintReact}/no-missing-component-display-name`]:
-        SEVERITY_LEVELS.Error,
-      [`${PLUGIN_NAMES.ESLintReact}/dom-no-unknown-property`]:
-        SEVERITY_LEVELS.Error,
-      // Native controls and valid labels keep the UI accessible.
-      [`${PLUGIN_NAMES.JSXA11yX}/anchor-ambiguous-text`]: SEVERITY_LEVELS.Error,
-      [`${PLUGIN_NAMES.JSXA11yX}/control-has-associated-label`]: [
-        SEVERITY_LEVELS.Error,
-        {
-          labelAttributes: [],
-          controlComponents: [],
-          ignoreElements: [
-            "audio",
-            "canvas",
-            "embed",
-            "input",
-            "textarea",
-            "tr",
-            "video",
-          ],
-          ignoreRoles: [
-            "grid",
-            "listbox",
-            "menu",
-            "menubar",
-            "radiogroup",
-            "row",
-            "tablist",
-            "toolbar",
-            "tree",
-            "treegrid",
-          ],
-        },
-      ],
-      [`${PLUGIN_NAMES.JSXA11yX}/lang`]: SEVERITY_LEVELS.Error,
-      [`${PLUGIN_NAMES.JSXA11yX}/no-aria-hidden-on-focusable`]:
-        SEVERITY_LEVELS.Error,
-      [`${PLUGIN_NAMES.JSXA11yX}/prefer-tag-over-role`]: SEVERITY_LEVELS.Error,
-    },
-  },
+  ...tailwindcssRules,
+  ...sourceRules,
+  ...reactRules,
   {
     linterOptions: {
       noInlineConfig: true,
@@ -309,135 +134,17 @@ export default defineConfig(
 
       ...duplicateAndConflictRules,
 
-      [`${PLUGIN_NAMES.TypescriptESLint}/consistent-type-imports`]: [
-        SEVERITY_LEVELS.Error,
-        {
-          fixStyle: "separate-type-imports",
-        },
-      ],
-      [`${PLUGIN_NAMES.TypescriptESLint}/explicit-function-return-type`]:
-        SEVERITY_LEVELS.Off,
-      // Keep the main arguments positional and put extra values in trailing options.
-      // One object for all arguments hides the main arguments at each call site.
-      [`${PLUGIN_NAMES.TypescriptESLint}/max-params`]: [
-        SEVERITY_LEVELS.Error,
-        {
-          max: 3,
-        },
-      ],
-      [`${PLUGIN_NAMES.TypescriptESLint}/no-deprecated`]: SEVERITY_LEVELS.Error,
-      [`${PLUGIN_NAMES.TypescriptESLint}/no-floating-promises`]: [
-        SEVERITY_LEVELS.Error,
-        {
-          checkThenables: true,
-        },
-      ],
-      [`${PLUGIN_NAMES.TypescriptESLint}/no-magic-numbers`]: [
-        SEVERITY_LEVELS.Error,
-        {
-          ignoreTypeIndexes: true,
-        },
-      ],
-      [`${PLUGIN_NAMES.TypescriptESLint}/no-misused-promises`]: [
-        SEVERITY_LEVELS.Error,
-        {
-          checksVoidReturn: false,
-        },
-      ],
-      [`${PLUGIN_NAMES.TypescriptESLint}/only-throw-error`]: [
-        SEVERITY_LEVELS.Error,
-        {
-          allow: [
-            {
-              from: "package",
-              name: "NotFoundError",
-              package: "@tanstack/router-core",
-            },
-          ],
-        },
-      ],
-      [`${PLUGIN_NAMES.TypescriptESLint}/prefer-destructuring`]: [
-        SEVERITY_LEVELS.Error,
-        {
-          array: false,
-          object: true,
-        },
-        {
-          enforceForRenamedProperties: false,
-        },
-      ],
-      [`${PLUGIN_NAMES.TypescriptESLint}/return-await`]: [
-        SEVERITY_LEVELS.Error,
-        "in-try-catch",
-      ],
+      ...typescriptRules,
       "arrow-body-style": SEVERITY_LEVELS.Off,
-      [`${PLUGIN_NAMES.ImportX}/newline-after-import`]: SEVERITY_LEVELS.Error,
-      /**
-       * The zod package root is the only supported entry point.
-       * In .oxlintrc.json, the user replaces this regex with a zod/** group by
-       * hand. That manual change keeps the same policy.
-       */
-      "no-restricted-imports": [
-        SEVERITY_LEVELS.Error,
-        {
-          paths: [
-            {
-              name: "@tanstack/react-query",
-              importNames: ["useQuery"],
-              allowTypeImports: true,
-              message:
-                "Runtime useQuery does not suspend for pending data. Use named useSuspenseQuery imports with an ancestor Suspense boundary and suitable error handling. Replace namespace imports and wildcard exports with explicit allowed APIs.",
-            },
-          ],
-          patterns: [
-            {
-              regex: "^zod/.+$",
-              message:
-                'Import Zod from the `zod` package root. Use `import * as z from "zod"` for runtime code or `import type * as z from "zod"` for type-only code. Replace every `zod/*` source with `zod`. The package root is the only supported project entry point.',
-            },
-          ],
-        },
-      ],
-      "no-restricted-syntax": [
-        SEVERITY_LEVELS.Error,
-        {
-          selector: "SwitchStatement",
-          message:
-            "Use a lookup map that raises an error for unknown keys instead.",
-        },
-        {
-          selector: "ImportExpression[source.value='@tanstack/react-query']",
-          message:
-            "Import @tanstack/react-query statically with named imports. A dynamic import exposes useQuery and hides it from the import restriction.",
-        },
-      ],
-      "no-undefined": SEVERITY_LEVELS.Error,
-      "object-shorthand": SEVERITY_LEVELS.Error,
+      ...importRestrictionRules,
+      ...syntaxRules,
       "react-hooks/exhaustive-deps": SEVERITY_LEVELS.Error,
       [`${PLUGIN_NAMES.SonarJS}/cognitive-complexity`]: [
         SEVERITY_LEVELS.Error,
         MAX_COMPLEXITY,
       ],
       [`${PLUGIN_NAMES.SonarJS}/no-commented-code`]: SEVERITY_LEVELS.Error,
-      // mod follows file names; props and ref are React terms.
-      // The ref-name rule also requires ref or a Ref suffix.
-      [`${PLUGIN_NAMES.Unicorn}/name-replacements`]: [
-        SEVERITY_LEVELS.Error,
-        {
-          replacements: {
-            mod: false,
-            props: false,
-            ref: false,
-          },
-        },
-      ],
-      [`${PLUGIN_NAMES.Unicorn}/no-null`]: SEVERITY_LEVELS.Off,
-      [`${PLUGIN_NAMES.Unicorn}/text-encoding-identifier-case`]: [
-        SEVERITY_LEVELS.Error,
-        {
-          withDash: true,
-        },
-      ],
+      ...unicornRules,
       complexity: [
         SEVERITY_LEVELS.Error,
         {
@@ -456,20 +163,7 @@ export default defineConfig(
       ],
     },
   },
-  {
-    files: [
-      "eslint.config.js",
-      "eslint-config/**/*.js",
-      "scripts/**/*.ts",
-      "vite.config.ts",
-      "vitest.config.ts",
-      "oxlint-plugin-metadata-scrubber/**/*.ts",
-      "oxlint-plugin-metadata-scrubber/**/*.tsx",
-    ],
-    languageOptions: {
-      globals: globals.node,
-    },
-  },
+  ...toolingRules,
   ...testRules,
   {
     files: ["oxlint-plugin-metadata-scrubber/check-fixtures.ts"],
