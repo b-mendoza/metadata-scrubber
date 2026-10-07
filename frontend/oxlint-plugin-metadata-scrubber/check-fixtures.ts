@@ -18,7 +18,12 @@ const oxlintPath = path.join(
   "oxlint",
 );
 
-const oxlintJsonStringSchema = z.string().trim();
+const oxlintJsonStringSchema = z
+  .string()
+  .refine((value) => value === value.trim(), {
+    error: "The diagnostic string must not start or end with whitespace.",
+  })
+  .trim();
 
 const oxlintJsonMessageSchema = z.object({
   code: oxlintJsonStringSchema.nullish(),
