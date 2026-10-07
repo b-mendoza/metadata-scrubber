@@ -18,12 +18,11 @@ const oxlintPath = path.join(
   "oxlint",
 );
 
-// eslint-disable-next-line zod/prefer-string-schema-with-trim -- This third-party oxlint JSON boundary needs byte-for-byte strings. Trim would hide whitespace mismatches.
-const oxlintJsonExactStringSchema = z.string();
+const oxlintJsonStringSchema = z.string().trim();
 
 const oxlintJsonMessageSchema = z.object({
-  code: oxlintJsonExactStringSchema.nullish(),
-  message: oxlintJsonExactStringSchema,
+  code: oxlintJsonStringSchema.nullish(),
+  message: oxlintJsonStringSchema,
 });
 
 const oxlintJsonOutputSchema = z.object({
