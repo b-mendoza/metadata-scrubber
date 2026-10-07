@@ -132,4 +132,4 @@ See the [architecture reference](./architecture.md) for the source layout under 
 
 - Fix the code when a check fails. Keep Vitest failing when it collects no tests. Keep each rule's file scope. Run React Doctor on the full frontend.
 - Add a matching lint scope when you add a test category to Vitest discovery. Update `eslint-config/test-rules.js` in the same change.
-- `eslint.config.js` loads the policy modules in `eslint-config/`. Keep rule policy in these files.
+- `eslint.config.js` keeps the preset order, the Oxlint bridge, the parser root, and small rule groups. It loads the config arrays and rule maps from `eslint-config/*-rules.js`. Each config module imports its own plugins. Put a new rule in the module for its theme.
