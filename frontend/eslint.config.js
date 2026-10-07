@@ -39,6 +39,7 @@ import globals from "globals";
 import tseslint from "typescript-eslint";
 
 import { PLUGIN_NAMES, SEVERITY_LEVELS } from "./eslint-config/constants.js";
+import { directiveCommentRules } from "./eslint-config/directive-comment-rules.js";
 import { duplicateAndConflictRules } from "./eslint-config/rule-exceptions.js";
 import { testRules } from "./eslint-config/test-rules.js";
 import metadataScrubber from "./oxlint-plugin-metadata-scrubber/index.ts";
@@ -263,6 +264,9 @@ export default defineConfig(
     },
   },
   {
+    linterOptions: {
+      noInlineConfig: true,
+    },
     languageOptions: {
       parserOptions: {
         projectService: true,
@@ -301,19 +305,7 @@ export default defineConfig(
         SEVERITY_LEVELS.Error,
       [`${PLUGIN_NAMES.SonarJS}/no-for-in-iterable`]: SEVERITY_LEVELS.Error,
 
-      // Line-level exceptions need a rule name and a reason for review.
-      [`${PLUGIN_NAMES.ESLintCommunityComments}/no-use`]: [
-        SEVERITY_LEVELS.Error,
-        {
-          allow: ["eslint-disable-next-line"],
-          additionalDirectives: [
-            "oxlint-disable",
-            "oxlint-disable-line",
-            "oxlint-disable-next-line",
-            "oxlint-enable",
-          ],
-        },
-      ],
+      ...directiveCommentRules,
 
       ...duplicateAndConflictRules,
 
