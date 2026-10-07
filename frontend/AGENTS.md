@@ -13,6 +13,7 @@ Vercel runs this service as a TanStack Start application. You do not control the
 ## Always
 
 - If Node.js (see `.nvmrc`) or pnpm is missing or has the wrong version, run `scripts/setup-node.sh` before any other work.
+- The frontend lint configuration rejects every suppression comment. Fix the code that a rule reports. Do not add a file-scoped rule override to bypass a rule.
 - After a substantive change, run `pnpm run lint`. See the [lint check](docs/commands.md#core-commands).
 - Before you commit, run `pnpm run test`. See the [test suite](docs/commands.md#core-commands).
 - Write specific and explicit application code for each use case. Accept duplication instead of creating a general helper.
