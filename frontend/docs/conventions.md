@@ -62,21 +62,21 @@ Apply the following server rules only to non-test `.server` modules under `src/`
 - Wrap every asynchronous operation with `ResultAsync.fromPromise`. This includes an operation whose promise the code would otherwise return to the framework. Replace `try`/`catch`, `.then()`, `.catch()`, and raw-promise `await` with this wrapper and an explicit result check, as `getMessage` does in the example above.
 - Pass the asynchronous operation as the first argument to `ResultAsync.fromPromise(promise, toMappedError)`. Pass an error mapper as the second argument. Convert the unknown failure to a known error value and keep the original failure in `cause`, as `getMessage` does above.
 - Await only a `ResultAsync` to read its `Result`. Branch with `isErr()` or `isOk()`. Throw the mapped error at a route or tRPC boundary, as `getMessage` does above.
-- Wrap a synchronous call that can throw with `fromThrowable(fn, toMappedError)` or `Result.fromThrowable(fn, toMappedError)`. Map the failure to a known error value with the original failure in `cause`, then branch with `isErr()` or `isOk()`. See how `resolveScope` wraps `validatePolicySample` in `scripts/check-lint-policy.ts`.
-- Wrap a direct synchronous Zod `schema.parse(...)` with `fromThrowable`. See how `checkLintPolicy` wraps `parseSnapshot` in `scripts/check-lint-policy.ts`. Alternatively, use `safeParse` and branch on `success`, as `mapWorkflowRequestFailure` does in `src/domains/wizard/wizard-router.mod.server.ts`. Keep framework-owned tRPC `.input(schema)` and Ky `.json(schema)` arguments unchanged because these APIs handle validation failures.
-- Mark a function `async` only where lint requires it. `typescript/promise-function-async` and `typescript/require-await` define these requirements; see `getMessage` above and `resolveScope` in `scripts/check-lint-policy.ts`.
+- Wrap a synchronous call that can throw with `fromThrowable(fn, toMappedError)` or `Result.fromThrowable(fn, toMappedError)`. Map the failure to a known error value with the original failure in `cause`, then branch with `isErr()` or `isOk()`.
+- Wrap a direct synchronous Zod `schema.parse(...)` with `fromThrowable`. Alternatively, use `safeParse` and branch on `success`, as `mapWorkflowRequestFailure` does in `src/domains/wizard/wizard-router.mod.server.ts`. Keep framework-owned tRPC `.input(schema)` and Ky `.json(schema)` arguments unchanged because these APIs handle validation failures.
+- Mark a function `async` only where lint requires it. `typescript/promise-function-async` and `typescript/require-await` define these requirements. See `getMessage` above.
 
 | API | Use it when | Example |
 | --- | --- | --- |
 | `ResultAsync.fromPromise` | Map a promise rejection to a known error value with the original failure in `cause`. | `src/domains/products/products-router.mod.server.ts`, `getMessage` |
-| `fromThrowable` / `Result.fromThrowable` | Wrap a synchronous call and map its failure. Keep the original failure in `cause`. Both names refer to the same function. | `scripts/check-lint-policy.ts`, `resolveScope` and `checkLintPolicy` |
-| `ResultAsync.fromPromise(Promise.all(...), toMappedError)` | Run independent asynchronous operations together and map the first rejection. | `scripts/check-lint-policy.ts`, `resolveScope` |
+| `fromThrowable` / `Result.fromThrowable` | Wrap a synchronous call and map its failure. Keep the original failure in `cause`. Both names refer to the same function. | No current example. |
+| `ResultAsync.fromPromise(Promise.all(...), toMappedError)` | Run independent asynchronous operations together and map the first rejection. | No current example. |
 | `.andThen` | Run the next result-producing operation only after success. | `scripts/check-lint-directives.ts`, `checkFilesForLintDirectives` |
 | `errAsync` | Return an error through a `ResultAsync`. | `scripts/check-lint-directives.ts`, `checkFilesForLintDirectives` |
 | `isErr()` | Check a result before reading its error or value. | `src/domains/products/products-router.mod.server.ts`, `getMessage` |
 | `safeParse` | Validate a value without throwing and branch on `success`. | `src/domains/wizard/wizard-router.mod.server.ts`, `mapWorkflowRequestFailure` |
 
-- Use `ResultAsync.fromPromise` for asynchronous operations. Do not use `ResultAsync.fromThrowable` or `fromAsyncThrowable`. For independent operations, wrap `Promise.all` with `ResultAsync.fromPromise`, as `resolveScope` does in `scripts/check-lint-policy.ts`. Do not use `ResultAsync.combine`. It waits for all inputs and selects errors in input order. Branch with `isErr()` or `isOk()`. Do not use `.match()` or the unwrap methods.
+- Use `ResultAsync.fromPromise` for asynchronous operations. Do not use `ResultAsync.fromThrowable` or `fromAsyncThrowable`. For independent operations, wrap `Promise.all` with `ResultAsync.fromPromise`. Do not use `ResultAsync.combine`. It waits for all inputs and selects errors in input order. Branch with `isErr()` or `isOk()`. Do not use `.match()` or the unwrap methods.
 
 ## Route data loading
 
@@ -91,8 +91,8 @@ This query rule leaves mutation pending state in the component because mutations
 
 ## Functions
 
-- Do not write an immediately invoked function, or IIFE. Call a named function, as the module-level call to `checkLintPolicy` does in `scripts/check-lint-policy.ts`. Anonymous functions are fine as inline callbacks, object fields, or arguments. Pass a named function to `fromThrowable` and call the returned function with the arguments, as `checkLintDirectives` is wrapped in `scripts/check-lint-directives.ts`. Do not wrap an anonymous function and call it on the spot.
-- Move a named local function to module scope only when it reads no variable from its enclosing function. This avoids a new function on each call. See the module-level `inspectRule` in `scripts/check-lint-policy.ts`. Keep anonymous callbacks passed as arguments inline. `unicorn/consistent-function-scoping` with `checkArrowFunctions: true` checks local declarations but does not report these callbacks.
+- Do not write an immediately invoked function, or IIFE. Call a named function, as the module-level loop calls `getDiagnosticMessages` in `oxlint-plugin-metadata-scrubber/check-fixtures.ts`. Anonymous functions are fine as inline callbacks, object fields, or arguments. Pass a named function to `fromThrowable` and call the returned function with the arguments, as `checkLintDirectives` is wrapped in `scripts/check-lint-directives.ts`. Do not wrap an anonymous function and call it on the spot.
+- Move a named local function to module scope only when it reads no variable from its enclosing function. This avoids a new function on each call. Keep anonymous callbacks passed as arguments inline. `unicorn/consistent-function-scoping` with `checkArrowFunctions: true` checks local declarations but does not report these callbacks.
 
 ## Contracts and validation
 
@@ -131,9 +131,7 @@ See the [architecture reference](./architecture.md) for the source layout under 
 ## Lint harness
 
 - Fix the code when a check fails. Keep Vitest failing when it collects no tests. Keep each rule's file scope. Run React Doctor on the full frontend.
-- Add a matching lint scope and policy sample when you add a test category to Vitest discovery. Update `eslint-config/test-rules.js` and `scripts/check-lint-policy.ts` in the same change.
+- Add a matching lint scope when you add a test category to Vitest discovery. Update `eslint-config/test-rules.js` in the same change.
 - `eslint.config.js` loads the policy modules in `eslint-config/`. Keep rule policy in these files.
-- See the [commands reference](./commands.md#core-commands) for directive checks and policy snapshot review.
+- See the [commands reference](./commands.md#core-commands) for directive checks.
 - `scripts/check-lint-directives.test.ts` tests the directive guard.
-- `scripts/check-lint-policy.ts` resolves rules for ten real files. The files cover source, source tests, config modules, scripts, script tests, Vite, and the Oxlint plugin. Each sample must exist. ESLint must not ignore any sample.
-- `scripts/lint-policy.snapshot` groups the rules by scope and sample path. Each sorted rule has one line with its resolved severity and options. The JSON file stores each rule value as text from `node:util.inspect`. This format preserves `Infinity` in resolved defaults. Plain JSON would change it to `null`.
