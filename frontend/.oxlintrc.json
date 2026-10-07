@@ -722,13 +722,19 @@
     "@eslint-community/eslint-comments/no-use": [
       "error",
       {
-        "allow": ["eslint-disable-next-line"],
         "additionalDirectives": [
           "oxlint-disable",
           "oxlint-disable-line",
           "oxlint-disable-next-line",
           "oxlint-enable"
         ]
+      }
+    ],
+    "no-warning-comments": [
+      "error",
+      {
+        "terms": ["react-doctor-disable"],
+        "location": "anywhere"
       }
     ],
     "no-restricted-imports": [
@@ -2487,13 +2493,7 @@
         "testing-library/prefer-screen-queries": "error",
         "testing-library/render-result-naming-convention": "error",
         "testing-library/prefer-user-event": "error",
-        "testing-library/prefer-user-event-setup": "error"
-      },
-      "jsPlugins": ["eslint-plugin-testing-library"]
-    },
-    {
-      "files": ["src/**/*.test.ts", "src/**/*.test.tsx"],
-      "rules": {
+        "testing-library/prefer-user-event-setup": "error",
         "vitest/expect-expect": "off",
         "vitest/no-commented-out-tests": "error",
         "vitest/no-conditional-expect": "error",
@@ -2548,7 +2548,7 @@
         "sonarjs/async-test-assertions": "off",
         "sonarjs/prefer-specific-assertions": "off"
       },
-      "jsPlugins": ["eslint-plugin-sonarjs"],
+      "jsPlugins": ["eslint-plugin-testing-library", "eslint-plugin-sonarjs"],
       "plugins": ["vitest"]
     },
     {
