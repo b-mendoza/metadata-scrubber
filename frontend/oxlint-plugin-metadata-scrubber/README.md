@@ -8,7 +8,7 @@ This plugin encodes the project's coding standards as enforceable Oxlint rules. 
 
 ## Registration and commands
 
-`index.ts` registers eight `metadata-scrubber/...` rules. `fixture.config.json` enables all eight at error severity. `frontend/eslint-config/metadata-scrubber-rules.js` loads this plugin and enables all eight at error severity. `frontend/eslint.config.js` loads that config module.
+`index.ts` registers eight `metadata-scrubber/...` rules. `fixture.config.json` enables all eight at error severity. `frontend/eslint-config/metadata-scrubber-rules.ts` loads this plugin and enables all eight at error severity. `frontend/eslint.config.ts` loads that config module.
 
 The main `frontend/.oxlintrc.json` loads this plugin and enables all eight custom rules at error severity. Agents must leave it unchanged. All eight custom rules remain active in ESLint after the Oxlint bridge.
 
@@ -33,7 +33,7 @@ The core `no-restricted-imports` entries reject runtime `useQuery` imports and s
 
 1. Add a rule file under `rules/` and create the rule with `defineRule`.
 2. Register the rule in `index.ts`.
-3. Enable the rule in `fixture.config.json` and `frontend/eslint-config/metadata-scrubber-rules.js`. Leave main Oxlint activation to the user's `.oxlintrc.json` update.
+3. Enable the rule in `fixture.config.json` and `frontend/eslint-config/metadata-scrubber-rules.ts`. Leave main Oxlint activation to the user's `.oxlintrc.json` update.
 4. Define message templates in `meta.messages`.
 5. Report with `messageId` and `{{ interpolation }}` data.
 6. Do not put an inline message string in `context.report`.
