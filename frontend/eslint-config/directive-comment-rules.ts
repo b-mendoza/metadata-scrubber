@@ -1,4 +1,6 @@
-import { PLUGIN_NAMES, SEVERITY_LEVELS } from "./constants.js";
+import type { Linter } from "eslint";
+
+import { PLUGIN_NAMES, SEVERITY_LEVELS } from "./constants.ts";
 
 export const directiveCommentRules = {
   // Fix the reported code instead of adding a lint directive.
@@ -18,4 +20,4 @@ export const directiveCommentRules = {
     SEVERITY_LEVELS.Error,
     { terms: ["react-doctor-disable"], location: "anywhere" },
   ],
-};
+} satisfies Linter.RulesRecord;

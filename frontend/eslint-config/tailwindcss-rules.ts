@@ -1,7 +1,7 @@
 import { defineConfig } from "eslint/config";
 import betterTailwindcss from "eslint-plugin-better-tailwindcss";
 
-import { PLUGIN_NAMES, SEVERITY_LEVELS } from "./constants.js";
+import { PLUGIN_NAMES, SEVERITY_LEVELS } from "./constants.ts";
 
 export const tailwindcssRules = defineConfig({
   plugins: {

@@ -1,7 +1,7 @@
 import { defineConfig } from "eslint/config";
 import globals from "globals";
 
-import { PLUGIN_NAMES, SEVERITY_LEVELS } from "./constants.js";
+import { PLUGIN_NAMES, SEVERITY_LEVELS } from "./constants.ts";
 
 export const sourceRules = defineConfig(
   // Source files can mix browser and Node code. shared-node-browser omits window and process.

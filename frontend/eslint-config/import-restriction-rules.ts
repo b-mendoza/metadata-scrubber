@@ -1,4 +1,6 @@
-import { PLUGIN_NAMES, SEVERITY_LEVELS } from "./constants.js";
+import type { Linter } from "eslint";
+
+import { PLUGIN_NAMES, SEVERITY_LEVELS } from "./constants.ts";
 
 export const importRestrictionRules = {
   [`${PLUGIN_NAMES.ImportX}/newline-after-import`]: SEVERITY_LEVELS.Error,
@@ -28,4 +30,4 @@ export const importRestrictionRules = {
       ],
     },
   ],
-};
+} satisfies Linter.RulesRecord;

@@ -1,4 +1,6 @@
-import { PLUGIN_NAMES, SEVERITY_LEVELS } from "./constants.js";
+import type { Linter } from "eslint";
+
+import { PLUGIN_NAMES, SEVERITY_LEVELS } from "./constants.ts";
 
 export const unicornRules = {
   // mod follows file names; props and ref are React terms.
@@ -20,4 +22,4 @@ export const unicornRules = {
       withDash: true,
     },
   ],
-};
+} satisfies Linter.RulesRecord;

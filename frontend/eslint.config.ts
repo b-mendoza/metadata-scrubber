@@ -27,44 +27,65 @@ import noUnsanitized from "eslint-plugin-no-unsanitized";
 import oxlint from "eslint-plugin-oxlint";
 import reactHooks from "eslint-plugin-react-hooks";
 import reactYouMightNotNeedAnEffect from "eslint-plugin-react-you-might-not-need-an-effect";
-import sonarjs from "eslint-plugin-sonarjs";
+import { configs as sonarjsConfigs } from "eslint-plugin-sonarjs";
 import unicorn from "eslint-plugin-unicorn";
 import eslintPluginZod from "eslint-plugin-zod";
 import tseslint from "typescript-eslint";
 
-import { PLUGIN_NAMES, SEVERITY_LEVELS } from "./eslint-config/constants.js";
-import { directiveCommentRules } from "./eslint-config/directive-comment-rules.js";
-import { importRestrictionRules } from "./eslint-config/import-restriction-rules.js";
-import { importXRules } from "./eslint-config/import-x-rules.js";
-import { jsxA11yRules } from "./eslint-config/jsx-a11y-rules.js";
-import { metadataScrubberRules } from "./eslint-config/metadata-scrubber-rules.js";
-import { reactRules } from "./eslint-config/react-rules.js";
-import { regexpRules } from "./eslint-config/regexp-rules.js";
-import { duplicateAndConflictRules } from "./eslint-config/rule-exceptions.js";
-import { simpleImportSortRules } from "./eslint-config/simple-import-sort-rules.js";
-import { sourceRules } from "./eslint-config/source-rules.js";
-import { syntaxRules } from "./eslint-config/syntax-rules.js";
-import { tailwindcssRules } from "./eslint-config/tailwindcss-rules.js";
-import { testRules } from "./eslint-config/test-rules.js";
-import { toolingRules } from "./eslint-config/tooling-rules.js";
-import { typescriptRules } from "./eslint-config/typescript-rules.js";
-import { unicornRules } from "./eslint-config/unicorn-rules.js";
+import { PLUGIN_NAMES, SEVERITY_LEVELS } from "./eslint-config/constants.ts";
+import { directiveCommentRules } from "./eslint-config/directive-comment-rules.ts";
+import { importRestrictionRules } from "./eslint-config/import-restriction-rules.ts";
+import { importXRules } from "./eslint-config/import-x-rules.ts";
+import { jsxA11yRules } from "./eslint-config/jsx-a11y-rules.ts";
+import { metadataScrubberRules } from "./eslint-config/metadata-scrubber-rules.ts";
+import { reactRules } from "./eslint-config/react-rules.ts";
+import { regexpRules } from "./eslint-config/regexp-rules.ts";
+import { duplicateAndConflictRules } from "./eslint-config/rule-exceptions.ts";
+import { simpleImportSortRules } from "./eslint-config/simple-import-sort-rules.ts";
+import { sourceRules } from "./eslint-config/source-rules.ts";
+import { syntaxRules } from "./eslint-config/syntax-rules.ts";
+import { tailwindcssRules } from "./eslint-config/tailwindcss-rules.ts";
+import { testRules } from "./eslint-config/test-rules.ts";
+import { toolingRules } from "./eslint-config/tooling-rules.ts";
+import { typescriptRules } from "./eslint-config/typescript-rules.ts";
+import { unicornRules } from "./eslint-config/unicorn-rules.ts";
 
 const MAX_COMPLEXITY = 8;
+
+const loveConfigs = defineConfig(
+  // @ts-expect-error TS2345: eslint-config-love uses typescript-eslint LanguageOptions without a string index signature. https://github.com/typescript-eslint/typescript-eslint/issues/11543
+  love,
+);
+
+const noUnsanitizedConfigs = defineConfig({
+  // @ts-expect-error TS2322: eslint-plugin-no-unsanitized configs use @types/eslint 9 LanguageOptions without a string index signature.
+  plugins: {
+    [PLUGIN_NAMES.NoUnsanitized]: noUnsanitized,
+  },
+  rules: {
+    // HTML sinks need sanitized values to prevent injection.
+    [`${PLUGIN_NAMES.NoUnsanitized}/method`]: SEVERITY_LEVELS.Error,
+    [`${PLUGIN_NAMES.NoUnsanitized}/property`]: SEVERITY_LEVELS.Error,
+  },
+});
+
+const oxlintConfigs = defineConfig(
+  // @ts-expect-error TS2345: eslint-plugin-oxlint returns configs with @types/eslint 9 LanguageOptions without a string index signature.
+  oxlint.buildFromOxlintConfigFile("./.oxlintrc.json", {
+    typeAware: true,
+  }),
+);
 
 export default defineConfig(
   eslint.configs.recommended,
   ...tseslint.configs.strictTypeChecked,
   ...tseslint.configs.stylisticTypeChecked,
   ...simpleImportSortRules,
-  // @ts-expect-error Type incompatibility between @typescript-eslint/utils re-exported types and defineConfig.
-  // This is a known issue with plugins using TSESLint.FlatConfig types.
-  // See: https://github.com/typescript-eslint/typescript-eslint/issues/11543
-  love,
+  ...loveConfigs,
   ...importXRules,
   unicorn.configs.recommended,
   e18e.configs.recommended,
-  sonarjs.configs?.["recommended"],
+  sonarjsConfigs.recommended,
   ...metadataScrubberRules,
   eslintReact.configs["strict-type-checked"],
   reactHooks.configs.flat["recommended-latest"],
@@ -75,16 +96,7 @@ export default defineConfig(
   pluginQuery.configs["flat/recommended-strict"],
   eslintPluginZod.configs.recommended,
   ...regexpRules,
-  {
-    plugins: {
-      [PLUGIN_NAMES.NoUnsanitized]: noUnsanitized,
-    },
-    rules: {
-      // HTML sinks need sanitized values to prevent injection.
-      [`${PLUGIN_NAMES.NoUnsanitized}/method`]: SEVERITY_LEVELS.Error,
-      [`${PLUGIN_NAMES.NoUnsanitized}/property`]: SEVERITY_LEVELS.Error,
-    },
-  },
+  ...noUnsanitizedConfigs,
   ...tailwindcssRules,
   ...sourceRules,
   ...reactRules,
@@ -177,9 +189,7 @@ export default defineConfig(
    * maps to enabled Oxlint rules.
    * All eight custom rules still run in both tools.
    */
-  oxlint.buildFromOxlintConfigFile("./.oxlintrc.json", {
-    typeAware: true,
-  }),
+  ...oxlintConfigs,
   {
     // Keep this block after the bridge, even when .oxlintrc.json enables these rules.
     // ESLint must keep the full policy where native oxlint checks miss cases.
