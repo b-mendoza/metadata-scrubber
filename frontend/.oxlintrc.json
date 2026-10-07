@@ -2450,8 +2450,8 @@
     },
     {
       "files": [
-        "eslint.config.js",
-        "eslint-config/**/*.js",
+        "eslint.config.ts",
+        "eslint-config/**/*.ts",
         "scripts/**/*.ts",
         "vite.config.ts",
         "vitest.config.ts",
@@ -2498,17 +2498,7 @@
         "vitest/no-commented-out-tests": "error",
         "vitest/no-conditional-expect": "error",
         "vitest/no-disabled-tests": "error",
-
-        // `eslint-plugin-vitest` supports options for this rule (for example
-        // `fixable`), but Oxc's `vitest/no-focused-tests` does not.
-        // Keep it disabled here to avoid an invalid-rule-configuration error.
-        // "vitest/no-focused-tests": [
-        //   "warn",
-        //   {
-        //     "fixable": false
-        //   }
-        // ],
-
+        "vitest/no-focused-tests": "error",
         "vitest/no-identical-title": "error",
         "vitest/no-import-node-test": "error",
         "vitest/no-interpolation-in-snapshots": "error",
