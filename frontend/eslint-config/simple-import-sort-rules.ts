@@ -1,7 +1,7 @@
 import { defineConfig } from "eslint/config";
 import simpleImportSort from "eslint-plugin-simple-import-sort";
 
-import { PLUGIN_NAMES, SEVERITY_LEVELS } from "./constants.js";
+import { PLUGIN_NAMES, SEVERITY_LEVELS } from "./constants.ts";
 
 export const simpleImportSortRules = defineConfig({
   plugins: {

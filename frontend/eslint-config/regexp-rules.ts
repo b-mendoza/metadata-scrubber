@@ -1,7 +1,7 @@
 import { defineConfig } from "eslint/config";
 import regexp from "eslint-plugin-regexp";
 
-import { PLUGIN_NAMES, SEVERITY_LEVELS } from "./constants.js";
+import { PLUGIN_NAMES, SEVERITY_LEVELS } from "./constants.ts";
 
 export const regexpRules = defineConfig({
   plugins: {

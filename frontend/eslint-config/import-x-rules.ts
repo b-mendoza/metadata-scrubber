@@ -1,7 +1,7 @@
 import { defineConfig } from "eslint/config";
 import { createNodeResolver, importX } from "eslint-plugin-import-x";
 
-import { PLUGIN_NAMES, SEVERITY_LEVELS } from "./constants.js";
+import { PLUGIN_NAMES, SEVERITY_LEVELS } from "./constants.ts";
 
 export const importXRules = defineConfig(
   // This block replaces rules removed in Love v155.

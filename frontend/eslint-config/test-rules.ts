@@ -2,7 +2,7 @@ import vitest from "@vitest/eslint-plugin";
 import { defineConfig } from "eslint/config";
 import testingLibrary from "eslint-plugin-testing-library";
 
-import { PLUGIN_NAMES, SEVERITY_LEVELS } from "./constants.js";
+import { PLUGIN_NAMES, SEVERITY_LEVELS } from "./constants.ts";
 
 export const testRules = defineConfig(
   {

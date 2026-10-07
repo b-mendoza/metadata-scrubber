@@ -1,7 +1,7 @@
 import { defineConfig } from "eslint/config";
 import jsxA11yX from "eslint-plugin-jsx-a11y-x";
 
-import { PLUGIN_NAMES, SEVERITY_LEVELS } from "./constants.js";
+import { PLUGIN_NAMES, SEVERITY_LEVELS } from "./constants.ts";
 
 export const jsxA11yRules = defineConfig({
   plugins: {

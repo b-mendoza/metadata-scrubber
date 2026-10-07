@@ -1,4 +1,6 @@
-import { SEVERITY_LEVELS } from "./constants.js";
+import type { Linter } from "eslint";
+
+import { SEVERITY_LEVELS } from "./constants.ts";
 
 export const syntaxRules = {
   "no-restricted-syntax": [
@@ -16,4 +18,4 @@ export const syntaxRules = {
   ],
   "no-undefined": SEVERITY_LEVELS.Error,
   "object-shorthand": SEVERITY_LEVELS.Error,
-};
+} satisfies Linter.RulesRecord;

@@ -1,4 +1,6 @@
-import { PLUGIN_NAMES, SEVERITY_LEVELS } from "./constants.js";
+import type { Linter } from "eslint";
+
+import { PLUGIN_NAMES, SEVERITY_LEVELS } from "./constants.ts";
 
 export const duplicateAndConflictRules = {
   /**
@@ -107,4 +109,4 @@ export const duplicateAndConflictRules = {
   [`${PLUGIN_NAMES.SonarJS}/no-useless-catch`]: SEVERITY_LEVELS.Off,
   [`${PLUGIN_NAMES.SonarJS}/prefer-single-boolean-return`]: SEVERITY_LEVELS.Off,
   [`${PLUGIN_NAMES.SonarJS}/updated-const-var`]: SEVERITY_LEVELS.Off,
-};
+} satisfies Linter.RulesRecord;

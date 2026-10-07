@@ -1,4 +1,6 @@
-import { PLUGIN_NAMES, SEVERITY_LEVELS } from "./constants.js";
+import type { Linter } from "eslint";
+
+import { PLUGIN_NAMES, SEVERITY_LEVELS } from "./constants.ts";
 
 export const typescriptRules = {
   [`${PLUGIN_NAMES.TypescriptESLint}/consistent-type-imports`]: [
@@ -62,4 +64,4 @@ export const typescriptRules = {
     SEVERITY_LEVELS.Error,
     "in-try-catch",
   ],
-};
+} satisfies Linter.RulesRecord;

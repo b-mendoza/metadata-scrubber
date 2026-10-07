@@ -1,6 +1,6 @@
 import { defineConfig } from "eslint/config";
 
-import { PLUGIN_NAMES, SEVERITY_LEVELS } from "./constants.js";
+import { PLUGIN_NAMES, SEVERITY_LEVELS } from "./constants.ts";
 
 export const reactRules = defineConfig({
   files: ["src/**/*.tsx"],
