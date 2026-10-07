@@ -8,6 +8,7 @@ export const directiveCommentRules = {
     SEVERITY_LEVELS.Error,
     {
       additionalDirectives: [
+        "eslint-disable",
         "oxlint-disable",
         "oxlint-disable-line",
         "oxlint-disable-next-line",
