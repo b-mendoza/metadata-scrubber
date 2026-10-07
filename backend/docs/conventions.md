@@ -25,7 +25,7 @@ Read the [root agent guide](../../AGENTS.md) for shared principles and [Code des
 
 - Build URLs and header values with standard-library encoders such as `url.URL` and `mime.FormatMediaType`. Agents joined variable text directly into URLs or header values. See `internal/config/config.go`, `url.URL`.
 - Dispatch on type with a type switch and keep the typed value inside its case. Agents used formatted type names as keys in a function map. See `internal/scrub/traversal.go`, `walkObject`.
-- Construct code-owned operation functions directly. Do not add nil checks, panics, or rejection tests for an operation function that the code itself supplies; agents added such checks during a hardening change, and later changes removed them. Pass a test function as an argument instead of replacing a package-level variable, as `internal/scrub/read.go`, `readPDFWithValidator`, does.
+- Construct code-owned operation functions directly. Do not add nil checks, panics, or rejection tests for these functions. Agents added these checks during a hardening change. Pass a test function as an argument instead of replacing a package-level variable. See `internal/scrub/read.go`, `readPDFWithValidator`.
 - Require the caller to pass the logger. Do not fall back to `slog.Default()` when a caller passes `nil`. See `internal/httpx/logging.go`, `RequestLogger`, and `internal/handler/handler.go`, `New`.
 
 ## Functions
