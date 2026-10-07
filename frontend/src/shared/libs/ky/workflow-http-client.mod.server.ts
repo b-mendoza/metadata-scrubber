@@ -15,21 +15,13 @@ const NO_RETRY_LIMIT = 0;
 const MINIMUM_RETRY_AFTER_SECONDS = 1;
 const DELAY_SECONDS_PATTERN = /^\d+$/v;
 
-// The regex copies Ky 2.1.0's delayPattern. The schema is stricter because it rejects HTTP dates, zero, and unsafe integers.
-// eslint-disable-next-line zod/prefer-string-schema-with-trim -- Ky 2.1.0 tests the raw header byte for byte. Trim would accept values that Ky rejects.
+// The regex copies Ky 2.1.0's delayPattern. This check is stricter than Ky.
+// It rejects HTTP dates, zero, and unsafe integers.
 const retryAfterSecondsSchema = z
-  .string({ error: "The Retry-After value must be a string." })
-  .regex(DELAY_SECONDS_PATTERN, {
-    error: "The Retry-After value must contain only decimal digits.",
-  })
-  .transform(Number)
-  .pipe(
-    z
-      .int({ error: "The Retry-After value must be a safe integer." })
-      .min(MINIMUM_RETRY_AFTER_SECONDS, {
-        error: "The Retry-After value must be at least one second.",
-      }),
-  );
+  .int({ error: "The Retry-After value must be a safe integer." })
+  .min(MINIMUM_RETRY_AFTER_SECONDS, {
+    error: "The Retry-After value must be at least one second.",
+  });
 
 const shouldRetryServerDirectedWorkflowRequest = ({
   error,
@@ -42,7 +34,11 @@ const shouldRetryServerDirectedWorkflowRequest = ({
   }
 
   const retryAfter = error.response.headers.get("Retry-After");
-  if (retryAfter != null && retryAfterSecondsSchema.validate(retryAfter)) {
+  if (
+    retryAfter != null &&
+    DELAY_SECONDS_PATTERN.test(retryAfter) &&
+    retryAfterSecondsSchema.validate(Number(retryAfter))
+  ) {
     // Ky 2.1.0 applies the server Retry-After delay and the maxRetryAfter cap only when shouldRetry returns undefined.
     // Returning true would replace the server-directed delay with Ky's own computed delay.
     return;
