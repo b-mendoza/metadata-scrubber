@@ -25,7 +25,7 @@ export const testRules = defineConfig(
     },
   },
   {
-    files: ["src/**/*.test.ts", "src/**/*.test.tsx", "scripts/**/*.test.ts"],
+    files: ["src/**/*.test.ts", "src/**/*.test.tsx"],
     ...vitest.configs.recommended,
     rules: {
       ...vitest.configs.recommended.rules,
