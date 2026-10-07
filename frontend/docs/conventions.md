@@ -71,8 +71,8 @@ Apply the following server rules only to non-test `.server` modules under `src/`
 | `ResultAsync.fromPromise` | Map a promise rejection to a known error value with the original failure in `cause`. | `src/domains/products/products-router.mod.server.ts`, `getMessage` |
 | `fromThrowable` / `Result.fromThrowable` | Wrap a synchronous call and map its failure. Keep the original failure in `cause`. Both names refer to the same function. | No current example. |
 | `ResultAsync.fromPromise(Promise.all(...), toMappedError)` | Run independent asynchronous operations together and map the first rejection. | No current example. |
-| `.andThen` | Run the next result-producing operation only after success. | `scripts/check-lint-directives.ts`, `checkFilesForLintDirectives` |
-| `errAsync` | Return an error through a `ResultAsync`. | `scripts/check-lint-directives.ts`, `checkFilesForLintDirectives` |
+| `.andThen` | Run the next result-producing operation only after success. | No current example. |
+| `errAsync` | Return an error through a `ResultAsync`. | No current example. |
 | `isErr()` | Check a result before reading its error or value. | `src/domains/products/products-router.mod.server.ts`, `getMessage` |
 | `safeParse` | Validate a value without throwing and branch on `success`. | `src/domains/wizard/wizard-router.mod.server.ts`, `mapWorkflowRequestFailure` |
 
@@ -91,7 +91,7 @@ This query rule leaves mutation pending state in the component because mutations
 
 ## Functions
 
-- Do not write an immediately invoked function, or IIFE. Call a named function, as the module-level loop calls `getDiagnosticMessages` in `oxlint-plugin-metadata-scrubber/check-fixtures.ts`. Anonymous functions are fine as inline callbacks, object fields, or arguments. Pass a named function to `fromThrowable` and call the returned function with the arguments, as `checkLintDirectives` is wrapped in `scripts/check-lint-directives.ts`. Do not wrap an anonymous function and call it on the spot.
+- Do not write an immediately invoked function, or IIFE. Call a named function, as the module-level loop calls `getDiagnosticMessages` in `oxlint-plugin-metadata-scrubber/check-fixtures.ts`. Anonymous functions are fine as inline callbacks, object fields, or arguments. Pass a named function to `fromThrowable` and call the returned function with the arguments. Do not wrap an anonymous function and call it on the spot.
 - Move a named local function to module scope only when it reads no variable from its enclosing function. This avoids a new function on each call. Keep anonymous callbacks passed as arguments inline. `unicorn/consistent-function-scoping` with `checkArrowFunctions: true` checks local declarations but does not report these callbacks.
 
 ## Contracts and validation
@@ -133,5 +133,3 @@ See the [architecture reference](./architecture.md) for the source layout under 
 - Fix the code when a check fails. Keep Vitest failing when it collects no tests. Keep each rule's file scope. Run React Doctor on the full frontend.
 - Add a matching lint scope when you add a test category to Vitest discovery. Update `eslint-config/test-rules.js` in the same change.
 - `eslint.config.js` loads the policy modules in `eslint-config/`. Keep rule policy in these files.
-- See the [commands reference](./commands.md#core-commands) for directive checks.
-- `scripts/check-lint-directives.test.ts` tests the directive guard.
