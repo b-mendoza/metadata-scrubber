@@ -103,7 +103,7 @@ This query rule leaves mutation pending state in the component because mutations
 
 ## Tests
 
-- Name a test for server code `*.server.test.ts` so that it runs in Node. `vitest.config.ts` runs `./src/**/*.server.test.ts` and `./scripts/**/*.test.ts` in the `server` project with the `node` environment and no setup file. It runs other `./src/**/*.test.{ts,tsx}` files in the `client` project with `happy-dom` and `src/tests/setup-test-environment.ts`.
+- Name a test for server code `*.server.test.ts` so that it runs in Node. `vitest.config.ts` runs `./src/**/*.server.test.ts` in the `server` project with the `node` environment and no setup file. It runs other `./src/**/*.test.{ts,tsx}` files in the `client` project with `happy-dom` and `src/tests/setup-test-environment.ts`.
 - Read or clone a request inside the fetch mock. Ky consumes the request body. A later read fails in Node. See the procedure tests in `src/domains/wizard/wizard-router.mod.server.test.ts`.
 - Build request payloads from production input types and response payloads from production output types. Export a schema-derived type next to its schema when a test needs it. `src/domains/wizard/wizard-router-response-validation.mod.server.test.ts` builds its error fixtures from `BackendErrorResponse`.
 - Test a tRPC procedure through `createCallerFactory` with the real router type, as `src/domains/wizard/wizard-router.mod.server.test.ts` does. Do not rebuild the caller through reflection.
@@ -124,7 +124,7 @@ Run the separate fixture check for these rules. Service lint alone does not run 
 - Use `*.mod.ts` and `*.mod.tsx` for module files. Use the `.tsx` extension when a module file contains JSX.
 - Use `*.mod.server.ts` for server-only modules such as environment parsing and tRPC routers. The `.server` suffix keeps server code out of client bundles.
 - Use `*.test.ts` and `*.test.tsx` for test files.
-- Put each test file next to the module that it tests. `vitest.config.ts` includes `src/**/*.test.{ts,tsx}` and `scripts/**/*.test.ts`. Keep test files out of `src/tests/`. Use that directory for setup and shared helpers.
+- Put each test file next to the module that it tests. `vitest.config.ts` includes `src/**/*.test.{ts,tsx}`. Keep test files out of `src/tests/`. Use that directory for setup and shared helpers.
 
 See the [architecture reference](./architecture.md) for the source layout under `src/domains/`, `src/shared/`, and `src/routes/`.
 

@@ -2492,11 +2492,7 @@
       "jsPlugins": ["eslint-plugin-testing-library"]
     },
     {
-      "files": [
-        "src/**/*.test.ts",
-        "src/**/*.test.tsx",
-        "scripts/**/*.test.ts"
-      ],
+      "files": ["src/**/*.test.ts", "src/**/*.test.tsx"],
       "rules": {
         "vitest/expect-expect": "off",
         "vitest/no-commented-out-tests": "error",
