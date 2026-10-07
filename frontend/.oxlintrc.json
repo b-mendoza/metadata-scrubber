@@ -723,6 +723,7 @@
       "error",
       {
         "additionalDirectives": [
+          "eslint-disable",
           "oxlint-disable",
           "oxlint-disable-line",
           "oxlint-disable-next-line",
