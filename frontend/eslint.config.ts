@@ -177,13 +177,6 @@ export default defineConfig(
   },
   ...toolingRules,
   ...testRules,
-  {
-    files: ["oxlint-plugin-metadata-scrubber/check-fixtures.ts"],
-    rules: {
-      // This file is a CLI harness. Console output is its user interface.
-      "no-console": SEVERITY_LEVELS.Off,
-    },
-  },
   /**
    * This final oxlint entry turns off ESLint rules that the bridge
    * maps to enabled Oxlint rules.
