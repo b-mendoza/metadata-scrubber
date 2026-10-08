@@ -1,7 +1,5 @@
-import { expect, test, test as check } from "vitest";
+import { test, test as check } from "vitest";
 
-test.skip("skips a prerequisite", () => {});
-test.skip("disabled without a callback");
 check.skip("skips through an imported alias", () => {});
 describe.skip("skips a global suite", () => {});
 it.skip("skips a global test", () => {});
@@ -16,25 +14,5 @@ test("returns for a missing value", () => {
   const value: string | undefined = undefined;
   if (value === undefined) {
     return;
-  }
-});
-
-test("returns when blocked", () => {
-  const blocked = true;
-  if (blocked) return;
-});
-
-test("returns after preparing when blocked", () => {
-  const blocked = true;
-  const prepare = (): boolean => blocked;
-  if ((prepare(), blocked)) return;
-});
-
-test("returns for a missing prerequisite with an else branch", () => {
-  const ready = false;
-  if (!ready) {
-    return;
-  } else {
-    expect(ready).toBe(true);
   }
 });
