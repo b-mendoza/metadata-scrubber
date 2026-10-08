@@ -103,7 +103,7 @@
     "oxlint-tsgolint": "7.0.2003",
     "react-doctor": "0.9.17",
     "typescript": "6.0.3",
-    "typescript-eslint": "8.71.0",
+    "typescript-eslint": "8.71.1",
     "vite": "8.3.2",
     "vitest": "5.0.3"
   },
