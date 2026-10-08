@@ -1,12 +1,13 @@
+import assert from "node:assert/strict";
 import { spawnSync } from "node:child_process";
 import path from "node:path";
+import { test } from "node:test";
 
 import * as z from "zod";
 
 import { fixtureCases } from "./fixture-cases.ts";
 
 const FAILURE_EXIT_CODE = 1;
-const NO_DIAGNOSTICS = 0;
 const SUCCESS_EXIT_CODE = 0;
 
 const pluginDirectory = import.meta.dirname;
@@ -80,44 +81,23 @@ const getDiagnosticMessages = (
   }
 };
 
-let hasFailure = false;
 for (const [ruleId, fixtureFile, expectedNegativeMessages] of fixtureCases) {
-  const positivePath = path.join(
-    "oxlint-plugin-metadata-scrubber",
-    "fixtures",
-    "positive",
-    fixtureFile,
-  );
-  const negativePath = path.join(
-    "oxlint-plugin-metadata-scrubber",
-    "fixtures",
-    "negative",
-    fixtureFile,
-  );
-  const positiveMessages = getDiagnosticMessages(positivePath, ruleId);
-  const negativeMessages = getDiagnosticMessages(negativePath, ruleId);
-  if (positiveMessages.length !== NO_DIAGNOSTICS) {
-    console.error(
-      `${ruleId} positive ${fixtureFile}: expected 0, got ${String(positiveMessages.length)}`,
+  void test(`${ruleId} ${fixtureFile}`, () => {
+    const positivePath = path.join(
+      "oxlint-plugin-metadata-scrubber",
+      "fixtures",
+      "positive",
+      fixtureFile,
     );
-    hasFailure = true;
-  }
-  if (negativeMessages.length !== expectedNegativeMessages.length) {
-    console.error(
-      `${ruleId} negative ${fixtureFile}: expected ${String(expectedNegativeMessages.length)}, got ${String(negativeMessages.length)}`,
+    const negativePath = path.join(
+      "oxlint-plugin-metadata-scrubber",
+      "fixtures",
+      "negative",
+      fixtureFile,
     );
-    hasFailure = true;
-    continue;
-  }
-  for (const [index, expectedMessage] of expectedNegativeMessages.entries()) {
-    const actualMessage = negativeMessages[index];
-    if (actualMessage !== expectedMessage) {
-      console.error(
-        `${ruleId} negative ${fixtureFile} message ${String(index)}: expected ${JSON.stringify(expectedMessage)}, got ${JSON.stringify(actualMessage)}`,
-      );
-      hasFailure = true;
-    }
-  }
+    const positiveMessages = getDiagnosticMessages(positivePath, ruleId);
+    const negativeMessages = getDiagnosticMessages(negativePath, ruleId);
+    assert.deepStrictEqual(positiveMessages, []);
+    assert.deepStrictEqual(negativeMessages, expectedNegativeMessages);
+  });
 }
-
-if (hasFailure) process.exitCode = FAILURE_EXIT_CODE;
