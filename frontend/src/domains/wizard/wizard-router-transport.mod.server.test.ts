@@ -5,11 +5,7 @@ import ky from "ky";
 import { afterEach, expect, test, vi } from "vitest";
 
 import { SERVICE_UNAVAILABLE_STATUS_CODE } from "#/shared/constants/http/status-codes/status-codes.mod";
-import {
-  createWorkflowHttpClient,
-  WORKFLOW_DRY_RUN_TIMEOUT_MS,
-  WORKFLOW_SCRUB_TIMEOUT_MS,
-} from "#/shared/libs/ky/workflow-http-client.mod.server";
+import { createWorkflowHttpClient } from "#/shared/libs/ky/workflow-http-client.mod.server";
 import type { RouterInputs } from "#/shared/libs/trpc/client/client.mod";
 import {
   createCallerFactory,
@@ -38,6 +34,8 @@ const MINIMUM_FILE_SIZE_BYTES = 1;
 const SERVER_RETRY_DELAY_MS = 1000;
 const ONE_MILLISECOND_MS = 1;
 const TWO_FETCH_ATTEMPTS = 2;
+const EXPECTED_DRY_RUN_TIMEOUT_MS = 90_000;
+const EXPECTED_SCRUB_TIMEOUT_MS = 240_000;
 
 const createWizardCaller = createCallerFactory(wizardRouter);
 
@@ -110,7 +108,7 @@ test("dryRun uses its total timeout after a server-directed retry", async () => 
   expect(fetchMock).toHaveBeenCalledTimes(TWO_FETCH_ATTEMPTS);
 
   await vi.advanceTimersByTimeAsync(
-    WORKFLOW_DRY_RUN_TIMEOUT_MS - SERVER_RETRY_DELAY_MS - ONE_MILLISECOND_MS,
+    EXPECTED_DRY_RUN_TIMEOUT_MS - SERVER_RETRY_DELAY_MS - ONE_MILLISECOND_MS,
   );
   expect(settle).not.toHaveBeenCalled();
 
@@ -155,7 +153,7 @@ test("scrubFile uses its total timeout after a server-directed retry", async () 
   expect(fetchMock).toHaveBeenCalledTimes(TWO_FETCH_ATTEMPTS);
 
   await vi.advanceTimersByTimeAsync(
-    WORKFLOW_SCRUB_TIMEOUT_MS - SERVER_RETRY_DELAY_MS - ONE_MILLISECOND_MS,
+    EXPECTED_SCRUB_TIMEOUT_MS - SERVER_RETRY_DELAY_MS - ONE_MILLISECOND_MS,
   );
   expect(settle).not.toHaveBeenCalled();
 
@@ -169,7 +167,6 @@ test("scrubFile uses its total timeout after a server-directed retry", async () 
 });
 
 test("getWorkflowConfig rejects a backend 503 without a retry", async () => {
-  vi.useFakeTimers();
   const response: BackendErrorResponse = {
     error: "processing capacity temporarily unavailable",
   };
@@ -182,12 +179,12 @@ test("getWorkflowConfig rejects a backend 503 without a retry", async () => {
   vi.stubGlobal("fetch", fetchMock);
   const request = new Request(FRONTEND_URL);
 
-  const operation = callerForRequest(request).getWorkflowConfig();
   let failure: unknown = null;
-  void operation.catch((error: unknown) => {
+  try {
+    await callerForRequest(request).getWorkflowConfig();
+  } catch (error) {
     failure = error;
-  });
-  await vi.runAllTimersAsync();
+  }
 
   expect.assert(failure instanceof TRPCError);
   expect(failure.code).toBe("SERVICE_UNAVAILABLE");
