@@ -91,7 +91,7 @@ This query rule leaves mutation pending state in the component because mutations
 
 ## Functions
 
-- Do not write an immediately invoked function, or IIFE. Call a named function, as the module-level loop calls `getDiagnosticMessages` in `oxlint-plugin-metadata-scrubber/check-fixtures.ts`. Anonymous functions are fine as inline callbacks, object fields, or arguments. Pass a named function to `fromThrowable` and call the returned function with the arguments. Do not wrap an anonymous function and call it on the spot.
+- Do not write an immediately invoked function, or IIFE. Call a named function, as the test callback calls `getDiagnosticMessages` in `oxlint-plugin-metadata-scrubber/check-fixtures.ts`. Anonymous functions are fine as inline callbacks, object fields, or arguments. Pass a named function to `fromThrowable` and call the returned function with the arguments. Do not wrap an anonymous function and call it on the spot.
 - Move a named local function to module scope only when it reads no variable from its enclosing function. This avoids a new function on each call. Keep anonymous callbacks passed as arguments inline. `unicorn/consistent-function-scoping` with `checkArrowFunctions: true` checks local declarations but does not report these callbacks.
 
 ## Contracts and validation
