@@ -16,7 +16,6 @@ Vercel runs this service as a TanStack Start application. You do not control the
 - The frontend lint configuration rejects every suppression comment. Fix the code that a rule reports. Do not add a file-scoped rule override to bypass a rule.
 - After a substantive change, run `pnpm run lint`. See the [lint check](docs/commands.md#core-commands).
 - Before you commit, run `pnpm run test`. See the [test suite](docs/commands.md#core-commands).
-- Write specific and explicit application code for each use case. Accept duplication instead of creating a general helper.
 - Give every generic an explicit, meaningful constraint. The constraint must name the accepted types or the operations that the generic code requires.
 
 ## Open when relevant
