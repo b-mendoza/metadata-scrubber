@@ -12,7 +12,7 @@ This plugin encodes the project's coding standards as enforceable Oxlint rules. 
 
 The main `frontend/.oxlintrc.json` loads this plugin and enables all eight custom rules at error severity. Agents must leave it unchanged. All eight custom rules remain active in ESLint after the Oxlint bridge.
 
-Run `pnpm run lint` from `frontend/` to run the service lint checks. Run `node oxlint-plugin-metadata-scrubber/check-fixtures.ts` from `frontend/` to run the fixture check. It uses `fixture.config.json`, not the main Oxlint config. It checks positive counts and exact ordered negative messages. The fixture check is separate from `pnpm run lint`.
+Run `pnpm run lint` from `frontend/` to run the service lint checks. Run `node oxlint-plugin-metadata-scrubber/check-fixtures.ts` from `frontend/` to run the fixture check. It uses `fixture.config.json`, not the main Oxlint config. It checks that each positive fixture has no rule diagnostics. It compares the exact ordered negative messages. The fixture check is separate from `pnpm run lint`.
 
 ## Rules
 
