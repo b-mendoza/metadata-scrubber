@@ -10,6 +10,9 @@ Read the long-lived [TypeScript design conventions](./agent/code-conventions.md)
 - Put types in standalone `import type` declarations. Keep runtime bindings in separate declarations, even for the same module.
 - Keep each imported name and local alias. A runtime binding named `type` is not a type-only import.
 - Move inline type specifiers into a standalone type declaration, even when the original declaration has no runtime bindings. Keep a side-effect import when module initialization is required.
+- `separate-type-imports` reports once per declaration, including declarations with only inline type specifiers.
+- Standalone named, default, and namespace type imports remain allowed.
+- The type-import rule does not decide whether a module needs a side-effect import. Review module initialization before removing the last runtime import.
 
 The workflow Ky client uses this split:
 
@@ -80,6 +83,11 @@ Apply the following server rules only to non-test `.server` modules under `src/`
 
 ## Route data loading
 
+Read the long-lived [Route data guidance](./agent/code-conventions.md#route-data) for the general principle.
+
+- The core `no-restricted-imports` entries reject runtime `useQuery` imports and source re-exports from `@tanstack/react-query`. They also reject runtime namespace imports and wildcard exports from that package. Type-only imports and exports remain allowed. The ESLint `no-restricted-syntax` entry rejects dynamic imports with that literal source.
+- Use named `useSuspenseQuery` imports with an ancestor Suspense boundary and suitable error handling.
+- The core Query import restrictions do not check actual Suspense or error-boundary ancestry. They do not decide route data criticality, loader use, server or client execution, streaming, or retry behavior. Review these properties in the application. A boundary can live in another file. Not every component needs a loader. Review the actual parent Suspense and error boundaries, route data needs, and retry behavior. Static lint does not prove those runtime properties.
 - Await only critical data in a route loader. Critical data is data that the page cannot render without. Use `await queryClient.query({ ...options, staleTime: "static" })` without `.catch` for this data. Let the router's `errorComponent` handle the failure.
 - Do not `await` a non-critical query in a loader. Do not return its promise from the loader. Do not make the loader `async` for it. A loader that waits delays the first byte of server rendering. It also delays each client navigation. The user sees a blank screen or a stalled navigation.
 - Start each non-critical query without waiting with `void queryClient.query(options).catch(() => null)`. The [TanStack Query prefetching guide](https://tanstack.com/query/latest/docs/framework/react/guides/prefetching#router-integration) recommends discarding the promise with `void` and handling its error with `.catch(noop)`. `query` replaces the deprecated `prefetchQuery` method. The `.catch` only stops an unhandled rejection. The consumer reads the query from the cache.
@@ -111,13 +119,11 @@ This query rule leaves mutation pending state in the component because mutations
 
 ## Custom lint rules
 
-The [plugin reference](../oxlint-plugin-metadata-scrubber/README.md) lists all eight rules. ESLint and the fixture config enable all eight at error severity. The main Oxlint config enables all eight at error severity. Agents must leave that file unchanged.
+The [plugin reference](../oxlint-plugin-metadata-scrubber/README.md) lists the rules and their static limits.
 
-- `use-effect-in-custom-hook` requires `useEffect` calls to belong to named custom hooks. Keep Uppy construction and destruction in `useUppyInstance`. Keep event subscription and Dashboard rendering in `FileUploader`. Remount `FileUploader` to apply changed creation inputs. The rule cannot prove that a `useEffect` call is necessary or that a hook name describes its purpose.
-- The core `no-restricted-imports` entry rejects runtime `useQuery` imports and source re-exports from `@tanstack/react-query`. It also rejects runtime namespace imports and wildcard exports from that package. Type-only imports and exports remain allowed. The core `no-restricted-syntax` entry rejects dynamic imports with that literal source. Follow the [route data loading rules](#route-data-loading). Review the actual parent Suspense and error boundaries, route data needs, and retry behavior. Static lint does not prove those runtime properties.
-- `separate-type-imports` enforces the import split above. It allows standalone named, default, and namespace type imports.
+- Keep Uppy construction and destruction in `useUppyInstance`. Keep event subscription and Dashboard rendering in `FileUploader`. Remount `FileUploader` to apply changed creation inputs. See the [Effect rule limits](../oxlint-plugin-metadata-scrubber/README.md#known-limitations).
 
-Run the separate fixture check for these rules. Service lint alone does not run their fixture cases. The plugin reference gives both commands and the static limits.
+Run the separate [rule fixture check](./commands.md#rule-fixture-check) for these rules.
 
 ## File names
 
