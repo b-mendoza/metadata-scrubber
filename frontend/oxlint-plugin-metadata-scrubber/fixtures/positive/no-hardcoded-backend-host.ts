@@ -1,10 +1,6 @@
-export const backendUrl = process.env["BACKEND_URL"];
-
 const region = "us";
 const staticProtocol = "https";
 const backendBaseUrl = process.env["BACKEND_URL"];
-export const createDynamicProtocolUrl = (protocol: string) =>
-  `${protocol}://backend.example.com`;
 export const createAssertedDynamicProtocolUrl = (protocol: string) =>
   `${protocol as string}://backend.example.com`;
 export const dynamicHostNameUrl = `https://api-${region}.example.com/files`;
