@@ -4,7 +4,12 @@ import { TRPCError } from "@trpc/server";
 import ky from "ky";
 import { afterEach, expect, test, vi } from "vitest";
 
-import { createWorkflowHttpClient } from "#/shared/libs/ky/workflow-http-client.mod.server";
+import { SERVICE_UNAVAILABLE_STATUS_CODE } from "#/shared/constants/http/status-codes/status-codes.mod";
+import {
+  createWorkflowHttpClient,
+  WORKFLOW_DRY_RUN_TIMEOUT_MS,
+  WORKFLOW_SCRUB_TIMEOUT_MS,
+} from "#/shared/libs/ky/workflow-http-client.mod.server";
 import type { RouterInputs } from "#/shared/libs/trpc/client/client.mod";
 import {
   createCallerFactory,
@@ -12,11 +17,13 @@ import {
 } from "#/shared/libs/trpc/utils/initializer/initializer.mod.server";
 import { getAppBindings } from "#/shared/middlewares/app-bindings/app-bindings.mod";
 
+import type { BackendErrorResponse } from "./wizard-contracts.mod.server";
 import {
   CREATE_UPLOAD_FAILURE_MESSAGE,
   DRY_RUN_FAILURE_MESSAGE,
-  REFRESH_DOWNLOAD_GRANT_FAILURE_MESSAGE,
+  SCRUB_FILE_FAILURE_MESSAGE,
   wizardRouter,
+  WORKFLOW_CONFIG_FAILURE_MESSAGE,
 } from "./wizard-router.mod.server";
 
 vi.mock(import("#/shared/middlewares/app-bindings/app-bindings.mod"), () => ({
@@ -28,6 +35,9 @@ const FRONTEND_URL = "https://frontend.test/";
 const STORAGE_KEY = "uploads/00000000-0000-4000-8000-000000000001";
 const CANONICAL_ETAG = "0123456789abcdef0123456789abcdef";
 const MINIMUM_FILE_SIZE_BYTES = 1;
+const SERVER_RETRY_DELAY_MS = 1000;
+const ONE_MILLISECOND_MS = 1;
+const TWO_FETCH_ATTEMPTS = 2;
 
 const createWizardCaller = createCallerFactory(wizardRouter);
 
@@ -39,20 +49,6 @@ const callerForRequest = (request: Request) => {
   return createWizardCaller(createTRPCRequestContext(request), {
     signal: request.signal,
   });
-};
-
-const requireTRPCError = async (
-  operation: Promise<unknown>,
-): Promise<TRPCError> => {
-  try {
-    await operation;
-  } catch (error) {
-    expect(error).toBeInstanceOf(TRPCError);
-    if (error instanceof TRPCError) {
-      return error;
-    }
-  }
-  expect.fail("the workflow procedure must reject with a TRPCError");
 };
 
 afterEach(() => {
@@ -70,46 +66,143 @@ test("an unclassified transport failure maps to BAD_GATEWAY without public detai
   vi.stubGlobal("fetch", fetchMock);
   const request = new Request(FRONTEND_URL);
 
-  const error = await requireTRPCError(
-    callerForRequest(request).createUpload(input),
-  );
+  let failure: unknown = null;
+  try {
+    await callerForRequest(request).createUpload(input);
+  } catch (error) {
+    failure = error;
+  }
 
-  expect(error.code).toBe("BAD_GATEWAY");
-  expect(error.message).toBe(CREATE_UPLOAD_FAILURE_MESSAGE);
-  expect(error.message).not.toContain(providerDetails);
-  expect(error.cause).toBe(transportFailure);
+  expect.assert(failure instanceof TRPCError);
+  expect(failure.code).toBe("BAD_GATEWAY");
+  expect(failure.message).toBe(CREATE_UPLOAD_FAILURE_MESSAGE);
+  expect(failure.message).not.toContain(providerDetails);
+  expect(failure.cause).toBe(transportFailure);
   expect(fetchMock).toHaveBeenCalledOnce();
 });
 
-test("a workflow client timeout maps to TIMEOUT without a retry", async () => {
+test("dryRun uses its total timeout after a server-directed retry", async () => {
   vi.useFakeTimers();
-  const input: RouterInputs["wizard"]["refreshDownloadGrant"] = {
-    etag: CANONICAL_ETAG,
-    storageKey: STORAGE_KEY,
+  const input: RouterInputs["wizard"]["dryRun"] = { storageKey: STORAGE_KEY };
+  const response: BackendErrorResponse = {
+    error: "processing capacity temporarily unavailable",
   };
   const fetchMock = vi
     .fn<typeof fetch>()
-    .mockReturnValue(Promise.race<Response>([]));
+    .mockReturnValue(Promise.race<Response>([]))
+    .mockResolvedValueOnce(
+      Response.json(response, {
+        headers: { "Retry-After": "1" },
+        status: SERVICE_UNAVAILABLE_STATUS_CODE,
+      }),
+    );
   vi.stubGlobal("fetch", fetchMock);
   const request = new Request(FRONTEND_URL);
 
-  const errorPromise = requireTRPCError(
-    callerForRequest(request).refreshDownloadGrant(input),
-  );
-  await vi.runAllTimersAsync();
-  const error = await errorPromise;
+  const operation = callerForRequest(request).dryRun(input);
+  const settle = vi.fn((outcome: unknown) => outcome);
+  void operation.then(settle).catch(settle);
 
+  await vi.advanceTimersByTimeAsync(SERVER_RETRY_DELAY_MS - ONE_MILLISECOND_MS);
+  expect(fetchMock).toHaveBeenCalledOnce();
+
+  await vi.advanceTimersByTimeAsync(ONE_MILLISECOND_MS);
+  expect(fetchMock).toHaveBeenCalledTimes(TWO_FETCH_ATTEMPTS);
+
+  await vi.advanceTimersByTimeAsync(
+    WORKFLOW_DRY_RUN_TIMEOUT_MS - SERVER_RETRY_DELAY_MS - ONE_MILLISECOND_MS,
+  );
+  expect(settle).not.toHaveBeenCalled();
+
+  await vi.advanceTimersByTimeAsync(ONE_MILLISECOND_MS);
+  expect(settle).toHaveBeenCalledOnce();
+  const [[error] = []] = settle.mock.calls;
+  expect.assert(error instanceof TRPCError);
   expect(error.code).toBe("TIMEOUT");
-  expect(error.message).toBe(REFRESH_DOWNLOAD_GRANT_FAILURE_MESSAGE);
+  expect(error.message).toBe(DRY_RUN_FAILURE_MESSAGE);
+  expect(fetchMock).toHaveBeenCalledTimes(TWO_FETCH_ATTEMPTS);
+});
+
+test("scrubFile uses its total timeout after a server-directed retry", async () => {
+  vi.useFakeTimers();
+  const input: RouterInputs["wizard"]["scrubFile"] = {
+    etag: CANONICAL_ETAG,
+    storageKey: STORAGE_KEY,
+  };
+  const response: BackendErrorResponse = {
+    error: "processing capacity temporarily unavailable",
+  };
+  const fetchMock = vi
+    .fn<typeof fetch>()
+    .mockReturnValue(Promise.race<Response>([]))
+    .mockResolvedValueOnce(
+      Response.json(response, {
+        headers: { "Retry-After": "1" },
+        status: SERVICE_UNAVAILABLE_STATUS_CODE,
+      }),
+    );
+  vi.stubGlobal("fetch", fetchMock);
+  const request = new Request(FRONTEND_URL);
+
+  const operation = callerForRequest(request).scrubFile(input);
+  const settle = vi.fn((outcome: unknown) => outcome);
+  void operation.then(settle).catch(settle);
+
+  await vi.advanceTimersByTimeAsync(SERVER_RETRY_DELAY_MS - ONE_MILLISECOND_MS);
+  expect(fetchMock).toHaveBeenCalledOnce();
+
+  await vi.advanceTimersByTimeAsync(ONE_MILLISECOND_MS);
+  expect(fetchMock).toHaveBeenCalledTimes(TWO_FETCH_ATTEMPTS);
+
+  await vi.advanceTimersByTimeAsync(
+    WORKFLOW_SCRUB_TIMEOUT_MS - SERVER_RETRY_DELAY_MS - ONE_MILLISECOND_MS,
+  );
+  expect(settle).not.toHaveBeenCalled();
+
+  await vi.advanceTimersByTimeAsync(ONE_MILLISECOND_MS);
+  expect(settle).toHaveBeenCalledOnce();
+  const [[error] = []] = settle.mock.calls;
+  expect.assert(error instanceof TRPCError);
+  expect(error.code).toBe("TIMEOUT");
+  expect(error.message).toBe(SCRUB_FILE_FAILURE_MESSAGE);
+  expect(fetchMock).toHaveBeenCalledTimes(TWO_FETCH_ATTEMPTS);
+});
+
+test("getWorkflowConfig rejects a backend 503 without a retry", async () => {
+  vi.useFakeTimers();
+  const response: BackendErrorResponse = {
+    error: "processing capacity temporarily unavailable",
+  };
+  const fetchMock = vi.fn<typeof fetch>().mockResolvedValue(
+    Response.json(response, {
+      headers: { "Retry-After": "1" },
+      status: SERVICE_UNAVAILABLE_STATUS_CODE,
+    }),
+  );
+  vi.stubGlobal("fetch", fetchMock);
+  const request = new Request(FRONTEND_URL);
+
+  const operation = callerForRequest(request).getWorkflowConfig();
+  let failure: unknown = null;
+  void operation.catch((error: unknown) => {
+    failure = error;
+  });
+  await vi.runAllTimersAsync();
+
+  expect.assert(failure instanceof TRPCError);
+  expect(failure.code).toBe("SERVICE_UNAVAILABLE");
+  expect(failure.message).toBe(WORKFLOW_CONFIG_FAILURE_MESSAGE);
   expect(fetchMock).toHaveBeenCalledOnce();
 });
 
 test("caller cancellation maps safely and starts no extra fetch", async () => {
   const input: RouterInputs["wizard"]["dryRun"] = { storageKey: STORAGE_KEY };
+  const fetchStarted = Promise.withResolvers<boolean>();
   const fetchMock = vi.fn<typeof fetch>(
     async (fetchInput): Promise<Response> => {
       const backendRequest =
         fetchInput instanceof Request ? fetchInput : new Request(fetchInput);
+      fetchStarted.resolve(true);
       await once(backendRequest.signal, "abort");
       throw new DOMException("aborted", "AbortError");
     },
@@ -118,16 +211,18 @@ test("caller cancellation maps safely and starts no extra fetch", async () => {
   const controller = new AbortController();
   const request = new Request(FRONTEND_URL, { signal: controller.signal });
 
-  const errorPromise = requireTRPCError(
-    callerForRequest(request).dryRun(input),
-  );
-  await vi.waitFor(() => {
-    expect(fetchMock).toHaveBeenCalledOnce();
-  });
+  const operation = callerForRequest(request).dryRun(input);
+  await fetchStarted.promise;
   controller.abort();
-  const error = await errorPromise;
+  let failure: unknown = null;
+  try {
+    await operation;
+  } catch (error) {
+    failure = error;
+  }
 
-  expect(error.code).toBe("BAD_GATEWAY");
-  expect(error.message).toBe(DRY_RUN_FAILURE_MESSAGE);
+  expect.assert(failure instanceof TRPCError);
+  expect(failure.code).toBe("BAD_GATEWAY");
+  expect(failure.message).toBe(DRY_RUN_FAILURE_MESSAGE);
   expect(fetchMock).toHaveBeenCalledOnce();
 });
