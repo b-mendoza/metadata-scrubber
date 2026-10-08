@@ -46,7 +46,7 @@ const shouldRetryServerDirectedWorkflowRequest = ({
   return false;
 };
 
-export const WORKFLOW_NO_RETRY_OPTIONS = {
+const WORKFLOW_NO_RETRY_OPTIONS = {
   limit: NO_RETRY_LIMIT,
   retryOnTimeout: false,
 } satisfies RetryOptions;
@@ -58,7 +58,6 @@ export const WORKFLOW_SERVER_DIRECTED_RETRY_OPTIONS = {
   methods: ["post"],
   retryOnTimeout: false,
   shouldRetry: shouldRetryServerDirectedWorkflowRequest,
-  statusCodes: [SERVICE_UNAVAILABLE_STATUS_CODE],
 } satisfies RetryOptions;
 
 export const createWorkflowHttpClient = (baseUrl: URL): KyInstance => {

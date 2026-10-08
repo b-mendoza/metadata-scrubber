@@ -16,7 +16,6 @@ import {
 import {
   WORKFLOW_CONFIG_TIMEOUT_MS,
   WORKFLOW_DRY_RUN_TIMEOUT_MS,
-  WORKFLOW_NO_RETRY_OPTIONS,
   WORKFLOW_ONE_SHOT_TIMEOUT_MS,
   WORKFLOW_SCRUB_TIMEOUT_MS,
   WORKFLOW_SERVER_DIRECTED_RETRY_OPTIONS,
@@ -79,7 +78,6 @@ export const wizardRouter = createTRPCRouter({
     const responseResult = await ResultAsync.fromPromise(
       workflowHttpClient
         .get("/api/files/config", {
-          retry: WORKFLOW_NO_RETRY_OPTIONS,
           signal: signal ?? null,
           timeout: WORKFLOW_CONFIG_TIMEOUT_MS,
           totalTimeout: WORKFLOW_CONFIG_TIMEOUT_MS,
@@ -101,7 +99,6 @@ export const wizardRouter = createTRPCRouter({
         workflowHttpClient
           .post("/api/uploads", {
             json: input,
-            retry: WORKFLOW_NO_RETRY_OPTIONS,
             signal: signal ?? null,
             timeout: WORKFLOW_ONE_SHOT_TIMEOUT_MS,
             totalTimeout: WORKFLOW_ONE_SHOT_TIMEOUT_MS,
@@ -167,7 +164,6 @@ export const wizardRouter = createTRPCRouter({
         workflowHttpClient
           .post("/api/files/download-grant", {
             json: input,
-            retry: WORKFLOW_NO_RETRY_OPTIONS,
             signal: signal ?? null,
             timeout: WORKFLOW_ONE_SHOT_TIMEOUT_MS,
             totalTimeout: WORKFLOW_ONE_SHOT_TIMEOUT_MS,
@@ -189,7 +185,6 @@ export const wizardRouter = createTRPCRouter({
         workflowHttpClient
           .post("/api/files/delete", {
             json: input,
-            retry: WORKFLOW_NO_RETRY_OPTIONS,
             signal: signal ?? null,
             timeout: WORKFLOW_ONE_SHOT_TIMEOUT_MS,
             totalTimeout: WORKFLOW_ONE_SHOT_TIMEOUT_MS,
