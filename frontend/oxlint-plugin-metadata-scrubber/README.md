@@ -8,11 +8,7 @@ This plugin encodes the project's coding standards as enforceable Oxlint rules. 
 
 ## Registration and commands
 
-`index.ts` registers eight `metadata-scrubber/...` rules. `fixture.config.json` enables all eight at error severity. `frontend/eslint-config/metadata-scrubber-rules.ts` loads this plugin and enables all eight at error severity. `frontend/eslint.config.ts` loads that config module.
-
-The main `frontend/.oxlintrc.json` loads this plugin and enables all eight custom rules at error severity. Agents must leave it unchanged. All eight custom rules remain active in ESLint after the Oxlint bridge.
-
-Run `pnpm run lint` from `frontend/` to run the service lint checks. Run `node oxlint-plugin-metadata-scrubber/check-fixtures.ts` from `frontend/` to run the fixture check. It uses `fixture.config.json`, not the main Oxlint config. It checks that each positive fixture has no rule diagnostics. It compares the exact ordered negative messages. The fixture check is separate from `pnpm run lint`.
+Run the [service lint checks](../docs/commands.md#core-commands) and the separate [rule fixture check](../docs/commands.md#rule-fixture-check).
 
 ## Rules
 
@@ -21,19 +17,19 @@ Run `pnpm run lint` from `frontend/` to run the service lint checks. Run `node o
 - `no-hardcoded-backend-host` requires environment fields instead of static HTTP service hosts outside tests and the validated environment module.
 - `no-mutable-module-state-in-server-code` rejects module-scope `let` and `var` declarations in server modules.
 - `no-silent-test-prerequisite` rejects `.skip` calls on Vitest test APIs, including chains such as `test.skip.each(...)`. It also rejects bare test prerequisite returns in test callbacks.
-- `separate-type-imports` rejects inline `type` specifiers in import declarations. It reports once per declaration, including declarations with only inline type specifiers. Use a separate `import type` declaration. Keep runtime imports separate. Preserve aliases and required module side effects. Standalone named, default, and namespace type imports remain allowed. A runtime binding named `type` remains allowed.
+- [`separate-type-imports`](../docs/conventions.md#imports) rejects inline `type` specifiers and requires separate `import type` declarations.
 - `use-effect-in-custom-hook` requires direct React `useEffect` calls inside the nearest named custom hook. It rejects runtime extraction of the Effect reference. Renamed imports, static React members, and immutable namespace aliases retain their React binding. Nested callbacks need their own valid owner. Type-only uses remain allowed.
 - `use-shared-render-helper` requires the shared `renderComponent` helper for Testing Library rendering.
 
 ## Core Query import restrictions
 
-The core `no-restricted-imports` entries reject runtime `useQuery` imports and source re-exports from `@tanstack/react-query`. They also reject runtime namespace imports and wildcard exports from that package. Type-only imports and exports remain allowed. The ESLint `no-restricted-syntax` entry rejects dynamic imports with that literal source. Use named `useSuspenseQuery` imports with an ancestor Suspense boundary and suitable error handling.
+Follow the [Query import policy and review limits](../docs/conventions.md#route-data-loading).
 
 ## How to contribute a rule
 
 1. Add a rule file under `rules/` and create the rule with `defineRule`.
 2. Register the rule in `index.ts`.
-3. Enable the rule in `fixture.config.json` and `frontend/eslint-config/metadata-scrubber-rules.ts`. Leave main Oxlint activation to the user's `.oxlintrc.json` update.
+3. Enable the rule in [`fixture.config.json`](fixture.config.json) and [`frontend/eslint-config/metadata-scrubber-rules.ts`](../eslint-config/metadata-scrubber-rules.ts). Leave main Oxlint activation to the user's `.oxlintrc.json` update. Follow the [config ownership rule](../eslint.config.ts).
 4. Define message templates in `meta.messages`.
 5. Report with `messageId` and `{{ interpolation }}` data.
 6. Do not put an inline message string in `context.report`.
@@ -41,7 +37,7 @@ The core `no-restricted-imports` entries reject runtime `useQuery` imports and s
 8. Do not match an identifier by its name only.
 9. Add a positive fixture that produces zero diagnostics.
 10. Add a negative fixture that produces the required diagnostics.
-11. Pin the exact diagnostic count in `fixture-cases.ts`. Pin each exact rendered message in the same file.
+11. Pin the exact diagnostic count in `check-fixtures.ts`. Pin each exact rendered message in the same file.
 12. Run the fixture before the rule change and record the expected failure.
 13. Implement the smallest rule change that makes the fixture pass.
 14. Do not add lint-suppression comments.
@@ -62,8 +58,7 @@ Name each known bypass. Forbid the bypass when it can preserve the violation. Us
 
 - The Effect rule tracks static member names and immutable namespace aliases. It does not evaluate dynamic keys, follow mutable namespace aliases, or prove arbitrary runtime data flow.
 - The Effect rule checks the nearest function owner. It cannot prove that external synchronization is necessary or that the hook name describes its purpose. A name such as `useMount` passes the name pattern but still needs review.
-- The core Query import restrictions do not check actual Suspense or error-boundary ancestry. They do not decide route data criticality, loader use, server or client execution, streaming, or retry behavior. Review these properties in the application. A boundary can live in another file. Not every component needs a loader.
-- The type-import rule does not decide whether a module needs a side-effect import. Review module initialization before removing the last runtime import.
+- Follow the [type-import policy and side-effect review](../docs/conventions.md#imports).
 - Namespace Vitest calls such as `vitest.expectTypeOf(...)` and `vitest.test.skip(...)` are not resolved.
 - Disabled Vitest calls through `test.todo(...)` and `test.skipIf(true)(...)` are not reported.
 - Suggested guard assertions do not preserve TypeScript control-flow narrowing. Adapt the surrounding code when it depends on that narrowing.
