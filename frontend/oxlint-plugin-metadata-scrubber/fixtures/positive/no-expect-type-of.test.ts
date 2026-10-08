@@ -1,19 +1,6 @@
 import { strictEqual as expectTypeOf } from "node:assert";
 
-import type { expectTypeOf as expectTypeOnly } from "vitest";
-import {
-  expect,
-  type expectTypeOf as expectTypeOnlyFromSpecifier,
-  test,
-} from "vitest";
-
-type ExpectTypeOnly = typeof expectTypeOnly;
-type ExpectTypeOnlyFromSpecifier = typeof expectTypeOnlyFromSpecifier;
-
-test("uses a runtime assertion", () => {
-  const value = "value";
-  expect(value).toBe("value");
-});
+import { expect, test } from "vitest";
 
 test("allows a non-Vitest function with the same name", () => {
   expectTypeOf("value", "value");
@@ -27,4 +14,7 @@ test("allows a parameter with the same name", () => {
   expect(callLocalExpectation((value) => value)).toBe("value");
 });
 
-export type { ExpectTypeOnly, ExpectTypeOnlyFromSpecifier };
+{
+  const expectTypeOf = (value: unknown): unknown => value;
+  expectTypeOf("local");
+}
