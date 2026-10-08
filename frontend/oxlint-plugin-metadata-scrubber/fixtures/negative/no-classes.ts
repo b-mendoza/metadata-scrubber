@@ -1,13 +1,5 @@
-export class Service {
-  run() {
-    return true;
-  }
-}
+export class Service {}
 
-export const ServiceExpression = class {
-  run() {
-    return true;
-  }
-};
+export const ServiceExpression = class {};
 
 export class ServiceError extends Error {}
