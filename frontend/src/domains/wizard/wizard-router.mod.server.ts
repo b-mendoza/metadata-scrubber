@@ -13,13 +13,7 @@ import {
   UNPROCESSABLE_ENTITY_STATUS_CODE,
   UNSUPPORTED_MEDIA_TYPE_STATUS_CODE,
 } from "#/shared/constants/http/status-codes/status-codes.mod";
-import {
-  WORKFLOW_CONFIG_TIMEOUT_MS,
-  WORKFLOW_DRY_RUN_TIMEOUT_MS,
-  WORKFLOW_ONE_SHOT_TIMEOUT_MS,
-  WORKFLOW_SCRUB_TIMEOUT_MS,
-  WORKFLOW_SERVER_DIRECTED_RETRY_OPTIONS,
-} from "#/shared/libs/ky/workflow-http-client.mod.server";
+import { WORKFLOW_SERVER_DIRECTED_RETRY_OPTIONS } from "#/shared/libs/ky/workflow-http-client.mod.server";
 import {
   createTRPCRouter,
   publicProcedure,
@@ -41,35 +35,30 @@ export const REFRESH_DOWNLOAD_GRANT_FAILURE_MESSAGE =
 export const CONFIRM_DELETE_FAILURE_MESSAGE =
   "Could not delete the file. Try again later.";
 
-const backendStatusCodes = new Map<number, TRPC_ERROR_CODE_KEY>([
-  [BAD_REQUEST_STATUS_CODE, "BAD_REQUEST"],
-  [NOT_FOUND_STATUS_CODE, "NOT_FOUND"],
-  [REQUEST_TIMEOUT_STATUS_CODE, "TIMEOUT"],
-  [CONFLICT_STATUS_CODE, "CONFLICT"],
-  [PAYLOAD_TOO_LARGE_STATUS_CODE, "PAYLOAD_TOO_LARGE"],
-  [UNSUPPORTED_MEDIA_TYPE_STATUS_CODE, "UNSUPPORTED_MEDIA_TYPE"],
-  [UNPROCESSABLE_ENTITY_STATUS_CODE, "UNPROCESSABLE_CONTENT"],
-  [SERVICE_UNAVAILABLE_STATUS_CODE, "SERVICE_UNAVAILABLE"],
-]);
+const backendStatusCodes: Record<number, TRPC_ERROR_CODE_KEY> = {
+  [BAD_REQUEST_STATUS_CODE]: "BAD_REQUEST",
+  [NOT_FOUND_STATUS_CODE]: "NOT_FOUND",
+  [REQUEST_TIMEOUT_STATUS_CODE]: "TIMEOUT",
+  [CONFLICT_STATUS_CODE]: "CONFLICT",
+  [PAYLOAD_TOO_LARGE_STATUS_CODE]: "PAYLOAD_TOO_LARGE",
+  [UNSUPPORTED_MEDIA_TYPE_STATUS_CODE]: "UNSUPPORTED_MEDIA_TYPE",
+  [UNPROCESSABLE_ENTITY_STATUS_CODE]: "UNPROCESSABLE_CONTENT",
+  [SERVICE_UNAVAILABLE_STATUS_CODE]: "SERVICE_UNAVAILABLE",
+};
 
 const mapWorkflowRequestFailure =
   (message: string) =>
   (cause: unknown): TRPCError => {
+    let code: TRPC_ERROR_CODE_KEY = "BAD_GATEWAY";
     if (
       cause instanceof HTTPError &&
       contracts.backendErrorResponseSchema.safeParse(cause.data).success
     ) {
-      return new TRPCError({
-        cause,
-        code: backendStatusCodes.get(cause.response.status) ?? "BAD_GATEWAY",
-        message,
-      });
+      code = backendStatusCodes[cause.response.status] ?? "BAD_GATEWAY";
+    } else if (cause instanceof TimeoutError) {
+      code = "TIMEOUT";
     }
-    return new TRPCError({
-      cause,
-      code: cause instanceof TimeoutError ? "TIMEOUT" : "BAD_GATEWAY",
-      message,
-    });
+    return new TRPCError({ cause, code, message });
   };
 
 export const wizardRouter = createTRPCRouter({
@@ -79,8 +68,6 @@ export const wizardRouter = createTRPCRouter({
       workflowHttpClient
         .get("/api/files/config", {
           signal: signal ?? null,
-          timeout: WORKFLOW_CONFIG_TIMEOUT_MS,
-          totalTimeout: WORKFLOW_CONFIG_TIMEOUT_MS,
         })
         .json(contracts.workflowConfigResponseSchema),
       mapWorkflowRequestFailure(WORKFLOW_CONFIG_FAILURE_MESSAGE),
@@ -100,8 +87,6 @@ export const wizardRouter = createTRPCRouter({
           .post("/api/uploads", {
             json: input,
             signal: signal ?? null,
-            timeout: WORKFLOW_ONE_SHOT_TIMEOUT_MS,
-            totalTimeout: WORKFLOW_ONE_SHOT_TIMEOUT_MS,
           })
           .json(contracts.uploadResponseSchema),
         mapWorkflowRequestFailure(CREATE_UPLOAD_FAILURE_MESSAGE),
@@ -122,8 +107,8 @@ export const wizardRouter = createTRPCRouter({
             json: input,
             retry: WORKFLOW_SERVER_DIRECTED_RETRY_OPTIONS,
             signal: signal ?? null,
-            timeout: WORKFLOW_DRY_RUN_TIMEOUT_MS,
-            totalTimeout: WORKFLOW_DRY_RUN_TIMEOUT_MS,
+            timeout: 90_000,
+            totalTimeout: 90_000,
           })
           .json(contracts.dryRunResponseSchema),
         mapWorkflowRequestFailure(DRY_RUN_FAILURE_MESSAGE),
@@ -144,8 +129,8 @@ export const wizardRouter = createTRPCRouter({
             json: input,
             retry: WORKFLOW_SERVER_DIRECTED_RETRY_OPTIONS,
             signal: signal ?? null,
-            timeout: WORKFLOW_SCRUB_TIMEOUT_MS,
-            totalTimeout: WORKFLOW_SCRUB_TIMEOUT_MS,
+            timeout: 240_000,
+            totalTimeout: 240_000,
           })
           .json(contracts.scrubFileResponseSchema),
         mapWorkflowRequestFailure(SCRUB_FILE_FAILURE_MESSAGE),
@@ -165,8 +150,6 @@ export const wizardRouter = createTRPCRouter({
           .post("/api/files/download-grant", {
             json: input,
             signal: signal ?? null,
-            timeout: WORKFLOW_ONE_SHOT_TIMEOUT_MS,
-            totalTimeout: WORKFLOW_ONE_SHOT_TIMEOUT_MS,
           })
           .json(contracts.refreshDownloadGrantResponseSchema),
         mapWorkflowRequestFailure(REFRESH_DOWNLOAD_GRANT_FAILURE_MESSAGE),
@@ -186,8 +169,6 @@ export const wizardRouter = createTRPCRouter({
           .post("/api/files/delete", {
             json: input,
             signal: signal ?? null,
-            timeout: WORKFLOW_ONE_SHOT_TIMEOUT_MS,
-            totalTimeout: WORKFLOW_ONE_SHOT_TIMEOUT_MS,
           })
           .json(contracts.confirmDeleteResponseSchema),
         mapWorkflowRequestFailure(CONFIRM_DELETE_FAILURE_MESSAGE),
