@@ -53,8 +53,8 @@ Developers build the frontend with [TanStack Start](https://tanstack.com/start) 
 
 - Each wizard procedure reads `workflowHttpClient` from the request-scoped bindings.
 - Each procedure calls one relative backend route and passes the tRPC request signal.
-- The workflow client disables retries by default.
-- `getWorkflowConfig`, `createUpload`, `refreshDownloadGrant`, and `confirmDelete` keep that default. Each procedure uses a 10-second attempt timeout and a 10-second total timeout.
+- The workflow client defaults to no retries, a 10-second attempt timeout, and a 10-second total timeout.
+- `getWorkflowConfig`, `createUpload`, `refreshDownloadGrant`, and `confirmDelete` keep these defaults.
 - `dryRun` uses a 90-second attempt timeout and a 90-second total timeout.
 - `scrubFile` uses a 240-second attempt timeout and a 240-second total timeout.
 - Dry-run and scrub permit at most two retries. They retry only `POST` responses with status `503` and a positive whole-second `Retry-After` header.
@@ -102,4 +102,3 @@ The workflow schemas enforce these contracts:
 - Workflow client tests cover the 4000 ms retry cap, the configured retry limit, and rejected retry conditions.
 - Router transport tests check the dry-run and scrub total timeouts after a server-directed retry. They also cover config requests without retries, safe transport errors, and caller cancellation.
 - Health transport tests check the 3000 ms attempt timeout, no retry after that timeout, and the one-retry limit for status `502`. They do not test the 5000 ms total timeout or either 250 ms cap.
-- `vitest.config.ts` requires test discovery. It does not permit a successful run with no tests.

@@ -4,24 +4,14 @@ import * as z from "zod";
 
 import { SERVICE_UNAVAILABLE_STATUS_CODE } from "#/shared/constants/http/status-codes/status-codes.mod";
 
-export const WORKFLOW_CONFIG_TIMEOUT_MS = 10_000;
-export const WORKFLOW_ONE_SHOT_TIMEOUT_MS = 10_000;
-export const WORKFLOW_DRY_RUN_TIMEOUT_MS = 90_000;
-export const WORKFLOW_SCRUB_TIMEOUT_MS = 240_000;
-export const WORKFLOW_RETRY_LIMIT = 2;
-export const WORKFLOW_RETRY_MAX_RETRY_AFTER_MS = 4000;
-
-const NO_RETRY_LIMIT = 0;
-const MINIMUM_RETRY_AFTER_SECONDS = 1;
-const DELAY_SECONDS_PATTERN = /^\d+$/v;
-
 // The regex copies Ky 2.1.0's delayPattern. This check is stricter than Ky.
 // It rejects HTTP dates, zero, and unsafe integers.
 const retryAfterSecondsSchema = z
-  .int({ error: "The Retry-After value must be a safe integer." })
-  .min(MINIMUM_RETRY_AFTER_SECONDS, {
-    error: "The Retry-After value must be at least one second.",
-  });
+  .string()
+  .regex(/^\d+$/v)
+  .trim()
+  .transform(Number)
+  .pipe(z.int().positive());
 
 const shouldRetryServerDirectedWorkflowRequest = ({
   error,
@@ -33,11 +23,8 @@ const shouldRetryServerDirectedWorkflowRequest = ({
     return false;
   }
 
-  const retryAfter = error.response.headers.get("Retry-After");
   if (
-    retryAfter != null &&
-    DELAY_SECONDS_PATTERN.test(retryAfter) &&
-    retryAfterSecondsSchema.validate(Number(retryAfter))
+    retryAfterSecondsSchema.validate(error.response.headers.get("Retry-After"))
   ) {
     // Ky 2.1.0 applies the server Retry-After delay and the maxRetryAfter cap only when shouldRetry returns undefined.
     // Returning true would replace the server-directed delay with Ky's own computed delay.
@@ -46,23 +33,18 @@ const shouldRetryServerDirectedWorkflowRequest = ({
   return false;
 };
 
-const WORKFLOW_NO_RETRY_OPTIONS = {
-  limit: NO_RETRY_LIMIT,
-  retryOnTimeout: false,
-} satisfies RetryOptions;
-
 export const WORKFLOW_SERVER_DIRECTED_RETRY_OPTIONS = {
-  afterStatusCodes: [SERVICE_UNAVAILABLE_STATUS_CODE],
-  limit: WORKFLOW_RETRY_LIMIT,
-  maxRetryAfter: WORKFLOW_RETRY_MAX_RETRY_AFTER_MS,
+  limit: 2,
+  maxRetryAfter: 4000,
   methods: ["post"],
-  retryOnTimeout: false,
   shouldRetry: shouldRetryServerDirectedWorkflowRequest,
 } satisfies RetryOptions;
 
 export const createWorkflowHttpClient = (baseUrl: URL): KyInstance => {
   return ky.create({
     baseUrl,
-    retry: WORKFLOW_NO_RETRY_OPTIONS,
+    retry: 0,
+    timeout: 10_000,
+    totalTimeout: 10_000,
   });
 };
