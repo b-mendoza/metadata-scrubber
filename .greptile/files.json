@@ -2,16 +2,16 @@
   "files": [
     {
       "path": "AGENTS.md",
-      "description": "Repository guidance for language, design, testing, and review scope."
+      "description": "General practices for the selected scope. The code is the source of truth."
     },
     {
       "path": "docs/agent/code-design.md",
-      "description": "Repository guidance for boundary contracts and simple design.",
+      "description": "General practices for the selected scope. The code is the source of truth.",
       "scope": ["backend/**", "frontend/src/**"]
     },
     {
       "path": "docs/agent/testing.md",
-      "description": "Repository guidance for useful tests and partial assertions.",
+      "description": "General practices for the selected scope. The code is the source of truth.",
       "scope": [
         "backend/**/*_test.go",
         "frontend/src/**/*.test.*",
@@ -20,17 +20,17 @@
     },
     {
       "path": "backend/AGENTS.md",
-      "description": "Backend service guidance.",
+      "description": "General practices for the selected scope. The code is the source of truth.",
       "scope": ["backend/**"]
     },
     {
       "path": "frontend/AGENTS.md",
-      "description": "Frontend service guidance.",
+      "description": "General practices for the selected scope. The code is the source of truth.",
       "scope": ["frontend/src/**"]
     },
     {
       "path": "frontend/docs/agent/code-conventions.md",
-      "description": "Frontend TypeScript design guidance.",
+      "description": "General practices for the selected scope. The code is the source of truth.",
       "scope": ["frontend/src/**"]
     }
   ]
