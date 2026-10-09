@@ -1,6 +1,6 @@
 # `@tanstack/devtools-vite@0.7.0` production build syntax error
 
-> **Short-lived reference.** This file describes the current state of the code. Update it when the code changes. If this file does not match the code, follow the code.
+> **Factual reference.** This file records an observed tool issue. Update it when its evidence changes. The code is the source of truth. If this document and the code disagree, the code wins.
 
 ## Summary
 
@@ -60,4 +60,4 @@ We pinned `0.6.1` until the TanStack Devtools maintainers fixed the regression. 
 
 ## Revisit criteria
 
-Revisit this entry when a new `@tanstack/devtools-vite` version changes the devtools stripping behavior. The maintainers published the fixed version, and we adopted `0.8.5`.
+Recheck this reference when its evidence or dependencies change.

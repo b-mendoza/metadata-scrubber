@@ -1,23 +1,16 @@
 # Known issues
 
-> **Short-lived reference.** This file describes the current state of the code. Update it when the code changes. If this file does not match the code, follow the code.
+> **Factual reference.** This file records observed dependency and tooling issues. Update it when its evidence changes. The code is the source of truth. If this document and the code disagree, the code wins.
 
-Use this directory to record dependency, tooling, and framework issues that affect local development or production builds.
+This directory records dependency, tooling, and framework issues that affect local development or production builds. These entries do not prescribe implementation patterns.
 
 ## Issues
 
 | Issue | Area | Status | Workaround |
 | --- | --- | --- | --- |
 | [`@tanstack/devtools-vite@0.7.0` production build syntax error](./tanstack-devtools-vite-0-7-0-build-syntax-error.md) | Build tooling | Resolved. TanStack Devtools maintainers fixed the issue. We use `0.8.5`. | None. We used a `0.6.1` pin before the fix. |
-| [`neverthrow@8.2.0` must-use lint compatibility](./neverthrow-must-use-lint-compatibility.md) | Lint tooling | Open. The available rules do not cover every `Result` form. | Enable `checkThenables` for `no-floating-promises`. Review the forms that lint does not catch. |
+| [`neverthrow@8.2.0` must-use lint compatibility](./neverthrow-must-use-lint-compatibility.md) | Lint tooling | Open. The available rules do not cover every `Result` form. | Thenable checks cover bare `ResultAsync` values. No complete workaround is recorded. |
 
 ## Entry format
 
-Each entry in this directory records:
-
-- The affected command or workflow.
-- The observed symptom and error message.
-- The suspected or confirmed root cause.
-- The package versions involved.
-- The current workaround.
-- Links to upstream issues, release notes, or local reproduction notes.
+Record the observed failure, the tested versions, and the evidence. Distinguish a confirmed cause from a suspected cause. Record the current status.
