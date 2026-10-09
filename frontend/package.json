@@ -8,6 +8,7 @@
   },
   "scripts": {
     "build": "vite build",
+    "check:fixtures": "node oxlint-plugin-metadata-scrubber/check-fixtures.ts",
     "clean:hard": "node scripts/hard-clean.ts",
     "clean:soft": "node scripts/soft-clean.ts",
     "dev": "vite dev",
