@@ -9,12 +9,15 @@ reviews:
     auto_incremental_review: false
 
   path_instructions:
+    - path: "**"
+      instructions: |
+        The code and its configured checks are the source of truth. A document does not override them. If a document and the code disagree, review against the code and report the stale document.
     - path: "backend/**"
       instructions: |
         Review boundary contracts. Require each boundary to declare and validate its input before domain logic runs. Require contract violations and unknown values to return an explicit error. Do not accept silent coercion, default values, or dropped input.
-        Require structural fixes for lint failures. Do not accept lint-suppression comments or rule escape hatches. Accept a suppression only at a third-party API boundary that forces it.
+        Require a fix for the cause of a failed check. Accept a narrow exception with a stated reason. Reject broad exceptions. Keep an exception only where an external API forces it.
         Review test call assertions. Require partial assertions for values with fields that the code under test does not control. Do not require an exact full-structure assertion unless the code controls the complete value.
-        Review names for clear domain meaning beyond any deterministic denylist. Accept established Go names such as ctx, w, r, ok, and short loop indexes.
+        Review names for clear domain meaning beyond any deterministic denylist. Accept short conventional names that the language community uses.
         Do not review complexity limits, switch statements, lookup-map structure, formatting, or other rules that deterministic checks own.
     - path: "{backend/**,frontend/src/**}"
       instructions: |
@@ -22,10 +25,10 @@ reviews:
         Review boundary contracts. Require each boundary to declare and validate external input before domain logic runs. Require contract violations and unknown values to fail with a clear error. Do not accept silent coercion, default values, or dropped input.
         Review application code for specific and explicit implementations. Do not accept one general function for many use cases. Require a helper that only avoids repeated code to be deleted and the code written at each call site. Accept duplication in application code.
         Require every generic type parameter to declare an explicit, meaningful constraint.
-        Prefer structural fixes for lint failures. In frontend code, accept a line-level `eslint-disable-next-line` comment that names the rule and gives a reason. Do not accept file-level suppressions or file-scoped rule overrides.
+        Require a fix for the cause of a failed check. Accept a narrow exception with a stated reason. Reject broad exceptions.
         Review test request and response payloads. Require each test to build payloads from the concrete typed contracts at the call site and serialize them there with errors checked. Accept raw wire literals only in dedicated wire-contract tests.
-        Review frontend server HTTP boundaries. Require ky for outbound frontend server HTTP calls. Require code to build service URLs from request-scoped application bindings. Require server code to return client-safe tRPC or route errors. Reject client-facing messages that include backend response bodies, service URLs, schema issues, or dependency error text.
-        Review test call assertions. Require expect.objectContaining or another partial matcher when the code controls only part of a value. Do not require an exact full-structure assertion unless the code controls the complete value.
+        Review frontend server HTTP boundaries. Require code to build service URLs from request-scoped application bindings. Require server code to return client-safe errors. Reject client-facing messages that include backend response bodies, service URLs, schema issues, or dependency error text.
+        Review test call assertions. Require a partial matcher when the code controls only part of a value. Do not require an exact full-structure assertion unless the code controls the complete value.
         Review design intent and simplicity. Prefer construction that removes invalid states. Report unclear or needless abstractions.
         Review names for clear domain meaning beyond any deterministic denylist.
         Do not review complexity limits, switch statements, class syntax, lookup-map structure, formatting, or other rules that deterministic checks own.
@@ -36,6 +39,7 @@ reviews:
       instructions: |
         Review Markdown for ASD-STE100 Simplified Technical English.
         Require short sentences in active voice. Require one idea in each sentence. Prefer the simplest word that keeps the meaning. Require one consistent word for one concept. Keep technical names, identifiers, commands, and code exact.
+        Require documents to describe general practices. Accept factual references about architecture and known issues. Reject instructions for specific implementations.
         Review design intent, clarity, and simplicity. Do not report formatting that a deterministic check owns.
 
 knowledge_base:
