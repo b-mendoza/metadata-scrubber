@@ -20,6 +20,9 @@ export const directiveCommentRules = {
   // Fix React Doctor findings in the code instead of adding a disable comment.
   "no-warning-comments": [
     SEVERITY_LEVELS.Error,
-    { terms: ["react-doctor-disable"], location: "anywhere" },
+    {
+      terms: ["react-doctor-disable"],
+      location: "anywhere",
+    },
   ],
 } satisfies Linter.RulesRecord;
