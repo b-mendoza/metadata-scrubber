@@ -101,6 +101,9 @@ export default defineConfig(
   ...sourceRules,
   ...reactRules,
   {
+    // The Oxlint bridge turns off ESLint rules that map to native Oxlint rules.
+    // ESLint would report their valid line-level exceptions as unused.
+    linterOptions: { reportUnusedDisableDirectives: "off" },
     languageOptions: {
       parserOptions: {
         projectService: true,
