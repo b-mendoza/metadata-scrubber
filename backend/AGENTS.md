@@ -1,31 +1,26 @@
 # Backend agent guide
 
-The backend is a Go HTTP service. It grants direct uploads to private storage. It inspects stored PDF files. It returns download grants for cleaned files.
+This guide describes general practices. The code is the source of truth. This guide does not override the code.
 
-Use [Task](https://taskfile.dev) as the command interface for this service. Run each target as `task <target>`.
+[Taskfile.yml](Taskfile.yml) defines the available commands.
 
-## Deployment target
+## Runtime limits
 
-Vercel Fluid compute runs the service in a stateless container. You do not control the server. Design and review the service for these conditions:
+- Account for runtime limits when you design or review code.
+- Keep resource use within the runtime's limits.
+- Bound resource lifetimes even when cancellation does not stop work.
+- Keep accepted work within available capacity.
 
-- One instance serves many requests at the same time. The platform fills a warm instance before it starts a new instance. The platform does not isolate requests from each other.
-- Each instance has a small fixed memory limit. Each instance has few CPUs. Limit work that holds a large buffer for each request. An out-of-memory kill stops the process and fails every request in that process.
-- The platform sets each request time limit in minutes. Do not depend on client disconnection to release a resource before that time limit expires.
-- The platform adds instances when current instances are busy. Refuse work that you cannot start so the platform can add instances.
+## Code design
 
-## Always
+- Give every generic an explicit, meaningful constraint. The constraint must name the accepted types or the operations that the generic code requires.
+- Keep a suppression only where an external API boundary forces it. State the reason.
 
-- Run `task lint` after a substantive change.
-- Run `task test` before you commit.
+## Documentation
 
-The custom analyzers ban the `any` and `interface{}` forms of the empty interface in application code. Give every generic an explicit, meaningful constraint. The constraint must name the accepted types or the operations that the generic code requires.
-
-## Short-lived references
-
-These short-lived references describe the current code. Verify them against the code.
+The architecture reference describes the current code. Verify it against the code. The conventions guide describes general practices.
 
 - [Architecture](docs/architecture.md) describes the package layout and runtime wiring.
-- [Commands](docs/commands.md) lists all Task targets and explains how tooling manages generated files.
-- [Conventions](docs/conventions.md) lists mistakes that agents repeated in this service and the required fix. Read it before you change backend code.
+- [Conventions](docs/conventions.md) describes general design practices.
 
-The [root agent guide](../AGENTS.md) contains the long-lived guidance for naming, code design, testing, workflow, and verification. Follow that guidance in this service.
+Read the [root agent guide](../AGENTS.md) for shared general practices. Follow that guidance in this service.

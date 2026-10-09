@@ -1,6 +1,8 @@
 # Current backend architecture
 
-> **Short-lived reference.** This file describes the current state of the code. Update it when the code changes. If this file does not match the code, follow the code.
+> **Factual reference.** This file describes the current state of the code. Update it when the code changes. The code is the source of truth. If this document and the code disagree, the code wins.
+
+The backend is a Go HTTP service. It grants direct uploads to private storage. It inspects stored PDF files. It returns download grants for cleaned files.
 
 ## Internal package layout
 
@@ -22,6 +24,8 @@
 | `lint/noemptyinterface` | `lint/noemptyinterface` provides a Go analyzer. The analyzer reports `any`, literal empty interfaces, and named types or aliases that resolve to empty interfaces in application code. |
 | `lint/cmd/analyzers` | `lint/cmd/analyzers` runs both analyzers on application packages. The lint targets select the service root and all packages under `internal/`. |
 
+Stock `golangci-lint` checks all packages, including analyzer code. Git ignores the generated `coverage.out` file.
+
 ## HTTP API
 
 The server registers these routes:
@@ -40,10 +44,21 @@ The download-grant route checks one exact sanitized revision. It returns a fresh
 
 The delete route removes the source and all sanitized revisions for one file. The R2 adapter lists every sanitized-prefix page and deletes each page as one batch. It checks the provider delete result for each page. It then verifies that the source and sanitized prefix are empty. The operation is idempotent. A verified remaining object produces a `409 Conflict` response. Only verified deletion returns `{ "status": "deleted" }`. Confirmed deletion shows absence at the time of the checks. A scrub that is already in progress can still write a cleaned file after that.
 
+## Deployment
+
+Vercel Fluid compute runs the service in a stateless container. Vercel manages the server.
+
+- One instance serves many requests at the same time. The platform fills a warm instance before it starts a new instance. The platform does not isolate requests from each other.
+- Each instance has a small fixed memory limit and few CPUs. An out-of-memory kill stops the process and fails every request in that process.
+- The platform controls request time limits. The deployment configuration does not state a duration.
+- The platform adds instances when current instances are busy.
+
 ## Runtime
 
+The local run process uses the shell environment. It has no `.env` loader. Before startup, the service validates `PORT`, `R2_ACCOUNT_ID`, `R2_ACCESS_KEY_ID`, `R2_SECRET_ACCESS_KEY`, and `R2_BUCKET`. The R2 settings are required. `PORT` defaults to 8080. [`.env.example`](../.env.example) lists these variables with example values.
+
 - `main.go` configures JSON slog logging. It validates the service configuration and the Cloudflare R2 connection configuration. It creates one long-lived R2 adapter from the validated configuration without contacting R2. It passes the adapter into server construction.
-- Server construction creates one handler and one buffered admission channel with a fixed capacity of two. It does not register the superseded multipart endpoint.
+- Server construction creates one handler and one buffered admission channel with a fixed capacity of two. The permits limit active PDF work. They do not limit waiting requests or memory use. Server construction does not register the superseded multipart endpoint.
 - Server construction uses request bindings to inject the validated configuration and the provider-neutral `storage.Storage` interface before routing. Handlers do not construct provider clients or receive AWS SDK types.
 - Dry-run acquires the shared permit before source download. It holds the permit through the intake check and PDF inspection.
 - Scrub checks that the source exists before it checks the sanitized revision cache. A missing source returns `404 Not Found`. A source-check failure stops later storage and PDF work.
