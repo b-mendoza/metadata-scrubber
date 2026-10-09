@@ -10,7 +10,7 @@ Documents are never the source of truth. The code is the source of truth. If the
 
 Factual references, such as architecture, layout, and known issues, can describe the current code and tools. They do not define requirements. Check them against the code. Update them when they become wrong.
 
-The project manifest defines available commands and scripts. Use `package.json` for the frontend and `Taskfile.yml` for the backend. Do not keep a separate command inventory in a document.
+The project manifest defines available commands and scripts. Use `package.json` for the frontend, `Taskfile.yml` for the backend, and `terraform/Taskfile.yml` for Terraform. Do not keep a separate command inventory in a document.
 
 Keep a guidance rule only when it states a useful general practice. Use observed failures to find general lessons. Remove case-specific fixes and duplicate guidance. Remove a rule when it no longer changes agent behavior. Every agent loads these files into its context. Keep each line tied to an agent action. State the required action instead of listing prohibited actions. Use a standalone prohibition when it addresses a repeated failure.
 
