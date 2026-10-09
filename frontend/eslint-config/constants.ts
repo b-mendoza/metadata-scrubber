@@ -1,8 +1,8 @@
 export const PLUGIN_NAMES = {
-  ESLintReact: "@eslint-react",
   BetterTailwindcss: "better-tailwindcss",
   E18e: "e18e",
   ESLintCommunityComments: "@eslint-community/eslint-comments",
+  ESLintReact: "@eslint-react",
   ImportX: "import-x",
   JSXA11yX: "jsx-a11y-x",
   MetadataScrubber: "metadata-scrubber",
