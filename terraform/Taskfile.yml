@@ -1,0 +1,45 @@
+#:schema https://taskfile.dev/schema.json
+
+version: "3.51.1"
+
+tasks:
+  init:
+    desc: >-
+      Initialize R2 state and install the pinned provider without changing the lock file. Set AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY, and AWS_ENDPOINT_URL_S3. For plan and apply, also set CLOUDFLARE_API_TOKEN and TF_VAR_cloudflare_account_id.
+    cmds:
+      - terraform init -lockfile=readonly
+
+  lint:
+    desc: Check formatting and validate the configuration without credentials
+    env:
+      # A separate data directory keeps lint from loading the backend that init saved.
+      TF_DATA_DIR: .terraform/lint
+    cmds:
+      - terraform init -backend=false -lockfile=readonly
+      - terraform fmt -check -recursive
+      - terraform validate
+
+  fix:
+    desc: Format the configuration (writes files)
+    cmds:
+      - terraform fmt -recursive
+
+  plan:
+    desc: >-
+      Save a plan to tfplan. Set CLOUDFLARE_API_TOKEN, TF_VAR_cloudflare_account_id, AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY, and AWS_ENDPOINT_URL_S3.
+    deps:
+      - init
+    cmds:
+      - terraform plan -out=tfplan
+
+  apply:
+    desc: >-
+      Run plan first. Apply tfplan to change the Cloudflare account. Set CLOUDFLARE_API_TOKEN, TF_VAR_cloudflare_account_id, AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY, and AWS_ENDPOINT_URL_S3.
+    cmds:
+      - terraform apply tfplan
+
+  lock:
+    desc: >-
+      Record install checksums for the current platform. Signed registry checksums in the lock file cover the other platforms.
+    cmds:
+      - terraform providers lock
