@@ -10,7 +10,7 @@ import { SERVICE_UNAVAILABLE_STATUS_CODE } from "#/shared/constants/http/status-
 const retryAfterSecondsSchema = z
   .string()
   .regex(/^\d+$/v)
-  .transform(Number)
+  .pipe(z.coerce.number())
   .pipe(z.int().positive());
 
 const shouldRetryServerDirectedWorkflowRequest = ({
