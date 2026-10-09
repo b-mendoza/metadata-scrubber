@@ -1,40 +1,30 @@
-# TypeScript design conventions
+# Frontend design practices
 
-This file contains long-lived guidance for TypeScript design in the frontend. The short-lived [conventions reference](../conventions.md) records the current file names and structure.
+This guide describes general practices, not specific use cases or implementations. The code is the source of truth. This guide does not override the code.
 
-## Mapped dependency failures
+## Dependencies and failures
 
-- Use result values for dependency failures only in server-only modules and frontend scripts. Browser code uses `async`/`await`, so the result library stays out of the client bundle.
-- Keep the lint plugin free of the result library so that plugin consumers do not need it.
-- Map each failure to a known error value at the operation. Keep the original failure in `cause`.
-- Read a failed HTTP response body from the error data that the HTTP client already parsed. The client reads the body before it throws. A second read fails on the server.
-- Await only a result value in server-only modules and frontend scripts. This await rule does not apply to scripts that delete installed dependencies or dependency caches. Branch on success or failure.
-- Use only runtime built-ins in scripts that delete installed dependencies or dependency caches so they can run without dependencies.
-- Throw the mapped error at the route or tRPC boundary.
-- Wrap a synchronous call that can throw so that it returns a mapped result.
-- Map application-owned validation failures in server-only modules and scripts that use result values. Let a framework own validation only when it calls the schema and handles the failure.
-- Review every result consumption. Lint checks do not cover every consumption form.
+- Keep each operation focused on one purpose.
+- Keep a dependency out of a runtime that does not need it. Check every path that can reach another runtime.
+- Do not require tool consumers to install dependencies they do not need.
+- Report a failure in terms the caller understands. Preserve the original cause.
+- Do not read a consumed resource again.
+- Keep maintenance tools independent of resources they remove.
+- Report a failure at the boundary responsible for it.
+- Keep validation and failure handling under one clear owner.
 
-## Route data
+## Data and resources
 
-- Await only critical data in a route loader. Critical data is data that the page cannot render without.
-- Treat data as non-critical unless evidence shows that the page cannot render without it. Each query that a loader awaits delays the time to first byte, the first contentful paint, and every client navigation to the page.
-- Start non-critical queries without waiting. Render their data under a Suspense boundary with a fallback.
-- Read query data through Suspense by default. Ask the owner before you use a non-suspending query read. Keep query loading UI in the parent Suspense fallback instead of loading flags or nullable-data branches in the component. Keep mutation pending state in the component because mutations do not suspend.
+- Wait only for data required to show useful content. Treat other data as optional until evidence shows otherwise.
+- Stop dependent work when its owner cancels it.
+- Match resource creation and release to the lifetime of its owner.
 
-## External input
+## Changes and checks
 
-Validate external input with Zod at each boundary.
-
-## Client context
-
-- Read the tRPC options proxy and the query client from context in components. Do not pass them as props.
-- Pass the tRPC client and the query client as props only to the tRPC provider setup.
-- Read the tRPC options proxy and the query client from the loader context in route loaders.
-
-## HTTP requests
-
-- Read the request-scoped Ky client from app bindings for backend calls.
-- Pass the request signal.
-- Use a relative path. The binding supplies the base URL.
-- Extend the client for one use case only when that use case needs a different transport policy.
+- Preserve program meaning when changing syntax.
+- Preserve limits and accepted inputs when changing dependencies.
+- Reject invalid input without silently changing it.
+- Validate external data against its actual contract. Reject missing required data. Do not hide invalid input with a default.
+- Do not let control flow skip a required assertion.
+- Keep checks able to detect failures. Do not narrow their scope to hide a failure.
+- Keep automated-check coverage aligned with the code it must inspect.

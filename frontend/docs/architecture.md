@@ -1,10 +1,17 @@
 # Current frontend architecture
 
-> **Short-lived reference.** This file describes the current state of the code. Update it when the code changes. If this file does not match the code, follow the code.
+> **Factual reference.** This file describes the current state of the code. Update it when the code changes. The code is the source of truth. If this document and the code disagree, the code wins.
 
 ## Framework
 
 Developers build the frontend with [TanStack Start](https://tanstack.com/start) through `@tanstack/react-start`. They keep file-based routes under `src/routes/`. They mount tRPC at `src/routes/api/trpc.$.ts`.
+
+## Deployment
+
+- Vercel runs this service as a TanStack Start application. Vercel manages the server runtime.
+- One instance can serve many requests at the same time.
+- Vercel injects the backend's URL as a service binding.
+- Vercel limits each request's run time and each instance's memory.
 
 ## Source layout
 
@@ -13,11 +20,15 @@ Developers build the frontend with [TanStack Start](https://tanstack.com/start) 
 - Developers keep cross-domain code under `src/shared/`. It contains `config`, `constants`, `libs` for tRPC and Ky, `middlewares`, and `utils`.
 - TanStack Router reads file-based routes from `src/routes/`. Developers keep API routes under `src/routes/api/`.
 - Developers keep test setup and shared render helpers under `src/tests/`. The render helpers are in `src/tests/utils/renderers/`.
+- Module files use `.mod.ts` or `.mod.tsx`. Server-only modules use `.mod.server.ts`.
+- Source tests use `.test.ts` or `.test.tsx` and sit next to the code they test.
+- `tsconfig.app.json` maps the `#/` import alias to `src/`.
+- The TanStack Router plugin generates `src/routeTree.gen.ts` during development and production builds. The service has no separate route-generation script.
 
 ## Server boundaries
 
-- Use route server handlers and server functions for small operations. Keep each operation direct and single-purpose. See `src/routes/api/trpc.$.ts`. Wrap server-only code with `createServerOnlyFn` from `@tanstack/react-start`.
-- Use tRPC procedures for business logic and the small-JSON backend workflow.
+- The frontend server proxies the small-JSON workflow to the Go backend through tRPC procedures.
+- The `.server` module suffix marks server-only code. Other source modules can enter the client bundle, even when they contain a server callback.
 - The root tRPC router registers the `products` and `wizard` routers.
 - The wizard router provides these procedures:
   - `getWorkflowConfig`
@@ -37,6 +48,7 @@ Developers build the frontend with [TanStack Start](https://tanstack.com/start) 
 - The `workflowHttpClient` binding is the request-scoped file-workflow Ky client.
 - Both clients use the validated `BACKEND_URL` as `baseUrl`.
 - On each request, the middleware calls `environmentSchema.parse(process.env)`. A validation error rejects the middleware request. The middleware provides the validated bindings to downstream code through `getAppBindings()`.
+- The environment schema requires `BACKEND_URL` and accepts absolute HTTP and HTTPS URLs. This service has no `.env.example`.
 
 ## Backend HTTP
 
@@ -63,10 +75,9 @@ Developers build the frontend with [TanStack Start](https://tanstack.com/start) 
 - A Ky timeout maps to `TIMEOUT`. Invalid backend success JSON and invalid backend error JSON map to `BAD_GATEWAY`. Other upstream failures also map to `BAD_GATEWAY`.
 - Public tRPC errors do not include backend error text, provider details, credentials, object keys, request IDs, or presigned URL details.
 - Outbound failure handling uses neverthrow.
+- Ky reads an error body before it throws. `HTTPError.data` contains the parsed body. A second body read failed in Node during a prior test. happy-dom hid that failure.
 
 ## Validation
-
-Use Zod for all validation logic in every environment.
 
 The workflow schemas enforce these contracts:
 
@@ -89,9 +100,22 @@ The workflow schemas enforce these contracts:
 - No frontend route parses or proxies file bytes.
 - The Go backend owns R2 credentials and the file-size limit. The browser does not receive R2 credentials.
 - The Go backend also owns PDF inspection, metadata removal, sanitized revisions, download grants, and confirmed deletion.
-- Read the service-integration section of the root [architecture reference](../../docs/architecture.md) before you change storage code in the frontend.
+
+The root [architecture reference](../../docs/architecture.md) describes service integration.
+
+## Tooling
+
+- [package.json](../package.json) defines the available commands and scripts.
+- `scripts/setup-node.sh` installs the pinned Node.js runtime and pnpm. It installs dependencies, then runs lint, fixes, tests, coverage, and a production build.
+- `scripts/hard-clean.ts` and `scripts/soft-clean.ts` import only Node built-ins. They can run without installed dependencies.
+- The lint checks cover ESLint rules, React Doctor findings, unused code, formatting, Oxlint rules, and TypeScript types. Knip checks unused files, dependencies, and exports. oxfmt checks formatting.
+- React Doctor scans the frontend. Its configured ignores include generated output and the Oxlint plugin. It runs without interactive input. Telemetry, scoring, and the supply-chain scan are off. Warnings and errors fail the check.
+- `eslint.config.ts` defines preset order, the Oxlint bridge, the parser root, and rule groups. It loads configuration arrays and rule maps from `eslint-config/*-rules.ts`. Each configuration module imports its own plugins.
+- The [lint plugin reference](../oxlint-plugin-metadata-scrubber/README.md) describes custom rules and static-check limits.
 
 ## Testing status
+
+- `vitest.config.ts` runs `src/**/*.server.test.ts` in the `server` project with Node and no setup file. It runs the other `src/**/*.test.{ts,tsx}` files in the `client` project with happy-dom and `src/tests/setup-test-environment.ts`.
 
 - Direct tRPC caller tests cover all six workflow procedures and root-router registration.
 - Tests check exact backend methods, paths, and JSON bodies. They compare each request body with its typed procedure input.

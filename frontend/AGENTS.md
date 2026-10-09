@@ -1,34 +1,34 @@
 # Frontend agent guide
 
-Use `pnpm` as the package manager.
+This guide describes general practices, not specific use cases or implementations. A guide does not override the code.
 
-## Deployment target
+Use the package manager and version declared by the project manifest.
 
-Vercel runs this service as a TanStack Start application. You do not control the Vercel server. Use these deployment properties when you design or review frontend code.
+[package.json](package.json) defines the available commands and scripts.
 
-- One instance can serve many requests at the same time. Design request handling for concurrent requests.
-- Vercel injects the backend's URL as a service binding.
-- Vercel limits each request's run time and each instance's memory. Limit work that keeps a large buffer in memory for each request.
+## Runtime limits
+
+- Account for the runtime's limits when you design or review code.
+- Prevent concurrent work from interfering with other work.
+- Keep resource use within the runtime's limits.
 
 ## Always
 
-- If Node.js (see `.nvmrc`) or pnpm is missing or has the wrong version, run `scripts/setup-node.sh` before any other work.
-- Fix the code that a rule reports. If one line needs an exception, add an `eslint-disable-next-line` comment that names the rule and gives a reason. The lint configuration rejects file-level suppressions and Oxlint directive comments. Do not add a file-scoped rule override to bypass a rule.
-- After a substantive change, run `pnpm run lint`. See the [lint check](docs/commands.md#core-commands).
-- Before you commit, run `pnpm run test`. See the [test suite](docs/commands.md#core-commands).
+- Check the required tools and versions before work. Use the configured setup process when a tool is missing or has the wrong version.
+- Fix the cause of a failed check. A narrow exception is acceptable when it has a stated reason. Do not use a broad exception.
 - Give every generic an explicit, meaningful constraint. The constraint must name the accepted types or the operations that the generic code requires.
+- Use the formatter configured by the project.
 
 ## Open when relevant
 
-- Read [TypeScript design conventions](docs/agent/code-conventions.md) for long-lived TypeScript design guidance.
+- Read the [frontend design guide](docs/agent/code-conventions.md) for general practices.
 
-## Short-lived references
+## Factual references
 
-Verify these short-lived references against the code.
+These references describe current facts. Check them against the code.
 
 - [Architecture](docs/architecture.md) describes the framework, source layout, server boundaries, bindings, uploads, and testing status.
-- [File structure and conventions](docs/conventions.md) describes the path alias and file names. It lists mistakes that agents repeated and their required fixes.
-- [Commands](docs/commands.md) is the full service command reference.
-- [Known issues](docs/known-issues/README.md) describes dependency and tooling issues that affect builds and their workarounds.
+- [Known issues](docs/known-issues/README.md) describes observed dependency and tooling issues.
+- [Lint plugin](oxlint-plugin-metadata-scrubber/README.md) describes the rules and their static limits.
 
-Read the [root agent guide](../AGENTS.md) for long-lived guidance about code design and testing. Use it for workflow and verification guidance. Apply that guidance to this service.
+Read the [root agent guide](../AGENTS.md) for shared general practices.
