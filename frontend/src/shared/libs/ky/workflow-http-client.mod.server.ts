@@ -6,10 +6,10 @@ import { SERVICE_UNAVAILABLE_STATUS_CODE } from "#/shared/constants/http/status-
 
 // The regex copies Ky 2.1.0's delayPattern. This check is stricter than Ky.
 // It rejects HTTP dates, zero, and unsafe integers.
+// eslint-disable-next-line zod/prefer-string-schema-with-trim -- The regex accepts only digits, so .trim() cannot change an accepted value.
 const retryAfterSecondsSchema = z
   .string()
   .regex(/^\d+$/v)
-  .trim()
   .transform(Number)
   .pipe(z.int().positive());
 
