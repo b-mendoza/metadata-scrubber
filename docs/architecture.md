@@ -1,6 +1,6 @@
 # Repository architecture
 
-> **Short-lived reference.** This file describes the current state of the repository. Update it when the repository changes. If this file does not match the code, follow the code.
+> **Factual reference.** This file describes the current state of the repository. Update it when the repository changes. The code is the source of truth. If this document and the code disagree, the code wins.
 
 ## Layout
 
@@ -8,7 +8,7 @@
 | --- | --- |
 | `backend/` | Go HTTP backend service for scrubbing, request handling, configuration, and private storage. The service has its own `AGENTS.md`. |
 | `frontend/` | TypeScript and React frontend service on TanStack Start and Vite. `pnpm` manages the service. The service has its own `AGENTS.md`. |
-| `docs/` | Cross-service documentation. Long-lived guidance is under `docs/agent/`. Short-lived references include this file. |
+| `docs/` | Cross-service documentation. General guides are under `docs/agent/`. Factual references include this file. |
 | `docker-compose.yml` | Runs the backend and frontend together for local development. |
 
 ## Service integration
@@ -26,7 +26,7 @@
 - The backend confirms full-flow deletion before it reports success. The operation removes the source and every sanitized revision for the file. Confirmed deletion shows absence at the time of the checks. A scrub that is already in progress can still write a cleaned file after that.
 - Backend workflow errors contain safe public text. The frontend maps them to safe tRPC errors and does not return provider details.
 
-## Short-lived references for each service
+## Factual references for each service
 
-- See the reference list in [backend/AGENTS.md](../backend/AGENTS.md) for the backend.
-- See the reference list in [frontend/AGENTS.md](../frontend/AGENTS.md) for the frontend.
+- See the [backend agent guide](../backend/AGENTS.md) for general practices and factual references.
+- See the [frontend agent guide](../frontend/AGENTS.md) for general practices and factual references.
