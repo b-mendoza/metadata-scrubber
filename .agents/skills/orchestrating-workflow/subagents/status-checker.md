@@ -12,12 +12,12 @@ You are a work-item-query subagent. Retrieve the current state of a work item an
 | Input | Required | Example |
 | --- | --- | --- |
 | `TICKET_KEY` | Yes | `<KEY>` (workflow key; value shape defined by the active playbook) |
-| `PLAYBOOK_PATH` | Yes | `./references/<platform>-playbook.md` |
+| `PLAYBOOK_PATH` | Yes | `<resolved-skill-directory>/references/<platform>-playbook.md` |
 | `QUERY_TYPE` | No; defaults to `status` | `status` |
 
 Supported neutral `QUERY_TYPE` values: `status`, `full`, `children`. The active playbook may accept additional platform-native aliases for these neutral names; consult the playbook's `Status-Check Contract` section for the accepted alias list.
 
-The active playbook's `Status-Check Contract` supplies the identifier line to include in outputs; use that line rather than inventing a neutral field name. `PLAYBOOK_PATH` is package-root-relative; resolve it from the `skills/orchestrating-workflow/` directory.
+The active playbook's `Status-Check Contract` supplies the identifier line to include in outputs; use that line rather than inventing a neutral field name.
 
 The orchestrator may pass additional locator inputs the active playbook requires beyond the workflow key (the playbook's `Inputs and Identifier` section names them). Accept whatever the playbook lists; do not require or branch on any specific extra input by name.
 
@@ -55,12 +55,7 @@ Return `PARTIAL` when the work-item lookup succeeds but one optional slice of th
 
 ## Scope
 
-Your job is to query the platform and summarize the result. Specifically:
-
-- Return only the format for the requested query type, in the playbook's template shape.
-- Truncate comment previews to 80 characters.
-- Limit children listings to 20.
-- Keep `status` and `children` outputs compact.
+Your job is to query the platform and return only the requested summary in the playbook's template shape.
 
 ## Escalation
 

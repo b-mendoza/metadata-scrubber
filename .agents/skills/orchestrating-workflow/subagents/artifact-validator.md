@@ -12,12 +12,12 @@ You are a validation subagent. Verify one requested workflow boundary and return
 | Input | Required | Example |
 | --- | --- | --- |
 | `TICKET_KEY` | Yes | `<KEY>` (workflow key; value shape defined by the active playbook) |
-| `PLAYBOOK_PATH` | Yes | `./references/<platform>-playbook.md` |
+| `PLAYBOOK_PATH` | Yes | `<resolved-skill-directory>/references/<platform>-playbook.md` |
 | `PHASE` | Yes | `2` |
 | `DIRECTION` | Yes | `postcondition` |
 | `TASK_NUMBER` | Required only for task-specific phases 5-7 | `3` |
 
-`TICKET_KEY` is the workflow's stable key under its alias parameter name; its value is opaque to this subagent and its shape is defined by the active playbook. Pass it back in outputs as a `Workflow:` line so the value carries through unchanged. `PLAYBOOK_PATH` is package-root-relative; resolve it from the `skills/orchestrating-workflow/` directory.
+Treat TICKET_KEY as opaque and copy it unchanged to the Workflow: output line.
 
 ## Instructions
 

@@ -12,10 +12,10 @@ You are a progress-tracking subagent. Maintain the workflow-level and task-level
 | Input | Required | Example |
 | --- | --- | --- |
 | `TICKET_KEY` | Yes | `<KEY>` (workflow key; value shape defined by the active playbook) |
-| `PLAYBOOK_PATH` | Required for `initialize`, `update`, and `initialize_task` (template skill names) | `./references/<platform>-playbook.md` |
+| `PLAYBOOK_PATH` | Required for `initialize`, `update`, and `initialize_task` (template skill names) | `<resolved-skill-directory>/references/<platform>-playbook.md` |
 | `ACTION` | Yes | `read` |
 
-`TICKET_KEY` is the workflow's stable key under its alias parameter name; its value is opaque to this subagent and its shape is defined by the active playbook's `Inputs and Identifier` section. Substitute this value for `<KEY>` in generated progress file paths and headings. `PLAYBOOK_PATH` is package-root-relative; resolve it from the `skills/orchestrating-workflow/` directory when an action requires it.
+Treat TICKET_KEY as opaque; substitute it for <KEY> in progress file paths and headings.
 
 Additional inputs by action:
 
@@ -40,8 +40,6 @@ When `TASKS` is provided for Phase 4 completion, each task entry should carry ta
 | `docs/<KEY>-progress.md` | Workflow-level | Tracks phases 1-4 and task list |
 | `docs/<KEY>-task-<N>-progress.md` | Per-task | Tracks phases 5-7 for one task |
 
-The `<KEY>` placeholder below refers to the `TICKET_KEY` value passed at dispatch.
-
 Read `../references/progress-tracker-templates.md` when an action creates or modifies one of these files. The templates expect to be filled with skill names from the active playbook's `Phase Skill Map`.
 
 ## Instructions
@@ -62,27 +60,15 @@ Read `../references/progress-tracker-templates.md` when an action creates or mod
 
 ### `update`
 
-1. Read the existing workflow progress file, initializing it first if it does not exist yet.
-2. Update the requested phase row for phases 1-4.
-3. Append a one-line execution log entry with a UTC timestamp.
-4. If `PHASE=4` and `STATUS=complete`, populate or refresh the Task Execution table using `TASKS`, preserving dependencies, priority, and any platform-specific linkage metadata supplied.
-5. Return the resulting workflow summary.
+Follow the update procedure in ../references/progress-tracker-templates.md and return the resulting workflow summary.
 
 ### `initialize_task`
 
-1. Read the template file and the active playbook's `Phase Skill Map` for the per-phase skill names (5-7) to fill into the template.
-2. Create `docs/<KEY>-task-<N>-progress.md` only if it does not already exist.
-3. Use this action only after task selection is confirmed and the Phase 5 precondition has passed.
-4. Mark the corresponding task as active in the workflow-level progress file.
-5. Return the resulting resume summary.
+Follow the initialize_task procedure in ../references/progress-tracker-templates.md and return the resulting resume summary.
 
 ### `update_task`
 
-1. Read the per-task progress file.
-2. Update the requested row for phases 5-7.
-3. Append a one-line task activity log entry with a UTC timestamp.
-4. Mirror the task status into the workflow-level Task Execution table.
-5. Return the resulting workflow summary.
+Follow the update_task procedure in ../references/progress-tracker-templates.md and return the resulting workflow summary.
 
 ## Output Format
 

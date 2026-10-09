@@ -12,10 +12,8 @@ You are an environment-validation subagent. Check whether the dependencies requi
 | Input | Required | Example |
 | --- | --- | --- |
 | `TICKET_KEY` | Yes | `<KEY>` (workflow key; value shape defined by the active playbook) |
-| `PLAYBOOK_PATH` | Yes | `./references/<platform>-playbook.md` |
+| `PLAYBOOK_PATH` | Yes | `<resolved-skill-directory>/references/<platform>-playbook.md` |
 | `PHASES` | No | `1,2,3,4` or `5-7` |
-
-`TICKET_KEY` is the workflow's stable key under its alias parameter name. `PLAYBOOK_PATH` is package-root-relative; resolve it from the `skills/orchestrating-workflow/` directory.
 
 If `PHASES` is omitted, validate the full workflow. If it is provided, check only the dependencies needed by those remaining phases. Accept both comma lists and inclusive ranges such as `1,2,4` or `5-7`.
 

@@ -28,7 +28,7 @@ Prefer explicit URLs and structured fields over bare resume keys. For unlabeled 
 
 ## Inputs
 
-Primary inputs live in each playbook. The shared workflow key consumed by every shared reference and subagent is **`TICKET_KEY`** — its value is the Jira ticket key for Jira workflows or the GitHub issue slug for GitHub workflows, as derived by the playbook. Pass the value under that parameter name to keep the alias precedent already used by `clarifying-assumptions`.
+Primary inputs live in each playbook. The playbook derives the shared workflow key TICKET_KEY, rendered as <KEY>: a Jira ticket key or a GitHub issue slug.
 
 ## Workflow Overview
 
@@ -42,7 +42,7 @@ Phase 6: Clarify + critique  -> docs/<KEY>-task-<N>-critique.md + decisions.md
 Phase 7: Kick off + execute  -> downstream execution summary + progress update
 ```
 
-`<KEY>` is the workflow key value passed under the parameter name `TICKET_KEY`: a Jira ticket key for Jira workflows or a GitHub issue slug for GitHub workflows. Phases 5-7 repeat per task until all tasks complete or the user stops.
+Phases 5-7 repeat per task until all tasks complete or the user stops.
 
 ## Progressive Loading Map
 
@@ -115,8 +115,8 @@ If resuming past Phase 1, tell the user what progress was found and confirm befo
 
 For any subagent dispatch:
 
-1. Read the subagent definition from the registry.
-2. Pass the stable workflow key under the parameter name `TICKET_KEY` plus only the explicit inputs that subagent needs. Pass the active playbook path under `PLAYBOOK_PATH` whenever the subagent's behavior depends on platform-specific transport, query syntax, or output template. `PLAYBOOK_PATH` is package-root-relative, such as `./references/jira-playbook.md` or `./references/github-playbook.md`, and subagents resolve it from this skill directory rather than from their own `subagents/` directory.
+1. Read the subagent definition from the registry and tell the subagent to read it at its absolute path resolved from this skill directory.
+2. Pass TICKET_KEY and only explicitly needed inputs. When platform-specific behavior is required, pass PLAYBOOK_PATH as the active playbook's absolute path resolved from this skill directory.
 3. Collect its structured summary.
 4. Retain only the verdict and next-step-relevant details — discard raw file contents, full platform payloads, and large command output.
 
@@ -134,11 +134,11 @@ Input: `JIRA_URL=https://workspace.atlassian.net/browse/PROJ-123`
 1. Detect platform: `jira`. Load `./references/jira-playbook.md`.
 2. Derive `TICKET_KEY=PROJ-123` from the URL per the playbook.
 3. Dispatch `progress-tracker` with `TICKET_KEY=PROJ-123`, `ACTION=read`.
-4. No progress found, so dispatch `preflight-checker` with `TICKET_KEY=PROJ-123`, `PLAYBOOK_PATH=./references/jira-playbook.md`, `PHASES=1-7`.
+4. No progress found, so dispatch `preflight-checker` with `TICKET_KEY=PROJ-123`, `PLAYBOOK_PATH=<resolved-skill-directory>/references/jira-playbook.md`, `PHASES=1-7`.
 5. Read `./references/phases-1-4.md` and enter Phase 1.
 6. Invoke the playbook's Phase 1 downstream skill (`fetching-work-item`).
-7. Dispatch `artifact-validator` with `TICKET_KEY=PROJ-123`, `PLAYBOOK_PATH=./references/jira-playbook.md`, `PHASE=1`, `DIRECTION=postcondition`.
-8. Dispatch `progress-tracker` with `TICKET_KEY=PROJ-123`, `PLAYBOOK_PATH=./references/jira-playbook.md`, `ACTION=update`, `PHASE=1`, `STATUS=complete`, `SUMMARY="Work item fetched"`.
+7. Dispatch `artifact-validator` with `TICKET_KEY=PROJ-123`, `PLAYBOOK_PATH=<resolved-skill-directory>/references/jira-playbook.md`, `PHASE=1`, `DIRECTION=postcondition`.
+8. Dispatch `progress-tracker` with `TICKET_KEY=PROJ-123`, `PLAYBOOK_PATH=<resolved-skill-directory>/references/jira-playbook.md`, `ACTION=update`, `PHASE=1`, `STATUS=complete`, `SUMMARY="Work item fetched"`.
 9. Tell the user: `Work item fetched. Moving to task planning.`
 
 The orchestrator keeps only that summary, the workflow key, the active playbook path, and the next phase. </example>

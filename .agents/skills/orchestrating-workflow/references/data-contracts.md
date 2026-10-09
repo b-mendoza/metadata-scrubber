@@ -62,31 +62,14 @@ Every dispatch to `artifact-validator` uses these inputs:
 
 ```text
 TICKET_KEY: <KEY>                 (workflow key; shape defined by the active playbook)
-PLAYBOOK_PATH: ./references/<platform>-playbook.md
-                                   (package-root-relative active playbook; pass for every validator dispatch)
+PLAYBOOK_PATH: <resolved-skill-directory>/references/<platform>-playbook.md
+                                   (absolute active playbook; pass for every validator dispatch)
 PHASE: <1-7>
 DIRECTION: <precondition | postcondition>
 TASK_NUMBER: <N>                  (task-specific boundaries only)
 ```
 
-The subagent returns a structured verdict:
-
-```text
-VALIDATION: <PASS | FAIL | ERROR>
-Phase: <N> | Direction: <precondition | postcondition>
-File: <path>
-Checks:
-  - File exists: <yes/no>
-  - <Section check>: <pass/fail - detail if failed>
-```
-
-If the validator itself cannot complete, it returns:
-
-```text
-VALIDATION: ERROR
-Phase: <N> | Direction: <precondition | postcondition>
-Reason: <what prevented validation>
-```
+Reply formats are declared in artifact-validator.md under Output Format and Escalation.
 
 For Phases 3 and 6, validation covers only the artifact boundary. The clarification skill's final summary still carries `RE_PLAN_NEEDED` and `BLOCKERS_PRESENT`, and the orchestrator must honor those flags separately at the gate step.
 
@@ -131,7 +114,7 @@ TICKET_KEY: <KEY>
 ACTION: read | initialize | update | initialize_task | update_task
 ```
 
-Include `PLAYBOOK_PATH=./references/<platform>-playbook.md` only for actions that read progress templates or phase skill names: `initialize`, `update`, and `initialize_task`.
+Include `PLAYBOOK_PATH=<resolved-skill-directory>/references/<platform>-playbook.md` only for actions that read progress templates or phase skill names: `initialize`, `update`, and `initialize_task`.
 
 - `update`: `PHASE` (1-4), `STATUS`, `SUMMARY`; for `PHASE=4` and `STATUS=complete`, include `TASKS` (metadata for the workflow task table, from the Phase 4 downstream summary).
 - `initialize_task`: `TASK_NUMBER`, `TASK_TITLE`.
@@ -153,7 +136,7 @@ Include `PLAYBOOK_PATH=./references/<platform>-playbook.md` only for actions tha
 <example>
 Postcondition failure after Phase 2:
 
-artifact-validator returns: VALIDATION: FAIL Phase: 2 | Direction: postcondition File: docs/<KEY>-tasks.md + planning intermediates Checks:
+artifact-validator reports VALIDATION: FAIL for Workflow: <KEY>, Phase 2, Direction postcondition, and docs/<KEY>-tasks.md plus planning intermediates, with these checks:
 
 - docs/<KEY>-tasks.md exists: pass
 - Contains ## Validation Report: fail - missing section

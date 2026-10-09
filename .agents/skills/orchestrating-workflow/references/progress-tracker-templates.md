@@ -115,9 +115,9 @@ _None_
 
 ### `initialize_task` procedure
 
-Call this only after the orchestrator has selected a task and the Phase 5 precondition has passed.
+Call this only after task selection is confirmed and the Phase 5 precondition has passed.
 
-1. Create the per-task progress file from the template at `docs/<KEY>-task-<N>-progress.md`, with `<PHASE_5_SKILL>` and `<PHASE_7_SKILL>` filled from the active playbook's `Phase Skill Map`.
+1. Create the per-task progress file only if it does not already exist, using the template at docs/<KEY>-task-<N>-progress.md with <PHASE_5_SKILL> and <PHASE_7_SKILL> filled from the active playbook's Phase Skill Map.
 2. Update the corresponding task row in the main progress file's Task Execution table:
    - Current Phase → `5/7 Plan`
    - Status → `🔄 Active`
