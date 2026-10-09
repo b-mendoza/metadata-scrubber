@@ -1,5 +1,7 @@
 # Workflow and task scoping
 
+These are general work practices. The code is the source of truth.
+
 ## Simplicity
 
 - Use a solution with the least complexity that solves the problem. Before implementation, check whether fewer abstractions can solve it. Reject design made for possible future requirements that no current consumer has. Choose a design that a junior developer can understand in five minutes.
@@ -11,7 +13,7 @@
 
 ## Task management
 
-- Propose a GitHub issue for each multi-step or non-trivial task. The required workflow in the root agent guide still applies. Do not create the issue unless the user asks.
+- Propose a tracked work item for each multi-step or non-trivial task. Create it only when the user asks.
 
 ## Task decomposition
 
