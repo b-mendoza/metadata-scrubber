@@ -148,12 +148,12 @@ const oxlintPath = path.join(
   "oxlint",
 );
 
+// eslint-disable-next-line zod/prefer-string-schema-with-trim -- The .refine() check rejects padding, so .trim() cannot change an accepted value.
 const oxlintJsonStringSchema = z
   .string()
   .refine((value) => value === value.trim(), {
     error: "The diagnostic string must not start or end with whitespace.",
-  })
-  .trim();
+  });
 
 const oxlintJsonMessageSchema = z.object({
   code: oxlintJsonStringSchema.nullish(),
