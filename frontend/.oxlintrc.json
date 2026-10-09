@@ -2541,12 +2541,6 @@
       },
       "jsPlugins": ["eslint-plugin-testing-library", "eslint-plugin-sonarjs"],
       "plugins": ["vitest"]
-    },
-    {
-      "files": ["oxlint-plugin-metadata-scrubber/check-fixtures.ts"],
-      "rules": {
-        "no-console": "off"
-      }
     }
   ]
 }
