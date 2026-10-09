@@ -13,7 +13,7 @@ Vercel runs this service as a TanStack Start application. You do not control the
 ## Always
 
 - If Node.js (see `.nvmrc`) or pnpm is missing or has the wrong version, run `scripts/setup-node.sh` before any other work.
-- The frontend lint configuration rejects every suppression comment. Fix the code that a rule reports. Do not add a file-scoped rule override to bypass a rule.
+- Fix the code that a rule reports. If one line needs an exception, add an `eslint-disable-next-line` comment that names the rule and gives a reason. The lint configuration rejects file-level suppressions and Oxlint directive comments. Do not add a file-scoped rule override to bypass a rule.
 - After a substantive change, run `pnpm run lint`. See the [lint check](docs/commands.md#core-commands).
 - Before you commit, run `pnpm run test`. See the [test suite](docs/commands.md#core-commands).
 - Give every generic an explicit, meaningful constraint. The constraint must name the accepted types or the operations that the generic code requires.
