@@ -103,7 +103,9 @@ export default defineConfig(
   {
     // The Oxlint bridge turns off ESLint rules that map to native Oxlint rules.
     // ESLint would report their valid line-level exceptions as unused.
-    linterOptions: { reportUnusedDisableDirectives: "off" },
+    linterOptions: {
+      reportUnusedDisableDirectives: "off",
+    },
     languageOptions: {
       parserOptions: {
         projectService: true,
@@ -115,7 +117,11 @@ export default defineConfig(
       "getter-return": SEVERITY_LEVELS.Error,
       "no-implicit-coercion": [
         SEVERITY_LEVELS.Error,
-        { boolean: false, number: true, string: false },
+        {
+          boolean: false,
+          number: true,
+          string: false,
+        },
       ],
       // Distinct bindings and trailing defaults keep argument use clear.
       [`${PLUGIN_NAMES.TypescriptESLint}/default-param-last`]:
@@ -191,11 +197,15 @@ export default defineConfig(
       [`${PLUGIN_NAMES.Unicorn}/prefer-string-raw`]: [SEVERITY_LEVELS.Error],
       [`${PLUGIN_NAMES.Unicorn}/no-array-callback-reference`]: [
         SEVERITY_LEVELS.Error,
-        { ignore: [] },
+        {
+          ignore: [],
+        },
       ],
       "no-misleading-character-class": [
         SEVERITY_LEVELS.Error,
-        { allowEscape: false },
+        {
+          allowEscape: false,
+        },
       ],
       [`${PLUGIN_NAMES.Unicorn}/prefer-regexp-test`]: [SEVERITY_LEVELS.Error],
     },
