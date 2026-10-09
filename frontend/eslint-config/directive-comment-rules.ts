@@ -17,7 +17,7 @@ export const directiveCommentRules = {
       ],
     },
   ],
-  // Fix the reported code instead of adding a suppression comment.
+  // Fix React Doctor findings in the code instead of adding a disable comment.
   "no-warning-comments": [
     SEVERITY_LEVELS.Error,
     { terms: ["react-doctor-disable"], location: "anywhere" },
