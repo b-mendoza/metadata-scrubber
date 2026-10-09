@@ -6,8 +6,9 @@
 
 | Path | Contents |
 | --- | --- |
-| `backend/` | Go HTTP backend service for scrubbing, request handling, configuration, and private storage. The service has its own `AGENTS.md`. |
-| `frontend/` | TypeScript and React frontend service on TanStack Start and Vite. `pnpm` manages the service. The service has its own `AGENTS.md`. |
+| `backend/` | Go HTTP backend in a Cloudflare Container behind a private Worker. It handles scrubbing, requests, configuration, and private storage. The service has its own `AGENTS.md`. |
+| `frontend/` | TypeScript and React frontend Worker on TanStack Start and Vite. `pnpm` manages the service. The service has its own `AGENTS.md`. |
+| `terraform/` | Terraform configuration for the production R2 bucket CORS policy. State lives in the private R2 bucket `metadata-scrubber-terraform-state`. A manual workflow applies changes. |
 | `docs/` | Cross-service documentation. General guides are under `docs/agent/`. Factual references include this file. |
 | `docker-compose.yml` | Runs only the Go backend for local development. |
 
