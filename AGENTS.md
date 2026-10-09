@@ -4,12 +4,15 @@
 
 ## Documentation model
 
-Use two types of agent documentation. Keep this split when you add or edit documentation.
+Documents describe general practices only. Do not prescribe a specific use case, code pattern, or implementation.
 
-- Keep long-lived guidance in `AGENTS.md` files and `docs/agent/` directories. Include principles and general examples. Exclude source-code paths and code snippets so the guidance stays valid when the code changes.
-- Keep short-lived references in Markdown files under a root or service `docs/` directory, outside `docs/agent/`. You can group related references in a subdirectory. Use these references for current architecture, file structure, conventions, and commands. Add a banner that requires an update when the code changes.
+Documents are never the source of truth. The code is the source of truth. If the code and a document disagree, the code wins.
 
-Add a guidance rule after an observed failure shows the need for it. Remove a rule when it no longer changes agent behavior. Every agent loads these files into its context. Keep each line tied to an agent action. State the required action instead of listing prohibited actions. Use a standalone prohibition when it addresses a repeated failure.
+Factual references, such as architecture, layout, and known issues, can describe the current code and tools. They do not define requirements. Check them against the code. Update them when they become wrong.
+
+The project manifest defines available commands and scripts. Use `package.json` for the frontend and `Taskfile.yml` for the backend. Do not keep a separate command inventory in a document.
+
+Keep a guidance rule only when it states a useful general practice. Use observed failures to find general lessons. Remove case-specific fixes and duplicate guidance. Remove a rule when it no longer changes agent behavior. Every agent loads these files into its context. Keep each line tied to an agent action. State the required action instead of listing prohibited actions. Use a standalone prohibition when it addresses a repeated failure.
 
 ## Language
 
@@ -23,14 +26,14 @@ Review the user's instructions before you act. Treat them as a starting point fo
 
 - Write separate and explicit application code for each use case. Do not replace use-case code with one general function for many use cases. Delete an application helper that does nothing except remove duplication. Keep duplication at each application call site. In a test file, you can keep one local setup helper that builds the code under test. Call the code under test explicitly in each test.
 - Make each custom lint rule message descriptive, actionable, and educational. Identify the problem and explain the required fix. Do not explain how to silence or bypass the rule.
-- Fix the structure that causes each lint failure. Do not add a file-level suppression or a file-scoped rule override. In the frontend, you can add a line-level ESLint suppression that names the rule and gives a reason. In the backend, keep a suppression only at a third-party API boundary that requires it.
+- Fix the cause of each failed check. If one place needs an exception, keep the exception as narrow as the tool allows and state the reason. Do not add a broad exception that covers a whole file or scope.
 - In tests, build request and response payloads from concrete typed contracts at each call site. Serialize each payload at that call site. Check each error. Use raw wire literals in dedicated wire-contract tests and nowhere else.
 
 ## Required workflow
 
-- Read each service's `AGENTS.md` before you edit files in that service. That file defines the build, lint, and test commands for the service. It can override this file.
-- Run the affected service's lint check after a substantive change. Run its test suite before you commit. Use the commands in the service's `AGENTS.md`. Passing checks do not prove that a change is correct. Escalate if you are unsure about correctness. Do not declare success while that doubt remains.
-- Treat the linter configuration as the enforced style standard in each service. AI-review rules are in `.coderabbit.yaml` and the `.greptile/` directory. Read those files when a question about a standard occurs.
+- Read each service's `AGENTS.md` before you edit files in that service. Use it for general practices. Find available commands in the service's project manifest. A guide does not override the code.
+- Run the affected service's lint check after a substantive change. Run its test suite before you commit. Select commands from the project manifest. Passing checks do not prove that a change is correct. Escalate if you are unsure about correctness. Do not declare success while that doubt remains.
+- Treat the linter configuration as the enforced style standard in each service.
 - Editing does not give permission to publish. Do not commit, push, open a pull request, or create an issue unless the user asks. If you commit, stage the paths that the task touched and no other paths.
 
 ## Subagents
@@ -39,13 +42,13 @@ Use subagents to keep intermediate file dumps out of the main thread. Keep each 
 
 ## Open when relevant
 
-Long-lived guidance:
+General guides:
 
-- [Code design](docs/agent/code-design.md) covers construction over validation, comments, and request-scoped dependency injection.
-- [Testing principles](docs/agent/testing.md) covers what to test and how to test it across services.
-- [Workflow and task scoping](docs/agent/workflow.md) covers simplicity, scope control, issues, and task decomposition.
-- [Verifying your work](docs/agent/verification.md) defines the evidence required in addition to passing tests.
+- [Code design](docs/agent/code-design.md) covers general design practices.
+- [Testing principles](docs/agent/testing.md) covers general test practices.
+- [Workflow and task scoping](docs/agent/workflow.md) covers general practices for scope and task planning.
+- [Verifying your work](docs/agent/verification.md) covers general practices for evidence and reporting.
 
-Short-lived references describe the current state. Check them against the code.
+Factual references describe the current code. Check their claims against the code. They do not define requirements.
 
-- [Repository architecture](docs/architecture.md) describes the monorepo layout and links to each service's references.
+- [Repository architecture](docs/architecture.md) describes the current monorepo layout and links to each service's factual references.
