@@ -722,6 +722,7 @@
     "@eslint-community/eslint-comments/no-use": [
       "error",
       {
+        "allow": ["eslint-disable-next-line"],
         "additionalDirectives": [
           "eslint-disable",
           "oxlint-disable",
