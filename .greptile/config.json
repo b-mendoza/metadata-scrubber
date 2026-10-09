@@ -80,7 +80,7 @@
       "id": "structural-lint-fixes",
       "severity": "high",
       "scope": ["backend/**", "frontend/src/**"],
-      "rule": "Fix the cause of each lint failure structurally. Do not add lint-suppression comments or rule escape hatches. Keep a suppression only at a third-party API boundary that forces it."
+      "rule": "Fix the cause of each lint failure structurally. Do not add a file-level suppression or a file-scoped rule override. In frontend code, you can add a line-level `eslint-disable-next-line` comment that names the rule and gives a reason. In backend code, keep a suppression only at a third-party API boundary that forces it."
     },
     {
       "id": "typed-test-wire-payloads",
