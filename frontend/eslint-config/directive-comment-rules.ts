@@ -3,10 +3,11 @@ import type { Linter } from "eslint";
 import { PLUGIN_NAMES, SEVERITY_LEVELS } from "./constants.ts";
 
 export const directiveCommentRules = {
-  // Fix the reported code instead of adding a lint directive.
+  // Line-level exceptions need a rule name and a reason for review.
   [`${PLUGIN_NAMES.ESLintCommunityComments}/no-use`]: [
     SEVERITY_LEVELS.Error,
     {
+      allow: ["eslint-disable-next-line"],
       additionalDirectives: [
         "eslint-disable",
         "oxlint-disable",
