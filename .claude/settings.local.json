@@ -10,6 +10,7 @@
     "chrome-devtools",
     "cloudflare",
     "context7",
+    "notion",
     "vercel"
   ],
   "workflowSizeGuideline": "medium"
