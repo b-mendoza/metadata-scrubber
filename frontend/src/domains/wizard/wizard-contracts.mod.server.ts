@@ -57,25 +57,25 @@ const canonicalETagSchema = z
   .regex(CANONICAL_ETAG_PATTERN, { error: "The ETag is invalid." })
   .trim();
 
-export const workflowConfigResponseSchema = z.strictObject({
+export const workflowConfigResponseSchema = z.object({
   maxFileSizeBytes: z.int().positive(),
 });
 
-export const uploadInputSchema = z.strictObject({
+export const uploadInputSchema = z.object({
   fileName: fileNameSchema,
   fileSizeBytes: z.int().min(MINIMUM_FILE_SIZE_BYTES),
 });
 
-export const uploadResponseSchema = z.strictObject({
+export const uploadResponseSchema = z.object({
   storageKey: storageKeySchema,
   uploadUrl: z.url({ protocol: HTTP_PROTOCOL }),
 });
 
-export const dryRunInputSchema = z.strictObject({
+export const dryRunInputSchema = z.object({
   storageKey: storageKeySchema,
 });
 
-const publicFieldSchema = z.strictObject({
+const publicFieldSchema = z.object({
   action: z.enum(["remove", "replace"]),
   label: z.string().trim(),
   name: z.string().trim(),
@@ -83,42 +83,42 @@ const publicFieldSchema = z.strictObject({
   preview: z.string().trim(),
 });
 
-export const dryRunResponseSchema = z.strictObject({
+export const dryRunResponseSchema = z.object({
   etag: canonicalETagSchema,
   fields: z.array(publicFieldSchema),
 });
 
-export const scrubFileInputSchema = z.strictObject({
+export const scrubFileInputSchema = z.object({
   etag: canonicalETagSchema,
   storageKey: storageKeySchema,
 });
 
-export const scrubFileResponseSchema = z.strictObject({
-  result: z.strictObject({
+export const scrubFileResponseSchema = z.object({
+  result: z.object({
     downloadUrl: z.url({ protocol: HTTP_PROTOCOL }),
   }),
   status: z.literal("done"),
 });
 
-export const refreshDownloadGrantInputSchema = z.strictObject({
+export const refreshDownloadGrantInputSchema = z.object({
   etag: canonicalETagSchema,
   storageKey: storageKeySchema,
 });
 
-export const refreshDownloadGrantResponseSchema = z.strictObject({
+export const refreshDownloadGrantResponseSchema = z.object({
   downloadUrl: z.url({ protocol: HTTP_PROTOCOL }),
   expiresAt: z.iso.datetime({ precision: WHOLE_SECOND_PRECISION }),
 });
 
-export const confirmDeleteInputSchema = z.strictObject({
+export const confirmDeleteInputSchema = z.object({
   storageKey: storageKeySchema,
 });
 
-export const confirmDeleteResponseSchema = z.strictObject({
+export const confirmDeleteResponseSchema = z.object({
   status: z.literal("deleted"),
 });
 
-export const backendErrorResponseSchema = z.strictObject({
+export const backendErrorResponseSchema = z.object({
   error: z.string().trim().nonempty(),
 });
 
