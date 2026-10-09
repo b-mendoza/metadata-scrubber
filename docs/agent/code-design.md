@@ -1,11 +1,11 @@
 # Code design
 
-Use these principles in every service and language. Read each service's guides for the methods that its framework uses.
+Use these general design practices in every service and language. The code is the source of truth.
 
 ## Construction over validation
 
-- Construct a structured value when one part of it can vary. Accept the variable part as input. Keep the fixed parts in code. For a fixed provider URL, accept the account identifier and construct the URL. For a fixed path, accept the name and construct the path. This design prevents configuration from representing a different destination. Delete the validator and rejection-case tests that guarded the removed state. Check whether construction can remove a state before you add validation for it.
-- Require an opaque external identifier to be present and non-blank. A syntax check can show that a bucket name or account identifier matches a format. It cannot show that the value identifies the correct resource. The owning system checks the identifier on first use. Before you add stronger checks, check whether construction can remove the need for them. Stronger checks apply to inputs that control which destination receives trusted data, such as the host that receives credentials.
+- Construct a structured value when one part of it can vary. Accept the variable part as input. Keep the fixed parts in code. Check whether construction can remove a state before you add validation for it.
+- Validate external input before use. Match each check to the input's meaning and risk. A format check does not prove that a resource exists or that access is permitted.
 
 ## Decisions
 
