@@ -1,6 +1,7 @@
 import { AsyncLocalStorage } from "node:async_hooks";
 
 import { createMiddleware, createServerOnlyFn } from "@tanstack/react-start";
+import { env } from "cloudflare:workers";
 import type { KyInstance } from "ky";
 
 import { environmentSchema } from "#/shared/config/env/environment.mod.server";
@@ -18,12 +19,14 @@ const AppBindingsStore = new AsyncLocalStorage<AppBindingsValue>();
 export const appBindingsMiddleware = createMiddleware({
   type: "request",
 }).server(async (options) => {
-  const safeEnvironmentVariables = environmentSchema.parse(process.env);
+  const safeEnvironmentVariables = environmentSchema.parse(env);
 
-  const httpClient = createHttpClient(safeEnvironmentVariables.BACKEND_URL);
+  const httpClient = createHttpClient(
+    safeEnvironmentVariables.BACKEND_URL,
+  ).extend({ fetch: env.BACKEND.fetch.bind(env.BACKEND) });
   const workflowHttpClient = createWorkflowHttpClient(
     safeEnvironmentVariables.BACKEND_URL,
-  );
+  ).extend({ fetch: env.BACKEND.fetch.bind(env.BACKEND) });
 
   return AppBindingsStore.run(
     {
