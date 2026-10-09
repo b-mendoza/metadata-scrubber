@@ -19,7 +19,7 @@ const fileSizeFormatter = new Intl.NumberFormat("en-US", {
   maximumFractionDigits: 2,
 });
 
-const uploadedFileMetadataSchema = z.strictObject({
+const uploadedFileMetadataSchema = z.object({
   storageKey: z.string().trim().nonempty(),
 });
 
