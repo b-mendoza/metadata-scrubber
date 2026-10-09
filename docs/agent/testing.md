@@ -1,6 +1,6 @@
 # Testing principles
 
-Use these principles in every service and language. Read each service's guides for its test tools and known problems.
+Use these general test practices in every service and language. The code is the source of truth.
 
 ## Test scope
 
@@ -12,13 +12,13 @@ Use these principles in every service and language. Read each service's guides f
 
 ## Test environment
 
-- Run each test in the runtime that runs the code in production. A browser-like test environment replaces the server runtime's networking classes. This can hide a failure that occurs only on the server.
+- Run each test in the runtime that runs the code in production.
 
 ## Assertions
 
 - Import production constants when a test must verify the use of a specific constant. Do not duplicate the constant value in the test. An import prevents the production and test strings from becoming different. A change to the production constant makes the test fail by design.
-- For each constant that can change cost, behavior, or a contract without an error, write a brittle test that checks its exact wiring. Examples include an AI model ID, a system prompt, a rate limit, and a pricing tier. Import the production constant and assert its exact wiring. The suite can be the only check that detects this regression.
-- Test a value's wiring through the code that uses it. Check a caller's timeout by calling the caller.
+- For each constant that can change cost, behavior, or a contract without an error, write a brittle test that checks its exact wiring. Import the production constant and assert its exact wiring. The suite can be the only check that detects this regression.
+- Test a value's wiring through the code that uses it.
 - Use inline literals for simple test data. Use a builder or factory when several tests share non-trivial setup. A builder or factory adds indirection without value in other cases.
 
 ## Test failures
