@@ -4,3 +4,8 @@ coverage.out
 
 # Task runner watch/checksum state
 .task/
+
+# Worker dependencies and local state
+node_modules/
+.wrangler/
+.dev.vars*
