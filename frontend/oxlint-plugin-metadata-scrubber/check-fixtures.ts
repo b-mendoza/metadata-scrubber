@@ -156,7 +156,7 @@ const oxlintJsonStringSchema = z
   });
 
 const oxlintJsonMessageSchema = z.object({
-  code: oxlintJsonStringSchema.nullish(),
+  code: z.nullish(oxlintJsonStringSchema),
   message: oxlintJsonStringSchema,
 });
 
