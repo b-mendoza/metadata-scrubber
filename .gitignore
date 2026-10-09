@@ -1,7 +1,6 @@
 .DS_Store
 
 # Local tool configs
-.mcp.json
 *.bak
 /.codex/
 opencode.jsonc
