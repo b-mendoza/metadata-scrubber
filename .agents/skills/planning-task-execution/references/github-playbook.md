@@ -1,6 +1,6 @@
 # GitHub Task-Execution Planning Playbook
 
-> Read this file only after detecting GitHub. It is the complete platform-specific contract for Phase 5 planning. Shared pipeline, artifact, validation, and summary-example rules live in the other bundled references.
+> Read this file only after detecting GitHub. It is the complete platform-specific contract for Phase 5 planning. Shared pipeline, artifact, and validation rules live in the bundled references; summary formats live in each producing subagent.
 
 ## Inputs and Identifier
 
@@ -56,46 +56,7 @@ GitHub Task Issue:
 
 Treat `## Decisions Log`, when present, as later authority over earlier task wording.
 
-## Summary Fields
-
-The GitHub playbook owns the rendered summary paths and permissible platform nouns. Use these exact shapes with the GitHub `<KEY>` slug:
-
-```text
-PREP: PASS|FAIL|BLOCKED|ERROR
-Task: <TASK_NUMBER> - <Task Title>
-Brief: docs/<KEY>-task-<TASK_NUMBER>-brief.md | Not written
-Dependencies: <Satisfied | Unsatisfied: ...>
-Questions: <Resolved | Unresolved: ...>
-References fetched: <exact URLs or none>
-Notes: <one concise line, or None>
-```
-
-```text
-PLAN: PASS|FAIL|BLOCKED|ERROR
-Execution plan: docs/<KEY>-task-<TASK_NUMBER>-execution-plan.md | Not written
-Recommended skills: <comma-separated list or None>
-References fetched: <exact URLs or none>
-Approach: <one or two sentences>
-Blockers: <list or None>
-```
-
-```text
-TEST_SPEC: PASS|FAIL|BLOCKED|ERROR
-Spec: docs/<KEY>-task-<TASK_NUMBER>-test-spec.md | Not written
-Framework: <framework or Unknown>
-References fetched: <exact URLs or none>
-Coverage: <short description of groups and priorities>
-Blockers: <list or None>
-```
-
-```text
-REFACTORING: PASS|FAIL|BLOCKED|ERROR
-Refactoring plan: docs/<KEY>-task-<TASK_NUMBER>-refactoring-plan.md | Not written
-Verdict: <Refactor before | Refactor during | No refactoring needed>
-References fetched: <exact URLs or none>
-Summary: <one concise line>
-Blockers: <list or None>
-```
+Use each producing subagent's Output Format with this playbook's <KEY>.
 
 Platform-specific notes may say `issue` or `GitHub task issue`; they must not claim GitHub was modified.
 

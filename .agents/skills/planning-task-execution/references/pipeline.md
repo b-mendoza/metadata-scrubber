@@ -10,14 +10,12 @@ Every subagent dispatch includes `PLAYBOOK_PATH`; pass `TICKET_KEY=<KEY>`, `TASK
 
 ```text
 PLAYBOOK_PATH: ../references/<platform>-playbook.md
-PIPELINE_PATH: ../references/pipeline.md
 DATA_CONTRACTS_PATH: ../references/data-contracts.md
 ARTIFACT_TEMPLATES_PATH: ../references/artifact-templates.md
-HANDOFF_FORMATS_PATH: ../references/handoff-formats.md
 EXTERNAL_SOURCES_PATH: ../references/external-sources.md
 ```
 
-A subagent reads `PLAYBOOK_PATH` first. It reads `EXTERNAL_SOURCES_PATH` only when the active playbook routes a public source that can change the current artifact decision, and reads `HANDOFF_FORMATS_PATH` only for summary examples or malformed-summary repair.
+A subagent reads PLAYBOOK_PATH first. It reads EXTERNAL_SOURCES_PATH only when the active playbook routes a public source that can change the current artifact decision. Its own Output Format declares the summary grammar used for malformed-summary repair.
 
 ## Standard Pipeline
 

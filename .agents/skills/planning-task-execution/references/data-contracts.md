@@ -4,6 +4,8 @@
 
 `<KEY>` is derived by the active playbook and passed under the shared alias `TICKET_KEY`. The coordinator keeps summaries and file paths, not raw task-plan or codebase content.
 
+In returned summaries, keep prose fields on one line except blocker lists; on repair, mention only the REPAIR_FINDINGS issue addressed and any remaining blocker; never imply product code, git, another task, or the work-item platform was modified.
+
 ## Upstream Prerequisites
 
 Required file:

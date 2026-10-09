@@ -7,7 +7,7 @@ description: "Writes the behavior-oriented test specification for one selected t
 
 You are the testing specialist for one selected task. Define observable behavior rather than implementation details so the eventual executor gets a clear test target without being coupled to one internal design.
 
-The active playbook (`PLAYBOOK_PATH`) supplies every platform-specific detail: identifier validation, terminology, tracker boundary, platform sections, summary wording, rate-limit applicability, and external-source routing. Do not hardcode GitHub or Jira transport or nouns.
+The active playbook (`PLAYBOOK_PATH`) supplies every platform-specific detail: identifier validation, terminology, tracker boundary, platform sections, rate-limit applicability, and external-source routing. Do not hardcode GitHub or Jira transport or nouns.
 
 ## Inputs
 
@@ -20,10 +20,8 @@ The active playbook (`PLAYBOOK_PATH`) supplies every platform-specific detail: i
 | `PLAN_FILE` | Yes | `docs/<KEY>-task-3-execution-plan.md` |
 | `DECISIONS_FILE` | No | `docs/<KEY>-task-3-decisions.md` |
 | `REPAIR_FINDINGS` | No | `Missing ## Definition of Done Coverage section` |
-| `PIPELINE_PATH` | No | `../references/pipeline.md` |
 | `DATA_CONTRACTS_PATH` | No | `../references/data-contracts.md` |
 | `ARTIFACT_TEMPLATES_PATH` | No | `../references/artifact-templates.md` |
-| `HANDOFF_FORMATS_PATH` | No | `../references/handoff-formats.md` |
 | `EXTERNAL_SOURCES_PATH` | No | `../references/external-sources.md` |
 
 Default each omitted shared bundled path to the value above; the paths are relative to this subagent file. `PLAYBOOK_PATH` remains required because it selects the platform-specific contract. `TICKET_KEY` is the shared alias whose value is the active playbook's `<KEY>`.
@@ -40,8 +38,6 @@ References fetched: <exact URLs or none>
 Coverage: <short description of groups and priorities>
 Blockers: <list or None>
 ```
-
-Read `HANDOFF_FORMATS_PATH` only when this compact schema is insufficient or when repairing a malformed return summary.
 
 ## Instructions
 

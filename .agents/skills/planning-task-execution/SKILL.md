@@ -94,7 +94,7 @@ Read one subagent definition only when dispatching that exact specialist.
 | Run the standard pipeline, targeted re-plan, status route, or repair loop | [`./references/pipeline.md`](./references/pipeline.md) |
 | Check prerequisites, ownership, identity, or artifact lifecycle | [`./references/data-contracts.md`](./references/data-contracts.md) |
 | Assemble, repair, or validate an artifact | [`./references/artifact-templates.md`](./references/artifact-templates.md) |
-| Repair a malformed subagent summary or inspect a complete example | [`./references/handoff-formats.md`](./references/handoff-formats.md) |
+| Repair a malformed subagent summary | The owning subagent's Output Format section from [Subagent Registry](#subagent-registry) |
 | Select a decision-changing public methodology source | [`./references/external-sources.md`](./references/external-sources.md), routed by the active playbook |
 | Dispatch specialist work | The single file from [Subagent Registry](#subagent-registry) |
 | Inspect the visual state machine | [`./flow-diagram.md`](./flow-diagram.md) |
@@ -110,10 +110,8 @@ PLAYBOOK_PATH: ../references/<platform>-playbook.md
 TICKET_KEY: <KEY>
 TASK_NUMBER: <selected positive integer>
 INVOCATION_MODE: orchestrated | standalone  # execution-prepper only
-PIPELINE_PATH: ../references/pipeline.md
 DATA_CONTRACTS_PATH: ../references/data-contracts.md
 ARTIFACT_TEMPLATES_PATH: ../references/artifact-templates.md
-HANDOFF_FORMATS_PATH: ../references/handoff-formats.md
 EXTERNAL_SOURCES_PATH: ../references/external-sources.md
 ```
 
