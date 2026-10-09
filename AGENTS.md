@@ -23,7 +23,7 @@ Review the user's instructions before you act. Treat them as a starting point fo
 
 - Write separate and explicit application code for each use case. Do not replace use-case code with one general function for many use cases. Delete an application helper that does nothing except remove duplication. Keep duplication at each application call site. In a test file, you can keep one local setup helper that builds the code under test. Call the code under test explicitly in each test.
 - Make each custom lint rule message descriptive, actionable, and educational. Identify the problem and explain the required fix. Do not explain how to silence or bypass the rule.
-- Fix the structure that causes each lint failure. Do not add lint-suppression comments or rule escape hatches. Keep a suppression only at a third-party API boundary that requires it.
+- Fix the structure that causes each lint failure. Do not add a file-level suppression or a file-scoped rule override. In the frontend, you can add a line-level ESLint suppression that names the rule and gives a reason. In the backend, keep a suppression only at a third-party API boundary that requires it.
 - In tests, build request and response payloads from concrete typed contracts at each call site. Serialize each payload at that call site. Check each error. Use raw wire literals in dedicated wire-contract tests and nowhere else.
 
 ## Required workflow
