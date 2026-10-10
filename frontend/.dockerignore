@@ -1,9 +1,0 @@
-.DS_Store
-.env
-.env.*
-.git
-.output
-coverage
-node_modules
-npm-debug.log*
-pnpm-debug.log*

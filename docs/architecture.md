@@ -6,16 +6,18 @@
 
 | Path | Contents |
 | --- | --- |
-| `backend/` | Go HTTP backend service for scrubbing, request handling, configuration, and private storage. The service has its own `AGENTS.md`. |
-| `frontend/` | TypeScript and React frontend service on TanStack Start and Vite. `pnpm` manages the service. The service has its own `AGENTS.md`. |
+| `backend/` | Go HTTP backend in a Cloudflare Container behind a private Worker. It handles scrubbing, requests, configuration, and private storage. The service has its own `AGENTS.md`. |
+| `frontend/` | TypeScript and React frontend Worker on TanStack Start and Vite. `pnpm` manages the service. The service has its own `AGENTS.md`. |
+| `terraform/` | Terraform configuration for the production R2 bucket CORS policy. State lives in the private R2 bucket `metadata-scrubber-terraform-state`. A manual workflow applies changes. |
 | `docs/` | Cross-service documentation. General guides are under `docs/agent/`. Factual references include this file. |
-| `docker-compose.yml` | Runs the backend and frontend together for local development. |
+| `docker-compose.yml` | Runs only the Go backend for local development. |
 
 ## Service integration
 
-- Clients send public application requests to the frontend. Frontend server code calls the backend over HTTP.
-- The frontend validates `BACKEND_URL` and creates request-scoped Ky clients with this URL as the base URL.
-- On Vercel, `vercel.json` injects `BACKEND_URL` as a service binding to the backend container. For local development, `docker-compose` or the shell supplies the value.
+- Clients send public application requests to the frontend Cloudflare Worker, `metadata-scrubber`.
+- Frontend server code calls `metadata-scrubber-backend` through the `BACKEND` service binding. This backend Worker forwards requests to the Go backend in a Cloudflare Container.
+- The backend Worker has no public URL. The browser cannot call the Go backend directly.
+- The frontend validates `BACKEND_URL` and creates request-scoped Ky clients with this base URL. The service binding ignores the URL host.
 - The products tRPC router calls backend health.
 - The wizard tRPC router provides typed proxies for workflow configuration, upload grants, dry-run inspection, revision-bound scrubbing, download-grant refresh, and confirmed deletion.
 - The tRPC workflow sends only small JSON values. It does not send file bytes.

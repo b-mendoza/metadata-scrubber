@@ -1,0 +1,16 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "metadata-scrubber",
+  "main": "@tanstack/react-start/server-entry",
+  "compatibility_date": "2026-10-01",
+  "compatibility_flags": ["nodejs_compat"],
+  "observability": { "enabled": true },
+  "upload_source_maps": true,
+  "services": [
+    { "binding": "BACKEND", "service": "metadata-scrubber-backend" },
+  ],
+  "vars": {
+    // The service binding ignores the host, but Ky needs an absolute base URL.
+    "BACKEND_URL": "https://metadata-scrubber-backend.invalid",
+  },
+}

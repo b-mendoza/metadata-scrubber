@@ -12,6 +12,7 @@ export const createTRPCRequestContext = (
 });
 
 const t = initTRPC.context<TRPCRequestContext>().create({
+  isDev: import.meta.env.DEV,
   transformer: {
     deserialize: parse,
     serialize: stringify,

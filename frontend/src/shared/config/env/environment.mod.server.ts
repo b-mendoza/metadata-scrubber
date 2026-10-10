@@ -3,9 +3,7 @@ import * as z from "zod";
 const HTTP_PROTOCOL = /^https?$/v;
 
 export const environmentSchema = z.object({
-  // On Vercel this is injected by the service binding to the backend
-  // container; locally it comes from docker-compose/pnpm. Accept both http
-  // (local) and https (Vercel's internal binding URL).
+  // Ky needs an absolute HTTP(S) base URL even when BACKEND routes the request.
   BACKEND_URL: z
     .url({
       error:

@@ -1,0 +1,55 @@
+#:schema https://taskfile.dev/schema.json
+
+version: "3.51.1"
+
+tasks:
+  credentials:
+    desc: >-
+      Refresh local OAuth and one-hour R2 credentials in .env. Sign in and enter the parent access key ID when prompted.
+    interactive: true
+    cmds:
+      - sh ./credentials.sh
+
+  init:
+    desc: >-
+      Initialize R2 state and install the pinned provider without changing the lock file. Run credentials first locally. CI sets credentials in the environment.
+    dotenv: [".env"]
+    cmds:
+      - terraform init -lockfile=readonly
+
+  lint:
+    desc: Check formatting and validate the configuration without credentials
+    env:
+      # A separate data directory keeps lint from loading the backend that init saved.
+      TF_DATA_DIR: .terraform/lint
+    cmds:
+      - terraform init -backend=false -lockfile=readonly
+      - terraform fmt -check -recursive
+      - terraform validate
+
+  fix:
+    desc: Format the configuration (writes files)
+    cmds:
+      - terraform fmt -recursive
+
+  plan:
+    desc: >-
+      Save a plan to tfplan. Run credentials first locally. CI sets credentials in the environment.
+    dotenv: [".env"]
+    deps:
+      - init
+    cmds:
+      - terraform plan -out=tfplan
+
+  apply:
+    desc: >-
+      Run credentials first locally, then run plan. Apply tfplan to change the Cloudflare account. CI sets credentials in the environment.
+    dotenv: [".env"]
+    cmds:
+      - terraform apply tfplan
+
+  lock:
+    desc: >-
+      Record install checksums for the current platform. Signed registry checksums in the lock file cover the other platforms.
+    cmds:
+      - terraform providers lock

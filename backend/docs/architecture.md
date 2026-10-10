@@ -26,6 +26,8 @@ The backend is a Go HTTP service. It grants direct uploads to private storage. I
 
 Stock `golangci-lint` checks all packages, including analyzer code. Git ignores the generated `coverage.out` file.
 
+TypeScript checks the Worker entry with the types that `wrangler types` generates.
+
 ## HTTP API
 
 The server registers these routes:
@@ -46,16 +48,18 @@ The delete route removes the source and all sanitized revisions for one file. Th
 
 ## Deployment
 
-Vercel Fluid compute runs the service in a stateless container. Vercel manages the server.
+Cloudflare Containers runs the unchanged Go image behind the private `metadata-scrubber-backend` Worker. The frontend Worker `metadata-scrubber` calls it through the `BACKEND` service binding. Clients cannot call the backend directly. The backend Worker disables `workers.dev` and preview URLs. It has no public routes.
 
-- One instance serves many requests at the same time. The platform fills a warm instance before it starts a new instance. The platform does not isolate requests from each other.
-- Each instance has a small fixed memory limit and few CPUs. An out-of-memory kill stops the process and fails every request in that process.
-- The platform controls request time limits. The deployment configuration does not state a duration.
-- The platform adds instances when current instances are busy.
+- `BackendContainer` uses the `BACKEND_CONTAINER` Durable Object binding. The Worker sends every request to one named container instance. The two-job PDF admission limit applies to this one instance.
+- The configuration uses a custom instance type to match the Vercel Standard size. It has 1 vCPU, 3 GiB of memory, and the default 2 GB of disk. Cloudflare requires at least 3 GiB of memory for 1 vCPU. [Cloudflare's limits reference](https://developers.cloudflare.com/containers/platform/limits/#custom-instance-types) lists these limits. An out-of-memory kill stops the process and fails its active requests.
+- Worker secrets hold `R2_ACCOUNT_ID`, `R2_ACCESS_KEY_ID`, and `R2_SECRET_ACCESS_KEY`. `secrets.required` makes deploy fail when one is missing. The non-secret `R2_BUCKET` variable is `metadata-scrubber-prod`. The Worker passes all four values to the container through `envVars`. It does not set `PORT`.
+- A running container keeps the environment from its start. New secret values and Worker environment changes apply at the next container start. The container stops after 10 minutes without requests. This is the library default. A deploy with an unchanged image does not restart the container.
 
 ## Runtime
 
-The local run process uses the shell environment. It has no `.env` loader. Before startup, the service validates `PORT`, `R2_ACCOUNT_ID`, `R2_ACCESS_KEY_ID`, `R2_SECRET_ACCESS_KEY`, and `R2_BUCKET`. The R2 settings are required. `PORT` defaults to 8080. [`.env.example`](../.env.example) lists these variables with example values.
+`task run` in `backend/` starts the Go process with the shell environment. The Go process has no `.env` loader. `pnpm exec wrangler dev` in `backend/` starts the Worker and container with Docker. Wrangler reads local secrets from `.dev.vars`. That file can also override `R2_BUCKET` for local use. Git and Docker exclude `.dev.vars*`.
+
+Before startup, the service validates `PORT`, `R2_ACCOUNT_ID`, `R2_ACCESS_KEY_ID`, `R2_SECRET_ACCESS_KEY`, and `R2_BUCKET`. The R2 settings are required. `PORT` defaults to 8080. [`.env.example`](../.env.example) lists these variables with example values.
 
 - `main.go` configures JSON slog logging. It validates the service configuration and the Cloudflare R2 connection configuration. It creates one long-lived R2 adapter from the validated configuration without contacting R2. It passes the adapter into server construction.
 - Server construction creates one handler and one buffered admission channel with a fixed capacity of two. The permits limit active PDF work. They do not limit waiting requests or memory use. Server construction does not register the superseded multipart endpoint.
