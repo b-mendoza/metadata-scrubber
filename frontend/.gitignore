@@ -4,4 +4,8 @@
 /coverage/
 
 # Artifacts
-/.output/
+/dist/
+/.wrangler/
+
+# Local environment
+.dev.vars*

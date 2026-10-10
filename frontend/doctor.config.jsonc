@@ -12,7 +12,9 @@
   "ignore": {
     // Ignore findings in generated output and in the Oxlint plugin, which is Node tooling, not React code.
     "files": [
-      ".output/**",
+      "dist/**",
+      ".wrangler/**",
+      "worker-configuration.d.ts",
       "coverage/**",
       "oxlint-plugin-metadata-scrubber/**",
       "src/routeTree.gen.ts",

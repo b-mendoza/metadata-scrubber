@@ -1,6 +1,12 @@
 {
   "$schema": "./node_modules/oxfmt/configuration_schema.json",
-  "ignorePatterns": [".output/", "coverage/", "src/routeTree.gen.ts"],
+  "ignorePatterns": [
+    "dist/",
+    ".wrangler/",
+    "worker-configuration.d.ts",
+    "coverage/",
+    "src/routeTree.gen.ts"
+  ],
   "printWidth": 80,
   "proseWrap": "never",
   "sortPackageJson": {

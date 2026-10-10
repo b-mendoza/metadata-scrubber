@@ -212,7 +212,9 @@ export default defineConfig(
     },
   },
   globalIgnores([
-    ".output/",
+    "dist/",
+    ".wrangler/",
+    "worker-configuration.d.ts",
     "coverage/",
     "oxlint-plugin-metadata-scrubber/fixtures/",
     "src/routeTree.gen.ts",
