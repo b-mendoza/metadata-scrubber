@@ -88,7 +88,6 @@ The workflow schemas enforce these contracts:
 - A canonical ETag contains exactly 32 lower-case hexadecimal characters. It has no quotes or whitespace.
 - A file name cannot start or end with whitespace. The schema rejects whitespace instead of changing the file name.
 - A download-grant expiry is an RFC 3339 whole-second timestamp.
-- Backend success and error objects reject unknown properties.
 
 ## File uploads
 
