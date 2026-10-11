@@ -80,7 +80,6 @@ if ! printf '%s\n' "$auth" "$identity" "$response" | jq -ser --arg quote "'" '
   printf 'Cloudflare returned invalid credential values. The .env file was not changed.\n' >&2
   exit 1
 fi
-chmod 600 "$output"
 mv -f "$output" "$script_dir/.env"
 printf 'Updated CLOUDFLARE_API_TOKEN, TF_VAR_cloudflare_account_id, AWS_ENDPOINT_URL_S3, AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY, AWS_SESSION_TOKEN.\n'
 printf 'Estimated R2 expiry: %s\n' "$expiry"
