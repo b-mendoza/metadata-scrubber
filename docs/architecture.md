@@ -4,12 +4,12 @@
 
 ## Layout
 
-| Path | Contents |
-| --- | --- |
-| `backend/` | Go HTTP backend service for scrubbing, request handling, configuration, and private storage. The service has its own `AGENTS.md`. |
-| `frontend/` | TypeScript and React frontend service on TanStack Start and Vite. `pnpm` manages the service. The service has its own `AGENTS.md`. |
-| `docs/` | Cross-service documentation. General guides are under `docs/agent/`. Factual references include this file. |
-| `docker-compose.yml` | Runs the backend and frontend together for local development. |
+| Path                 | Contents                                                                                                                           |
+| -------------------- | ---------------------------------------------------------------------------------------------------------------------------------- |
+| `backend/`           | Go HTTP backend service for scrubbing, request handling, configuration, and private storage. The service has its own `AGENTS.md`.  |
+| `frontend/`          | TypeScript and React frontend service on TanStack Start and Vite. `pnpm` manages the service. The service has its own `AGENTS.md`. |
+| `docs/`              | Cross-service documentation. General guides are under `docs/agent/`. Factual references include this file.                         |
+| `docker-compose.yml` | Runs the backend and frontend together for local development.                                                                      |
 
 ## Service integration
 

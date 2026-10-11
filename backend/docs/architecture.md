@@ -6,23 +6,23 @@ The backend is a Go HTTP service. It grants direct uploads to private storage. I
 
 ## Internal package layout
 
-| Package | Responsibility |
-| --- | --- |
-| `scrub` | `scrub` parses and validates PDF bytes. It inspects metadata and removes supported metadata. It enforces the 10 MiB input limit. |
-| `sniff` | `sniff` applies the strict offset-zero `%PDF-` byte policy to select PDF intake candidates. This check does not establish structural validity. |
-| `handler` | `handler` provides the health and file-workflow HTTP handlers. It creates upload grants. It handles workflow configuration, dry-run inspection, revision-bound scrubbing, download-grant refresh, and confirmed deletion. It applies strict JSON validation and returns safe public errors. |
-| `httpx` | `httpx` provides HTTP helpers that handlers share. The helpers handle CORS and safe request logging. The helpers return error responses. The `httpx/header` and `httpx/mediatype` subpackages handle headers and media types. |
-| `bindings` | `bindings` provides middleware that attaches configuration and storage dependencies to each request context. |
-| `config` | `config` reads service and Cloudflare R2 connection configuration from the environment. It validates the configuration before startup. |
-| `storage` | `storage` defines provider-neutral upload, workflow, and lifecycle ports. It includes a synchronized in-memory fake and a Cloudflare R2 adapter. Source objects are private. The R2 adapter checks exact source existence. |
+| Package    | Responsibility                                                                                                                                                                                                                                                                              |
+| ---------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `scrub`    | `scrub` parses and validates PDF bytes. It inspects metadata and removes supported metadata. It enforces the 10 MiB input limit.                                                                                                                                                            |
+| `sniff`    | `sniff` applies the strict offset-zero `%PDF-` byte policy to select PDF intake candidates. This check does not establish structural validity.                                                                                                                                              |
+| `handler`  | `handler` provides the health and file-workflow HTTP handlers. It creates upload grants. It handles workflow configuration, dry-run inspection, revision-bound scrubbing, download-grant refresh, and confirmed deletion. It applies strict JSON validation and returns safe public errors. |
+| `httpx`    | `httpx` provides HTTP helpers that handlers share. The helpers handle CORS and safe request logging. The helpers return error responses. The `httpx/header` and `httpx/mediatype` subpackages handle headers and media types.                                                               |
+| `bindings` | `bindings` provides middleware that attaches configuration and storage dependencies to each request context.                                                                                                                                                                                |
+| `config`   | `config` reads service and Cloudflare R2 connection configuration from the environment. It validates the configuration before startup.                                                                                                                                                      |
+| `storage`  | `storage` defines provider-neutral upload, workflow, and lifecycle ports. It includes a synchronized in-memory fake and a Cloudflare R2 adapter. Source objects are private. The R2 adapter checks exact source existence.                                                                  |
 
 ## Tooling layout
 
-| Package | Responsibility |
-| --- | --- |
-| `lint/nohiddentestsignal` | `lint/nohiddentestsignal` provides a Go analyzer. The analyzer reports test skips and `time.Sleep` calls in Go test files. |
-| `lint/noemptyinterface` | `lint/noemptyinterface` provides a Go analyzer. The analyzer reports `any`, literal empty interfaces, and named types or aliases that resolve to empty interfaces in application code. |
-| `lint/cmd/analyzers` | `lint/cmd/analyzers` runs both analyzers on application packages. The lint targets select the service root and all packages under `internal/`. |
+| Package                   | Responsibility                                                                                                                                                                         |
+| ------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `lint/nohiddentestsignal` | `lint/nohiddentestsignal` provides a Go analyzer. The analyzer reports test skips and `time.Sleep` calls in Go test files.                                                             |
+| `lint/noemptyinterface`   | `lint/noemptyinterface` provides a Go analyzer. The analyzer reports `any`, literal empty interfaces, and named types or aliases that resolve to empty interfaces in application code. |
+| `lint/cmd/analyzers`      | `lint/cmd/analyzers` runs both analyzers on application packages. The lint targets select the service root and all packages under `internal/`.                                         |
 
 Stock `golangci-lint` checks all packages, including analyzer code. Git ignores the generated `coverage.out` file.
 
