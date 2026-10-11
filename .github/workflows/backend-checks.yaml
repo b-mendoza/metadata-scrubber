@@ -48,6 +48,12 @@ jobs:
         working-directory: ./backend
         run: pnpm install --frozen-lockfile
 
+      - name: Verify generated backend Cloudflare types
+        working-directory: ./backend
+        run: |
+          pnpm run codegen:cloudflare
+          git diff --exit-code -- worker-configuration.d.ts
+
       - name: Check backend Worker types
         working-directory: ./backend
         run: pnpm run lint:types
