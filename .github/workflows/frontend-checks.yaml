@@ -1,6 +1,8 @@
 name: Frontend Quality Checks
 
 on:
+  workflow_call:
+
   pull_request:
     paths:
       - .github/actions/frontend/**
@@ -35,7 +37,8 @@ jobs:
         uses: ./.github/actions/frontend/setup-env
 
       - name: "Run linting, formatting and type checks"
-        uses: ./.github/actions/frontend/quality-checks
+        working-directory: ./frontend
+        run: pnpm run lint
 
       - name: Run tests
         working-directory: ./frontend
