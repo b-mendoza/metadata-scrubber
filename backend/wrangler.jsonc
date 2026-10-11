@@ -16,7 +16,7 @@
     {
       "class_name": "BackendContainer",
       "image": "./Dockerfile",
-      // Match Vercel Standard 2 GB / 1 vCPU; Cloudflare requires at least 3072 MiB for 1 vCPU.
+      // Cloudflare requires at least 3072 MiB of memory for 1 vCPU.
       "instance_type": {
         "vcpu": 1,
         "memory_mib": 3072,
