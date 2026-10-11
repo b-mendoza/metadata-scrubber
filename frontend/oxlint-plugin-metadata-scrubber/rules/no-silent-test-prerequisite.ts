@@ -117,7 +117,7 @@ const getGuardAssertion = (
     ? `expect(${test.argument.name}).toBeTruthy()`
     : `expect((${sourceCode.getText(test)})).toBeFalsy()`;
 
-export default defineRule({
+const rule = defineRule({
   meta: {
     type: "problem",
     docs: {
@@ -184,3 +184,5 @@ export default defineRule({
     };
   },
 });
+
+export default rule;

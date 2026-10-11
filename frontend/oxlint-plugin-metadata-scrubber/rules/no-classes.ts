@@ -10,7 +10,7 @@ const getClassName = (node: ESTree.Class): string => {
   return "anonymous class";
 };
 
-export default defineRule({
+const rule = defineRule({
   meta: {
     type: "problem",
     docs: {
@@ -37,3 +37,5 @@ export default defineRule({
     };
   },
 });
+
+export default rule;

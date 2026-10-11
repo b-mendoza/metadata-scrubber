@@ -9,7 +9,7 @@ import separateTypeImports from "./rules/separate-type-imports.ts";
 import useEffectInCustomHook from "./rules/use-effect-in-custom-hook.ts";
 import useSharedRenderHelper from "./rules/use-shared-render-helper.ts";
 
-export default definePlugin({
+const plugin = definePlugin({
   meta: {
     name: "metadata-scrubber",
   },
@@ -24,3 +24,5 @@ export default definePlugin({
     "use-shared-render-helper": useSharedRenderHelper,
   },
 });
+
+export default plugin;

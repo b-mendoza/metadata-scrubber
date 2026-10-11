@@ -5,7 +5,7 @@ import react from "@vitejs/plugin-react";
 import { nitro } from "nitro/vite";
 import { defineConfig } from "vite";
 
-export default defineConfig({
+const config = defineConfig({
   css: {
     transformer: "lightningcss",
   },
@@ -19,3 +19,5 @@ export default defineConfig({
     }),
   ],
 });
+
+export default config;

@@ -1,6 +1,6 @@
 import { configDefaults, defineConfig } from "vitest/config";
 
-export default defineConfig({
+const config = defineConfig({
   test: {
     coverage: {
       include: ["src/**/*.{ts,tsx}"],
@@ -28,3 +28,5 @@ export default defineConfig({
     unstubGlobals: true,
   },
 });
+
+export default config;

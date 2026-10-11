@@ -2,7 +2,7 @@ import { defineRule } from "@oxlint/plugins";
 
 const NO_TYPE_BINDINGS = 0;
 
-export default defineRule({
+const rule = defineRule({
   meta: {
     type: "problem",
     docs: {
@@ -46,3 +46,5 @@ export default defineRule({
     };
   },
 });
+
+export default rule;
