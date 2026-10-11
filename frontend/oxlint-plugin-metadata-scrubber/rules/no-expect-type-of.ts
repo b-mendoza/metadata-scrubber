@@ -41,7 +41,7 @@ const isVitestExpectTypeOfReference = (
   return node.name === "expectTypeOf";
 };
 
-export default defineRule({
+const rule = defineRule({
   meta: {
     type: "problem",
     docs: {
@@ -57,8 +57,10 @@ export default defineRule({
 
     return {
       CallExpression(node) {
-        if (node.callee.type !== "Identifier") return;
-        if (!isVitestExpectTypeOfReference(node.callee, context.sourceCode)) {
+        if (
+          node.callee.type !== "Identifier" ||
+          !isVitestExpectTypeOfReference(node.callee, context.sourceCode)
+        ) {
           return;
         }
         context.report({
@@ -70,3 +72,5 @@ export default defineRule({
     };
   },
 });
+
+export default rule;

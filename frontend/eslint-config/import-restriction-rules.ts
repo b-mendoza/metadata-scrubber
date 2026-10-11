@@ -5,10 +5,10 @@ import { PLUGIN_NAMES, SEVERITY_LEVELS } from "./constants.ts";
 export const importRestrictionRules = {
   [`${PLUGIN_NAMES.ImportX}/newline-after-import`]: SEVERITY_LEVELS.Error,
   /**
-   * The zod package root is the only supported entry point.
-   * In .oxlintrc.json, the user replaces this regex with a zod/** group by
-   * hand. That manual change keeps the same policy.
-   */
+  The zod package root is the only supported entry point.
+  In .oxlintrc.json, the user replaces this regex with a zod/** group by
+  hand. That manual change keeps the same policy.
+  */
   "no-restricted-imports": [
     SEVERITY_LEVELS.Error,
     {
