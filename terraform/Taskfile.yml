@@ -10,13 +10,6 @@ tasks:
     cmds:
       - sh ./credentials.sh
 
-  init:
-    desc: >-
-      Initialize R2 state and install the pinned provider without changing the lock file. Run credentials first locally. CI sets credentials in the environment.
-    dotenv: [".env"]
-    cmds:
-      - terraform init -lockfile=readonly
-
   lint:
     desc: Check formatting and validate the configuration without credentials
     env:
@@ -33,12 +26,10 @@ tasks:
       - terraform fmt -recursive
 
   plan:
-    desc: >-
-      Save a plan to tfplan. Run credentials first locally. CI sets credentials in the environment.
+    desc: Initialize R2 state and save a plan to tfplan
     dotenv: [".env"]
-    deps:
-      - init
     cmds:
+      - terraform init -lockfile=readonly
       - terraform plan -out=tfplan
 
   apply:
