@@ -8,10 +8,12 @@ Developers build the frontend with [TanStack Start](https://tanstack.com/start) 
 
 ## Deployment
 
-- Vercel runs this service as a TanStack Start application. Vercel manages the server runtime.
-- One instance can serve many requests at the same time.
-- Vercel injects the backend's URL as a service binding.
-- Vercel limits each request's run time and each instance's memory.
+- Cloudflare Workers runs this TanStack Start application as the `metadata-scrubber` Worker.
+- The `BACKEND` service binding connects the frontend server to the private `metadata-scrubber-backend` Worker. The backend has no public URL. The browser never calls the backend.
+- Local `vite dev` serves `http://localhost:3000` in the Workers runtime. The frontend calls `BACKEND_URL` directly, for example the Docker Compose backend at `http://localhost:8080`.
+- Each isolate can serve many requests at the same time. Each isolate has a 128 MB memory limit.
+- HTTP requests have no fixed duration limit while the client stays connected. Workers applies CPU time limits. Network wait time does not count as CPU time.
+- The Free plan permits 10 ms of CPU time per HTTP request. The Paid plan defaults to 30 seconds and permits a configured limit of up to five minutes. The [Workers limits](https://developers.cloudflare.com/workers/platform/limits/) describe the platform limits.
 
 ## Source layout
 
@@ -46,9 +48,10 @@ Developers build the frontend with [TanStack Start](https://tanstack.com/start) 
 - Server code calls `getAppBindings()`. The function returns `{ httpClient, workflowHttpClient }`.
 - The `httpClient` binding is the request-scoped health-check Ky client.
 - The `workflowHttpClient` binding is the request-scoped file-workflow Ky client.
-- Both clients use the validated `BACKEND_URL` as `baseUrl`.
-- On each request, the middleware calls `environmentSchema.parse(process.env)`. A validation error rejects the middleware request. The middleware provides the validated bindings to downstream code through `getAppBindings()`.
-- The environment schema requires `BACKEND_URL` and accepts absolute HTTP and HTTPS URLs. This service has no `.env.example`.
+- The middleware imports `env` from `cloudflare:workers`. It calls `environmentSchema.parse(env)` on each request. Both clients use the parsed `BACKEND_URL` as `baseUrl`.
+- `wrangler.jsonc` sets `BACKEND_URL` to the placeholder `https://metadata-scrubber-backend.invalid`. The deployed `BACKEND` binding ignores the URL host, but Ky needs an absolute URL.
+- Local `.dev.vars` supplies the backend URL, such as `BACKEND_URL=http://localhost:8080` for Docker Compose.
+- When `import.meta.env.DEV` is true, both clients call global fetch with `globalThis` as its receiver. Deployed builds call `env.BACKEND.fetch` with `env.BACKEND` as its receiver.
 
 ## Backend HTTP
 
@@ -105,10 +108,13 @@ The root [architecture reference](../../docs/architecture.md) describes service 
 ## Tooling
 
 - [package.json](../package.json) defines the available commands and scripts.
+- Vite uses the Cloudflare plugin for development and builds. `wrangler.jsonc` defines the Worker and its bindings. Builds write client assets and server code under `dist/`. Cloudflare tooling writes local state under `.wrangler/`.
+- Wrangler generates `worker-configuration.d.ts` from the Worker configuration. `tsconfig.app.json` includes these binding and runtime types.
 - `scripts/setup-node.sh` installs the pinned Node.js runtime and pnpm. It installs dependencies, then runs lint, fixes, tests, coverage, and a production build.
 - `scripts/hard-clean.ts` and `scripts/soft-clean.ts` import only Node built-ins. They can run without installed dependencies.
 - The lint checks cover ESLint rules, React Doctor findings, unused code, formatting, Oxlint rules, and TypeScript types. Knip checks unused files, dependencies, and exports. oxfmt checks formatting.
-- React Doctor scans the frontend. Its configured ignores include generated output and the Oxlint plugin. It runs without interactive input. Telemetry, scoring, and the supply-chain scan are off. Warnings and errors fail the check.
+- Knip reads `cloudflare:workers` as the package name `cloudflare`. Its dependency ignore covers this runtime-provided module.
+- React Doctor scans the frontend. Its built-in ignores exclude output directories. Its configured ignores exclude tracked generated files and the Oxlint plugin. It runs without interactive input. Telemetry, scoring, and the supply-chain scan are off. Warnings and errors fail the check.
 - `eslint.config.ts` defines preset order, the Oxlint bridge, the parser root, and rule groups. It loads configuration arrays and rule maps from `eslint-config/*-rules.ts`. Each configuration module imports its own plugins.
 - The [lint plugin reference](../oxlint-plugin-metadata-scrubber/README.md) describes custom rules and static-check limits.
 
@@ -116,6 +122,7 @@ The root [architecture reference](../../docs/architecture.md) describes service 
 
 - `vitest.config.ts` runs `src/**/*.server.test.ts` in the `server` project with Node and no setup file. It runs the other `src/**/*.test.{ts,tsx}` files in the `client` project with happy-dom and `src/tests/setup-test-environment.ts`.
 
+- The middleware tests check both Ky clients in local and deployed modes. They check fetch receivers, request methods, and absolute request URLs. They check that local requests use global fetch and deployed requests use only `BACKEND`. They also check that an invalid `BACKEND_URL` rejects before downstream code runs.
 - Direct tRPC caller tests cover all six workflow procedures and root-router registration.
 - Tests check exact backend methods, paths, and JSON bodies. They compare each request body with its typed procedure input.
 - Tests cover canonical ETag validation, invalid procedure inputs, invalid backend success bodies, safe status mapping, invalid backend error bodies, timeouts, and caller cancellation.

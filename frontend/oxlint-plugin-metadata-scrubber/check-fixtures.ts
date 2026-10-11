@@ -13,14 +13,11 @@ type FixtureCase = readonly [
 
 const FAILURE_EXIT_CODE = 1;
 const SUCCESS_EXIT_CODE = 0;
-const INSECURE_HTTP_PROTOCOL = "http";
 
 const NO_CLASSES_GUIDANCE =
   "Replace it with plain functions and objects. Use a factory function such as `const createService = () => ({ run: () => true })` when code must create an object. Plain functions and objects keep dependencies and mutable state explicit. The rule has no class exceptions, including classes that extend `Error`.";
 const NO_EXPECT_TYPE_OF_GUIDANCE =
   "Remove this assertion. Put the expected type on the production declaration with `: ExpectedType`, or constrain the value with `satisfies ExpectedType`. TypeScript checks this contract during the type check. Use Vitest `expect(...)` only for runtime behavior.";
-const NO_HARDCODED_BACKEND_HOST_GUIDANCE =
-  "Service hosts vary by deployment, so this source text can target the wrong environment. For the backend base URL in server code, read `env.BACKEND_URL` through `getAppBindings()` and build `new URL(path, env.BACKEND_URL)`. Browser code must call a frontend server route for backend access. For another service host, add a validated environment field.";
 const NO_MUTABLE_MODULE_STATE_IN_SERVER_CODE_GUIDANCE =
   "Move request-local mutation into request scope. Put request dependencies in `appBindingsMiddleware` and read them with `getAppBindings()`. Use `const` only when no request changes the value or its contents. Do not move the mutation into a module-scope object or array.";
 const NO_SILENT_TEST_PREREQUISITE_GUIDANCE =
@@ -48,21 +45,6 @@ const fixtureCases: readonly FixtureCase[] = [
     [
       `\`assertType(...)\` tests a static type. ${NO_EXPECT_TYPE_OF_GUIDANCE}`,
       `\`expectTypeOf(...)\` tests a static type. ${NO_EXPECT_TYPE_OF_GUIDANCE}`,
-    ],
-  ],
-  [
-    "no-hardcoded-backend-host",
-    "no-hardcoded-backend-host.ts",
-    [
-      `\`https://backend.example.com\` contains a static HTTP service host. ${NO_HARDCODED_BACKEND_HOST_GUIDANCE}`,
-      `\`${INSECURE_HTTP_PROTOCOL}://template.example.com\` contains a static HTTP service host. ${NO_HARDCODED_BACKEND_HOST_GUIDANCE}`,
-      `\`http://localhost:8787/\\unicode\` contains a static HTTP service host. ${NO_HARDCODED_BACKEND_HOST_GUIDANCE}`,
-      `\`http://localhost:8787/\` contains a static HTTP service host. ${NO_HARDCODED_BACKEND_HOST_GUIDANCE}`,
-      `\`HTTP://service.example/path\` contains a static HTTP service host. ${NO_HARDCODED_BACKEND_HOST_GUIDANCE}`,
-      `\`https://backend.example.com\` contains a static HTTP service host. ${NO_HARDCODED_BACKEND_HOST_GUIDANCE}`,
-      `\`${INSECURE_HTTP_PROTOCOL}://backend.example.com\` contains a static HTTP service host. ${NO_HARDCODED_BACKEND_HOST_GUIDANCE}`,
-      `\`https://backend.example.com/api\` contains a static HTTP service host. ${NO_HARDCODED_BACKEND_HOST_GUIDANCE}`,
-      `\`https://backend.example.com\` contains a static HTTP service host. ${NO_HARDCODED_BACKEND_HOST_GUIDANCE}`,
     ],
   ],
   [

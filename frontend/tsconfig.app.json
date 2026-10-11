@@ -29,7 +29,12 @@
     "skipLibCheck": true,
     "strict": true,
     "target": "es2024",
-    "types": ["vite/client", "node", "@total-typescript/ts-reset"],
+    "types": [
+      "vite/client",
+      "node",
+      "./worker-configuration.d.ts",
+      "@total-typescript/ts-reset"
+    ],
     "useDefineForClassFields": true,
     "verbatimModuleSyntax": true
   },

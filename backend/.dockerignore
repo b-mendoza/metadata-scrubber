@@ -1,12 +1,5 @@
-.git
-.DS_Store
-.env
-.env.*
-.golangci.yml
-Taskfile.yml
-coverage
-*.test
-metadata-scrubber
-tmp
-dist
-bin
+*
+!go.mod
+!go.sum
+!*.go
+!internal/

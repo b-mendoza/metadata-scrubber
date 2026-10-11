@@ -1,6 +1,8 @@
 name: Frontend Quality Checks
 
 on:
+  workflow_call:
+
   pull_request:
     paths:
       - .github/actions/frontend/**
@@ -15,6 +17,9 @@ on:
       - .github/workflows/frontend-checks.yaml
       - frontend/**
 
+permissions:
+  contents: read
+
 concurrency:
   group: "${{ github.workflow }}-${{ github.ref }}"
   cancel-in-progress: true
@@ -25,12 +30,15 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
 
       - name: "Setup Node.js, pnpm and dependencies"
         uses: ./.github/actions/frontend/setup-env
 
       - name: "Run linting, formatting and type checks"
-        uses: ./.github/actions/frontend/quality-checks
+        working-directory: ./frontend
+        run: pnpm run lint
 
       - name: Run tests
         working-directory: ./frontend

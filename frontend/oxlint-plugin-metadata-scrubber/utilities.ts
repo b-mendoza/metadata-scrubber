@@ -86,7 +86,7 @@ export const isServerModule = (filename: string, cwd: string): boolean => {
   );
 };
 
-export const toProjectPath = (filename: string, cwd: string): string => {
+const toProjectPath = (filename: string, cwd: string): string => {
   const normalizedFilename = filename.replaceAll("\\", "/");
   const normalizedCwd = cwd
     .replaceAll("\\", "/")

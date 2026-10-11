@@ -187,7 +187,7 @@ export default defineConfig(
   /**
    * This final oxlint entry turns off ESLint rules that the bridge
    * maps to enabled Oxlint rules.
-   * All eight custom rules still run in both tools.
+   * All seven custom rules still run in both tools.
    */
   ...oxlintConfigs,
   {
@@ -212,7 +212,9 @@ export default defineConfig(
     },
   },
   globalIgnores([
-    ".output/",
+    "dist/",
+    ".wrangler/",
+    "worker-configuration.d.ts",
     "coverage/",
     "oxlint-plugin-metadata-scrubber/fixtures/",
     "src/routeTree.gen.ts",

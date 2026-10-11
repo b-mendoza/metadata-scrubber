@@ -16,7 +16,6 @@ This plugin encodes the project's coding standards as enforceable Oxlint rules. 
 
 - `no-classes` requires plain functions and objects instead of class declarations and class expressions. It also rejects classes that extend `Error`.
 - `no-expect-type-of` requires TypeScript contracts instead of Vitest `expectTypeOf(...)` calls, including renamed imports.
-- `no-hardcoded-backend-host` requires environment fields instead of static HTTP service hosts outside tests and the validated environment module.
 - `no-mutable-module-state-in-server-code` rejects module-scope `let` and `var` declarations in server modules.
 - `no-silent-test-prerequisite` rejects `.skip` calls on Vitest test APIs, including chains such as `test.skip.each(...)`. It also rejects bare test prerequisite returns in test callbacks.
 - `separate-type-imports` rejects inline `type` specifiers and requires separate `import type` declarations. It reports once per declaration, including declarations with only inline type specifiers. Standalone named, default, and namespace type imports remain allowed.
@@ -51,6 +50,5 @@ Make each diagnostic clear enough to explain the required correction. Explain th
 - Suggested guard assertions do not preserve TypeScript control-flow narrowing.
 - A destructured Testing Library `render` reference is not reported after a namespace import.
 - An unresolved non-Vitest global can be reported when it uses the Vitest name `expectTypeOf`, `describe`, `it`, or `test`.
-- Protocol-relative string literals such as `"//backend.example.com/api"` are not reported.
 - `unicorn/consistent-function-scoping` does not report inline callbacks.
 - `vitest/no-conditional-expect` does not check a helper outside a test callback.
