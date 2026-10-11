@@ -3,7 +3,7 @@ import * as z from "zod";
 const HTTP_PROTOCOL = /^https?$/v;
 
 export const environmentSchema = z.object({
-  // Ky needs an absolute HTTP(S) base URL even when BACKEND routes the request.
+  // Local development calls this URL; deployed BACKEND ignores the host, but Ky needs an absolute URL.
   BACKEND_URL: z
     .url({
       error:

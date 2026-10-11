@@ -14,7 +14,7 @@ const { workerEnvironment } = vi.hoisted(() => ({
   },
 }));
 
-// eslint-disable-next-line vitest/prefer-import-in-mock -- The mock supplies invalid Worker env values to test runtime validation, outside the generated literal types.
+// eslint-disable-next-line vitest/prefer-import-in-mock -- The mock tests invalid Worker env values outside the generated literal types and omits the unused Fetcher.connect method.
 vi.mock("cloudflare:workers", () => ({ env: workerEnvironment }));
 
 const BACKEND_REQUEST_COUNT = 2;
@@ -23,15 +23,17 @@ const INITIAL_REQUEST_CONTEXT = undefined;
 
 afterEach(() => {
   workerEnvironment.BACKEND_URL = "https://metadata-scrubber-backend.invalid";
+  workerEnvironment.BACKEND.fetch.mockReset();
   vi.unstubAllEnvs();
+  vi.unstubAllGlobals();
 });
 
 test("both backend clients use the service binding with its receiver and absolute request URLs", async () => {
+  vi.stubEnv("DEV", false);
   const publicFetch = vi
     .fn<typeof fetch>()
     .mockRejectedValue(new Error("Public backend requests are not allowed"));
   vi.stubGlobal("fetch", publicFetch);
-  vi.stubEnv("BACKEND_URL", workerEnvironment.BACKEND_URL);
   const healthBody: inferRouterOutputs<typeof productsRouter>["getMessage"] = {
     status: "reachable",
   };
@@ -90,6 +92,69 @@ test("both backend clients use the service binding with its receiver and absolut
   expect(configRequest).toMatchObject({
     method: "GET",
     url: "https://metadata-scrubber-backend.invalid/api/files/config",
+  });
+});
+
+test("both backend clients use global fetch with BACKEND_URL in local development", async () => {
+  vi.stubEnv("DEV", true);
+  workerEnvironment.BACKEND_URL = "http://localhost:8080";
+  workerEnvironment.BACKEND.fetch.mockRejectedValue(
+    new Error("Local backend requests must not use the service binding"),
+  );
+  const healthBody: inferRouterOutputs<typeof productsRouter>["getMessage"] = {
+    status: "reachable",
+  };
+  const configBody: z.output<typeof workflowConfigResponseSchema> = {
+    maxFileSizeBytes: 1024,
+  };
+  const publicFetch = vi
+    .fn<typeof fetch>()
+    .mockResolvedValueOnce(Response.json(healthBody))
+    .mockResolvedValueOnce(Response.json(configBody));
+  vi.stubGlobal("fetch", publicFetch);
+  const request = new Request("https://frontend.test/");
+  const handler = appBindingsMiddleware.options.server;
+  expect.assert(handler != null);
+
+  const next = vi.fn();
+  next.mockImplementationOnce(async () => {
+    const { httpClient, workflowHttpClient } = getAppBindings();
+    const health = await httpClient
+      .get("/api/health", { signal: request.signal })
+      .json<inferRouterOutputs<typeof productsRouter>["getMessage"]>();
+    const config = await workflowHttpClient
+      .get("/api/files/config", { signal: request.signal })
+      .json(workflowConfigResponseSchema);
+
+    expect(health).toStrictEqual(healthBody);
+    expect(config).toStrictEqual(configBody);
+    return {
+      context: INITIAL_REQUEST_CONTEXT,
+      pathname: "/",
+      request,
+      response: new Response(),
+    };
+  });
+
+  await handler({
+    context: INITIAL_REQUEST_CONTEXT,
+    handlerType: "router",
+    next,
+    pathname: "/",
+    request,
+  });
+
+  expect(workerEnvironment.BACKEND.fetch).not.toHaveBeenCalled();
+  expect(publicFetch.mock.contexts).toStrictEqual([globalThis, globalThis]);
+  expect(publicFetch).toHaveBeenCalledTimes(BACKEND_REQUEST_COUNT);
+  const [[healthRequest] = [], [configRequest] = []] = publicFetch.mock.calls;
+  expect(healthRequest).toMatchObject({
+    method: "GET",
+    url: "http://localhost:8080/api/health",
+  });
+  expect(configRequest).toMatchObject({
+    method: "GET",
+    url: "http://localhost:8080/api/files/config",
   });
 });
 

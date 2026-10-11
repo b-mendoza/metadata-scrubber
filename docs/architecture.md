@@ -15,9 +15,10 @@
 ## Service integration
 
 - Clients send public application requests to the frontend Cloudflare Worker, `metadata-scrubber`.
-- Frontend server code calls `metadata-scrubber-backend` through the `BACKEND` service binding. This backend Worker forwards requests to the Go backend in a Cloudflare Container.
+- Deployed frontend server code calls `metadata-scrubber-backend` through the `BACKEND` service binding. This backend Worker forwards requests to the Go backend in a Cloudflare Container.
+- In local development with `vite dev`, the frontend calls `BACKEND_URL` directly, for example the Docker Compose backend at `http://localhost:8080`.
 - The backend Worker has no public URL. The browser cannot call the Go backend directly.
-- The frontend validates `BACKEND_URL` and creates request-scoped Ky clients with this base URL. The service binding ignores the URL host.
+- The frontend validates `BACKEND_URL` on each request. It creates request-scoped Ky clients with this base URL. The deployed service binding ignores the URL host.
 - The products tRPC router calls backend health.
 - The wizard tRPC router provides typed proxies for workflow configuration, upload grants, dry-run inspection, revision-bound scrubbing, download-grant refresh, and confirmed deletion.
 - The tRPC workflow sends only small JSON values. It does not send file bytes.

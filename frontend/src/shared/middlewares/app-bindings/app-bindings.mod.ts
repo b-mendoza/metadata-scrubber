@@ -21,12 +21,21 @@ export const appBindingsMiddleware = createMiddleware({
 }).server(async (options) => {
   const safeEnvironmentVariables = environmentSchema.parse(env);
 
+  // Local development uses global fetch because BACKEND cannot reach Docker Compose.
   const httpClient = createHttpClient(
     safeEnvironmentVariables.BACKEND_URL,
-  ).extend({ fetch: env.BACKEND.fetch.bind(env.BACKEND) });
+  ).extend({
+    fetch: import.meta.env.DEV
+      ? fetch.bind(globalThis)
+      : env.BACKEND.fetch.bind(env.BACKEND),
+  });
   const workflowHttpClient = createWorkflowHttpClient(
     safeEnvironmentVariables.BACKEND_URL,
-  ).extend({ fetch: env.BACKEND.fetch.bind(env.BACKEND) });
+  ).extend({
+    fetch: import.meta.env.DEV
+      ? fetch.bind(globalThis)
+      : env.BACKEND.fetch.bind(env.BACKEND),
+  });
 
   return AppBindingsStore.run(
     {
