@@ -56,7 +56,7 @@ Vercel Fluid compute runs the service in a stateless container. Vercel manages t
 
 ## Runtime
 
-The local run process uses the shell environment. It has no `.env` loader. Before startup, the service validates `PORT`, `R2_ACCOUNT_ID`, `R2_ACCESS_KEY_ID`, `R2_SECRET_ACCESS_KEY`, `R2_BUCKET`, and `POSTHOG_PROJECT_TOKEN`. `PORT` defaults to 8080. Every other setting is required whenever the backend starts. The PostHog project token must start with `phc_`. [`.env.example`](../.env.example) lists these variables.
+The local run process uses the shell environment. It has no `.env` loader. Before startup, the service validates `PORT`, `R2_ACCOUNT_ID`, `R2_ACCESS_KEY_ID`, `R2_SECRET_ACCESS_KEY`, `R2_BUCKET`, and `POSTHOG_PROJECT_TOKEN`. `PORT` defaults to 8080. Every other setting is required whenever the backend starts. The schema trims `POSTHOG_PROJECT_TOKEN` and requires the `phc_` prefix. [`.env.example`](../.env.example) lists these variables.
 
 - `main.go` configures JSON slog logging. It validates the service configuration and the Cloudflare R2 connection configuration. It validates the PostHog project token. It creates one long-lived R2 adapter from the validated configuration without contacting R2. It creates telemetry clients and passes the logger and workflow-event port into server construction.
 - Server construction creates one handler and one buffered admission channel with a fixed capacity of two. The permits limit active PDF work. They do not limit waiting requests or memory use. Server construction does not register the superseded multipart endpoint.
