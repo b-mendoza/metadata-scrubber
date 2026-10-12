@@ -5,6 +5,7 @@ import (
 	"time"
 	"uuid"
 
+	"metadata-scrubber/internal/bindings"
 	"metadata-scrubber/internal/httpx"
 	"metadata-scrubber/internal/storage"
 )
@@ -41,7 +42,12 @@ func (handler *Handler) Upload(w http.ResponseWriter, request *http.Request) {
 	handler.logStage(pipelineLogEvent{ctx: request.Context(), stage: pipelineStageUploadCreated, storageKey: storageKey, outcome: pipelineOutcomeSuccess, startedAt: startedAt})
 	if err := writeJSON(w, http.StatusOK, uploadResponse{StorageKey: storageKey, UploadURL: grant.URL}); err != nil {
 		handler.logger.ErrorContext(request.Context(), "could not write JSON response", "error", err)
+		return
 	}
+	requestBindings, _ := bindings.FromContext(request.Context())
+	requestBindings.Events.Capture(bindings.WorkflowEvent{
+		Name: "upload grant created", DistinctID: requestBindings.PostHogDistinctID, SessionID: requestBindings.PostHogSessionID,
+	})
 }
 
 func (handler *Handler) validateUploadRequest(w http.ResponseWriter, request *http.Request, input uploadRequest) bool {

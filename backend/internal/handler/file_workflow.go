@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"time"
 
+	"metadata-scrubber/internal/bindings"
 	"metadata-scrubber/internal/httpx"
 	"metadata-scrubber/internal/scrub"
 	"metadata-scrubber/internal/sniff"
@@ -49,7 +50,12 @@ func (handler *Handler) DryRun(w http.ResponseWriter, request *http.Request) {
 	handler.logStage(pipelineLogEvent{ctx: request.Context(), stage: pipelineStageDryRun, storageKey: input.StorageKey, outcome: pipelineOutcomeSuccess, startedAt: startedAt})
 	if err := writeJSON(w, http.StatusOK, dryRunResponse{ETag: etag, Fields: fields}); err != nil {
 		handler.logger.ErrorContext(request.Context(), "could not write JSON response", "error", err)
+		return
 	}
+	requestBindings, _ := bindings.FromContext(request.Context())
+	requestBindings.Events.Capture(bindings.WorkflowEvent{
+		Name: "dry run completed", DistinctID: requestBindings.PostHogDistinctID, SessionID: requestBindings.PostHogSessionID,
+	})
 }
 
 func (handler *Handler) dryRunFileID(w http.ResponseWriter, request *http.Request, input dryRunRequest) (string, bool) {
@@ -243,5 +249,10 @@ func (handler *Handler) presignScrubbed(w http.ResponseWriter, scrubWorkflow scr
 		Result: scrubResponseResult{DownloadURL: grant.URL},
 	}); err != nil {
 		handler.logger.ErrorContext(scrubWorkflow.request.Context(), "could not write JSON response", "error", err)
+		return
 	}
+	requestBindings, _ := bindings.FromContext(scrubWorkflow.request.Context())
+	requestBindings.Events.Capture(bindings.WorkflowEvent{
+		Name: "file scrubbed", DistinctID: requestBindings.PostHogDistinctID, SessionID: requestBindings.PostHogSessionID,
+	})
 }
