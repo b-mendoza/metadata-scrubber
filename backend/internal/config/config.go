@@ -4,6 +4,7 @@ package config
 import (
 	"fmt"
 	"net/url"
+	"strings"
 
 	"github.com/caarlos0/env/v11"
 	"github.com/go-playground/validator/v10"
@@ -27,8 +28,8 @@ type Config struct {
 	R2SecretAccessKey string `env:"R2_SECRET_ACCESS_KEY" validate:"notblank"`
 	// R2Bucket is the Cloudflare R2 bucket used by the backend.
 	R2Bucket string `env:"R2_BUCKET" validate:"notblank"`
-	// PostHogProjectToken is required. It authenticates PostHog events,
-	// error tracking, and logs.
+	// PostHogProjectToken is required and has no surrounding whitespace.
+	// It authenticates PostHog events, error tracking, and logs.
 	PostHogProjectToken string `env:"POSTHOG_PROJECT_TOKEN" validate:"notblank,startswith=phc_"`
 }
 
@@ -51,6 +52,8 @@ func Load() (Config, error) {
 	if err != nil {
 		return Config{}, fmt.Errorf("reading environment: %w", err)
 	}
+
+	cfg.PostHogProjectToken = strings.TrimSpace(cfg.PostHogProjectToken)
 
 	if err := configValidator.Struct(cfg); err != nil {
 		return Config{}, fmt.Errorf("invalid configuration: %w", err)
