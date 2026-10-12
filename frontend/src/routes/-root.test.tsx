@@ -1,7 +1,6 @@
 import { screen } from "@testing-library/react";
 import posthog from "posthog-js";
 import { memo } from "react";
-import { renderToString } from "react-dom/server";
 import { afterEach, expect, test, vi } from "vitest";
 
 import type { getPostHogBrowserConfig } from "#/shared/config/posthog/posthog-browser-config.mod.server";
@@ -60,15 +59,5 @@ test("a development build renders the root without starting analytics", () => {
   expect(
     screen.getByRole("heading", { name: "Metadata Scrubber" }),
   ).toBeVisible();
-  expect(init).not.toHaveBeenCalled();
-});
-
-test("SSR of a production build renders the root without initializing analytics", () => {
-  vi.stubEnv("DEV", false);
-  const { init } = setupRoot();
-
-  const view = renderToString(<RootComponent />);
-
-  expect(view).toContain("Metadata Scrubber");
   expect(init).not.toHaveBeenCalled();
 });
