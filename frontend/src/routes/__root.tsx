@@ -9,12 +9,15 @@ import { ReactQueryDevtoolsPanel } from "@tanstack/react-query-devtools";
 import {
   createRootRouteWithContext,
   HeadContent,
+  Outlet,
   Scripts,
 } from "@tanstack/react-router";
 import { TanStackRouterDevtoolsPanel } from "@tanstack/react-router-devtools";
+import { createServerFn } from "@tanstack/react-start";
 import type { TRPCOptionsProxy } from "@trpc/tanstack-react-query";
 
 import globalStyles from "#/app.css?url";
+import { getPostHogBrowserConfig } from "#/shared/config/posthog/posthog-browser-config.mod.server";
 import type { AppRouter } from "#/shared/libs/trpc/routers/routers.mod.server";
 
 interface RouterContext {
@@ -37,7 +40,15 @@ const BASE_LINKS: Array<React.ComponentProps<"link">> = [
   },
 ];
 
+const loadPostHogBrowserConfig = createServerFn({ method: "GET" }).handler(() =>
+  getPostHogBrowserConfig(),
+);
+
 export const Route = createRootRouteWithContext<RouterContext>()({
+  // The configuration is fixed for each deployment, so client navigation
+  // does not load it again.
+  staleTime: Infinity,
+  loader: async () => loadPostHogBrowserConfig(),
   head() {
     return {
       links: import.meta.env.DEV
@@ -55,8 +66,19 @@ export const Route = createRootRouteWithContext<RouterContext>()({
       ],
     };
   },
+  component: RootComponent,
   shellComponent: DocumentShell,
 });
+
+export function RootComponent() {
+  const { apiKey, options } = Route.useLoaderData();
+
+  return (
+    <PostHogProvider apiKey={apiKey} options={options}>
+      <Outlet />
+    </PostHogProvider>
+  );
+}
 
 const DEVTOOLS_CONFIG = {
   position: "bottom-right",
@@ -73,25 +95,10 @@ const PLUGINS: TanStackDevtoolsReactPlugin[] = [
   },
 ];
 
-const POSTHOG_OPTIONS = {
-  defaults: "2026-08-30",
-  api_host: "/relay",
-  // eslint-disable-next-line metadata-scrubber/no-hardcoded-backend-host -- This fixed US Cloud UI host is not the backend or the event transport.
-  ui_host: "https://us.posthog.com",
-  capture_exceptions: true,
-  capture_performance: { web_vitals: true },
-  disable_session_recording: true,
-  person_profiles: "identified_only",
-} satisfies NonNullable<
-  React.ComponentProps<typeof PostHogProvider>["options"]
->;
-
 type DocumentShellProps = React.PropsWithChildren;
 
-export function DocumentShell(props: Readonly<DocumentShellProps>) {
+function DocumentShell(props: Readonly<DocumentShellProps>) {
   const { children } = props;
-  // Vite inlines this public value at build time.
-  const posthogKey: unknown = import.meta.env["VITE_PUBLIC_POSTHOG_KEY"];
 
   return (
     <html data-theme="light" lang="en">
@@ -99,13 +106,7 @@ export function DocumentShell(props: Readonly<DocumentShellProps>) {
         <HeadContent />
       </head>
       <body>
-        {typeof posthogKey === "string" && posthogKey !== "" ? (
-          <PostHogProvider apiKey={posthogKey} options={POSTHOG_OPTIONS}>
-            {children}
-          </PostHogProvider>
-        ) : (
-          children
-        )}
+        {children}
 
         {import.meta.env.DEV ? (
           <TanStackDevtools config={DEVTOOLS_CONFIG} plugins={PLUGINS} />
