@@ -13,6 +13,7 @@ Developers build the frontend with [TanStack Start](https://tanstack.com/start) 
 - The SSR payload sends this loader data to the browser. The client bundle does not contain the token or the options.
 - The root route sets `staleTime` to `Infinity`. Client navigation does not call the server function again.
 - The root route component reads the loader data with `Route.useLoaderData()`. It wraps `<Outlet />` with `PostHogProvider`. The router renders this component only after the root loader succeeds.
+- In a development build, `import.meta.env.DEV` is `true`. The root route component renders `<Outlet />` without `PostHogProvider`, so the browser does not initialize PostHog. Production builds initialize it. Vercel preview deployments are production builds.
 - The provider initializes the client in a React Effect. SSR does not run this Effect or initialize PostHog.
 - The client uses US Cloud. It sends events and flag requests through `/relay`. `vercel.json` routes this path to PostHog before the frontend catch-all.
 - The client enables browser error tracking and web vitals. It uses PostHog's default autocapture. Session recording is off. Person profiles use `identified_only`.
