@@ -45,9 +45,7 @@ func (handler *Handler) Upload(w http.ResponseWriter, request *http.Request) {
 		return
 	}
 	requestBindings, _ := bindings.FromContext(request.Context())
-	requestBindings.Events.Capture(bindings.WorkflowEvent{
-		Name: "upload grant created", DistinctID: requestBindings.PostHogDistinctID, SessionID: requestBindings.PostHogSessionID,
-	})
+	requestBindings.Events(request.Context(), "upload grant created")
 }
 
 func (handler *Handler) validateUploadRequest(w http.ResponseWriter, request *http.Request, input uploadRequest) bool {

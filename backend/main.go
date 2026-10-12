@@ -96,7 +96,7 @@ func serveHTTPServer(server *http.Server, logger *slog.Logger, serverErr chan er
 	serverErr <- err
 }
 
-func newServer(cfg config.Config, objectStorage storage.Storage, logger *slog.Logger, events bindings.WorkflowEvents) *http.Server {
+func newServer(cfg config.Config, objectStorage storage.Storage, logger *slog.Logger, events func(ctx context.Context, event string)) *http.Server {
 	mux := http.NewServeMux()
 	workflow := handler.New(logger)
 

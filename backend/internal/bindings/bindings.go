@@ -15,26 +15,8 @@ type Bindings struct {
 	Storage           storage.Storage
 	PostHogDistinctID string
 	PostHogSessionID  string
-	Events            WorkflowEvents
+	Events            func(ctx context.Context, event string)
 }
-
-// WorkflowEvent contains only the outcome and validated anonymous browser IDs.
-type WorkflowEvent struct {
-	Name       string
-	DistinctID string
-	SessionID  string
-}
-
-// WorkflowEvents enqueues outcomes without changing the workflow response.
-type WorkflowEvents interface {
-	Capture(event WorkflowEvent)
-}
-
-// DiscardWorkflowEvents replaces a nil event port in Inject.
-type DiscardWorkflowEvents struct{}
-
-// Capture discards the event without contacting PostHog.
-func (DiscardWorkflowEvents) Capture(WorkflowEvent) {}
 
 // contextKey is unexported, so no other package can forge the bindings key.
 type contextKey struct{}
@@ -42,7 +24,7 @@ type contextKey struct{}
 // Inject returns middleware that attaches bindings to every request context.
 func Inject(bindings Bindings) func(http.Handler) http.Handler {
 	if bindings.Events == nil {
-		bindings.Events = DiscardWorkflowEvents{}
+		bindings.Events = func(context.Context, string) {}
 	}
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {

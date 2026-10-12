@@ -248,8 +248,14 @@ func (observer *blockingServerStorage) DownloadSource(
 
 func TestNewServerInjectsAnonymousWorkflowEvents(t *testing.T) {
 	t.Parallel()
-	events := &serverEvents{}
-	server := newServer(config.Config{}, storage.NewFake(), slog.New(slog.DiscardHandler), events)
+	var events []string
+	server := newServer(config.Config{}, storage.NewFake(), slog.New(slog.DiscardHandler), func(ctx context.Context, event string) {
+		requestBindings, ok := bindings.FromContext(ctx)
+		require.True(t, ok)
+		require.Equal(t, "browser-id", requestBindings.PostHogDistinctID)
+		require.Equal(t, "browser-session", requestBindings.PostHogSessionID)
+		events = append(events, event)
+	})
 	type deleteRequest struct {
 		StorageKey string `json:"storageKey"`
 	}
@@ -264,7 +270,7 @@ func TestNewServerInjectsAnonymousWorkflowEvents(t *testing.T) {
 	server.Handler.ServeHTTP(response, request)
 
 	require.Equal(t, http.StatusOK, response.Code)
-	require.Equal(t, []bindings.WorkflowEvent{{Name: "file deleted", DistinctID: "browser-id", SessionID: "browser-session"}}, events.captured)
+	require.Equal(t, []string{"file deleted"}, events)
 }
 
 func TestRequestErrorLogsReceiveValidatedAnalyticsBindings(t *testing.T) {
@@ -306,9 +312,3 @@ func (observer *contextLogHandler) Handle(ctx context.Context, record slog.Recor
 type panicDeleteStorage struct{ storage.Storage }
 
 func (*panicDeleteStorage) DeleteFlow(context.Context, string) error { panic("storage panic") }
-
-type serverEvents struct{ captured []bindings.WorkflowEvent }
-
-func (events *serverEvents) Capture(event bindings.WorkflowEvent) {
-	events.captured = append(events.captured, event)
-}

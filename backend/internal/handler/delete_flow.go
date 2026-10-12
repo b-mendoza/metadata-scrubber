@@ -35,9 +35,7 @@ func (handler *Handler) DeleteFlow(w http.ResponseWriter, request *http.Request)
 		return
 	}
 	requestBindings, _ := bindings.FromContext(request.Context())
-	requestBindings.Events.Capture(bindings.WorkflowEvent{
-		Name: "file deleted", DistinctID: requestBindings.PostHogDistinctID, SessionID: requestBindings.PostHogSessionID,
-	})
+	requestBindings.Events(request.Context(), "file deleted")
 }
 
 func (handler *Handler) deleteStoredFlow(

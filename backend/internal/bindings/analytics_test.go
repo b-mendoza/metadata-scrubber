@@ -38,7 +38,7 @@ func TestInjectValidatesAnalyticsHeadersWithoutRejectingRequests(t *testing.T) {
 				got, ok := bindings.FromContext(r.Context())
 				assert.True(t, ok)
 				assert.NotNil(t, got.Events)
-				got.Events.Capture(bindings.WorkflowEvent{Name: "file scrubbed", DistinctID: got.PostHogDistinctID})
+				got.Events(r.Context(), "file scrubbed")
 				assert.Equal(t, testCase.want, got.PostHogDistinctID)
 				assert.Equal(t, testCase.want, got.PostHogSessionID)
 				w.WriteHeader(http.StatusCreated)

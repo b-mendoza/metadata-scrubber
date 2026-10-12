@@ -53,9 +53,7 @@ func (handler *Handler) DryRun(w http.ResponseWriter, request *http.Request) {
 		return
 	}
 	requestBindings, _ := bindings.FromContext(request.Context())
-	requestBindings.Events.Capture(bindings.WorkflowEvent{
-		Name: "dry run completed", DistinctID: requestBindings.PostHogDistinctID, SessionID: requestBindings.PostHogSessionID,
-	})
+	requestBindings.Events(request.Context(), "dry run completed")
 }
 
 func (handler *Handler) dryRunFileID(w http.ResponseWriter, request *http.Request, input dryRunRequest) (string, bool) {
