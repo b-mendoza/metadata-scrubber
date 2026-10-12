@@ -35,10 +35,12 @@ func TestRunRejectsIncompleteOrInvalidR2ConfigurationBeforeStartingServer(t *tes
 	t.Setenv("R2_ACCESS_KEY_ID", startupR2AccessKeyID)
 	t.Setenv("R2_SECRET_ACCESS_KEY", startupR2SecretAccessKey)
 	t.Setenv("R2_BUCKET", startupR2Bucket)
+	t.Setenv("POSTHOG_PROJECT_TOKEN", "phc_synthetic_project_token")
 
 	err := run(context.Background(), slog.New(slog.DiscardHandler))
 
 	require.ErrorContains(t, err, "invalid configuration")
+	require.ErrorContains(t, err, "R2AccountID")
 }
 
 func TestNewServerAppliesSettingsAndLogsRequests(t *testing.T) {

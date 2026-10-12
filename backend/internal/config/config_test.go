@@ -10,16 +10,18 @@ import (
 )
 
 const (
-	portEnvKey              = "PORT"
-	r2AccountIDEnvKey       = "R2_ACCOUNT_ID"
-	r2AccessKeyIDEnvKey     = "R2_ACCESS_KEY_ID"
-	r2SecretAccessKeyEnvKey = "R2_SECRET_ACCESS_KEY"
-	r2BucketEnvKey          = "R2_BUCKET"
+	portEnvKey                = "PORT"
+	r2AccountIDEnvKey         = "R2_ACCOUNT_ID"
+	r2AccessKeyIDEnvKey       = "R2_ACCESS_KEY_ID"
+	r2SecretAccessKeyEnvKey   = "R2_SECRET_ACCESS_KEY"
+	r2BucketEnvKey            = "R2_BUCKET"
+	postHogProjectTokenEnvKey = "POSTHOG_PROJECT_TOKEN" //nolint:gosec // This constant names an environment variable, not a credential.
 
-	validR2AccountID       = "0123456789abcdef0123456789abcdef"
-	validR2AccessKeyID     = " synthetic-access-key-id "
-	validR2SecretAccessKey = " synthetic-secret-access-key "
-	validR2Bucket          = "metadata-scrubber-test"
+	validR2AccountID         = "0123456789abcdef0123456789abcdef"
+	validR2AccessKeyID       = " synthetic-access-key-id "
+	validR2SecretAccessKey   = " synthetic-secret-access-key "
+	validR2Bucket            = "metadata-scrubber-test"
+	validPostHogProjectToken = "phc_synthetic_project_token" //nolint:gosec // This token is synthetic test input, not a credential.
 )
 
 func TestLoadDefaultsPortWhenUnset(t *testing.T) {
@@ -27,6 +29,7 @@ func TestLoadDefaultsPortWhenUnset(t *testing.T) {
 	t.Setenv(r2AccessKeyIDEnvKey, validR2AccessKeyID)
 	t.Setenv(r2SecretAccessKeyEnvKey, validR2SecretAccessKey)
 	t.Setenv(r2BucketEnvKey, validR2Bucket)
+	t.Setenv(postHogProjectTokenEnvKey, validPostHogProjectToken)
 	unsetEnvironmentValue(t, portEnvKey)
 
 	cfg, err := config.Load()
@@ -40,6 +43,7 @@ func TestLoadDefaultsPortWhenEmpty(t *testing.T) {
 	t.Setenv(r2AccessKeyIDEnvKey, validR2AccessKeyID)
 	t.Setenv(r2SecretAccessKeyEnvKey, validR2SecretAccessKey)
 	t.Setenv(r2BucketEnvKey, validR2Bucket)
+	t.Setenv(postHogProjectTokenEnvKey, validPostHogProjectToken)
 	t.Setenv(portEnvKey, "")
 
 	cfg, err := config.Load()
@@ -63,6 +67,7 @@ func TestLoadParsesExplicitPorts(t *testing.T) {
 			t.Setenv(r2AccessKeyIDEnvKey, validR2AccessKeyID)
 			t.Setenv(r2SecretAccessKeyEnvKey, validR2SecretAccessKey)
 			t.Setenv(r2BucketEnvKey, validR2Bucket)
+			t.Setenv(postHogProjectTokenEnvKey, validPostHogProjectToken)
 			t.Setenv(portEnvKey, testCase.port)
 
 			cfg, err := config.Load()
@@ -86,6 +91,7 @@ func TestLoadRejectsUnparseablePort(t *testing.T) {
 			t.Setenv(r2AccessKeyIDEnvKey, validR2AccessKeyID)
 			t.Setenv(r2SecretAccessKeyEnvKey, validR2SecretAccessKey)
 			t.Setenv(r2BucketEnvKey, validR2Bucket)
+			t.Setenv(postHogProjectTokenEnvKey, validPostHogProjectToken)
 			t.Setenv(portEnvKey, testCase.port)
 
 			_, err := config.Load()
@@ -111,6 +117,7 @@ func TestLoadRejectsOutOfRangePort(t *testing.T) {
 			t.Setenv(r2AccessKeyIDEnvKey, validR2AccessKeyID)
 			t.Setenv(r2SecretAccessKeyEnvKey, validR2SecretAccessKey)
 			t.Setenv(r2BucketEnvKey, validR2Bucket)
+			t.Setenv(postHogProjectTokenEnvKey, validPostHogProjectToken)
 			t.Setenv(portEnvKey, testCase.port)
 
 			_, err := config.Load()
@@ -127,6 +134,7 @@ func TestLoadReturnsCompleteR2ConfigurationUnchanged(t *testing.T) {
 	t.Setenv(r2AccessKeyIDEnvKey, validR2AccessKeyID)
 	t.Setenv(r2SecretAccessKeyEnvKey, validR2SecretAccessKey)
 	t.Setenv(r2BucketEnvKey, validR2Bucket)
+	t.Setenv(postHogProjectTokenEnvKey, validPostHogProjectToken)
 	t.Setenv(portEnvKey, "3000")
 
 	cfg, err := config.Load()
@@ -146,6 +154,7 @@ func TestLoadAcceptsAnyNonblankBucketName(t *testing.T) {
 			t.Setenv(r2AccessKeyIDEnvKey, validR2AccessKeyID)
 			t.Setenv(r2SecretAccessKeyEnvKey, validR2SecretAccessKey)
 			t.Setenv(r2BucketEnvKey, validR2Bucket)
+			t.Setenv(postHogProjectTokenEnvKey, validPostHogProjectToken)
 			t.Setenv(r2BucketEnvKey, bucket)
 
 			_, err := config.Load()
@@ -180,6 +189,7 @@ func TestLoadRejectsAbsentOrBlankR2Values(t *testing.T) {
 				t.Setenv(r2AccessKeyIDEnvKey, validR2AccessKeyID)
 				t.Setenv(r2SecretAccessKeyEnvKey, validR2SecretAccessKey)
 				t.Setenv(r2BucketEnvKey, validR2Bucket)
+				t.Setenv(postHogProjectTokenEnvKey, validPostHogProjectToken)
 				if input.unset {
 					unsetEnvironmentValue(t, setting.environmentKey)
 				} else {
@@ -220,6 +230,7 @@ func TestLoadDoesNotDiscloseConfigurationValuesInErrors(t *testing.T) {
 			t.Setenv(r2AccessKeyIDEnvKey, accessKeyIDSentinel)
 			t.Setenv(r2SecretAccessKeyEnvKey, secretAccessKeySentinel)
 			t.Setenv(r2BucketEnvKey, bucketSentinel)
+			t.Setenv(postHogProjectTokenEnvKey, validPostHogProjectToken)
 			t.Setenv(portEnvKey, testCase.port)
 
 			_, err := config.Load()
@@ -237,15 +248,40 @@ func TestLoadDoesNotDiscloseConfigurationValuesInErrors(t *testing.T) {
 	}
 }
 
-func TestLoadPostHogProjectToken(t *testing.T) {
+func TestLoadAcceptsPostHogProjectTokens(t *testing.T) {
+	for _, testCase := range []struct {
+		name  string
+		token string
+	}{
+		{name: "project token", token: validPostHogProjectToken},
+	} {
+		t.Run(testCase.name, func(t *testing.T) {
+			t.Setenv(r2AccountIDEnvKey, validR2AccountID)
+			t.Setenv(r2AccessKeyIDEnvKey, validR2AccessKeyID)
+			t.Setenv(r2SecretAccessKeyEnvKey, validR2SecretAccessKey)
+			t.Setenv(r2BucketEnvKey, validR2Bucket)
+			t.Setenv(postHogProjectTokenEnvKey, testCase.token)
+			t.Setenv(portEnvKey, "8080")
+
+			cfg, err := config.Load()
+
+			require.NoError(t, err)
+			require.Equal(t, testCase.token, cfg.PostHogProjectToken)
+		})
+	}
+}
+
+func TestLoadRejectsAbsentBlankOrInvalidPostHogProjectTokens(t *testing.T) {
 	for _, testCase := range []struct {
 		name  string
 		token string
 		unset bool
 	}{
 		{name: "unset", unset: true},
-		{name: "empty"},
-		{name: "configured", token: "phc_synthetic-project-token"}, //nolint:gosec // This token is synthetic test input, not a credential.
+		{name: "empty", token: ""},
+		{name: "ASCII whitespace only", token: " \t\n"},
+		{name: "Unicode whitespace only", token: "  "},
+		{name: "personal API key", token: "phx_synthetic_personal_api_key"}, //nolint:gosec // This key is synthetic test input, not a credential.
 	} {
 		t.Run(testCase.name, func(t *testing.T) {
 			t.Setenv(r2AccountIDEnvKey, validR2AccountID)
@@ -254,15 +290,17 @@ func TestLoadPostHogProjectToken(t *testing.T) {
 			t.Setenv(r2BucketEnvKey, validR2Bucket)
 			t.Setenv(portEnvKey, "8080")
 			if testCase.unset {
-				unsetEnvironmentValue(t, "POSTHOG_PROJECT_TOKEN")
+				unsetEnvironmentValue(t, postHogProjectTokenEnvKey)
 			} else {
-				t.Setenv("POSTHOG_PROJECT_TOKEN", testCase.token)
+				t.Setenv(postHogProjectTokenEnvKey, testCase.token)
 			}
 
 			cfg, err := config.Load()
 
-			require.NoError(t, err)
-			require.Equal(t, testCase.token, cfg.PostHogProjectToken)
+			require.Error(t, err)
+			require.Equal(t, config.Config{}, cfg)
+			require.ErrorContains(t, err, "invalid configuration")
+			require.ErrorContains(t, err, "PostHogProjectToken")
 		})
 	}
 }
