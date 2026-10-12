@@ -20,8 +20,8 @@ import (
 )
 
 const (
-	// PostHogHost fixes all backend telemetry to US Cloud.
-	PostHogHost     = "https://us.i.posthog.com"
+	// postHogHost fixes all backend telemetry to US Cloud.
+	postHogHost     = "https://us.i.posthog.com"
 	serviceName     = "metadata-scrubber-backend"
 	exportTimeout   = 5 * time.Second
 	shutdownTimeout = 5 * time.Second
@@ -39,7 +39,7 @@ type Runtime struct {
 // It adds telemetry to the local logger.
 func New(ctx context.Context, token string, local *slog.Logger) (*Runtime, error) {
 	exporter, err := otlploghttp.New(ctx,
-		otlploghttp.WithEndpointURL(PostHogHost+"/i/v1/logs"),
+		otlploghttp.WithEndpointURL(postHogHost+"/i/v1/logs"),
 		otlploghttp.WithHeaders(map[string]string{"Authorization": "Bearer " + token}),
 		otlploghttp.WithTimeout(exportTimeout),
 	)
@@ -51,7 +51,7 @@ func New(ctx context.Context, token string, local *slog.Logger) (*Runtime, error
 		sdklog.WithProcessor(sdklog.NewBatchProcessor(exporter, sdklog.WithExportTimeout(exportTimeout))),
 	)
 	client, err := posthog.NewWithConfig(token, posthog.Config{
-		Endpoint:           PostHogHost,
+		Endpoint:           postHogHost,
 		BatchUploadTimeout: exportTimeout,
 	})
 	if err != nil {
