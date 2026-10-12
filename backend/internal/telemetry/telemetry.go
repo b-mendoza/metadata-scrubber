@@ -53,7 +53,6 @@ func New(ctx context.Context, token string, local *slog.Logger) (*Runtime, error
 	client, err := posthog.NewWithConfig(token, posthog.Config{
 		Endpoint:           PostHogHost,
 		BatchUploadTimeout: exportTimeout,
-		ShutdownTimeout:    shutdownTimeout,
 	})
 	if err != nil {
 		shutdownCtx, cancel := context.WithTimeout(context.Background(), shutdownTimeout)
