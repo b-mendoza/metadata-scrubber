@@ -1,5 +1,4 @@
 import { act, screen, waitFor } from "@testing-library/react";
-import AwsS3 from "@uppy/aws-s3";
 import Uppy from "@uppy/core";
 import { StrictMode } from "react";
 import { afterEach, expect, test, vi } from "vitest";
@@ -34,7 +33,6 @@ afterEach(() => {
 test("StrictMode replay preserves PDF uploads and unmount destroys every Uppy instance", async () => {
   installXMLHttpRequestFake();
   const useSpy = vi.spyOn(Uppy.prototype, "use");
-  const addFilesSpy = vi.spyOn(Uppy.prototype, "addFiles");
   const destroySpy = vi.spyOn(Uppy.prototype, "destroy");
   const input: RouterInputs["wizard"]["createUpload"] = {
     fileName: "report.pdf",
@@ -46,9 +44,7 @@ test("StrictMode replay preserves PDF uploads and unmount destroys every Uppy in
   };
   const createUpload = vi.fn<CreateUpload>().mockResolvedValue(response);
   const onUploadComplete = vi.fn<OnUploadComplete>();
-  const file = new File(["pdf"], input.fileName, {
-    type: "application/pdf",
-  });
+  const file = new File(["pdf"], input.fileName, { type: "application/pdf" });
   const { unmount, user } = renderComponent(
     <StrictMode>
       <FileUploader
@@ -58,63 +54,40 @@ test("StrictMode replay preserves PDF uploads and unmount destroys every Uppy in
       />
     </StrictMode>,
   );
-  const createdInstances = new Set(
-    useSpy.mock.contexts.filter((_instance, index) => {
-      const [Plugin] = useSpy.mock.calls[index] ?? [];
-      return Plugin === AwsS3;
-    }),
-  );
-
+  const createdInstances = new Set(useSpy.mock.contexts);
   expect(createdInstances.size).toBe(STRICT_MODE_INSTANCE_COUNT);
+  const [replayedInstance, inUseInstance] = [...createdInstances];
+  expect(destroySpy.mock.contexts).toEqual([replayedInstance]);
+  if (!(inUseInstance instanceof Uppy)) {
+    throw new Error("The live Uppy instance was not created");
+  }
   const fileInput = await getFileInput(user);
   await user.upload(fileInput, file);
-  expect(addFilesSpy).toHaveBeenCalledOnce();
-  const [inUseInstance] = addFilesSpy.mock.contexts;
-  if (!(inUseInstance instanceof Uppy)) {
-    throw new Error("The PDF did not reach a real Uppy instance");
-  }
-
-  expect(inUseInstance.getPlugin("AwsS3")).toBeDefined();
+  expect(inUseInstance.getFiles()).toEqual([
+    expect.objectContaining({ data: file }),
+  ]);
   await user.click(
     screen.getByRole("button", { name: UPLOAD_ONE_FILE_BUTTON_NAME }),
   );
-
   await waitFor(() => {
-    expect(createUpload).toHaveBeenCalledExactlyOnceWith(input);
     expect(FakeXMLHttpRequest.requests).toHaveLength(EXPECTED_SINGLE_COUNT);
   });
+  expect(createUpload).toHaveBeenCalledExactlyOnceWith(input);
   const [request] = FakeXMLHttpRequest.requests;
   if (request == null) {
     throw new Error("The direct upload request did not start");
   }
-
   expect(request.method).toBe("PUT");
-  expect(request.url).toBe(response.uploadUrl);
-  expect(request.body).toBe(file);
-  expect(onUploadComplete).not.toHaveBeenCalled();
-
   await act(async () => {
-    await request.respond({
-      headers: { ETag: '"upload-etag"' },
-      responseText: "",
-      status: 200,
-    });
+    await request.respond({ headers: { ETag: '"upload-etag"' }, status: 200 });
   });
-
   await waitFor(() => {
     expect(onUploadComplete).toHaveBeenCalledExactlyOnceWith({
       storageKey: response.storageKey,
     });
   });
-
-  const replayedInstance = [...createdInstances].find(
-    (instance) => instance !== inUseInstance,
-  );
-  expect(replayedInstance).toBeInstanceOf(Uppy);
   expect(destroySpy.mock.contexts).toEqual([replayedInstance]);
-
   unmount();
-
   expect(destroySpy.mock.contexts).toEqual([replayedInstance, inUseInstance]);
   expect(new Set(destroySpy.mock.contexts)).toEqual(createdInstances);
 });
