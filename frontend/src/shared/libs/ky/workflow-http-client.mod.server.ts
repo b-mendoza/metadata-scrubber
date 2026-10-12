@@ -40,9 +40,23 @@ export const WORKFLOW_SERVER_DIRECTED_RETRY_OPTIONS = {
   shouldRetry: shouldRetryServerDirectedWorkflowRequest,
 } satisfies RetryOptions;
 
-export const createWorkflowHttpClient = (baseUrl: URL): KyInstance => {
+export const createWorkflowHttpClient = (
+  baseUrl: URL,
+  incomingHeaders?: Headers,
+): KyInstance => {
+  const headers = new Headers();
+  const distinctId = incomingHeaders?.get("X-POSTHOG-DISTINCT-ID");
+  const sessionId = incomingHeaders?.get("X-POSTHOG-SESSION-ID");
+  if (distinctId != null) {
+    headers.set("X-POSTHOG-DISTINCT-ID", distinctId);
+  }
+  if (sessionId != null) {
+    headers.set("X-POSTHOG-SESSION-ID", sessionId);
+  }
+
   return ky.create({
     baseUrl,
+    headers,
     retry: 0,
     timeout: 10_000,
     totalTimeout: 10_000,

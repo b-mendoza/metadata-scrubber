@@ -23,6 +23,7 @@ export const appBindingsMiddleware = createMiddleware({
   const httpClient = createHttpClient(safeEnvironmentVariables.BACKEND_URL);
   const workflowHttpClient = createWorkflowHttpClient(
     safeEnvironmentVariables.BACKEND_URL,
+    options.request.headers,
   );
 
   return AppBindingsStore.run(
