@@ -34,6 +34,7 @@ test("getMessage maps a rejected backend health request to BAD_GATEWAY", async (
         beforeRequest: [beforeRequest],
       },
     }),
+    posthogProjectToken: "phc_test_public_token",
     workflowHttpClient: ky.create({
       baseUrl: new URL("https://backend.test/"),
     }),

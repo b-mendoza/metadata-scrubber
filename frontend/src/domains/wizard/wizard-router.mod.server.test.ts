@@ -32,6 +32,7 @@ const createAppCaller = createCallerFactory(appRouter);
 const callerForRequest = (request: Request) => {
   vi.mocked(getAppBindings).mockReturnValue({
     httpClient: ky.create({ baseUrl: BACKEND_BASE_URL }),
+    posthogProjectToken: "phc_test_public_token",
     workflowHttpClient: createWorkflowHttpClient(BACKEND_BASE_URL),
   });
   return createAppCaller(createTRPCRequestContext(request), {
