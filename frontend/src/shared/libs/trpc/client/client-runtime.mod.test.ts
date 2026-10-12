@@ -27,6 +27,7 @@ function setupClient() {
     httpClient: ky.create({
       hooks: { beforeRequest: [() => Response.json(healthResponse)] },
     }),
+    posthogProjectToken: "phc_test_public_token",
     workflowHttpClient: ky.create(),
   });
   const fetchMock = vi

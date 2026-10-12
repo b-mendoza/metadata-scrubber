@@ -10,6 +10,7 @@ import { invariant } from "#/shared/utils/invariant/invariant.mod";
 
 interface AppBindingsValue {
   httpClient: KyInstance;
+  posthogProjectToken: string;
   workflowHttpClient: KyInstance;
 }
 
@@ -29,6 +30,7 @@ export const appBindingsMiddleware = createMiddleware({
   return AppBindingsStore.run(
     {
       httpClient,
+      posthogProjectToken: safeEnvironmentVariables.POSTHOG_PROJECT_TOKEN,
       workflowHttpClient,
     },
     options.next,
