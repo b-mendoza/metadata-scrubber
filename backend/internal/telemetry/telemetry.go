@@ -35,12 +35,9 @@ type Runtime struct {
 	logs   *sdklog.LoggerProvider
 }
 
-// New leaves the local logger unchanged when the project token is empty.
+// New creates PostHog clients with the validated project token.
+// It adds telemetry to the local logger.
 func New(ctx context.Context, token string, local *slog.Logger) (*Runtime, error) {
-	if token == "" {
-		return &Runtime{Logger: local}, nil
-	}
-
 	exporter, err := otlploghttp.New(ctx,
 		otlploghttp.WithEndpointURL(PostHogHost+"/i/v1/logs"),
 		otlploghttp.WithHeaders(map[string]string{"Authorization": "Bearer " + token}),
@@ -126,9 +123,6 @@ func (events recorder) Capture(event bindings.WorkflowEvent) {
 
 // Shutdown flushes and closes each client with its own bounded context.
 func (runtime *Runtime) Shutdown() error {
-	if runtime.client == nil {
-		return nil
-	}
 	clientCtx, cancelClient := context.WithTimeout(context.Background(), shutdownTimeout)
 	clientErr := closePostHog(clientCtx, runtime.client)
 	cancelClient()
