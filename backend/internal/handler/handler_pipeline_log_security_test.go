@@ -80,6 +80,54 @@ func TestPipelineLogsExcludeSeededSensitiveValues(t *testing.T) {
 	}
 }
 
+func TestUnexpectedStorageFailureLogsSafeErrorAndCancellationLogsNone(t *testing.T) {
+	t.Parallel()
+
+	for _, testCase := range []struct {
+		name       string
+		failure    error
+		wantStatus int
+		wantErrors int
+	}{
+		{name: "storage failure", failure: errors.New("sensitive-provider-url-object-key-marker"), wantStatus: http.StatusInternalServerError, wantErrors: 1},
+		{name: "canceled", failure: context.Canceled, wantStatus: http.StatusRequestTimeout},
+		{name: "deadline exceeded", failure: context.DeadlineExceeded, wantStatus: http.StatusRequestTimeout},
+	} {
+		t.Run(testCase.name, func(t *testing.T) {
+			t.Parallel()
+			fake := storage.NewFake()
+			fake.SetFailure(storage.FakePresignSourceUpload, testCase.failure)
+			var logs bytes.Buffer
+			handler := newTestHandler(t)
+			handler.logger = slog.New(slog.NewJSONHandler(&logs, nil))
+			body, err := json.Marshal(uploadRequest{FileName: "private-file.pdf", FileSizeBytes: 1})
+			require.NoError(t, err)
+			request := httptest.NewRequest(http.MethodPost, "/api/uploads", bytes.NewReader(body))
+			request.Header.Set(header.ContentType, mediatype.JSON)
+			response := httptest.NewRecorder()
+			bound := bindings.Inject(bindings.Bindings{Storage: fake})(http.HandlerFunc(handler.Upload))
+
+			bound.ServeHTTP(response, request)
+
+			require.Equal(t, testCase.wantStatus, response.Code)
+			require.Equal(t, testCase.wantErrors, bytes.Count(logs.Bytes(), []byte("\n")))
+			require.NotContains(t, logs.String(), "sensitive-provider-url-object-key-marker")
+			require.NotContains(t, logs.String(), `"error":`)
+			if testCase.wantErrors == 0 {
+				require.Empty(t, logs.String())
+				return
+			}
+			var record struct {
+				Level   string `json:"level"`
+				Message string `json:"msg"`
+			}
+			require.NoError(t, json.Unmarshal(logs.Bytes(), &record))
+			require.Equal(t, "ERROR", record.Level)
+			require.Equal(t, "could not create upload", record.Message)
+		})
+	}
+}
+
 type sensitiveGrantStorage struct {
 	storage.Storage
 }

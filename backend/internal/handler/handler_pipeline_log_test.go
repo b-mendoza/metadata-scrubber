@@ -223,9 +223,11 @@ func readLogRecords(t *testing.T, data []byte) []pipelineLogRecord {
 	for scanner.Scan() {
 		var record pipelineLogRecord
 		require.NoError(t, json.Unmarshal(scanner.Bytes(), &record))
-		require.NotNil(t, record.DurationMilliseconds)
-		require.GreaterOrEqual(t, *record.DurationMilliseconds, int64(0))
-		record.DurationMilliseconds = nil
+		if record.Outcome != "" {
+			require.NotNil(t, record.DurationMilliseconds)
+			require.GreaterOrEqual(t, *record.DurationMilliseconds, int64(0))
+			record.DurationMilliseconds = nil
+		}
 		records = append(records, record)
 	}
 	require.NoError(t, scanner.Err())
