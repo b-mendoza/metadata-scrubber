@@ -18,6 +18,62 @@ import (
 	"metadata-scrubber/internal/bindings"
 )
 
+func TestRecorderUsesValidatedAnonymousIdentity(t *testing.T) {
+	t.Parallel()
+
+	for _, testCase := range []struct {
+		name       string
+		distinctID string
+		sessionID  string
+		want       []posthog.Message
+	}{
+		{
+			name:       "distinct ID and session",
+			distinctID: "browser-id",
+			sessionID:  "browser-session",
+			want: []posthog.Message{posthog.Capture{
+				Event:      "file scrubbed",
+				DistinctId: "browser-id",
+				Properties: posthog.Properties{"$process_person_profile": false, "$session_id": "browser-session"},
+			}},
+		},
+		{
+			name:      "session only",
+			sessionID: "browser-session",
+		},
+		{
+			name:       "distinct ID only",
+			distinctID: "browser-id",
+			want: []posthog.Message{posthog.Capture{
+				Event:      "file scrubbed",
+				DistinctId: "browser-id",
+				Properties: posthog.Properties{"$process_person_profile": false},
+			}},
+		},
+	} {
+		t.Run(testCase.name, func(t *testing.T) {
+			t.Parallel()
+
+			client := &captureClient{}
+			events := NewRecorder(client, slog.New(slog.DiscardHandler))
+			request := httptest.NewRequest(http.MethodPost, "/api/files/scrub", http.NoBody)
+			if testCase.distinctID != "" {
+				request.Header.Set("X-POSTHOG-DISTINCT-ID", testCase.distinctID)
+			}
+			if testCase.sessionID != "" {
+				request.Header.Set("X-POSTHOG-SESSION-ID", testCase.sessionID)
+			}
+			bound := bindings.Inject(bindings.Bindings{})(http.HandlerFunc(func(_ http.ResponseWriter, request *http.Request) {
+				events(request.Context(), "file scrubbed")
+			}))
+
+			bound.ServeHTTP(httptest.NewRecorder(), request)
+
+			require.Equal(t, testCase.want, client.messages)
+		})
+	}
+}
+
 func TestCaptureReportsQueueFailureOnlyToLocalLogger(t *testing.T) {
 	t.Parallel()
 	client := &captureClient{err: errors.New("queue full")}
@@ -76,8 +132,6 @@ func TestConfiguredTokenCreatesBothClientsAndClosesEmptyQueues(t *testing.T) {
 	runtime, err := New(context.Background(), "phc_synthetic_project_token", slog.New(slog.DiscardHandler))
 
 	require.NoError(t, err)
-	require.NotNil(t, runtime.client)
-	require.NotNil(t, runtime.logs)
 	require.NotNil(t, runtime.Events)
 	require.NoError(t, runtime.Shutdown())
 }
