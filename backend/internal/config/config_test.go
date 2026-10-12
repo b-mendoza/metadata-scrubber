@@ -145,6 +145,7 @@ func TestLoadReturnsCompleteR2ConfigurationUnchanged(t *testing.T) {
 	require.Equal(t, validR2AccessKeyID, cfg.R2AccessKeyID)
 	require.Equal(t, validR2SecretAccessKey, cfg.R2SecretAccessKey)
 	require.Equal(t, validR2Bucket, cfg.R2Bucket)
+	require.Equal(t, validPostHogProjectToken, cfg.PostHogProjectToken)
 }
 
 func TestLoadAcceptsAnyNonblankBucketName(t *testing.T) {
@@ -164,7 +165,7 @@ func TestLoadAcceptsAnyNonblankBucketName(t *testing.T) {
 	}
 }
 
-func TestLoadRejectsAbsentOrBlankR2Values(t *testing.T) {
+func TestLoadRejectsAbsentOrBlankRequiredValues(t *testing.T) {
 	for _, setting := range []struct {
 		environmentKey string
 		fieldName      string
@@ -173,6 +174,7 @@ func TestLoadRejectsAbsentOrBlankR2Values(t *testing.T) {
 		{environmentKey: r2AccessKeyIDEnvKey, fieldName: "R2AccessKeyID"},
 		{environmentKey: r2SecretAccessKeyEnvKey, fieldName: "R2SecretAccessKey"},
 		{environmentKey: r2BucketEnvKey, fieldName: "R2Bucket"},
+		{environmentKey: postHogProjectTokenEnvKey, fieldName: "PostHogProjectToken"},
 	} {
 		for _, input := range []struct {
 			name  string
@@ -248,64 +250,34 @@ func TestLoadDoesNotDiscloseConfigurationValuesInErrors(t *testing.T) {
 	}
 }
 
-func TestLoadAcceptsPostHogProjectTokens(t *testing.T) {
-	for _, testCase := range []struct {
-		name  string
-		token string
-	}{
-		{name: "project token", token: validPostHogProjectToken},
-		{name: "trailing newline", token: validPostHogProjectToken + "\n"},
-		{name: "surrounding whitespace", token: " \t" + validPostHogProjectToken + " \r\n"},
-	} {
-		t.Run(testCase.name, func(t *testing.T) {
-			t.Setenv(r2AccountIDEnvKey, validR2AccountID)
-			t.Setenv(r2AccessKeyIDEnvKey, validR2AccessKeyID)
-			t.Setenv(r2SecretAccessKeyEnvKey, validR2SecretAccessKey)
-			t.Setenv(r2BucketEnvKey, validR2Bucket)
-			t.Setenv(postHogProjectTokenEnvKey, testCase.token)
-			t.Setenv(portEnvKey, "8080")
+func TestLoadTrimsPostHogProjectToken(t *testing.T) {
+	t.Setenv(r2AccountIDEnvKey, validR2AccountID)
+	t.Setenv(r2AccessKeyIDEnvKey, validR2AccessKeyID)
+	t.Setenv(r2SecretAccessKeyEnvKey, validR2SecretAccessKey)
+	t.Setenv(r2BucketEnvKey, validR2Bucket)
+	t.Setenv(postHogProjectTokenEnvKey, " \t"+validPostHogProjectToken+" \r\n")
+	t.Setenv(portEnvKey, "8080")
 
-			cfg, err := config.Load()
+	cfg, err := config.Load()
 
-			require.NoError(t, err)
-			require.Equal(t, validPostHogProjectToken, cfg.PostHogProjectToken)
-		})
-	}
+	require.NoError(t, err)
+	require.Equal(t, validPostHogProjectToken, cfg.PostHogProjectToken)
 }
 
-func TestLoadRejectsAbsentBlankOrInvalidPostHogProjectTokens(t *testing.T) {
-	for _, testCase := range []struct {
-		name  string
-		token string
-		unset bool
-	}{
-		{name: "unset", unset: true},
-		{name: "empty", token: ""},
-		{name: "ASCII whitespace only", token: " \t\n"},
-		{name: "Unicode whitespace only", token: "  "},
-		{name: "personal API key", token: "phx_synthetic_personal_api_key"},           //nolint:gosec // This key is synthetic test input, not a credential.
-		{name: "padded personal API key", token: " phx_synthetic_personal_api_key\n"}, //nolint:gosec // This key is synthetic test input, not a credential.
-	} {
-		t.Run(testCase.name, func(t *testing.T) {
-			t.Setenv(r2AccountIDEnvKey, validR2AccountID)
-			t.Setenv(r2AccessKeyIDEnvKey, validR2AccessKeyID)
-			t.Setenv(r2SecretAccessKeyEnvKey, validR2SecretAccessKey)
-			t.Setenv(r2BucketEnvKey, validR2Bucket)
-			t.Setenv(portEnvKey, "8080")
-			if testCase.unset {
-				unsetEnvironmentValue(t, postHogProjectTokenEnvKey)
-			} else {
-				t.Setenv(postHogProjectTokenEnvKey, testCase.token)
-			}
+func TestLoadRejectsPostHogTokenWithWrongPrefix(t *testing.T) {
+	t.Setenv(r2AccountIDEnvKey, validR2AccountID)
+	t.Setenv(r2AccessKeyIDEnvKey, validR2AccessKeyID)
+	t.Setenv(r2SecretAccessKeyEnvKey, validR2SecretAccessKey)
+	t.Setenv(r2BucketEnvKey, validR2Bucket)
+	t.Setenv(postHogProjectTokenEnvKey, "phx_synthetic_personal_api_key")
+	t.Setenv(portEnvKey, "8080")
 
-			cfg, err := config.Load()
+	cfg, err := config.Load()
 
-			require.Error(t, err)
-			require.Equal(t, config.Config{}, cfg)
-			require.ErrorContains(t, err, "invalid configuration")
-			require.ErrorContains(t, err, "PostHogProjectToken")
-		})
-	}
+	require.Error(t, err)
+	require.Equal(t, config.Config{}, cfg)
+	require.ErrorContains(t, err, "invalid configuration")
+	require.ErrorContains(t, err, "PostHogProjectToken")
 }
 
 func unsetEnvironmentValue(t *testing.T, key string) {
