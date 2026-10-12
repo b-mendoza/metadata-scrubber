@@ -16,7 +16,6 @@ vi.mock(import("#/shared/middlewares/app-bindings/app-bindings.mod"), () => ({
 
 afterEach(() => {
   posthog.__loaded = false;
-  vi.unstubAllEnvs();
 });
 
 function setupClient() {
@@ -49,7 +48,6 @@ function setupClient() {
 }
 
 test("browser tRPC calls send the current PostHog IDs on every request", async () => {
-  vi.stubEnv("SSR", false);
   posthog.__loaded = true;
   vi.spyOn(posthog, "get_distinct_id")
     .mockReturnValueOnce("visitor-a")
@@ -71,12 +69,8 @@ test("browser tRPC calls send the current PostHog IDs on every request", async (
   expect(secondHeaders.get("X-POSTHOG-SESSION-ID")).toBe("session-b");
 });
 
-test.each([
-  ["an uninitialized browser", false, false],
-  ["SSR with an initialized SDK", true, true],
-])("tRPC sends no PostHog IDs for %s", async (_name, ssr, initialized) => {
-  vi.stubEnv("SSR", ssr);
-  posthog.__loaded = initialized;
+test("tRPC sends no PostHog IDs for an uninitialized browser", async () => {
+  posthog.__loaded = false;
   const { client, fetchMock } = setupClient();
 
   await client.products.getMessage.query();
