@@ -1,4 +1,5 @@
 import { act, screen, waitFor } from "@testing-library/react";
+import { StrictMode } from "react";
 import { afterEach, expect, test, vi } from "vitest";
 
 import { FileUploader } from "#/domains/wizard/components/file-uploader/file-uploader.mod";
@@ -28,7 +29,7 @@ afterEach(() => {
   FakeXMLHttpRequest.reset();
 });
 
-test("one PDF sends a typed grant and direct PUT, keeps initial settings, and uses the latest completion callback", async () => {
+test("a StrictMode PDF upload sends a typed grant and direct PUT, keeps initial settings, and reports to the latest callback", async () => {
   installXMLHttpRequestFake();
   const input: RouterInputs["wizard"]["createUpload"] = {
     fileName: "report.pdf",
@@ -46,19 +47,23 @@ test("one PDF sends a typed grant and direct PUT, keeps initial settings, and us
     type: "application/pdf",
   });
   const { rerender, user } = renderComponent(
-    <FileUploader
-      createUpload={createUpload}
-      maxFileSizeBytes={TEST_MAX_FILE_SIZE_BYTES}
-      onUploadComplete={onUploadComplete}
-    />,
+    <StrictMode>
+      <FileUploader
+        createUpload={createUpload}
+        maxFileSizeBytes={TEST_MAX_FILE_SIZE_BYTES}
+        onUploadComplete={onUploadComplete}
+      />
+    </StrictMode>,
   );
 
   rerender(
-    <FileUploader
-      createUpload={replacementCreateUpload}
-      maxFileSizeBytes={TEST_REPLACEMENT_MAX_FILE_SIZE_BYTES}
-      onUploadComplete={onUploadComplete}
-    />,
+    <StrictMode>
+      <FileUploader
+        createUpload={replacementCreateUpload}
+        maxFileSizeBytes={TEST_REPLACEMENT_MAX_FILE_SIZE_BYTES}
+        onUploadComplete={onUploadComplete}
+      />
+    </StrictMode>,
   );
   const fileInput = await getFileInput(user);
   await user.upload(fileInput, file);
@@ -82,11 +87,13 @@ test("one PDF sends a typed grant and direct PUT, keeps initial settings, and us
   expect(request.body).toBe(file);
 
   rerender(
-    <FileUploader
-      createUpload={replacementCreateUpload}
-      maxFileSizeBytes={TEST_REPLACEMENT_MAX_FILE_SIZE_BYTES}
-      onUploadComplete={latestOnUploadComplete}
-    />,
+    <StrictMode>
+      <FileUploader
+        createUpload={replacementCreateUpload}
+        maxFileSizeBytes={TEST_REPLACEMENT_MAX_FILE_SIZE_BYTES}
+        onUploadComplete={latestOnUploadComplete}
+      />
+    </StrictMode>,
   );
   expect(latestOnUploadComplete).not.toHaveBeenCalled();
 
