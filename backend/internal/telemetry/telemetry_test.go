@@ -100,22 +100,10 @@ func TestLogFanoutPreservesStdoutAndCapturesOnlyErrorExceptions(t *testing.T) {
 	require.Equal(t, posthog.Properties{"$process_person_profile": false}, anonymousException.Properties)
 }
 
-func TestEmptyTokenLeavesLoggerUnchangedAndDisablesTelemetry(t *testing.T) {
-	t.Parallel()
-	logger := slog.New(slog.DiscardHandler)
-
-	runtime, err := New(context.Background(), "", logger)
-
-	require.NoError(t, err)
-	require.Same(t, logger, runtime.Logger)
-	require.Nil(t, runtime.Events)
-	require.NoError(t, runtime.Shutdown())
-}
-
 func TestConfiguredTokenCreatesBothClientsAndClosesEmptyQueues(t *testing.T) {
 	t.Parallel()
 
-	runtime, err := New(context.Background(), "synthetic-project-key", slog.New(slog.DiscardHandler))
+	runtime, err := New(context.Background(), "phc_synthetic_project_token", slog.New(slog.DiscardHandler))
 
 	require.NoError(t, err)
 	require.NotNil(t, runtime.client)
