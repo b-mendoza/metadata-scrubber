@@ -64,7 +64,7 @@ export const initializeTRPCClient = (trpcURL: URL) => {
     links: [
       httpBatchStreamLink({
         headers() {
-          if (import.meta.env.SSR || !posthog.__loaded) {
+          if (!posthog.__loaded) {
             return new Headers();
           }
           return new Headers({

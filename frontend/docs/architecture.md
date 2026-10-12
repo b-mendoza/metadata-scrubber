@@ -136,7 +136,7 @@ The root [architecture reference](../../docs/architecture.md) describes service 
 - `vitest.config.ts` runs `src/**/*.server.test.ts` in the `server` project with Node and no setup file. It runs the other `src/**/*.test.{ts,tsx}` files in the `client` project with happy-dom and `src/tests/setup-test-environment.ts`.
 
 - Root-shell tests cover browser initialization, development-build rendering, and SSR without PostHog initialization.
-- tRPC client tests cover current browser PostHog IDs on each request, an uninitialized SDK, and SSR.
+- tRPC client tests cover current browser PostHog IDs on each request and an uninitialized SDK.
 - Request-binding tests cover both PostHog headers, each header alone, empty values, and absent headers. They check that workflow calls do not forward credentials and health calls do not forward PostHog IDs.
 - Direct tRPC caller tests cover all six workflow procedures and root-router registration.
 - Tests check exact backend methods, paths, and JSON bodies. They compare each request body with its typed procedure input.
