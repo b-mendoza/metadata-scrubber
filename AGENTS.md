@@ -31,19 +31,12 @@ Review the user's instructions before you act. Treat them as a starting point fo
 
 ## Environment variables
 
-Each service defines its environment variables in one schema. The schema is the canonical reference for each name, format, required value, and default value. Do not keep a separate environment variable inventory in a guide.
-
-- The frontend schema is [`environment.mod.server.ts`](frontend/src/shared/config/env/environment.mod.server.ts).
-- The backend schema is [`config.go`](backend/internal/config/config.go).
-
-Practices:
-
-- Add or change an environment variable only in the service's schema. Make the schema reject each missing or invalid value. Then no code after the schema can receive an invalid state.
-- In the frontend, server code gets environment values from `getAppBindings()`. Browser code gets a value only from data that the server sends, such as route loader data. Send a value to the browser only when it is safe to expose.
-- In the backend, `main.go` calls `config.Load()` one time at startup. Other code gets the validated `config.Config` value through parameters or request bindings.
-- Do not read `process.env`, `import.meta.env`, or `os.Getenv` in application code. Only the frontend app-bindings middleware and the backend `config.Load()` function read the raw environment. Vite build flags, such as `import.meta.env.DEV` and `import.meta.env.SSR`, are build constants, not environment variables. You can use them.
-- Trust the validated values. Do not add checks, defaults, or fallbacks for a missing or invalid value after the schema.
+- Define each environment variable only in its service schema: the [frontend schema](frontend/src/shared/config/env/environment.mod.server.ts) or the [backend schema](backend/internal/config/config.go). Make the schema reject each missing or invalid value. Do not keep an inventory in a guide.
+- Read the raw environment only in the frontend app-bindings middleware and the backend `config.Load()`. Pass validated values to other code through `getAppBindings()`, parameters, or request bindings.
 - Tests can set environment values to test the schema boundary.
+- Trust the validated values. Do not add later checks, defaults, or fallbacks.
+- Send a value to the browser only through server data, such as route loader data, and only when it is safe to expose.
+- Vite build flags, such as `import.meta.env.DEV` and `import.meta.env.SSR`, are build constants, not environment variables. You can use them.
 
 ## Required workflow
 
