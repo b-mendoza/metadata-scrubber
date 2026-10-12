@@ -237,6 +237,36 @@ func TestLoadDoesNotDiscloseConfigurationValuesInErrors(t *testing.T) {
 	}
 }
 
+func TestLoadPostHogProjectToken(t *testing.T) {
+	for _, testCase := range []struct {
+		name  string
+		token string
+		unset bool
+	}{
+		{name: "unset", unset: true},
+		{name: "empty"},
+		{name: "configured", token: "phc_synthetic-project-token"}, //nolint:gosec // This token is synthetic test input, not a credential.
+	} {
+		t.Run(testCase.name, func(t *testing.T) {
+			t.Setenv(r2AccountIDEnvKey, validR2AccountID)
+			t.Setenv(r2AccessKeyIDEnvKey, validR2AccessKeyID)
+			t.Setenv(r2SecretAccessKeyEnvKey, validR2SecretAccessKey)
+			t.Setenv(r2BucketEnvKey, validR2Bucket)
+			t.Setenv(portEnvKey, "8080")
+			if testCase.unset {
+				unsetEnvironmentValue(t, "POSTHOG_PROJECT_TOKEN")
+			} else {
+				t.Setenv("POSTHOG_PROJECT_TOKEN", testCase.token)
+			}
+
+			cfg, err := config.Load()
+
+			require.NoError(t, err)
+			require.Equal(t, testCase.token, cfg.PostHogProjectToken)
+		})
+	}
+}
+
 func unsetEnvironmentValue(t *testing.T, key string) {
 	t.Helper()
 
