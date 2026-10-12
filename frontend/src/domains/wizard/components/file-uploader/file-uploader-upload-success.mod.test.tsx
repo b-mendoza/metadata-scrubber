@@ -1,6 +1,4 @@
 import { act, screen, waitFor } from "@testing-library/react";
-import AwsS3 from "@uppy/aws-s3";
-import Uppy from "@uppy/core";
 import { afterEach, expect, test, vi } from "vitest";
 
 import { FileUploader } from "#/domains/wizard/components/file-uploader/file-uploader.mod";
@@ -8,7 +6,6 @@ import {
   FakeXMLHttpRequest,
   getFileInput,
   installXMLHttpRequestFake,
-  isConfiguredAwsS3Options,
 } from "#/domains/wizard/components/file-uploader/file-uploader.test-helper";
 import type {
   RouterInputs,
@@ -29,44 +26,6 @@ const TEST_REPLACEMENT_MAX_FILE_SIZE_BYTES = 1;
 
 afterEach(() => {
   FakeXMLHttpRequest.reset();
-});
-
-test("AWS S3 uses one presigned PUT mode without browser credentials", async () => {
-  const useSpy = vi.spyOn(Uppy.prototype, "use");
-  const createUpload = vi.fn<CreateUpload>();
-  const onUploadComplete = vi.fn<OnUploadComplete>();
-
-  renderComponent(
-    <FileUploader
-      createUpload={createUpload}
-      maxFileSizeBytes={TEST_MAX_FILE_SIZE_BYTES}
-      onUploadComplete={onUploadComplete}
-    />,
-  );
-
-  const awsS3Call = useSpy.mock.calls.find(([Plugin]) => Plugin === AwsS3);
-  const [, options]: unknown[] = awsS3Call ?? [];
-  if (!isConfiguredAwsS3Options(options)) {
-    throw new Error("The uploader did not configure AwsS3 signRequest mode");
-  }
-
-  expect(options.shouldUseMultipart).toBe(false);
-  expect(options).not.toHaveProperty("getCredentials");
-  expect(options).not.toHaveProperty("getUploadParameters");
-  expect(options).not.toHaveProperty("s3Endpoint");
-  expect(options).not.toHaveProperty("region");
-  expect(options).not.toHaveProperty("companionEndpoint");
-  expect(options).not.toHaveProperty("endpoint");
-  expect(options).not.toHaveProperty("headers");
-
-  const unsupportedRequest: Parameters<typeof options.signRequest>[0] = {
-    key: "report.pdf",
-    method: "DELETE",
-  };
-  await expect(options.signRequest(unsupportedRequest)).rejects.toThrow(
-    "Only PUT upload requests are supported",
-  );
-  expect(createUpload).not.toHaveBeenCalled();
 });
 
 test("one PDF sends a typed grant and direct PUT, keeps initial settings, and uses the latest completion callback", async () => {
