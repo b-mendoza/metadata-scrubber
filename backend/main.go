@@ -49,12 +49,10 @@ func run(ctx context.Context, logger *slog.Logger) error {
 		return err
 	}
 
-	if cfg.PostHogProjectToken != "" {
-		// Export failures stay local so a failed export cannot create another exported log.
-		otel.SetErrorHandler(otel.ErrorHandlerFunc(func(err error) {
-			logger.Warn("could not export PostHog logs", "error", err)
-		}))
-	}
+	// Export failures stay local so a failed export cannot create another exported log.
+	otel.SetErrorHandler(otel.ErrorHandlerFunc(func(err error) {
+		logger.Warn("could not export PostHog logs", "error", err)
+	}))
 	runtime, err := telemetry.New(ctx, cfg.PostHogProjectToken, logger)
 	if err != nil {
 		logger.Error("metadata-scrubber stopped", "error", err)
