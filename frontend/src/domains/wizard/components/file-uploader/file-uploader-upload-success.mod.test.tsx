@@ -161,6 +161,7 @@ test("an upload keeps its initial settings and uses the latest completion callba
   const replacementCreateUpload = vi.fn<CreateUpload>();
   const onUploadComplete = vi.fn<OnUploadComplete>();
   const replacementOnUploadComplete = vi.fn<OnUploadComplete>();
+  const latestOnUploadComplete = vi.fn<OnUploadComplete>();
   const file = new File(["pdf"], input.fileName, {
     type: "application/pdf",
   });
@@ -195,6 +196,14 @@ test("an upload keeps its initial settings and uses the latest completion callba
     throw new Error("The direct upload request did not start");
   }
 
+  rerender(
+    <FileUploader
+      createUpload={replacementCreateUpload}
+      maxFileSizeBytes={TEST_REPLACEMENT_MAX_FILE_SIZE_BYTES}
+      onUploadComplete={latestOnUploadComplete}
+    />,
+  );
+
   await act(async () => {
     await request.respond({
       headers: { ETag: '"upload-etag"' },
@@ -203,9 +212,10 @@ test("an upload keeps its initial settings and uses the latest completion callba
   });
 
   await waitFor(() => {
-    expect(replacementOnUploadComplete).toHaveBeenCalledExactlyOnceWith({
+    expect(latestOnUploadComplete).toHaveBeenCalledExactlyOnceWith({
       storageKey: response.storageKey,
     });
   });
   expect(onUploadComplete).not.toHaveBeenCalled();
+  expect(replacementOnUploadComplete).not.toHaveBeenCalled();
 });
