@@ -65,7 +65,7 @@ func TestPipelineLogsRecordRequiredSuccessFacts(t *testing.T) {
 func TestPipelineLogsRecordFailureCacheHitAndShortCircuitFacts(t *testing.T) {
 	t.Run("upload failure omits created success", func(t *testing.T) {
 		fake := storage.NewFake()
-		fake.SetFailure(storage.FakePresignSourceUpload, errors.New("upload failure"))
+		fake.SetFailure(storage.FakePresignSourceUpload, errors.New("sensitive-provider-url-object-key-marker"))
 		var logs bytes.Buffer
 		handler := newTestHandler(t)
 		handler.logger = slog.New(slog.NewJSONHandler(&logs, nil))
@@ -78,6 +78,9 @@ func TestPipelineLogsRecordFailureCacheHitAndShortCircuitFacts(t *testing.T) {
 
 		require.Equal(t, http.StatusInternalServerError, recorder.Code)
 		require.NotContains(t, logs.String(), `"msg":"upload-created"`)
+		require.Equal(t, []pipelineLogRecord{{Level: "ERROR", Message: "could not create upload"}}, readLogRecords(t, logs.Bytes()))
+		require.NotContains(t, logs.String(), "sensitive-provider-url-object-key-marker")
+		require.NotContains(t, logs.String(), `"error":`)
 	})
 
 	t.Run("sniff rejection records terminal facts and omits later success", func(t *testing.T) {
