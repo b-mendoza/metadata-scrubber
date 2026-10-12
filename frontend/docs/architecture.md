@@ -9,9 +9,11 @@ Developers build the frontend with [TanStack Start](https://tanstack.com/start) 
 ## Browser analytics
 
 - `posthog-js` supplies the browser client. `@posthog/react` supplies the provider and the feature-flag and experiment hooks.
-- `DocumentShell` in `src/routes/__root.tsx` wraps the root route's children with `PostHogProvider` inside `<body>`, before `<Scripts />`.
+- The root route loader in `src/routes/__root.tsx` calls a GET server function. The function returns the validated `POSTHOG_PROJECT_TOKEN` value from `getAppBindings()`. It also returns the fixed client options from `src/shared/config/posthog/posthog-browser-config.mod.server.ts`.
+- The SSR payload sends this loader data to the browser. The client bundle does not contain the token or the options.
+- The root route sets `staleTime` to `Infinity`. Client navigation does not call the server function again.
+- The root route component reads the loader data with `Route.useLoaderData()`. It wraps `<Outlet />` with `PostHogProvider`. The router renders this component only after the root loader succeeds.
 - The provider initializes the client in a React Effect. SSR does not run this Effect or initialize PostHog.
-- Vite inlines the public `VITE_PUBLIC_POSTHOG_KEY` value at build time. If the value is absent or empty, the root renders without the provider.
 - The client uses US Cloud. It sends events and flag requests through `/relay`. `vercel.json` routes this path to PostHog before the frontend catch-all.
 - The client enables browser error tracking and web vitals. It uses PostHog's default autocapture. Session recording is off. Person profiles use `identified_only`.
 - The frontend has no PostHog server SDK, browser Logs integration, or Vite development proxy. The `/relay` proxy runs on Vercel only.
@@ -53,7 +55,7 @@ Developers build the frontend with [TanStack Start](https://tanstack.com/start) 
 ## App bindings
 
 - Developers implement request-scoped dependency injection with `AsyncLocalStorage` in `src/shared/middlewares/app-bindings/app-bindings.mod.ts`.
-- Server code calls `getAppBindings()`. The function returns `{ httpClient, workflowHttpClient }`.
+- Server code calls `getAppBindings()`. The function returns `{ httpClient, posthogProjectToken, workflowHttpClient }`.
 - The `httpClient` binding is the request-scoped health-check Ky client.
 - The `workflowHttpClient` binding is the request-scoped file-workflow Ky client.
 - The browser tRPC client's `httpBatchStreamLink` reads PostHog IDs for each request after the SDK initializes. It sends `X-POSTHOG-DISTINCT-ID` and `X-POSTHOG-SESSION-ID`. SSR and an uninitialized SDK send neither header.
@@ -61,7 +63,10 @@ Developers build the frontend with [TanStack Start](https://tanstack.com/start) 
 - The health-check client does not forward these headers.
 - Both clients use the validated `BACKEND_URL` as `baseUrl`.
 - On each request, the middleware calls `environmentSchema.parse(process.env)`. A validation error rejects the middleware request. The middleware provides the validated bindings to downstream code through `getAppBindings()`.
-- The environment schema requires `BACKEND_URL` and accepts absolute HTTP and HTTPS URLs. This service has no `.env.example`.
+- The environment schema requires `BACKEND_URL` and `POSTHOG_PROJECT_TOKEN`.
+- `BACKEND_URL` must be an absolute HTTP or HTTPS URL.
+- The schema trims `POSTHOG_PROJECT_TOKEN` and requires the `phc_` prefix of a public project token. This check rejects a secret personal API key.
+- [`.env.example`](../.env.example) lists these variables.
 
 ## Backend HTTP
 
