@@ -5,7 +5,6 @@ import (
 	"time"
 	"uuid"
 
-	"metadata-scrubber/internal/bindings"
 	"metadata-scrubber/internal/httpx"
 	"metadata-scrubber/internal/storage"
 )
@@ -23,12 +22,12 @@ func (handler *Handler) Upload(w http.ResponseWriter, request *http.Request) {
 
 	fileID := uuid.NewV4().String()
 	storageKey := storageKeyPrefix + fileID
-	objectStorage := handler.storageFromRequest(w, request)
-	if objectStorage == nil {
+	requestBindings := handler.bindingsFromRequest(w, request)
+	if requestBindings.Storage == nil {
 		return
 	}
 
-	grant, err := objectStorage.PresignSourceUpload(
+	grant, err := requestBindings.Storage.PresignSourceUpload(
 		request.Context(),
 		fileID,
 		input.FileSizeBytes,
@@ -44,7 +43,6 @@ func (handler *Handler) Upload(w http.ResponseWriter, request *http.Request) {
 		handler.logger.ErrorContext(request.Context(), "could not write JSON response", "error", err)
 		return
 	}
-	requestBindings, _ := bindings.FromContext(request.Context())
 	requestBindings.Events(request.Context(), "upload grant created")
 }
 

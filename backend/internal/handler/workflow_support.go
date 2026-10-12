@@ -67,15 +67,15 @@ func convertPublicFields(inspectedFields []scrub.Field) ([]publicField, error) {
 	return fields, nil
 }
 
-func (handler *Handler) storageFromRequest(w http.ResponseWriter, request *http.Request) storage.Storage {
+func (handler *Handler) bindingsFromRequest(w http.ResponseWriter, request *http.Request) bindings.Bindings {
 	requestBindings, ok := bindings.FromContext(request.Context())
 	if !ok || requestBindings.Storage == nil {
 		if err := httpx.WriteError(w, http.StatusInternalServerError, "service unavailable"); err != nil {
 			handler.logger.ErrorContext(request.Context(), "could not write JSON response", "error", err)
 		}
-		return nil
+		return bindings.Bindings{}
 	}
-	return requestBindings.Storage
+	return requestBindings
 }
 
 func (handler *Handler) acquirePermit(ctx context.Context) (func(), error) {

@@ -6,7 +6,6 @@ import (
 	"net/http"
 	"time"
 
-	"metadata-scrubber/internal/bindings"
 	"metadata-scrubber/internal/httpx"
 	"metadata-scrubber/internal/scrub"
 	"metadata-scrubber/internal/sniff"
@@ -24,13 +23,13 @@ func (handler *Handler) DryRun(w http.ResponseWriter, request *http.Request) {
 	if !ok {
 		return
 	}
-	objectStorage := handler.storageFromRequest(w, request)
-	if objectStorage == nil {
+	requestBindings := handler.bindingsFromRequest(w, request)
+	if requestBindings.Storage == nil {
 		return
 	}
 
 	inspectWorkflow := inspectWorkflowRequest{
-		request: request, objectStorage: objectStorage, fileID: fileID,
+		request: request, objectStorage: requestBindings.Storage, fileID: fileID,
 		storageKey: input.StorageKey, startedAt: startedAt,
 	}
 	etag, inspectedFields, err := handler.inspectSource(inspectWorkflow)
@@ -52,7 +51,6 @@ func (handler *Handler) DryRun(w http.ResponseWriter, request *http.Request) {
 		handler.logger.ErrorContext(request.Context(), "could not write JSON response", "error", err)
 		return
 	}
-	requestBindings, _ := bindings.FromContext(request.Context())
 	requestBindings.Events(request.Context(), "dry run completed")
 }
 

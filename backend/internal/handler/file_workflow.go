@@ -23,19 +23,19 @@ func (handler *Handler) Scrub(w http.ResponseWriter, request *http.Request) {
 	if !ok {
 		return
 	}
-	objectStorage := handler.storageFromRequest(w, request)
-	if objectStorage == nil {
+	requestBindings := handler.bindingsFromRequest(w, request)
+	if requestBindings.Storage == nil {
 		return
 	}
 	scrubWorkflow := scrubWorkflowRequest{
-		request: request, objectStorage: objectStorage, fileID: fileID, input: input, startedAt: startedAt,
+		request: request, requestBindings: requestBindings, fileID: fileID, input: input, startedAt: startedAt,
 	}
 
-	if !handler.scrubSourceAvailable(w, request, objectStorage, fileID) {
+	if !handler.scrubSourceAvailable(w, request, requestBindings.Storage, fileID) {
 		return
 	}
 
-	sanitizedExists, err := objectStorage.SanitizedExists(request.Context(), fileID, input.ETag)
+	sanitizedExists, err := requestBindings.Storage.SanitizedExists(request.Context(), fileID, input.ETag)
 	if err != nil {
 		handler.writeUnexpectedFailure(w, request, err, "could not check scrubbed file")
 		return
@@ -84,11 +84,11 @@ func (handler *Handler) scrubFileID(w http.ResponseWriter, request *http.Request
 }
 
 type scrubWorkflowRequest struct {
-	request       *http.Request
-	objectStorage storage.Storage
-	fileID        string
-	input         scrubRequest
-	startedAt     time.Time
+	request         *http.Request
+	requestBindings bindings.Bindings
+	fileID          string
+	input           scrubRequest
+	startedAt       time.Time
 }
 
 func (handler *Handler) materializeScrubbed(w http.ResponseWriter, scrubWorkflow scrubWorkflowRequest) bool {
@@ -107,7 +107,7 @@ func (handler *Handler) materializeScrubbed(w http.ResponseWriter, scrubWorkflow
 	}
 	handler.logStage(pipelineLogEvent{ctx: scrubWorkflow.request.Context(), stage: pipelineStageScrubbed, storageKey: scrubWorkflow.input.StorageKey, outcome: pipelineOutcomeSuccess, startedAt: scrubWorkflow.startedAt})
 
-	if err := scrubWorkflow.objectStorage.UploadSanitized(scrubWorkflow.request.Context(), scrubWorkflow.fileID, scrubWorkflow.input.ETag, cleanedBytes); err != nil {
+	if err := scrubWorkflow.requestBindings.Storage.UploadSanitized(scrubWorkflow.request.Context(), scrubWorkflow.fileID, scrubWorkflow.input.ETag, cleanedBytes); err != nil {
 		handler.writeUnexpectedFailure(w, scrubWorkflow.request, err, "could not store scrubbed file")
 		return false
 	}
@@ -121,7 +121,7 @@ func (handler *Handler) cleanSource(scrubWorkflow scrubWorkflowRequest) ([]byte,
 	}
 	defer release()
 
-	source, err := scrubWorkflow.objectStorage.DownloadSource(scrubWorkflow.request.Context(), scrubWorkflow.fileID, scrubWorkflow.input.ETag)
+	source, err := scrubWorkflow.requestBindings.Storage.DownloadSource(scrubWorkflow.request.Context(), scrubWorkflow.fileID, scrubWorkflow.input.ETag)
 	if err != nil {
 		return nil, err
 	}
@@ -135,7 +135,7 @@ func (handler *Handler) cleanSource(scrubWorkflow scrubWorkflowRequest) ([]byte,
 }
 
 func (handler *Handler) presignScrubbed(w http.ResponseWriter, scrubWorkflow scrubWorkflowRequest, outcome pipelineOutcome) {
-	grant, err := scrubWorkflow.objectStorage.PresignSanitizedDownload(
+	grant, err := scrubWorkflow.requestBindings.Storage.PresignSanitizedDownload(
 		scrubWorkflow.request.Context(),
 		scrubWorkflow.fileID,
 		scrubWorkflow.input.ETag,
@@ -154,6 +154,5 @@ func (handler *Handler) presignScrubbed(w http.ResponseWriter, scrubWorkflow scr
 		handler.logger.ErrorContext(scrubWorkflow.request.Context(), "could not write JSON response", "error", err)
 		return
 	}
-	requestBindings, _ := bindings.FromContext(scrubWorkflow.request.Context())
-	requestBindings.Events(scrubWorkflow.request.Context(), "file scrubbed")
+	scrubWorkflow.requestBindings.Events(scrubWorkflow.request.Context(), "file scrubbed")
 }
