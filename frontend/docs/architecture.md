@@ -6,6 +6,16 @@
 
 Developers build the frontend with [TanStack Start](https://tanstack.com/start) through `@tanstack/react-start`. They keep file-based routes under `src/routes/`. They mount tRPC at `src/routes/api/trpc.$.ts`.
 
+## Browser analytics
+
+- `posthog-js` supplies the browser client. `@posthog/react` supplies the provider and the feature-flag and experiment hooks.
+- `DocumentShell` in `src/routes/__root.tsx` wraps the root route's children with `PostHogProvider` inside `<body>`, before `<Scripts />`.
+- The provider initializes the client in a React Effect. SSR does not run this Effect or initialize PostHog.
+- Vite inlines the public `VITE_PUBLIC_POSTHOG_KEY` value at build time. If the value is absent or empty, the root renders without the provider.
+- The client uses US Cloud. It sends events and flag requests through `/relay`. `vercel.json` routes this path to PostHog before the frontend catch-all.
+- The client enables browser error tracking and web vitals. It uses PostHog's default autocapture. Session recording is off. Person profiles use `identified_only`.
+- The frontend has no PostHog server SDK, browser Logs integration, or Vite development proxy. The `/relay` proxy runs on Vercel only.
+
 ## Deployment
 
 - Vercel runs this service as a TanStack Start application. Vercel manages the server runtime.
@@ -46,6 +56,9 @@ Developers build the frontend with [TanStack Start](https://tanstack.com/start) 
 - Server code calls `getAppBindings()`. The function returns `{ httpClient, workflowHttpClient }`.
 - The `httpClient` binding is the request-scoped health-check Ky client.
 - The `workflowHttpClient` binding is the request-scoped file-workflow Ky client.
+- The browser tRPC client's `httpBatchStreamLink` reads PostHog IDs for each request after the SDK initializes. It sends `X-POSTHOG-DISTINCT-ID` and `X-POSTHOG-SESSION-ID`. SSR and an uninitialized SDK send neither header.
+- The middleware passes incoming request headers to `createWorkflowHttpClient`. This factory copies only the two PostHog headers when present. It does not change their values. The backend validates them.
+- The health-check client does not forward these headers.
 - Both clients use the validated `BACKEND_URL` as `baseUrl`.
 - On each request, the middleware calls `environmentSchema.parse(process.env)`. A validation error rejects the middleware request. The middleware provides the validated bindings to downstream code through `getAppBindings()`.
 - The environment schema requires `BACKEND_URL` and accepts absolute HTTP and HTTPS URLs. This service has no `.env.example`.
@@ -116,6 +129,9 @@ The root [architecture reference](../../docs/architecture.md) describes service 
 
 - `vitest.config.ts` runs `src/**/*.server.test.ts` in the `server` project with Node and no setup file. It runs the other `src/**/*.test.{ts,tsx}` files in the `client` project with happy-dom and `src/tests/setup-test-environment.ts`.
 
+- Root-shell tests cover browser initialization, missing-token rendering, and SSR without PostHog initialization.
+- tRPC client tests cover current browser PostHog IDs on each request, an uninitialized SDK, and SSR.
+- Request-binding tests cover both PostHog headers, each header alone, empty values, and absent headers. They check that workflow calls do not forward credentials and health calls do not forward PostHog IDs.
 - Direct tRPC caller tests cover all six workflow procedures and root-router registration.
 - Tests check exact backend methods, paths, and JSON bodies. They compare each request body with its typed procedure input.
 - Tests cover canonical ETag validation, invalid procedure inputs, invalid backend success bodies, safe status mapping, invalid backend error bodies, timeouts, and caller cancellation.
