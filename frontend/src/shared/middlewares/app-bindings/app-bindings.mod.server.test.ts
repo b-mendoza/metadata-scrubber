@@ -4,11 +4,41 @@ import { appBindingsMiddleware, getAppBindings } from "./app-bindings.mod";
 
 beforeEach(() => {
   vi.stubEnv("BACKEND_URL", "https://backend.test/");
+  vi.stubEnv("POSTHOG_PROJECT_TOKEN", "phc_test_public_token");
 });
 
 afterEach(() => {
   vi.unstubAllEnvs();
 });
+
+test.each([
+  // eslint-disable-next-line no-undefined -- Vitest uses undefined to remove the environment variable.
+  { name: "an absent token", token: undefined },
+  { name: "an empty token", token: "" },
+  { name: "a personal API key", token: "phx_secret_personal_key" },
+])(
+  "requests fail before downstream code runs with $name",
+  async ({ token }) => {
+    vi.stubEnv("POSTHOG_PROJECT_TOKEN", token);
+    const handler = appBindingsMiddleware.options.server;
+    expect.assert(handler != null);
+    const next = vi.fn<() => Promise<never>>();
+
+    await expect(
+      handler({
+        request: new Request("https://frontend.test/"),
+        pathname: "/",
+        // eslint-disable-next-line no-undefined -- TanStack requires undefined for a request middleware without context.
+        context: undefined,
+        handlerType: "router",
+        next,
+      }),
+    ).rejects.toThrow(
+      "The POSTHOG_PROJECT_TOKEN value must be a PostHog project token that starts with phc_.",
+    );
+    expect(next).not.toHaveBeenCalled();
+  },
+);
 
 test.each([
   {
