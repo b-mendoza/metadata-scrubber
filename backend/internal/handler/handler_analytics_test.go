@@ -37,29 +37,28 @@ func TestWorkflowEventsCaptureOnlySuccessfulAnonymousOutcomes(t *testing.T) {
 		name       string
 		body       []byte
 		serve      func(*Handler, http.ResponseWriter, *http.Request)
-		event      string
 		failure    storage.FakeOperation
 		distinctID string
 		failureErr error
 		sanitized  bool
 		wantStatus int
-		wantCount  int
+		wantEvents []posthog.Capture
 	}{
-		{name: "upload/success", body: uploadBody, serve: (*Handler).Upload, event: "upload grant created", failure: storage.FakePresignSourceUpload, distinctID: "browser-id", failureErr: nil, sanitized: false, wantStatus: http.StatusOK, wantCount: 1},
-		{name: "upload/absent distinct ID", body: uploadBody, serve: (*Handler).Upload, event: "upload grant created", failure: storage.FakePresignSourceUpload, distinctID: "", failureErr: nil, sanitized: false, wantStatus: http.StatusOK, wantCount: 0},
-		{name: "upload/failure", body: uploadBody, serve: (*Handler).Upload, event: "upload grant created", failure: storage.FakePresignSourceUpload, distinctID: "browser-id", failureErr: errors.New("storage failure"), sanitized: false, wantStatus: http.StatusInternalServerError, wantCount: 0},
-		{name: "dry run/success", body: dryRunBody, serve: (*Handler).DryRun, event: "dry run completed", failure: storage.FakeDownloadSource, distinctID: "browser-id", failureErr: nil, sanitized: false, wantStatus: http.StatusOK, wantCount: 1},
-		{name: "dry run/absent distinct ID", body: dryRunBody, serve: (*Handler).DryRun, event: "dry run completed", failure: storage.FakeDownloadSource, distinctID: "", failureErr: nil, sanitized: false, wantStatus: http.StatusOK, wantCount: 0},
-		{name: "dry run/failure", body: dryRunBody, serve: (*Handler).DryRun, event: "dry run completed", failure: storage.FakeDownloadSource, distinctID: "browser-id", failureErr: errors.New("storage failure"), sanitized: false, wantStatus: http.StatusInternalServerError, wantCount: 0},
-		{name: "scrub/success", body: scrubBody, serve: (*Handler).Scrub, event: "file scrubbed", failure: storage.FakePresignSanitizedDownload, distinctID: "browser-id", failureErr: nil, sanitized: false, wantStatus: http.StatusOK, wantCount: 1},
-		{name: "scrub/absent distinct ID", body: scrubBody, serve: (*Handler).Scrub, event: "file scrubbed", failure: storage.FakePresignSanitizedDownload, distinctID: "", failureErr: nil, sanitized: false, wantStatus: http.StatusOK, wantCount: 0},
-		{name: "scrub/failure", body: scrubBody, serve: (*Handler).Scrub, event: "file scrubbed", failure: storage.FakePresignSanitizedDownload, distinctID: "browser-id", failureErr: errors.New("storage failure"), sanitized: false, wantStatus: http.StatusInternalServerError, wantCount: 0},
-		{name: "download/success", body: downloadBody, serve: (*Handler).DownloadGrant, event: "download grant refreshed", failure: storage.FakePresignSanitizedDownload, distinctID: "browser-id", failureErr: nil, sanitized: true, wantStatus: http.StatusOK, wantCount: 1},
-		{name: "download/absent distinct ID", body: downloadBody, serve: (*Handler).DownloadGrant, event: "download grant refreshed", failure: storage.FakePresignSanitizedDownload, distinctID: "", failureErr: nil, sanitized: true, wantStatus: http.StatusOK, wantCount: 0},
-		{name: "download/failure", body: downloadBody, serve: (*Handler).DownloadGrant, event: "download grant refreshed", failure: storage.FakePresignSanitizedDownload, distinctID: "browser-id", failureErr: errors.New("storage failure"), sanitized: true, wantStatus: http.StatusInternalServerError, wantCount: 0},
-		{name: "delete/success", body: deleteBody, serve: (*Handler).DeleteFlow, event: "file deleted", failure: storage.FakeDeleteFlow, distinctID: "browser-id", failureErr: nil, sanitized: false, wantStatus: http.StatusOK, wantCount: 1},
-		{name: "delete/absent distinct ID", body: deleteBody, serve: (*Handler).DeleteFlow, event: "file deleted", failure: storage.FakeDeleteFlow, distinctID: "", failureErr: nil, sanitized: false, wantStatus: http.StatusOK, wantCount: 0},
-		{name: "delete/failure", body: deleteBody, serve: (*Handler).DeleteFlow, event: "file deleted", failure: storage.FakeDeleteFlow, distinctID: "browser-id", failureErr: errors.New("storage failure"), sanitized: false, wantStatus: http.StatusInternalServerError, wantCount: 0},
+		{name: "upload/success", body: uploadBody, serve: (*Handler).Upload, failure: storage.FakePresignSourceUpload, distinctID: "browser-id", wantStatus: http.StatusOK, wantEvents: []posthog.Capture{{Event: "upload grant created", DistinctId: "browser-id", Properties: posthog.Properties{"$process_person_profile": false, "$session_id": "browser-session"}}}},
+		{name: "upload/absent distinct ID", body: uploadBody, serve: (*Handler).Upload, failure: storage.FakePresignSourceUpload, wantStatus: http.StatusOK},
+		{name: "upload/failure", body: uploadBody, serve: (*Handler).Upload, failure: storage.FakePresignSourceUpload, distinctID: "browser-id", failureErr: errors.New("storage failure"), wantStatus: http.StatusInternalServerError},
+		{name: "dry run/success", body: dryRunBody, serve: (*Handler).DryRun, failure: storage.FakeDownloadSource, distinctID: "browser-id", wantStatus: http.StatusOK, wantEvents: []posthog.Capture{{Event: "dry run completed", DistinctId: "browser-id", Properties: posthog.Properties{"$process_person_profile": false, "$session_id": "browser-session"}}}},
+		{name: "dry run/absent distinct ID", body: dryRunBody, serve: (*Handler).DryRun, failure: storage.FakeDownloadSource, wantStatus: http.StatusOK},
+		{name: "dry run/failure", body: dryRunBody, serve: (*Handler).DryRun, failure: storage.FakeDownloadSource, distinctID: "browser-id", failureErr: errors.New("storage failure"), wantStatus: http.StatusInternalServerError},
+		{name: "scrub/success", body: scrubBody, serve: (*Handler).Scrub, failure: storage.FakePresignSanitizedDownload, distinctID: "browser-id", wantStatus: http.StatusOK, wantEvents: []posthog.Capture{{Event: "file scrubbed", DistinctId: "browser-id", Properties: posthog.Properties{"$process_person_profile": false, "$session_id": "browser-session"}}}},
+		{name: "scrub/absent distinct ID", body: scrubBody, serve: (*Handler).Scrub, failure: storage.FakePresignSanitizedDownload, wantStatus: http.StatusOK},
+		{name: "scrub/failure", body: scrubBody, serve: (*Handler).Scrub, failure: storage.FakePresignSanitizedDownload, distinctID: "browser-id", failureErr: errors.New("storage failure"), wantStatus: http.StatusInternalServerError},
+		{name: "download/success", body: downloadBody, serve: (*Handler).DownloadGrant, failure: storage.FakePresignSanitizedDownload, distinctID: "browser-id", sanitized: true, wantStatus: http.StatusOK, wantEvents: []posthog.Capture{{Event: "download grant refreshed", DistinctId: "browser-id", Properties: posthog.Properties{"$process_person_profile": false, "$session_id": "browser-session"}}}},
+		{name: "download/absent distinct ID", body: downloadBody, serve: (*Handler).DownloadGrant, failure: storage.FakePresignSanitizedDownload, sanitized: true, wantStatus: http.StatusOK},
+		{name: "download/failure", body: downloadBody, serve: (*Handler).DownloadGrant, failure: storage.FakePresignSanitizedDownload, distinctID: "browser-id", failureErr: errors.New("storage failure"), sanitized: true, wantStatus: http.StatusInternalServerError},
+		{name: "delete/success", body: deleteBody, serve: (*Handler).DeleteFlow, failure: storage.FakeDeleteFlow, distinctID: "browser-id", wantStatus: http.StatusOK, wantEvents: []posthog.Capture{{Event: "file deleted", DistinctId: "browser-id", Properties: posthog.Properties{"$process_person_profile": false, "$session_id": "browser-session"}}}},
+		{name: "delete/absent distinct ID", body: deleteBody, serve: (*Handler).DeleteFlow, failure: storage.FakeDeleteFlow, wantStatus: http.StatusOK},
+		{name: "delete/failure", body: deleteBody, serve: (*Handler).DeleteFlow, failure: storage.FakeDeleteFlow, distinctID: "browser-id", failureErr: errors.New("storage failure"), wantStatus: http.StatusInternalServerError},
 	} {
 		t.Run(testCase.name, func(t *testing.T) {
 			t.Parallel()
@@ -77,10 +76,7 @@ func TestWorkflowEventsCaptureOnlySuccessfulAnonymousOutcomes(t *testing.T) {
 			bound.ServeHTTP(response, request)
 
 			require.Equal(t, testCase.wantStatus, response.Code, response.Body.String())
-			require.Len(t, events.captured, testCase.wantCount)
-			if testCase.wantCount != 0 {
-				require.Equal(t, []posthog.Capture{{Event: testCase.event, DistinctId: "browser-id", Properties: posthog.Properties{"$process_person_profile": false, "$session_id": "browser-session"}}}, events.captured)
-			}
+			require.ElementsMatch(t, testCase.wantEvents, events.captured)
 		})
 	}
 }
@@ -98,11 +94,7 @@ func newAnalyticsTest(t *testing.T, sanitized bool) (*Handler, *storage.Fake, *w
 
 func TestScrubCacheHitCapturesOneCompletedOutcome(t *testing.T) {
 	t.Parallel()
-	handler := newTestHandler(t)
-	fake := storage.NewFake()
-	require.NoError(t, fake.SetSource(fileIDOne, storage.SourceObject{PDFBytes: []byte("%PDF-source"), ETag: canonicalETagOne}))
-	require.NoError(t, fake.SetSanitized(fileIDOne, canonicalETagOne, []byte("cleaned")))
-	events := &workflowEvents{}
+	handler, fake, events := newAnalyticsTest(t, true)
 	body, err := json.Marshal(scrubRequest{StorageKey: "uploads/" + fileIDOne, ETag: canonicalETagOne})
 	require.NoError(t, err)
 	request := httptest.NewRequest(http.MethodPost, "/api/files/scrub", bytes.NewReader(body))
@@ -119,11 +111,8 @@ func TestScrubCacheHitCapturesOneCompletedOutcome(t *testing.T) {
 
 func TestScrubUploadFailureDoesNotCaptureCompletedOutcome(t *testing.T) {
 	t.Parallel()
-	handler := newTestHandler(t)
-	fake := storage.NewFake()
-	require.NoError(t, fake.SetSource(fileIDOne, storage.SourceObject{PDFBytes: []byte("%PDF-source"), ETag: canonicalETagOne}))
+	handler, fake, events := newAnalyticsTest(t, false)
 	fake.SetFailure(storage.FakeUploadSanitized, errors.New("upload failure"))
-	events := &workflowEvents{}
 	body, err := json.Marshal(scrubRequest{StorageKey: "uploads/" + fileIDOne, ETag: canonicalETagOne})
 	require.NoError(t, err)
 	request := httptest.NewRequest(http.MethodPost, "/api/files/scrub", bytes.NewReader(body))
