@@ -50,7 +50,6 @@ const useUppyDashboard = (props: FileUploaderProps) => {
         maxNumberOfFiles: WIZARD_UPLOAD_FILE_COUNT,
         minNumberOfFiles: WIZARD_UPLOAD_FILE_COUNT,
       },
-      autoProceed: false,
     });
 
     instance.use(AwsS3, {
@@ -81,7 +80,6 @@ const useUppyDashboard = (props: FileUploaderProps) => {
       maxFileSizeBytes / BYTES_PER_MEBIBYTE,
     );
     instance.use(Dashboard, {
-      id: "Dashboard",
       inline: true,
       target: container,
       height: 400,
