@@ -29,6 +29,22 @@ Review the user's instructions before you act. Treat them as a starting point fo
 - Fix the cause of each failed check. If one place needs an exception, keep the exception as narrow as the tool allows and state the reason. Do not add a broad exception that covers a whole file or scope.
 - In tests, build request and response payloads from concrete typed contracts at each call site. Serialize each payload at that call site. Check each error. Use raw wire literals in dedicated wire-contract tests and nowhere else.
 
+## Environment variables
+
+Each service defines its environment variables in one schema. The schema is the canonical reference for each name, format, required value, and default value. Do not keep a separate environment variable inventory in a guide.
+
+- The frontend schema is [`environment.mod.server.ts`](frontend/src/shared/config/env/environment.mod.server.ts).
+- The backend schema is [`config.go`](backend/internal/config/config.go).
+
+Practices:
+
+- Add or change an environment variable only in the service's schema. Make the schema reject each missing or invalid value. Then no code after the schema can receive an invalid state.
+- In the frontend, server code gets environment values from `getAppBindings()`. Browser code gets a value only from data that the server sends, such as route loader data. Send a value to the browser only when it is safe to expose.
+- In the backend, `main.go` calls `config.Load()` one time at startup. Other code gets the validated `config.Config` value through parameters or request bindings.
+- Do not read `process.env`, `import.meta.env`, or `os.Getenv` in application code. Only the frontend app-bindings middleware and the backend `config.Load()` function read the raw environment. Vite build flags, such as `import.meta.env.DEV` and `import.meta.env.SSR`, are build constants, not environment variables. You can use them.
+- Trust the validated values. Do not add checks, defaults, or fallbacks for a missing or invalid value after the schema.
+- Tests can set environment values to test the schema boundary.
+
 ## Required workflow
 
 - Read each service's `AGENTS.md` before you edit files in that service. Use it for general practices. Find available commands in the service's project manifest. A guide does not override the code.
