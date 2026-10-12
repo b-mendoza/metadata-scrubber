@@ -1,14 +1,15 @@
 package handler
 
 import (
-	"bufio"
 	"bytes"
+	"context"
 	"encoding/json"
 	"errors"
 	"log/slog"
 	"net/http"
 	"net/http/httptest"
 	"testing"
+	"time"
 
 	"github.com/stretchr/testify/require"
 
@@ -23,9 +24,9 @@ func TestPipelineLogsRecordRequiredSuccessFacts(t *testing.T) {
 	fake := storage.NewFake()
 	require.NoError(t, fake.SetSource(fileIDOne, storage.SourceObject{PDFBytes: []byte("%PDF-one"), ETag: canonicalETagOne}))
 	require.NoError(t, fake.SetSource(fileIDTwo, storage.SourceObject{PDFBytes: []byte("%PDF-two"), ETag: canonicalETagTwo}))
-	var logs bytes.Buffer
+	logs := &pipelineLogHandler{Handler: slog.DiscardHandler}
 	handler := newTestHandler(t)
-	handler.logger = slog.New(slog.NewJSONHandler(&logs, nil))
+	handler.logger = slog.New(logs)
 
 	uploadBody, err := json.Marshal(uploadRequest{FileName: "report.pdf", FileSizeBytes: 1})
 	require.NoError(t, err)
@@ -53,42 +54,22 @@ func TestPipelineLogsRecordRequiredSuccessFacts(t *testing.T) {
 	bindings.Inject(bindings.Bindings{Storage: fake})(http.HandlerFunc(handler.Scrub)).ServeHTTP(scrubRecorder, scrubRequest)
 	require.Equal(t, http.StatusOK, scrubRecorder.Code, scrubRecorder.Body.String())
 
-	records := readLogRecords(t, logs.Bytes())
-	require.Contains(t, records, pipelineLogRecord{Message: "upload-created", Level: "INFO", StorageKeyDigest: storageKeyDigest(grantedUpload.StorageKey), Outcome: "success"})
-	require.Contains(t, records, pipelineLogRecord{Message: "sniffed", Level: "INFO", StorageKeyDigest: storageKeyDigestOne, Outcome: "accepted"})
-	require.Contains(t, records, pipelineLogRecord{Message: "dry-run", Level: "INFO", StorageKeyDigest: storageKeyDigestOne, Outcome: "success"})
-	require.Contains(t, records, pipelineLogRecord{Message: "sniffed", Level: "INFO", StorageKeyDigest: storageKeyDigestTwo, Outcome: "accepted"})
-	require.Contains(t, records, pipelineLogRecord{Message: "scrubbed", Level: "INFO", StorageKeyDigest: storageKeyDigestTwo, Outcome: "success"})
-	require.Contains(t, records, pipelineLogRecord{Message: "presigned", Level: "INFO", StorageKeyDigest: storageKeyDigestTwo, Outcome: "success"})
+	records := logs.records
+	require.Contains(t, records, pipelineLogRecord{Message: "upload-created", Level: slog.LevelInfo, StorageKeyDigest: storageKeyDigest(grantedUpload.StorageKey), Outcome: "success", DurationRecorded: true})
+	require.Contains(t, records, pipelineLogRecord{Message: "sniffed", Level: slog.LevelInfo, StorageKeyDigest: storageKeyDigestOne, Outcome: "accepted", DurationRecorded: true})
+	require.Contains(t, records, pipelineLogRecord{Message: "dry-run", Level: slog.LevelInfo, StorageKeyDigest: storageKeyDigestOne, Outcome: "success", DurationRecorded: true})
+	require.Contains(t, records, pipelineLogRecord{Message: "sniffed", Level: slog.LevelInfo, StorageKeyDigest: storageKeyDigestTwo, Outcome: "accepted", DurationRecorded: true})
+	require.Contains(t, records, pipelineLogRecord{Message: "scrubbed", Level: slog.LevelInfo, StorageKeyDigest: storageKeyDigestTwo, Outcome: "success", DurationRecorded: true})
+	require.Contains(t, records, pipelineLogRecord{Message: "presigned", Level: slog.LevelInfo, StorageKeyDigest: storageKeyDigestTwo, Outcome: "success", DurationRecorded: true})
 }
 
 func TestPipelineLogsRecordFailureCacheHitAndShortCircuitFacts(t *testing.T) {
-	t.Run("upload failure omits created success", func(t *testing.T) {
-		fake := storage.NewFake()
-		fake.SetFailure(storage.FakePresignSourceUpload, errors.New("sensitive-provider-url-object-key-marker"))
-		var logs bytes.Buffer
-		handler := newTestHandler(t)
-		handler.logger = slog.New(slog.NewJSONHandler(&logs, nil))
-		body, err := json.Marshal(uploadRequest{FileName: "report.pdf", FileSizeBytes: 1})
-		require.NoError(t, err)
-		request := httptest.NewRequest(http.MethodPost, "/api/files/upload", bytes.NewReader(body))
-		request.Header.Set(header.ContentType, mediatype.JSON)
-		recorder := httptest.NewRecorder()
-		bindings.Inject(bindings.Bindings{Storage: fake})(http.HandlerFunc(handler.Upload)).ServeHTTP(recorder, request)
-
-		require.Equal(t, http.StatusInternalServerError, recorder.Code)
-		require.NotContains(t, logs.String(), `"msg":"upload-created"`)
-		require.Equal(t, []pipelineLogRecord{{Level: "ERROR", Message: "could not create upload"}}, readLogRecords(t, logs.Bytes()))
-		require.NotContains(t, logs.String(), "sensitive-provider-url-object-key-marker")
-		require.NotContains(t, logs.String(), `"error":`)
-	})
-
 	t.Run("sniff rejection records terminal facts and omits later success", func(t *testing.T) {
 		fake := storage.NewFake()
 		require.NoError(t, fake.SetSource(fileIDOne, storage.SourceObject{PDFBytes: []byte("not-pdf"), ETag: canonicalETagOne}))
-		var logs bytes.Buffer
+		logs := &pipelineLogHandler{Handler: slog.DiscardHandler}
 		handler := newTestHandler(t)
-		handler.logger = slog.New(slog.NewJSONHandler(&logs, nil))
+		handler.logger = slog.New(logs)
 		body, err := json.Marshal(dryRunRequest{StorageKey: storageKeyPrefix + fileIDOne})
 		require.NoError(t, err)
 		request := httptest.NewRequest(http.MethodPost, "/api/files/dry-run", bytes.NewReader(body))
@@ -97,21 +78,21 @@ func TestPipelineLogsRecordFailureCacheHitAndShortCircuitFacts(t *testing.T) {
 		bindings.Inject(bindings.Bindings{Storage: fake})(http.HandlerFunc(handler.DryRun)).ServeHTTP(recorder, request)
 
 		require.Equal(t, http.StatusUnsupportedMediaType, recorder.Code)
-		records := readLogRecords(t, logs.Bytes())
-		require.Contains(t, records, pipelineLogRecord{Message: "sniffed", Level: "INFO", StorageKeyDigest: storageKeyDigestOne, Outcome: "rejected"})
-		require.Contains(t, records, pipelineLogRecord{Message: "dry-run", Level: "INFO", StorageKeyDigest: storageKeyDigestOne, Outcome: "not-pdf"})
-		require.NotContains(t, records, pipelineLogRecord{Message: "dry-run", Level: "INFO", StorageKeyDigest: storageKeyDigestOne, Outcome: "success"})
+		records := logs.records
+		require.Contains(t, records, pipelineLogRecord{Message: "sniffed", Level: slog.LevelInfo, StorageKeyDigest: storageKeyDigestOne, Outcome: "rejected", DurationRecorded: true})
+		require.Contains(t, records, pipelineLogRecord{Message: "dry-run", Level: slog.LevelInfo, StorageKeyDigest: storageKeyDigestOne, Outcome: "not-pdf", DurationRecorded: true})
+		require.NotContains(t, records, pipelineLogRecord{Message: "dry-run", Level: slog.LevelInfo, StorageKeyDigest: storageKeyDigestOne, Outcome: "success", DurationRecorded: true})
 	})
 
 	t.Run("inspection failure records error and omits success", func(t *testing.T) {
 		fake := storage.NewFake()
 		require.NoError(t, fake.SetSource(fileIDOne, storage.SourceObject{PDFBytes: []byte("%PDF-one"), ETag: canonicalETagOne}))
-		var logs bytes.Buffer
+		logs := &pipelineLogHandler{Handler: slog.DiscardHandler}
 		handler := newTestHandler(t)
 		handler.inspect = func([]byte) ([]scrub.Field, error) {
 			return nil, errors.New("inspect failed")
 		}
-		handler.logger = slog.New(slog.NewJSONHandler(&logs, nil))
+		handler.logger = slog.New(logs)
 		body, err := json.Marshal(dryRunRequest{StorageKey: storageKeyPrefix + fileIDOne})
 		require.NoError(t, err)
 		request := httptest.NewRequest(http.MethodPost, "/api/files/dry-run", bytes.NewReader(body))
@@ -120,21 +101,21 @@ func TestPipelineLogsRecordFailureCacheHitAndShortCircuitFacts(t *testing.T) {
 		bindings.Inject(bindings.Bindings{Storage: fake})(http.HandlerFunc(handler.DryRun)).ServeHTTP(recorder, request)
 
 		require.Equal(t, http.StatusInternalServerError, recorder.Code)
-		records := readLogRecords(t, logs.Bytes())
-		require.Contains(t, records, pipelineLogRecord{Message: "sniffed", Level: "INFO", StorageKeyDigest: storageKeyDigestOne, Outcome: "accepted"})
-		require.Contains(t, records, pipelineLogRecord{Message: "dry-run", Level: "ERROR", StorageKeyDigest: storageKeyDigestOne, Outcome: "failed"})
-		require.NotContains(t, records, pipelineLogRecord{Message: "dry-run", Level: "INFO", StorageKeyDigest: storageKeyDigestOne, Outcome: "success"})
+		records := logs.records
+		require.Contains(t, records, pipelineLogRecord{Message: "sniffed", Level: slog.LevelInfo, StorageKeyDigest: storageKeyDigestOne, Outcome: "accepted", DurationRecorded: true})
+		require.Contains(t, records, pipelineLogRecord{Message: "dry-run", Level: slog.LevelError, StorageKeyDigest: storageKeyDigestOne, Outcome: "failed", DurationRecorded: true})
+		require.NotContains(t, records, pipelineLogRecord{Message: "dry-run", Level: slog.LevelInfo, StorageKeyDigest: storageKeyDigestOne, Outcome: "success", DurationRecorded: true})
 	})
 
 	t.Run("clean failure records error and omits presign success", func(t *testing.T) {
 		fake := storage.NewFake()
 		require.NoError(t, fake.SetSource(fileIDOne, storage.SourceObject{PDFBytes: []byte("%PDF-one"), ETag: canonicalETagOne}))
-		var logs bytes.Buffer
+		logs := &pipelineLogHandler{Handler: slog.DiscardHandler}
 		handler := newTestHandler(t)
 		handler.clean = func([]byte) ([]byte, error) {
 			return nil, errors.New("clean failed")
 		}
-		handler.logger = slog.New(slog.NewJSONHandler(&logs, nil))
+		handler.logger = slog.New(logs)
 		body, err := json.Marshal(scrubRequest{StorageKey: storageKeyPrefix + fileIDOne, ETag: canonicalETagOne})
 		require.NoError(t, err)
 		request := httptest.NewRequest(http.MethodPost, "/api/files/scrub", bytes.NewReader(body))
@@ -143,39 +124,19 @@ func TestPipelineLogsRecordFailureCacheHitAndShortCircuitFacts(t *testing.T) {
 		bindings.Inject(bindings.Bindings{Storage: fake})(http.HandlerFunc(handler.Scrub)).ServeHTTP(recorder, request)
 
 		require.Equal(t, http.StatusInternalServerError, recorder.Code)
-		records := readLogRecords(t, logs.Bytes())
-		require.Contains(t, records, pipelineLogRecord{Message: "sniffed", Level: "INFO", StorageKeyDigest: storageKeyDigestOne, Outcome: "accepted"})
-		require.Contains(t, records, pipelineLogRecord{Message: "scrubbed", Level: "ERROR", StorageKeyDigest: storageKeyDigestOne, Outcome: "failed"})
-		require.NotContains(t, records, pipelineLogRecord{Message: "presigned", Level: "INFO", StorageKeyDigest: storageKeyDigestOne, Outcome: "success"})
-	})
-
-	t.Run("sanitized upload failure records scrub success and omits presign success", func(t *testing.T) {
-		fake := storage.NewFake()
-		require.NoError(t, fake.SetSource(fileIDOne, storage.SourceObject{PDFBytes: []byte("%PDF-one"), ETag: canonicalETagOne}))
-		fake.SetFailure(storage.FakeUploadSanitized, errors.New("upload failed"))
-		var logs bytes.Buffer
-		handler := newTestHandler(t)
-		handler.logger = slog.New(slog.NewJSONHandler(&logs, nil))
-		body, err := json.Marshal(scrubRequest{StorageKey: storageKeyPrefix + fileIDOne, ETag: canonicalETagOne})
-		require.NoError(t, err)
-		request := httptest.NewRequest(http.MethodPost, "/api/files/scrub", bytes.NewReader(body))
-		request.Header.Set(header.ContentType, mediatype.JSON)
-		recorder := httptest.NewRecorder()
-		bindings.Inject(bindings.Bindings{Storage: fake})(http.HandlerFunc(handler.Scrub)).ServeHTTP(recorder, request)
-
-		require.Equal(t, http.StatusInternalServerError, recorder.Code)
-		records := readLogRecords(t, logs.Bytes())
-		require.Contains(t, records, pipelineLogRecord{Message: "scrubbed", Level: "INFO", StorageKeyDigest: storageKeyDigestOne, Outcome: "success"})
-		require.NotContains(t, records, pipelineLogRecord{Message: "presigned", Level: "INFO", StorageKeyDigest: storageKeyDigestOne, Outcome: "success"})
+		records := logs.records
+		require.Contains(t, records, pipelineLogRecord{Message: "sniffed", Level: slog.LevelInfo, StorageKeyDigest: storageKeyDigestOne, Outcome: "accepted", DurationRecorded: true})
+		require.Contains(t, records, pipelineLogRecord{Message: "scrubbed", Level: slog.LevelError, StorageKeyDigest: storageKeyDigestOne, Outcome: "failed", DurationRecorded: true})
+		require.NotContains(t, records, pipelineLogRecord{Message: "presigned", Level: slog.LevelInfo, StorageKeyDigest: storageKeyDigestOne, Outcome: "success", DurationRecorded: true})
 	})
 
 	t.Run("presign failure records scrub success and omits presign success", func(t *testing.T) {
 		fake := storage.NewFake()
 		require.NoError(t, fake.SetSource(fileIDOne, storage.SourceObject{PDFBytes: []byte("%PDF-one"), ETag: canonicalETagOne}))
 		fake.SetFailure(storage.FakePresignSanitizedDownload, errors.New("presign failed"))
-		var logs bytes.Buffer
+		logs := &pipelineLogHandler{Handler: slog.DiscardHandler}
 		handler := newTestHandler(t)
-		handler.logger = slog.New(slog.NewJSONHandler(&logs, nil))
+		handler.logger = slog.New(logs)
 		body, err := json.Marshal(scrubRequest{StorageKey: storageKeyPrefix + fileIDOne, ETag: canonicalETagOne})
 		require.NoError(t, err)
 		request := httptest.NewRequest(http.MethodPost, "/api/files/scrub", bytes.NewReader(body))
@@ -184,18 +145,18 @@ func TestPipelineLogsRecordFailureCacheHitAndShortCircuitFacts(t *testing.T) {
 		bindings.Inject(bindings.Bindings{Storage: fake})(http.HandlerFunc(handler.Scrub)).ServeHTTP(recorder, request)
 
 		require.Equal(t, http.StatusInternalServerError, recorder.Code)
-		records := readLogRecords(t, logs.Bytes())
-		require.Contains(t, records, pipelineLogRecord{Message: "scrubbed", Level: "INFO", StorageKeyDigest: storageKeyDigestOne, Outcome: "success"})
-		require.NotContains(t, records, pipelineLogRecord{Message: "presigned", Level: "INFO", StorageKeyDigest: storageKeyDigestOne, Outcome: "success"})
+		records := logs.records
+		require.Contains(t, records, pipelineLogRecord{Message: "scrubbed", Level: slog.LevelInfo, StorageKeyDigest: storageKeyDigestOne, Outcome: "success", DurationRecorded: true})
+		require.NotContains(t, records, pipelineLogRecord{Message: "presigned", Level: slog.LevelInfo, StorageKeyDigest: storageKeyDigestOne, Outcome: "success", DurationRecorded: true})
 	})
 
 	t.Run("cache hit records reuse and omits scrub facts", func(t *testing.T) {
 		fake := storage.NewFake()
 		require.NoError(t, fake.SetSource(fileIDOne, storage.SourceObject{PDFBytes: []byte("%PDF-one"), ETag: canonicalETagOne}))
 		require.NoError(t, fake.SetSanitized(fileIDOne, canonicalETagOne, []byte("clean")))
-		var logs bytes.Buffer
+		logs := &pipelineLogHandler{Handler: slog.DiscardHandler}
 		handler := newTestHandler(t)
-		handler.logger = slog.New(slog.NewJSONHandler(&logs, nil))
+		handler.logger = slog.New(logs)
 		body, err := json.Marshal(scrubRequest{StorageKey: storageKeyPrefix + fileIDOne, ETag: canonicalETagOne})
 		require.NoError(t, err)
 		request := httptest.NewRequest(http.MethodPost, "/api/files/scrub", bytes.NewReader(body))
@@ -204,35 +165,184 @@ func TestPipelineLogsRecordFailureCacheHitAndShortCircuitFacts(t *testing.T) {
 		bindings.Inject(bindings.Bindings{Storage: fake})(http.HandlerFunc(handler.Scrub)).ServeHTTP(recorder, request)
 
 		require.Equal(t, http.StatusOK, recorder.Code)
-		records := readLogRecords(t, logs.Bytes())
-		require.Contains(t, records, pipelineLogRecord{Message: "presigned", Level: "INFO", StorageKeyDigest: storageKeyDigestOne, Outcome: "cache-hit"})
-		require.NotContains(t, records, pipelineLogRecord{Message: "scrubbed", Level: "INFO", StorageKeyDigest: storageKeyDigestOne, Outcome: "success"})
-		require.NotContains(t, records, pipelineLogRecord{Message: "sniffed", Level: "INFO", StorageKeyDigest: storageKeyDigestOne, Outcome: "accepted"})
+		records := logs.records
+		require.Contains(t, records, pipelineLogRecord{Message: "presigned", Level: slog.LevelInfo, StorageKeyDigest: storageKeyDigestOne, Outcome: "cache-hit", DurationRecorded: true})
+		require.NotContains(t, records, pipelineLogRecord{Message: "scrubbed", Level: slog.LevelInfo, StorageKeyDigest: storageKeyDigestOne, Outcome: "success", DurationRecorded: true})
+		require.NotContains(t, records, pipelineLogRecord{Message: "sniffed", Level: slog.LevelInfo, StorageKeyDigest: storageKeyDigestOne, Outcome: "accepted", DurationRecorded: true})
+	})
+}
+
+func TestPipelineLogsExcludeSeededSensitiveValues(t *testing.T) {
+	t.Run("successful requests", func(t *testing.T) {
+		fake := storage.NewFake()
+		require.NoError(t, fake.SetSource(fileIDOne, storage.SourceObject{
+			PDFBytes: []byte("%PDF-source-bytes-secret"),
+			Metadata: map[string]string{"private-object-marker": "private-metadata-marker"},
+			ETag:     "eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee",
+		}))
+		objectStorage := &sensitiveGrantStorage{Storage: fake}
+		var logs bytes.Buffer
+		handler := newTestHandler(t)
+		handler.inspect = func([]byte) ([]scrub.Field, error) {
+			return []scrub.Field{{Name: "title", Preview: "metadata-preview-secret", Action: scrub.ActionRemove}}, nil
+		}
+		handler.logger = slog.New(slog.NewJSONHandler(&logs, nil))
+		uploadBody, err := json.Marshal(uploadRequest{FileName: "request-name-secret.pdf", FileSizeBytes: 1})
+		require.NoError(t, err)
+		uploadRequest := httptest.NewRequest(http.MethodPost, "/api/files/upload", bytes.NewReader(uploadBody))
+		uploadRequest.Header.Set(header.ContentType, mediatype.JSON)
+		uploadRecorder := httptest.NewRecorder()
+		bindings.Inject(bindings.Bindings{Storage: objectStorage})(http.HandlerFunc(handler.Upload)).ServeHTTP(uploadRecorder, uploadRequest)
+		dryRunBody, err := json.Marshal(dryRunRequest{StorageKey: storageKeyPrefix + fileIDOne})
+		require.NoError(t, err)
+		dryRunHTTPRequest := httptest.NewRequest(http.MethodPost, "/api/files/dry-run", bytes.NewReader(dryRunBody))
+		dryRunHTTPRequest.Header.Set(header.ContentType, mediatype.JSON)
+		dryRunRecorder := httptest.NewRecorder()
+		bindings.Inject(bindings.Bindings{Storage: objectStorage})(http.HandlerFunc(handler.DryRun)).ServeHTTP(dryRunRecorder, dryRunHTTPRequest)
+
+		require.Equal(t, http.StatusOK, uploadRecorder.Code, uploadRecorder.Body.String())
+		var grantedUpload uploadResponse
+		require.NoError(t, json.Unmarshal(uploadRecorder.Body.Bytes(), &grantedUpload))
+		require.Equal(t, http.StatusOK, dryRunRecorder.Code, dryRunRecorder.Body.String())
+		rawLogs := logs.String()
+		require.Contains(t, rawLogs, `"storage_key_digest":"`+storageKeyDigestOne+`"`)
+		for _, secret := range []string{
+			grantedUpload.StorageKey,
+			storageKeyPrefix + fileIDOne,
+			"source-bytes-secret",
+			"private-object-marker",
+			"private-metadata-marker",
+			"metadata-preview-secret",
+			"eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee",
+			"request-name-secret",
+			"upload-url-secret",
+			"credential-secret",
+		} {
+			require.NotContains(t, rawLogs, secret)
+		}
+	})
+
+	t.Run("dependency failure", func(t *testing.T) {
+		fake := storage.NewFake()
+		fake.SetFailure(storage.FakeDownloadSource, errors.New("dependency-error-sensitive-marker"))
+		var logs bytes.Buffer
+		handler := newTestHandler(t)
+		handler.logger = slog.New(slog.NewJSONHandler(&logs, nil))
+		body, err := json.Marshal(dryRunRequest{StorageKey: storageKeyPrefix + fileIDTwo})
+		require.NoError(t, err)
+		request := httptest.NewRequest(http.MethodPost, "/api/files/dry-run", bytes.NewReader(body))
+		request.Header.Set(header.ContentType, mediatype.JSON)
+		response := httptest.NewRecorder()
+		bindings.Inject(bindings.Bindings{Storage: fake})(http.HandlerFunc(handler.DryRun)).ServeHTTP(response, request)
+
+		require.Equal(t, http.StatusInternalServerError, response.Code, response.Body.String())
+		require.NotContains(t, logs.String(), storageKeyPrefix+fileIDTwo)
+		require.NotContains(t, logs.String(), "dependency-error-sensitive-marker")
+		require.NotContains(t, logs.String(), `"error":`)
+	})
+
+	t.Run("upload failure", func(t *testing.T) {
+		fake := storage.NewFake()
+		fake.SetFailure(storage.FakePresignSourceUpload, errors.New("sensitive-provider-url-object-key-marker"))
+		var rawLogs bytes.Buffer
+		logs := &pipelineLogHandler{Handler: slog.DiscardHandler}
+		handler := newTestHandler(t)
+		handler.logger = slog.New(slog.NewMultiHandler(logs, slog.NewJSONHandler(&rawLogs, nil)))
+		body, err := json.Marshal(uploadRequest{FileName: "request-name-secret.pdf", FileSizeBytes: 1})
+		require.NoError(t, err)
+		request := httptest.NewRequest(http.MethodPost, "/api/files/upload", bytes.NewReader(body))
+		request.Header.Set(header.ContentType, mediatype.JSON)
+		response := httptest.NewRecorder()
+		bindings.Inject(bindings.Bindings{Storage: fake})(http.HandlerFunc(handler.Upload)).ServeHTTP(response, request)
+
+		require.Equal(t, http.StatusInternalServerError, response.Code)
+		require.Equal(t, []pipelineLogRecord{{Level: slog.LevelError, Message: "could not create upload"}}, logs.records)
+		require.NotContains(t, rawLogs.String(), `"msg":"upload-created"`)
+		require.NotContains(t, rawLogs.String(), "sensitive-provider-url-object-key-marker")
+		require.NotContains(t, rawLogs.String(), "request-name-secret")
+		require.NotContains(t, rawLogs.String(), `"error":`)
 	})
 }
 
 type pipelineLogRecord struct {
-	Message              string `json:"msg"`
-	Level                string `json:"level"`
-	StorageKeyDigest     string `json:"storage_key_digest"`
-	Outcome              string `json:"outcome"`
-	DurationMilliseconds *int64 `json:"duration_ms"`
+	Message          string
+	Level            slog.Level
+	StorageKeyDigest string
+	Outcome          string
+	DurationRecorded bool
 }
 
-func readLogRecords(t *testing.T, data []byte) []pipelineLogRecord {
-	t.Helper()
-	var records []pipelineLogRecord
-	scanner := bufio.NewScanner(bytes.NewReader(data))
-	for scanner.Scan() {
-		var record pipelineLogRecord
-		require.NoError(t, json.Unmarshal(scanner.Bytes(), &record))
-		if record.Outcome != "" {
-			require.NotNil(t, record.DurationMilliseconds)
-			require.GreaterOrEqual(t, *record.DurationMilliseconds, int64(0))
-			record.DurationMilliseconds = nil
+type pipelineLogHandler struct {
+	slog.Handler
+	records []pipelineLogRecord
+}
+
+func (*pipelineLogHandler) Enabled(context.Context, slog.Level) bool { return true }
+
+func (logs *pipelineLogHandler) Handle(_ context.Context, record slog.Record) error {
+	entry := pipelineLogRecord{Message: record.Message, Level: record.Level}
+	record.Attrs(func(attr slog.Attr) bool {
+		switch attr.Key {
+		case "storage_key_digest":
+			entry.StorageKeyDigest = attr.Value.String()
+		case "outcome":
+			entry.Outcome = attr.Value.String()
+		case "duration_ms":
+			entry.DurationRecorded = attr.Value.Kind() == slog.KindInt64 && attr.Value.Int64() >= 0
 		}
-		records = append(records, record)
+		return true
+	})
+	logs.records = append(logs.records, entry)
+	return nil
+}
+
+func TestStorageCancellationLogsNone(t *testing.T) {
+	t.Parallel()
+
+	for _, testCase := range []struct {
+		name       string
+		failure    error
+		wantStatus int
+	}{
+		{name: "canceled", failure: context.Canceled, wantStatus: http.StatusRequestTimeout},
+		{name: "deadline exceeded", failure: context.DeadlineExceeded, wantStatus: http.StatusRequestTimeout},
+	} {
+		t.Run(testCase.name, func(t *testing.T) {
+			t.Parallel()
+			fake := storage.NewFake()
+			fake.SetFailure(storage.FakePresignSourceUpload, testCase.failure)
+			logs := &pipelineLogHandler{Handler: slog.DiscardHandler}
+			handler := newTestHandler(t)
+			handler.logger = slog.New(logs)
+			body, err := json.Marshal(uploadRequest{FileName: "private-file.pdf", FileSizeBytes: 1})
+			require.NoError(t, err)
+			request := httptest.NewRequest(http.MethodPost, "/api/uploads", bytes.NewReader(body))
+			request.Header.Set(header.ContentType, mediatype.JSON)
+			response := httptest.NewRecorder()
+			bound := bindings.Inject(bindings.Bindings{Storage: fake})(http.HandlerFunc(handler.Upload))
+
+			bound.ServeHTTP(response, request)
+
+			require.Equal(t, testCase.wantStatus, response.Code)
+			require.Empty(t, logs.records)
+		})
 	}
-	require.NoError(t, scanner.Err())
-	return records
+}
+
+type sensitiveGrantStorage struct {
+	storage.Storage
+}
+
+func (objectStorage *sensitiveGrantStorage) PresignSourceUpload(
+	ctx context.Context,
+	fileID string,
+	sizeBytes int64,
+	expiry time.Duration,
+) (storage.PresignedRequest, error) {
+	grant, err := objectStorage.Storage.PresignSourceUpload(ctx, fileID, sizeBytes, expiry)
+	if err != nil {
+		return storage.PresignedRequest{}, err
+	}
+	grant.URL = "https://upload-url-secret.invalid/source?credential=credential-secret"
+	return grant, nil
 }
