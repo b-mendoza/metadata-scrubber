@@ -116,6 +116,8 @@ func (handler *Handler) writeUnexpectedFailure(w http.ResponseWriter, request *h
 		}
 		return
 	}
+	// Provider error text can contain private object URLs and storage keys.
+	handler.logger.ErrorContext(request.Context(), internalMessage)
 	if writeErr := httpx.WriteError(w, http.StatusInternalServerError, internalMessage); writeErr != nil {
 		handler.logger.ErrorContext(request.Context(), "could not write JSON response", "error", writeErr)
 	}
