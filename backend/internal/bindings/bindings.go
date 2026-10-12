@@ -30,7 +30,7 @@ type WorkflowEvents interface {
 	Capture(event WorkflowEvent)
 }
 
-// DiscardWorkflowEvents disables event capture when telemetry is not configured.
+// DiscardWorkflowEvents replaces a nil event port in Inject.
 type DiscardWorkflowEvents struct{}
 
 // Capture discards the event without contacting PostHog.
