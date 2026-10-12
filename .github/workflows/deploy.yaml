@@ -6,18 +6,23 @@ on:
 concurrency:
   group: "${{ github.workflow }}-${{ github.ref }}"
 
+permissions:
+  contents: read
+
 jobs:
   quality-checks:
     name: Run code quality checks
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
 
       - name: "Setup Node.js, pnpm and dependencies"
-        uses: ./.github/actions/frontend/setup-env
+        uses: $/.github/actions/frontend/setup-env
 
       - name: "Run linting, formatting and type checks"
-        uses: ./.github/actions/frontend/quality-checks
+        uses: $/.github/actions/frontend/quality-checks
 
   # unit-tests:
   #   name: Run unit tests
@@ -41,9 +46,11 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
 
       - name: "Setup Node.js, pnpm and dependencies"
-        uses: ./.github/actions/frontend/setup-env
+        uses: $/.github/actions/frontend/setup-env
 
       - name: Build application
         shell: bash
