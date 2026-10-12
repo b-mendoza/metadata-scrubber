@@ -68,9 +68,9 @@ test("one PDF sends a typed grant and direct PUT, keeps initial settings, and us
   );
 
   await waitFor(() => {
-    expect(createUpload).toHaveBeenCalledExactlyOnceWith(input);
     expect(FakeXMLHttpRequest.requests).toHaveLength(EXPECTED_SINGLE_COUNT);
   });
+  expect(createUpload).toHaveBeenCalledExactlyOnceWith(input);
   expect(replacementCreateUpload).not.toHaveBeenCalled();
   const [request] = FakeXMLHttpRequest.requests;
   if (request == null) {
