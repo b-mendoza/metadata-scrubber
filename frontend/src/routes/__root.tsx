@@ -1,3 +1,4 @@
+import { PostHogProvider } from "@posthog/react";
 import type {
   TanStackDevtoolsReactInit,
   TanStackDevtoolsReactPlugin,
@@ -72,10 +73,25 @@ const PLUGINS: TanStackDevtoolsReactPlugin[] = [
   },
 ];
 
+const POSTHOG_OPTIONS = {
+  defaults: "2026-08-30",
+  api_host: "/relay",
+  // eslint-disable-next-line metadata-scrubber/no-hardcoded-backend-host -- This fixed US Cloud UI host is not the backend or the event transport.
+  ui_host: "https://us.posthog.com",
+  capture_exceptions: true,
+  capture_performance: { web_vitals: true },
+  disable_session_recording: true,
+  person_profiles: "identified_only",
+} satisfies NonNullable<
+  React.ComponentProps<typeof PostHogProvider>["options"]
+>;
+
 type DocumentShellProps = React.PropsWithChildren;
 
-function DocumentShell(props: Readonly<DocumentShellProps>) {
+export function DocumentShell(props: Readonly<DocumentShellProps>) {
   const { children } = props;
+  // Vite inlines this public value at build time.
+  const posthogKey: unknown = import.meta.env["VITE_PUBLIC_POSTHOG_KEY"];
 
   return (
     <html data-theme="light" lang="en">
@@ -83,7 +99,13 @@ function DocumentShell(props: Readonly<DocumentShellProps>) {
         <HeadContent />
       </head>
       <body>
-        {children}
+        {typeof posthogKey === "string" && posthogKey !== "" ? (
+          <PostHogProvider apiKey={posthogKey} options={POSTHOG_OPTIONS}>
+            {children}
+          </PostHogProvider>
+        ) : (
+          children
+        )}
 
         {import.meta.env.DEV ? (
           <TanStackDevtools config={DEVTOOLS_CONFIG} plugins={PLUGINS} />
