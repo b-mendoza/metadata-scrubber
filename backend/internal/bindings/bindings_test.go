@@ -4,6 +4,7 @@ import (
 	"context"
 	"net/http"
 	"net/http/httptest"
+	"strings"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -32,6 +33,8 @@ func TestInjectProvidesExactBindingsToNextHandlerAndPreservesContextValues(t *te
 	}
 
 	request := httptest.NewRequest(http.MethodGet, "/", http.NoBody)
+	request.Header.Set("X-POSTHOG-DISTINCT-ID", "anonymous-browser-id")
+	request.Header.Set("X-POSTHOG-SESSION-ID", "anonymous-session-id")
 	request = request.WithContext(context.WithValue(request.Context(), key, wantValue))
 
 	called := false
@@ -43,8 +46,8 @@ func TestInjectProvidesExactBindingsToNextHandlerAndPreservesContextValues(t *te
 		assert.True(t, ok)
 		assert.Equal(t, wantBindings.Env, gotBindings.Env)
 		assert.Same(t, wantBindings.Storage, gotBindings.Storage)
-		assert.Equal(t, wantBindings.PostHogDistinctID, gotBindings.PostHogDistinctID)
-		assert.Equal(t, wantBindings.PostHogSessionID, gotBindings.PostHogSessionID)
+		assert.Equal(t, "anonymous-browser-id", gotBindings.PostHogDistinctID)
+		assert.Equal(t, "anonymous-session-id", gotBindings.PostHogSessionID)
 		assert.NotNil(t, gotBindings.Events)
 		gotBindings.Events(r.Context(), "file scrubbed")
 	}))
@@ -55,10 +58,42 @@ func TestInjectProvidesExactBindingsToNextHandlerAndPreservesContextValues(t *te
 	require.True(t, eventsCalled)
 }
 
-func TestFromContextReportsMissingBindings(t *testing.T) {
+func TestInjectValidatesAnalyticsHeadersWithoutRejectingRequests(t *testing.T) {
 	t.Parallel()
 
-	_, ok := bindings.FromContext(httptest.NewRequest(http.MethodGet, "/", http.NoBody).Context())
+	for _, testCase := range []struct {
+		name  string
+		value string
+		want  string
+	}{
+		{name: "first printable character", value: " ", want: " "},
+		{name: "last printable character", value: "~", want: "~"},
+		{name: "maximum length", value: strings.Repeat("a", 200), want: strings.Repeat("a", 200)},
+		{name: "too long", value: strings.Repeat("a", 201)},
+		{name: "control character", value: "id\x1fvalue"},
+		{name: "delete character", value: "id\x7f"},
+		{name: "non ASCII", value: "id-é"},
+	} {
+		t.Run(testCase.name, func(t *testing.T) {
+			t.Parallel()
 
-	require.False(t, ok)
+			request := httptest.NewRequest(http.MethodPost, "/api/uploads", http.NoBody)
+			request.Header.Set("X-POSTHOG-DISTINCT-ID", testCase.value)
+			request.Header.Set("X-POSTHOG-SESSION-ID", testCase.value)
+			handler := bindings.Inject(bindings.Bindings{})(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+				got, ok := bindings.FromContext(r.Context())
+				assert.True(t, ok)
+				assert.NotNil(t, got.Events)
+				got.Events(r.Context(), "file scrubbed")
+				assert.Equal(t, testCase.want, got.PostHogDistinctID)
+				assert.Equal(t, testCase.want, got.PostHogSessionID)
+				w.WriteHeader(http.StatusCreated)
+			}))
+			response := httptest.NewRecorder()
+
+			handler.ServeHTTP(response, request)
+
+			assert.Equal(t, http.StatusCreated, response.Code)
+		})
+	}
 }
