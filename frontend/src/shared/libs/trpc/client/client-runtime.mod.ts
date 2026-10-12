@@ -65,12 +65,12 @@ export const initializeTRPCClient = (trpcURL: URL) => {
       httpBatchStreamLink({
         headers() {
           if (import.meta.env.SSR || !posthog.__loaded) {
-            return {};
+            return new Headers();
           }
-          return {
+          return new Headers({
             "X-POSTHOG-DISTINCT-ID": posthog.get_distinct_id(),
             "X-POSTHOG-SESSION-ID": posthog.get_session_id(),
-          };
+          });
         },
         transformer: {
           deserialize: parse,
