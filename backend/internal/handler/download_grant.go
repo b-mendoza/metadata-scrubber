@@ -4,6 +4,7 @@ import (
 	"net/http"
 	"time"
 
+	"metadata-scrubber/internal/bindings"
 	"metadata-scrubber/internal/httpx"
 	"metadata-scrubber/internal/storage"
 )
@@ -50,7 +51,12 @@ func (handler *Handler) DownloadGrant(w http.ResponseWriter, request *http.Reque
 		ExpiresAt:   operationTime.Add(downloadGrantExpiry).Format(time.RFC3339),
 	}); err != nil {
 		handler.logger.ErrorContext(request.Context(), "could not write JSON response", "error", err)
+		return
 	}
+	requestBindings, _ := bindings.FromContext(request.Context())
+	requestBindings.Events.Capture(bindings.WorkflowEvent{
+		Name: "download grant refreshed", DistinctID: requestBindings.PostHogDistinctID, SessionID: requestBindings.PostHogSessionID,
+	})
 }
 
 func (handler *Handler) writeDownloadGrantNotFound(w http.ResponseWriter, request *http.Request) {
