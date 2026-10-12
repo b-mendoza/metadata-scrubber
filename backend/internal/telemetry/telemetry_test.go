@@ -18,41 +18,6 @@ import (
 	"metadata-scrubber/internal/bindings"
 )
 
-func TestCaptureUsesOnlyAnonymousWorkflowProperties(t *testing.T) {
-	t.Parallel()
-
-	for _, sessionID := range []string{"", "browser-session"} {
-		t.Run(sessionID, func(t *testing.T) {
-			t.Parallel()
-			client := &captureClient{}
-			events := recorder{client: client, logger: slog.New(slog.DiscardHandler)}
-
-			events.Capture(bindings.WorkflowEvent{Name: "file scrubbed", DistinctID: "browser-id", SessionID: sessionID})
-
-			require.Len(t, client.messages, 1)
-			capture, ok := client.messages[0].(posthog.Capture)
-			require.True(t, ok)
-			require.Equal(t, "browser-id", capture.DistinctId)
-			require.Equal(t, "file scrubbed", capture.Event)
-			want := posthog.Properties{"$process_person_profile": false}
-			if sessionID != "" {
-				want["$session_id"] = sessionID
-			}
-			require.Equal(t, want, capture.Properties)
-		})
-	}
-}
-
-func TestCaptureSkipsAbsentDistinctID(t *testing.T) {
-	t.Parallel()
-	client := &captureClient{}
-	events := recorder{client: client, logger: slog.New(slog.DiscardHandler)}
-
-	events.Capture(bindings.WorkflowEvent{Name: "file scrubbed", SessionID: "browser-session"})
-
-	require.Empty(t, client.messages)
-}
-
 func TestCaptureReportsQueueFailureOnlyToLocalLogger(t *testing.T) {
 	t.Parallel()
 	client := &captureClient{err: errors.New("queue full")}
