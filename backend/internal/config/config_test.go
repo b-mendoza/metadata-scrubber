@@ -254,6 +254,8 @@ func TestLoadAcceptsPostHogProjectTokens(t *testing.T) {
 		token string
 	}{
 		{name: "project token", token: validPostHogProjectToken},
+		{name: "trailing newline", token: validPostHogProjectToken + "\n"},
+		{name: "surrounding whitespace", token: " \t" + validPostHogProjectToken + " \r\n"},
 	} {
 		t.Run(testCase.name, func(t *testing.T) {
 			t.Setenv(r2AccountIDEnvKey, validR2AccountID)
@@ -266,7 +268,7 @@ func TestLoadAcceptsPostHogProjectTokens(t *testing.T) {
 			cfg, err := config.Load()
 
 			require.NoError(t, err)
-			require.Equal(t, testCase.token, cfg.PostHogProjectToken)
+			require.Equal(t, validPostHogProjectToken, cfg.PostHogProjectToken)
 		})
 	}
 }
@@ -281,7 +283,8 @@ func TestLoadRejectsAbsentBlankOrInvalidPostHogProjectTokens(t *testing.T) {
 		{name: "empty", token: ""},
 		{name: "ASCII whitespace only", token: " \t\n"},
 		{name: "Unicode whitespace only", token: "  "},
-		{name: "personal API key", token: "phx_synthetic_personal_api_key"}, //nolint:gosec // This key is synthetic test input, not a credential.
+		{name: "personal API key", token: "phx_synthetic_personal_api_key"},           //nolint:gosec // This key is synthetic test input, not a credential.
+		{name: "padded personal API key", token: " phx_synthetic_personal_api_key\n"}, //nolint:gosec // This key is synthetic test input, not a credential.
 	} {
 		t.Run(testCase.name, func(t *testing.T) {
 			t.Setenv(r2AccountIDEnvKey, validR2AccountID)
