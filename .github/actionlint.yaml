@@ -1,0 +1,6 @@
+# actionlint does not support $/ references. See https://github.com/rhysd/actionlint/issues/711.
+# Remove this rule when an actionlint release supports $/ references.
+paths:
+  .github/workflows/*.{yaml,yml}:
+    ignore:
+      - '^specifying action "\$/[^"]*" in invalid format because ref is missing\.'
