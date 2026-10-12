@@ -8,6 +8,7 @@ import {
   createTRPCOptionsProxy,
 } from "@trpc/tanstack-react-query";
 import { parse, stringify } from "devalue";
+import posthog from "posthog-js";
 
 import type { AppRouter } from "#/shared/libs/trpc/routers/routers.mod.server";
 import { appRouter } from "#/shared/libs/trpc/routers/routers.mod.server";
@@ -62,6 +63,15 @@ export const initializeTRPCClient = (trpcURL: URL) => {
   return createTRPCClient<AppRouter>({
     links: [
       httpBatchStreamLink({
+        headers() {
+          if (import.meta.env.SSR || !posthog.__loaded) {
+            return {};
+          }
+          return {
+            "X-POSTHOG-DISTINCT-ID": posthog.get_distinct_id(),
+            "X-POSTHOG-SESSION-ID": posthog.get_session_id(),
+          };
+        },
         transformer: {
           deserialize: parse,
           serialize: stringify,
