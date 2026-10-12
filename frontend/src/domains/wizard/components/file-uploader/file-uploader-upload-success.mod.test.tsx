@@ -41,7 +41,6 @@ test("one PDF sends a typed grant and direct PUT, keeps initial settings, and us
   const createUpload = vi.fn<CreateUpload>().mockResolvedValue(response);
   const replacementCreateUpload = vi.fn<CreateUpload>();
   const onUploadComplete = vi.fn<OnUploadComplete>();
-  const replacementOnUploadComplete = vi.fn<OnUploadComplete>();
   const latestOnUploadComplete = vi.fn<OnUploadComplete>();
   const file = new File(["pdf"], input.fileName, {
     type: "application/pdf",
@@ -58,7 +57,7 @@ test("one PDF sends a typed grant and direct PUT, keeps initial settings, and us
     <FileUploader
       createUpload={replacementCreateUpload}
       maxFileSizeBytes={TEST_REPLACEMENT_MAX_FILE_SIZE_BYTES}
-      onUploadComplete={replacementOnUploadComplete}
+      onUploadComplete={onUploadComplete}
     />,
   );
   const fileInput = await getFileInput(user);
@@ -104,5 +103,4 @@ test("one PDF sends a typed grant and direct PUT, keeps initial settings, and us
     });
   });
   expect(onUploadComplete).not.toHaveBeenCalled();
-  expect(replacementOnUploadComplete).not.toHaveBeenCalled();
 });
