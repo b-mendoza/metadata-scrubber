@@ -54,9 +54,7 @@ func (handler *Handler) DownloadGrant(w http.ResponseWriter, request *http.Reque
 		return
 	}
 	requestBindings, _ := bindings.FromContext(request.Context())
-	requestBindings.Events.Capture(bindings.WorkflowEvent{
-		Name: "download grant refreshed", DistinctID: requestBindings.PostHogDistinctID, SessionID: requestBindings.PostHogSessionID,
-	})
+	requestBindings.Events(request.Context(), "download grant refreshed")
 }
 
 func (handler *Handler) writeDownloadGrantNotFound(w http.ResponseWriter, request *http.Request) {

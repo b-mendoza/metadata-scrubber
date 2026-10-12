@@ -30,7 +30,7 @@ const (
 // Runtime owns the telemetry clients and their logger.
 type Runtime struct {
 	Logger *slog.Logger
-	Events bindings.WorkflowEvents
+	Events func(ctx context.Context, event string)
 	client posthog.Client
 	logs   *sdklog.LoggerProvider
 }
@@ -93,30 +93,24 @@ func newLogHandler(local slog.Handler, client posthog.EnqueueClient, provider ot
 }
 
 // NewRecorder constructs the workflow-event adapter for a PostHog queue.
-func NewRecorder(client posthog.EnqueueClient, local *slog.Logger) bindings.WorkflowEvents {
-	return recorder{client: client, logger: local}
-}
-
-type recorder struct {
-	client posthog.EnqueueClient
-	logger *slog.Logger
-}
-
-func (events recorder) Capture(event bindings.WorkflowEvent) {
-	if event.DistinctID == "" {
-		return
-	}
-	properties := posthog.Properties{"$process_person_profile": false}
-	if event.SessionID != "" {
-		properties["$session_id"] = event.SessionID
-	}
-	if err := events.client.Enqueue(posthog.Capture{
-		Event:      event.Name,
-		DistinctId: event.DistinctID,
-		Properties: properties,
-	}); err != nil {
-		// SDK failures use the local logger so they cannot create more remote telemetry.
-		events.logger.Warn("could not enqueue PostHog event", "error", err)
+func NewRecorder(client posthog.EnqueueClient, local *slog.Logger) func(ctx context.Context, event string) {
+	return func(ctx context.Context, event string) {
+		requestBindings, _ := bindings.FromContext(ctx)
+		if requestBindings.PostHogDistinctID == "" {
+			return
+		}
+		properties := posthog.Properties{"$process_person_profile": false}
+		if requestBindings.PostHogSessionID != "" {
+			properties["$session_id"] = requestBindings.PostHogSessionID
+		}
+		if err := client.Enqueue(posthog.Capture{
+			Event:      event,
+			DistinctId: requestBindings.PostHogDistinctID,
+			Properties: properties,
+		}); err != nil {
+			// SDK failures use the local logger so they cannot create more remote telemetry.
+			local.Warn("could not enqueue PostHog event", "error", err)
+		}
 	}
 }
 

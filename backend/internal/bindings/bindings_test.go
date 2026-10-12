@@ -20,10 +20,15 @@ func TestInjectProvidesExactBindingsToNextHandlerAndPreservesContextValues(t *te
 	type contextKey struct{}
 	key := contextKey{}
 	const wantValue = "request-id"
+	eventsCalled := false
 	wantBindings := bindings.Bindings{
 		Env:     config.Config{Port: 3000},
 		Storage: storage.NewFake(),
-		Events:  bindings.DiscardWorkflowEvents{},
+		Events: func(ctx context.Context, event string) {
+			eventsCalled = true
+			assert.Equal(t, wantValue, ctx.Value(key))
+			assert.Equal(t, "file scrubbed", event)
+		},
 	}
 
 	request := httptest.NewRequest(http.MethodGet, "/", http.NoBody)
@@ -36,12 +41,18 @@ func TestInjectProvidesExactBindingsToNextHandlerAndPreservesContextValues(t *te
 
 		gotBindings, ok := bindings.FromContext(r.Context())
 		assert.True(t, ok)
-		assert.Equal(t, wantBindings, gotBindings)
+		assert.Equal(t, wantBindings.Env, gotBindings.Env)
+		assert.Same(t, wantBindings.Storage, gotBindings.Storage)
+		assert.Equal(t, wantBindings.PostHogDistinctID, gotBindings.PostHogDistinctID)
+		assert.Equal(t, wantBindings.PostHogSessionID, gotBindings.PostHogSessionID)
+		assert.NotNil(t, gotBindings.Events)
+		gotBindings.Events(r.Context(), "file scrubbed")
 	}))
 
 	handler.ServeHTTP(httptest.NewRecorder(), request)
 
 	require.True(t, called)
+	require.True(t, eventsCalled)
 }
 
 func TestFromContextReportsMissingBindings(t *testing.T) {

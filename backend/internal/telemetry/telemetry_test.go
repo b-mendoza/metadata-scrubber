@@ -22,9 +22,14 @@ func TestCaptureReportsQueueFailureOnlyToLocalLogger(t *testing.T) {
 	t.Parallel()
 	client := &captureClient{err: errors.New("queue full")}
 	var output bytes.Buffer
-	events := recorder{client: client, logger: slog.New(slog.NewJSONHandler(&output, nil))}
+	events := NewRecorder(client, slog.New(slog.NewJSONHandler(&output, nil)))
+	request := httptest.NewRequest(http.MethodPost, "/api/files/scrub", http.NoBody)
+	request.Header.Set("X-POSTHOG-DISTINCT-ID", "browser-id")
+	bound := bindings.Inject(bindings.Bindings{})(http.HandlerFunc(func(_ http.ResponseWriter, request *http.Request) {
+		events(request.Context(), "file scrubbed")
+	}))
 
-	events.Capture(bindings.WorkflowEvent{Name: "file scrubbed", DistinctID: "browser-id"})
+	bound.ServeHTTP(httptest.NewRecorder(), request)
 
 	require.Contains(t, output.String(), "could not enqueue PostHog event")
 	require.NotContains(t, output.String(), "browser-id")

@@ -155,7 +155,5 @@ func (handler *Handler) presignScrubbed(w http.ResponseWriter, scrubWorkflow scr
 		return
 	}
 	requestBindings, _ := bindings.FromContext(scrubWorkflow.request.Context())
-	requestBindings.Events.Capture(bindings.WorkflowEvent{
-		Name: "file scrubbed", DistinctID: requestBindings.PostHogDistinctID, SessionID: requestBindings.PostHogSessionID,
-	})
+	requestBindings.Events(scrubWorkflow.request.Context(), "file scrubbed")
 }
