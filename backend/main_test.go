@@ -14,6 +14,7 @@ import (
 
 	"github.com/stretchr/testify/require"
 
+	"metadata-scrubber/internal/bindings"
 	"metadata-scrubber/internal/config"
 	"metadata-scrubber/internal/handler"
 	"metadata-scrubber/internal/httpx/header"
@@ -44,7 +45,7 @@ func TestNewServerAppliesSettingsAndLogsRequests(t *testing.T) {
 	t.Parallel()
 
 	var logs bytes.Buffer
-	server := newServer(config.Config{Port: 0}, storage.NewFake(), slog.New(slog.NewJSONHandler(&logs, nil)))
+	server := newServer(config.Config{Port: 0}, storage.NewFake(), slog.New(slog.NewJSONHandler(&logs, nil)), nil)
 
 	require.Equal(t, ":0", server.Addr)
 	require.Equal(t, readHeaderTimeout, server.ReadHeaderTimeout)
@@ -86,7 +87,7 @@ func TestNewServerAppliesSettingsAndLogsRequests(t *testing.T) {
 func TestNewServerHandlesCORSPreflight(t *testing.T) {
 	t.Parallel()
 
-	server := newServer(config.Config{Port: 0}, storage.NewFake(), slog.New(slog.DiscardHandler))
+	server := newServer(config.Config{Port: 0}, storage.NewFake(), slog.New(slog.DiscardHandler), nil)
 	request := httptest.NewRequest(http.MethodOptions, "/api/files/scrub", http.NoBody)
 	recorder := httptest.NewRecorder()
 	server.Handler.ServeHTTP(recorder, request)
@@ -99,7 +100,7 @@ func TestNewServerHandlesCORSPreflight(t *testing.T) {
 func TestNewServerRegistersWorkflowRoutes(t *testing.T) {
 	t.Parallel()
 
-	server := newServer(config.Config{Port: 0}, storage.NewFake(), slog.New(slog.DiscardHandler))
+	server := newServer(config.Config{Port: 0}, storage.NewFake(), slog.New(slog.DiscardHandler), nil)
 	testCases := []struct {
 		method     string
 		path       string
@@ -167,7 +168,7 @@ func TestNewServerSharesOneCapacityTwoGateAcrossDryRunAndScrubMisses(t *testing.
 		started: make(chan string, 3),
 		release: make(chan struct{}),
 	}
-	server := newServer(config.Config{Port: 0}, observer, slog.New(slog.DiscardHandler))
+	server := newServer(config.Config{Port: 0}, observer, slog.New(slog.DiscardHandler), nil)
 
 	firstDryRunBody, err := json.Marshal(dryRunRequest{StorageKey: "uploads/" + firstFileID})
 	require.NoError(t, err)
@@ -241,4 +242,71 @@ func (observer *blockingServerStorage) DownloadSource(
 	case <-ctx.Done():
 		return storage.SourceObject{}, ctx.Err()
 	}
+}
+
+func TestNewServerInjectsAnonymousWorkflowEvents(t *testing.T) {
+	t.Parallel()
+	events := &serverEvents{}
+	server := newServer(config.Config{}, storage.NewFake(), slog.New(slog.DiscardHandler), events)
+	type deleteRequest struct {
+		StorageKey string `json:"storageKey"`
+	}
+	body, err := json.Marshal(deleteRequest{StorageKey: "uploads/00000000-0000-4000-8000-000000000001"})
+	require.NoError(t, err)
+	request := httptest.NewRequest(http.MethodPost, "/api/files/delete", bytes.NewReader(body))
+	request.Header.Set(header.ContentType, mediatype.JSON)
+	request.Header.Set("X-POSTHOG-DISTINCT-ID", "browser-id")
+	request.Header.Set("X-POSTHOG-SESSION-ID", "browser-session")
+	response := httptest.NewRecorder()
+
+	server.Handler.ServeHTTP(response, request)
+
+	require.Equal(t, http.StatusOK, response.Code)
+	require.Equal(t, []bindings.WorkflowEvent{{Name: "file deleted", DistinctID: "browser-id", SessionID: "browser-session"}}, events.captured)
+}
+
+func TestRequestErrorLogsReceiveValidatedAnalyticsBindings(t *testing.T) {
+	t.Parallel()
+	logs := &contextLogHandler{Handler: slog.DiscardHandler}
+	server := newServer(config.Config{}, &panicDeleteStorage{Storage: storage.NewFake()}, slog.New(logs), nil)
+	type deleteRequest struct {
+		StorageKey string `json:"storageKey"`
+	}
+	body, err := json.Marshal(deleteRequest{StorageKey: "uploads/00000000-0000-4000-8000-000000000001"})
+	require.NoError(t, err)
+	request := httptest.NewRequest(http.MethodPost, "/api/files/delete", bytes.NewReader(body))
+	request.Header.Set(header.ContentType, mediatype.JSON)
+	request.Header.Set("X-POSTHOG-DISTINCT-ID", "browser-id")
+	request.Header.Set("X-POSTHOG-SESSION-ID", "browser-session")
+
+	require.Panics(t, func() { server.Handler.ServeHTTP(httptest.NewRecorder(), request) })
+
+	require.Len(t, logs.errorBindings, 1)
+	require.Equal(t, "browser-id", logs.errorBindings[0].PostHogDistinctID)
+	require.Equal(t, "browser-session", logs.errorBindings[0].PostHogSessionID)
+}
+
+type contextLogHandler struct {
+	slog.Handler
+	errorBindings []bindings.Bindings
+}
+
+func (*contextLogHandler) Enabled(context.Context, slog.Level) bool { return true }
+
+func (observer *contextLogHandler) Handle(ctx context.Context, record slog.Record) error {
+	if record.Level >= slog.LevelError {
+		requestBindings, _ := bindings.FromContext(ctx)
+		observer.errorBindings = append(observer.errorBindings, requestBindings)
+	}
+	return nil
+}
+
+type panicDeleteStorage struct{ storage.Storage }
+
+func (*panicDeleteStorage) DeleteFlow(context.Context, string) error { panic("storage panic") }
+
+type serverEvents struct{ captured []bindings.WorkflowEvent }
+
+func (events *serverEvents) Capture(event bindings.WorkflowEvent) {
+	events.captured = append(events.captured, event)
 }
