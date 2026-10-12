@@ -1,5 +1,4 @@
 import { screen } from "@testing-library/react";
-import type { AwsS3Options } from "@uppy/aws-s3";
 import { vi } from "vitest";
 
 import type { renderComponent } from "#/tests/utils/renderers/renderers.mod";
@@ -7,21 +6,6 @@ import type { renderComponent } from "#/tests/utils/renderers/renderers.mod";
 const BROWSE_FILES_BUTTON_NAME = /browse files/iv;
 const EMPTY_REQUEST_COUNT = 0;
 const NO_HTTP_STATUS = 0;
-
-type TestAwsS3Options = AwsS3Options<
-  Record<string, unknown>,
-  Record<string, unknown>
->;
-
-type AwsS3SignRequest = Extract<
-  TestAwsS3Options,
-  { signRequest: unknown }
->["signRequest"];
-
-export type ConfiguredAwsS3Options = TestAwsS3Options & {
-  generateObjectKey: NonNullable<TestAwsS3Options["generateObjectKey"]>;
-  signRequest: AwsS3SignRequest;
-};
 
 interface FakeXMLHttpResponse {
   headers?: Record<string, string>;
@@ -169,19 +153,4 @@ export const getFileInput = async (
 export const installXMLHttpRequestFake = () => {
   FakeXMLHttpRequest.reset();
   vi.stubGlobal("XMLHttpRequest", FakeXMLHttpRequest);
-};
-
-export const isConfiguredAwsS3Options = (
-  value: unknown,
-): value is ConfiguredAwsS3Options => {
-  if (typeof value !== "object" || value == null) {
-    return false;
-  }
-
-  return (
-    "generateObjectKey" in value &&
-    typeof value.generateObjectKey === "function" &&
-    "signRequest" in value &&
-    typeof value.signRequest === "function"
-  );
 };
