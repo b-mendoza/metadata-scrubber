@@ -16,6 +16,9 @@
 - Clients send public application requests to the frontend. Frontend server code calls the backend over HTTP.
 - The frontend validates `BACKEND_URL` and creates request-scoped Ky clients with this URL as the base URL.
 - On Vercel, `vercel.json` injects `BACKEND_URL` as a service binding to the backend container. For local development, `docker-compose` or the shell supplies the value.
+- The first three `vercel.json` rewrites proxy `/relay/static/*` and `/relay/array/*` to US Cloud PostHog assets. They proxy other `/relay/*` requests to US Cloud PostHog ingestion. These rewrites run before the frontend catch-all.
+- When the browser PostHog client initializes, the tRPC client sends `X-POSTHOG-DISTINCT-ID` and `X-POSTHOG-SESSION-ID`. The frontend server forwards these incoming headers unchanged on workflow calls only. The backend validates them and uses them for server events. Health calls do not forward them.
+- The backend reads the optional `POSTHOG_PROJECT_TOKEN`. When it is set, the backend sends one server event for each successful workflow outcome with a valid forwarded distinct ID. It also sends Error-level logs to PostHog error tracking and all logs to PostHog Logs.
 - The products tRPC router calls backend health.
 - The wizard tRPC router provides typed proxies for workflow configuration, upload grants, dry-run inspection, revision-bound scrubbing, download-grant refresh, and confirmed deletion.
 - The tRPC workflow sends only small JSON values. It does not send file bytes.
