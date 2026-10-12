@@ -199,9 +199,6 @@ importers:
       '@uppy/dashboard':
         specifier: 6.0.1
         version: 6.0.1(@uppy/core@6.2.0)
-      '@uppy/react':
-        specifier: 6.0.0
-        version: 6.0.0(@uppy/core@6.2.0)(@uppy/dashboard@6.0.1(@uppy/core@6.2.0))(@uppy/google-drive-picker@2.0.0(@uppy/core@6.2.0))(@uppy/google-photos-picker@2.0.0(@uppy/core@6.2.0))(react-dom@19.3.0(react@19.3.0))(react@19.3.0)
       devalue:
         specifier: 6.0.2
         version: 6.0.2
@@ -2763,23 +2760,6 @@ packages:
     peerDependencies:
       '@uppy/core': ^6.2.0
 
-  '@uppy/components@2.0.0':
-    resolution: {integrity: sha512-wviwX37ISeJQEaHh5ijyfSW7wDb5Ctvy10dnkRjuN9hddJo59N7lx+dKe985cP4OBBSr+wAzAkrvP6I8MmMvMg==}
-    peerDependencies:
-      '@uppy/core': ^6.0.0
-      '@uppy/google-drive-picker': ^2.0.0
-      '@uppy/google-photos-picker': ^2.0.0
-      '@uppy/image-editor': ^5.0.0
-      '@uppy/screen-capture': ^6.0.0
-      '@uppy/webcam': ^6.0.0
-    peerDependenciesMeta:
-      '@uppy/image-editor':
-        optional: true
-      '@uppy/screen-capture':
-        optional: true
-      '@uppy/webcam':
-        optional: true
-
   '@uppy/core@6.2.0':
     resolution: {integrity: sha512-GujQtHazyHM2jjoNZyZlB+R3mUf1bynx0D+sPRt4IfLEfV09LbqA1kzwabL+WEKFdfqls15T+a/4u3XGV4n/oQ==}
 
@@ -2787,36 +2767,6 @@ packages:
     resolution: {integrity: sha512-nss7xYzh6zXly03Tz/j9Lclm8rOkBOp0wPSQuAYkrtTzJrRsahemrOXwYRQTW2hyN+hDdjVtU9Ouo2NMcPzkVQ==}
     peerDependencies:
       '@uppy/core': ^6.2.0
-
-  '@uppy/google-drive-picker@2.0.0':
-    resolution: {integrity: sha512-i3XPwEWPCZJtHM9bYRIQ89cjIrSx6dqm3C81bb63Z0H3bet9Yz8E5BJS7ofyppJiOiJg19Vec4evx5QOCZ45aQ==}
-    peerDependencies:
-      '@uppy/core': ^6.0.0
-
-  '@uppy/google-photos-picker@2.0.0':
-    resolution: {integrity: sha512-mWad0IRAgZaAYCjIAytWS3t8MK3u3ZyAgXFgmeCqz15i3hXOXmrzlez/MEpMR9QJc9Hsju9yHShP/lKWF2tbIA==}
-    peerDependencies:
-      '@uppy/core': ^6.0.0
-
-  '@uppy/react@6.0.0':
-    resolution: {integrity: sha512-AgPeeEGCz4FFN2zblqrJs8zQzzDKPoToM4dkWsHXF/Ndm1BmI4uF8NkVjEvmzwjF4e2JPxRvk52baYTeSSKruQ==}
-    peerDependencies:
-      '@uppy/core': ^6.0.0
-      '@uppy/dashboard': ^6.0.0
-      '@uppy/screen-capture': ^6.0.0
-      '@uppy/status-bar': ^6.0.0
-      '@uppy/webcam': ^6.0.0
-      react: ^18.0.0 || ^19.0.0
-      react-dom: ^18.0.0 || ^19.0.0
-    peerDependenciesMeta:
-      '@uppy/dashboard':
-        optional: true
-      '@uppy/screen-capture':
-        optional: true
-      '@uppy/status-bar':
-        optional: true
-      '@uppy/webcam':
-        optional: true
 
   '@uppy/thumbnail-generator@6.0.1':
     resolution: {integrity: sha512-tNMn3C6tepp0UDoN6L9L3OLNzwG999s1+crXGLpZI2xG2UZ2uyVFASy4rjJS7/2wsXFsE9+xf1t12Hob8ZYRlQ==}
@@ -4214,10 +4164,6 @@ packages:
     resolution: {integrity: sha512-skGHTH1Yb9QvaTC4hWnRTzEYtCpApF0UMBPz+t/0ZPzP8ihefo/btKd+QA7pUE0fEwA1SbS/NmhyEcstdXOIdA==}
     engines: {node: '>=14'}
     hasBin: true
-
-  pretty-bytes@7.2.0:
-    resolution: {integrity: sha512-T2kroepGB5DRVbkN/nOpW03+VRWqdtJhZNuCW3wYk3chdPjgi4GcTBOaxWfHq1MIM0ypidxsSWbQaAiRpxnXmg==}
-    engines: {node: '>=20'}
 
   pretty-format@27.5.1:
     resolution: {integrity: sha512-Qb1gy5OrP5+zDf2Bvnzdl3jsTf1qXVMazbvCoKhtKqVs4/YK4ozX4gKQJJVyNe+cajNPn0KoC0MC3FUmaHWEmQ==}
@@ -6810,18 +6756,6 @@ snapshots:
     dependencies:
       '@uppy/core': 6.2.0
 
-  '@uppy/components@2.0.0(@uppy/core@6.2.0)(@uppy/google-drive-picker@2.0.0(@uppy/core@6.2.0))(@uppy/google-photos-picker@2.0.0(@uppy/core@6.2.0))':
-    dependencies:
-      '@uppy/core': 6.2.0
-      '@uppy/google-drive-picker': 2.0.0(@uppy/core@6.2.0)
-      '@uppy/google-photos-picker': 2.0.0(@uppy/core@6.2.0)
-      clsx: 2.1.1
-      dequal: 2.0.3
-      preact: 10.29.8
-      pretty-bytes: 7.2.0
-    transitivePeerDependencies:
-      - preact-render-to-string
-
   '@uppy/core@6.2.0':
     dependencies:
       '@transloadit/prettier-bytes': 2.0.0
@@ -6847,36 +6781,6 @@ snapshots:
       preact: 10.29.8
       shallow-equal: 3.1.0
     transitivePeerDependencies:
-      - preact-render-to-string
-
-  '@uppy/google-drive-picker@2.0.0(@uppy/core@6.2.0)':
-    dependencies:
-      '@uppy/core': 6.2.0
-      preact: 10.29.8
-    transitivePeerDependencies:
-      - preact-render-to-string
-
-  '@uppy/google-photos-picker@2.0.0(@uppy/core@6.2.0)':
-    dependencies:
-      '@uppy/core': 6.2.0
-      preact: 10.29.8
-    transitivePeerDependencies:
-      - preact-render-to-string
-
-  '@uppy/react@6.0.0(@uppy/core@6.2.0)(@uppy/dashboard@6.0.1(@uppy/core@6.2.0))(@uppy/google-drive-picker@2.0.0(@uppy/core@6.2.0))(@uppy/google-photos-picker@2.0.0(@uppy/core@6.2.0))(react-dom@19.3.0(react@19.3.0))(react@19.3.0)':
-    dependencies:
-      '@uppy/components': 2.0.0(@uppy/core@6.2.0)(@uppy/google-drive-picker@2.0.0(@uppy/core@6.2.0))(@uppy/google-photos-picker@2.0.0(@uppy/core@6.2.0))
-      '@uppy/core': 6.2.0
-      preact: 10.29.8
-      react: 19.3.0
-      react-dom: 19.3.0(react@19.3.0)
-      use-sync-external-store: 1.7.0(react@19.3.0)
-    optionalDependencies:
-      '@uppy/dashboard': 6.0.1(@uppy/core@6.2.0)
-    transitivePeerDependencies:
-      - '@uppy/google-drive-picker'
-      - '@uppy/google-photos-picker'
-      - '@uppy/image-editor'
       - preact-render-to-string
 
   '@uppy/thumbnail-generator@6.0.1(@uppy/core@6.2.0)':
@@ -8341,8 +8245,6 @@ snapshots:
   prelude-ls@1.2.1: {}
 
   prettier@3.9.10: {}
-
-  pretty-bytes@7.2.0: {}
 
   pretty-format@27.5.1:
     dependencies:
