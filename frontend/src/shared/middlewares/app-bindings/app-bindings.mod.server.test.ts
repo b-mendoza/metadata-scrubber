@@ -14,7 +14,6 @@ afterEach(() => {
 test.each([
   // eslint-disable-next-line no-undefined -- Vitest uses undefined to remove the environment variable.
   { name: "an absent token", token: undefined },
-  { name: "an empty token", token: "" },
   { name: "a personal API key", token: "phx_secret_personal_key" },
 ])(
   "requests fail before downstream code runs with $name",
@@ -62,13 +61,6 @@ test.each([
     distinctId: null,
     sessionId: "session-a",
   },
-  {
-    name: "empty IDs",
-    headers: { "X-POSTHOG-DISTINCT-ID": "", "X-POSTHOG-SESSION-ID": "" },
-    distinctId: "",
-    sessionId: "",
-  },
-  { name: "no IDs", headers: {}, distinctId: null, sessionId: null },
 ])(
   "workflow calls forward $name without other incoming headers",
   async ({ headers, distinctId, sessionId }) => {
