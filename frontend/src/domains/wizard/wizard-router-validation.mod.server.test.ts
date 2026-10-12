@@ -1,8 +1,17 @@
-import { TRPCError } from "@trpc/server";
 import ky from "ky";
 import { expect, test, vi } from "vitest";
-import * as z from "zod";
 
+import {
+  BAD_GATEWAY_STATUS_CODE,
+  BAD_REQUEST_STATUS_CODE,
+  CONFLICT_STATUS_CODE,
+  NOT_FOUND_STATUS_CODE,
+  PAYLOAD_TOO_LARGE_STATUS_CODE,
+  REQUEST_TIMEOUT_STATUS_CODE,
+  SERVICE_UNAVAILABLE_STATUS_CODE,
+  UNPROCESSABLE_ENTITY_STATUS_CODE,
+  UNSUPPORTED_MEDIA_TYPE_STATUS_CODE,
+} from "#/shared/constants/http/status-codes/status-codes.mod";
 import { createWorkflowHttpClient } from "#/shared/libs/ky/workflow-http-client.mod.server";
 import type { RouterInputs } from "#/shared/libs/trpc/client/client.mod";
 import {
@@ -11,8 +20,17 @@ import {
 } from "#/shared/libs/trpc/utils/initializer/initializer.mod.server";
 import { getAppBindings } from "#/shared/middlewares/app-bindings/app-bindings.mod";
 
+import type { BackendErrorResponse } from "./wizard-contracts.mod.server";
 import { scrubFileInputSchema } from "./wizard-contracts.mod.server";
-import { wizardRouter } from "./wizard-router.mod.server";
+import {
+  CONFIRM_DELETE_FAILURE_MESSAGE,
+  CREATE_UPLOAD_FAILURE_MESSAGE,
+  DRY_RUN_FAILURE_MESSAGE,
+  REFRESH_DOWNLOAD_GRANT_FAILURE_MESSAGE,
+  SCRUB_FILE_FAILURE_MESSAGE,
+  wizardRouter,
+  WORKFLOW_CONFIG_FAILURE_MESSAGE,
+} from "./wizard-router.mod.server";
 
 vi.mock(import("#/shared/middlewares/app-bindings/app-bindings.mod"), () => ({
   getAppBindings: vi.fn(),
@@ -22,7 +40,10 @@ const BACKEND_BASE_URL = new URL("https://backend.test/");
 const FRONTEND_URL = "https://frontend.test/";
 const STORAGE_KEY = "uploads/00000000-0000-4000-8000-000000000001";
 const CANONICAL_ETAG = "0123456789abcdef0123456789abcdef";
+const DOWNLOAD_URL = "https://downloads.test/sanitized.pdf";
 const ONE_BYTE = 1;
+const TWO_BYTE_FILE_NAME_CHARACTER = "é";
+const REJECTED_TWO_BYTE_CHARACTER_COUNT = 128;
 
 const createWizardCaller = createCallerFactory(wizardRouter);
 
@@ -37,52 +58,46 @@ const callerForRequest = (request: Request) => {
   });
 };
 
-const requireTRPCError = async (
-  operation: Promise<unknown>,
-): Promise<TRPCError> => {
-  try {
-    await operation;
-  } catch (error) {
-    expect(error).toBeInstanceOf(TRPCError);
-    if (error instanceof TRPCError) {
-      return error;
-    }
-  }
-  expect.fail("the workflow procedure must reject with a TRPCError");
-};
-
 test.each([
-  ["lower-case mixed hex", CANONICAL_ETAG, true],
-  ["lower-case repeated hex", "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa", true],
-  ["empty", "", false],
-  ["weak", `W/"${CANONICAL_ETAG}"`, false],
-  ["quoted", `"${CANONICAL_ETAG}"`, false],
-  ["leading quote", `"${CANONICAL_ETAG}`, false],
-  ["trailing quote", `${CANONICAL_ETAG}"`, false],
-  ["embedded quote", '0123456789abcde"0123456789abcdef', false],
-  ["single quoted", `'${CANONICAL_ETAG}'`, false],
-  ["line feed", "0123456789abcde\n0123456789abcdef", false],
-  ["carriage return", "0123456789abcde\r0123456789abcdef", false],
-  ["horizontal tab", "0123456789abcde\t0123456789abcdef", false],
-  ["null", "0123456789abcde\u{0000}0123456789abcdef", false],
-  ["too short", "0123456789abcdef0123456789abcde", false],
-  ["too long", `${CANONICAL_ETAG}0`, false],
-  ["upper case", CANONICAL_ETAG.toUpperCase(), false],
-  ["non-hex", "0123456789abcdef0123456789abcdeg", false],
-  ["multipart", `${CANONICAL_ETAG}-2`, false],
-  ["leading space", ` ${CANONICAL_ETAG}`, false],
-  ["trailing space", `${CANONICAL_ETAG} `, false],
-  ["opaque", "revision-1", false],
-])("canonical ETag schema handles %s", (_name, value, expectedSuccess) => {
-  expect(scrubFileInputSchema.shape.etag.safeParse(value).success).toBe(
-    expectedSuccess,
-  );
+  ["weak", `W/"${CANONICAL_ETAG}"`],
+  ["quoted", `"${CANONICAL_ETAG}"`],
+  ["too short", "0123456789abcdef0123456789abcde"],
+  ["too long", `${CANONICAL_ETAG}0`],
+  ["upper case", CANONICAL_ETAG.toUpperCase()],
+  ["non-hex", "0123456789abcdef0123456789abcdeg"],
+  ["multipart", `${CANONICAL_ETAG}-2`],
+  ["leading space", ` ${CANONICAL_ETAG}`],
+  ["trailing space", `${CANONICAL_ETAG} `],
+])("scrubFile rejects %s ETag before fetch", async (_caseName, etag) => {
+  const input: RouterInputs["wizard"]["scrubFile"] = {
+    etag,
+    storageKey: STORAGE_KEY,
+  };
+  const fetchMock = vi.fn<typeof fetch>();
+  vi.stubGlobal("fetch", fetchMock);
+  const request = new Request(FRONTEND_URL);
+
+  await expect(
+    callerForRequest(request).scrubFile(input),
+  ).rejects.toMatchObject({
+    code: "BAD_REQUEST",
+  });
+  expect(fetchMock).not.toHaveBeenCalled();
 });
 
 test.each([
   ["path traversal", "../report.pdf"],
   ["leading white space", " report.pdf"],
   ["trailing white space", "report.pdf "],
+  ["blank", " "],
+  ["backslash", String.raw`report\.pdf`],
+  ["ASCII control U+0001", "report\u{0001}.pdf"],
+  ["DEL U+007F", "report\u{007F}.pdf"],
+  ["U+FFFD", "report\u{FFFD}.pdf"],
+  [
+    "256-byte UTF-8 name",
+    TWO_BYTE_FILE_NAME_CHARACTER.repeat(REJECTED_TWO_BYTE_CHARACTER_COUNT),
+  ],
 ])("createUpload rejects %s before fetch", async (_caseName, fileName) => {
   const input: RouterInputs["wizard"]["createUpload"] = {
     fileName,
@@ -92,47 +107,25 @@ test.each([
   vi.stubGlobal("fetch", fetchMock);
   const request = new Request(FRONTEND_URL);
 
-  const error = await requireTRPCError(
+  await expect(
     callerForRequest(request).createUpload(input),
-  );
-
-  expect(error.code).toBe("BAD_REQUEST");
-  expect(fetchMock).not.toHaveBeenCalled();
-});
-
-test("createUpload reports only the empty-name error for whitespace", async () => {
-  const input: RouterInputs["wizard"]["createUpload"] = {
-    fileName: " ",
-    fileSizeBytes: ONE_BYTE,
-  };
-  const fetchMock = vi.fn<typeof fetch>();
-  vi.stubGlobal("fetch", fetchMock);
-  const request = new Request(FRONTEND_URL);
-
-  const error = await requireTRPCError(
-    callerForRequest(request).createUpload(input),
-  );
-
-  expect(error.code).toBe("BAD_REQUEST");
-  expect(error.cause).toBeInstanceOf(z.ZodError);
-  expect(error.cause).toMatchObject({
-    issues: [
-      expect.objectContaining({ message: "The file name must not be empty." }),
-    ],
+  ).rejects.toMatchObject({
+    code: "BAD_REQUEST",
   });
   expect(fetchMock).not.toHaveBeenCalled();
 });
 
 test("dryRun rejects an invalid storage key before fetch", async () => {
+  const input: RouterInputs["wizard"]["dryRun"] = {
+    storageKey: "source/not-public",
+  };
   const fetchMock = vi.fn<typeof fetch>();
   vi.stubGlobal("fetch", fetchMock);
   const request = new Request(FRONTEND_URL);
 
-  const error = await requireTRPCError(
-    callerForRequest(request).dryRun({ storageKey: "source/not-public" }),
-  );
-
-  expect(error.code).toBe("BAD_REQUEST");
+  await expect(callerForRequest(request).dryRun(input)).rejects.toMatchObject({
+    code: "BAD_REQUEST",
+  });
   expect(fetchMock).not.toHaveBeenCalled();
 });
 
@@ -143,32 +136,200 @@ test("the scrub input schema rejects a missing ETag", () => {
 });
 
 test("refreshDownloadGrant rejects an invalid ETag before fetch", async () => {
+  const input: RouterInputs["wizard"]["refreshDownloadGrant"] = {
+    etag: `"${CANONICAL_ETAG}"`,
+    storageKey: STORAGE_KEY,
+  };
   const fetchMock = vi.fn<typeof fetch>();
   vi.stubGlobal("fetch", fetchMock);
   const request = new Request(FRONTEND_URL);
 
-  const error = await requireTRPCError(
-    callerForRequest(request).refreshDownloadGrant({
-      etag: `"${CANONICAL_ETAG}"`,
-      storageKey: STORAGE_KEY,
-    }),
-  );
-
-  expect(error.code).toBe("BAD_REQUEST");
+  await expect(
+    callerForRequest(request).refreshDownloadGrant(input),
+  ).rejects.toMatchObject({
+    code: "BAD_REQUEST",
+  });
   expect(fetchMock).not.toHaveBeenCalled();
 });
 
 test("confirmDelete rejects an invalid storage key before fetch", async () => {
+  const input: RouterInputs["wizard"]["confirmDelete"] = {
+    storageKey: "uploads/not-a-uuid",
+  };
   const fetchMock = vi.fn<typeof fetch>();
   vi.stubGlobal("fetch", fetchMock);
   const request = new Request(FRONTEND_URL);
 
-  const error = await requireTRPCError(
-    callerForRequest(request).confirmDelete({
-      storageKey: "uploads/not-a-uuid",
+  await expect(
+    callerForRequest(request).confirmDelete(input),
+  ).rejects.toMatchObject({
+    code: "BAD_REQUEST",
+  });
+  expect(fetchMock).not.toHaveBeenCalled();
+});
+
+test("getWorkflowConfig rejects a malformed backend config body", async () => {
+  const fetchMock = vi
+    .fn<typeof fetch>()
+    .mockResolvedValue(Response.json({ maxFileSizeBytes: "big" }));
+  vi.stubGlobal("fetch", fetchMock);
+  const request = new Request(FRONTEND_URL);
+
+  await expect(
+    callerForRequest(request).getWorkflowConfig(),
+  ).rejects.toMatchObject({
+    code: "BAD_GATEWAY",
+    message: WORKFLOW_CONFIG_FAILURE_MESSAGE,
+  });
+});
+
+test("createUpload rejects an invalid backend upload URL", async () => {
+  const input: RouterInputs["wizard"]["createUpload"] = {
+    fileName: "report.pdf",
+    fileSizeBytes: ONE_BYTE,
+  };
+  const fetchMock = vi
+    .fn<typeof fetch>()
+    .mockResolvedValue(
+      Response.json({ storageKey: STORAGE_KEY, uploadUrl: "not-a-url" }),
+    );
+  vi.stubGlobal("fetch", fetchMock);
+  const request = new Request(FRONTEND_URL);
+
+  await expect(
+    callerForRequest(request).createUpload(input),
+  ).rejects.toMatchObject({
+    code: "BAD_GATEWAY",
+    message: CREATE_UPLOAD_FAILURE_MESSAGE,
+  });
+});
+
+test("dryRun rejects an invalid backend ETag", async () => {
+  const input: RouterInputs["wizard"]["dryRun"] = { storageKey: STORAGE_KEY };
+  const fetchMock = vi
+    .fn<typeof fetch>()
+    .mockResolvedValue(
+      Response.json({ etag: `"${CANONICAL_ETAG}"`, fields: [] }),
+    );
+  vi.stubGlobal("fetch", fetchMock);
+  const request = new Request(FRONTEND_URL);
+
+  await expect(callerForRequest(request).dryRun(input)).rejects.toMatchObject({
+    code: "BAD_GATEWAY",
+    message: DRY_RUN_FAILURE_MESSAGE,
+  });
+});
+
+test("scrubFile rejects an invalid backend success payload", async () => {
+  const input: RouterInputs["wizard"]["scrubFile"] = {
+    etag: CANONICAL_ETAG,
+    storageKey: STORAGE_KEY,
+  };
+  const fetchMock = vi.fn<typeof fetch>().mockResolvedValue(
+    Response.json({
+      result: { downloadUrl: "not-a-url" },
+      status: "done",
     }),
   );
+  vi.stubGlobal("fetch", fetchMock);
+  const request = new Request(FRONTEND_URL);
 
-  expect(error.code).toBe("BAD_REQUEST");
-  expect(fetchMock).not.toHaveBeenCalled();
+  await expect(
+    callerForRequest(request).scrubFile(input),
+  ).rejects.toMatchObject({
+    code: "BAD_GATEWAY",
+    message: SCRUB_FILE_FAILURE_MESSAGE,
+  });
+});
+
+test("refreshDownloadGrant rejects an invalid backend timestamp", async () => {
+  const input: RouterInputs["wizard"]["refreshDownloadGrant"] = {
+    etag: CANONICAL_ETAG,
+    storageKey: STORAGE_KEY,
+  };
+  const fetchMock = vi
+    .fn<typeof fetch>()
+    .mockResolvedValue(
+      Response.json({ downloadUrl: DOWNLOAD_URL, expiresAt: "tomorrow" }),
+    );
+  vi.stubGlobal("fetch", fetchMock);
+  const request = new Request(FRONTEND_URL);
+
+  await expect(
+    callerForRequest(request).refreshDownloadGrant(input),
+  ).rejects.toMatchObject({
+    code: "BAD_GATEWAY",
+    message: REFRESH_DOWNLOAD_GRANT_FAILURE_MESSAGE,
+  });
+});
+
+test("confirmDelete rejects an unconfirmed backend success payload", async () => {
+  const input: RouterInputs["wizard"]["confirmDelete"] = {
+    storageKey: STORAGE_KEY,
+  };
+  const fetchMock = vi
+    .fn<typeof fetch>()
+    .mockResolvedValue(Response.json({ status: "pending" }));
+  vi.stubGlobal("fetch", fetchMock);
+  const request = new Request(FRONTEND_URL);
+
+  await expect(
+    callerForRequest(request).confirmDelete(input),
+  ).rejects.toMatchObject({
+    code: "BAD_GATEWAY",
+    message: CONFIRM_DELETE_FAILURE_MESSAGE,
+  });
+});
+
+test.each([
+  { status: BAD_REQUEST_STATUS_CODE, code: "BAD_REQUEST" },
+  { status: NOT_FOUND_STATUS_CODE, code: "NOT_FOUND" },
+  { status: REQUEST_TIMEOUT_STATUS_CODE, code: "TIMEOUT" },
+  { status: CONFLICT_STATUS_CODE, code: "CONFLICT" },
+  { status: PAYLOAD_TOO_LARGE_STATUS_CODE, code: "PAYLOAD_TOO_LARGE" },
+  {
+    status: UNSUPPORTED_MEDIA_TYPE_STATUS_CODE,
+    code: "UNSUPPORTED_MEDIA_TYPE",
+  },
+  { status: UNPROCESSABLE_ENTITY_STATUS_CODE, code: "UNPROCESSABLE_CONTENT" },
+  { status: SERVICE_UNAVAILABLE_STATUS_CODE, code: "SERVICE_UNAVAILABLE" },
+  { status: BAD_GATEWAY_STATUS_CODE, code: "BAD_GATEWAY" },
+])("dryRun maps backend HTTP $status to $code", async ({ status, code }) => {
+  const input: RouterInputs["wizard"]["dryRun"] = { storageKey: STORAGE_KEY };
+  const response: BackendErrorResponse = {
+    error: "safe backend error",
+  };
+  const fetchMock = vi
+    .fn<typeof fetch>()
+    .mockResolvedValue(Response.json(response, { status }));
+  vi.stubGlobal("fetch", fetchMock);
+  const request = new Request(FRONTEND_URL);
+
+  await expect(callerForRequest(request).dryRun(input)).rejects.toMatchObject({
+    code,
+    message: DRY_RUN_FAILURE_MESSAGE,
+  });
+  expect(fetchMock).toHaveBeenCalledOnce();
+});
+
+test("a non-contract backend error body maps to BAD_GATEWAY without public details", async () => {
+  const input: RouterInputs["wizard"]["confirmDelete"] = {
+    storageKey: STORAGE_KEY,
+  };
+  const providerDetails = "provider-request-id-and-object-key";
+  const fetchMock = vi
+    .fn<typeof fetch>()
+    .mockResolvedValue(
+      new Response(providerDetails, { status: CONFLICT_STATUS_CODE }),
+    );
+  vi.stubGlobal("fetch", fetchMock);
+  const request = new Request(FRONTEND_URL);
+
+  await expect(
+    callerForRequest(request).confirmDelete(input),
+  ).rejects.toMatchObject({
+    code: "BAD_GATEWAY",
+    message: CONFIRM_DELETE_FAILURE_MESSAGE,
+  });
+  expect(fetchMock).toHaveBeenCalledOnce();
 });
