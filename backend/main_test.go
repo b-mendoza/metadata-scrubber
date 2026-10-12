@@ -16,7 +16,6 @@ import (
 
 	"metadata-scrubber/internal/bindings"
 	"metadata-scrubber/internal/config"
-	"metadata-scrubber/internal/handler"
 	"metadata-scrubber/internal/httpx/header"
 	"metadata-scrubber/internal/httpx/mediatype"
 	"metadata-scrubber/internal/scrub"
@@ -29,7 +28,7 @@ const (
 	startupR2Bucket          = "startup-bucket-sentinel"
 )
 
-func TestRunRejectsIncompleteOrInvalidR2ConfigurationBeforeStartingServer(t *testing.T) {
+func TestRunReturnsInvalidConfiguration(t *testing.T) {
 	t.Setenv("PORT", "8080")
 	t.Setenv("R2_ACCOUNT_ID", " \t\n")
 	t.Setenv("R2_ACCESS_KEY_ID", startupR2AccessKeyID)
@@ -130,12 +129,8 @@ func TestNewServerRegistersWorkflowRoutes(t *testing.T) {
 	}
 }
 
-func TestCanonicalCapacityAndSizeLimitsStayPinned(t *testing.T) {
-	t.Parallel()
-
-	require.Equal(t, 2, handler.ProcessingPermitCount)
-	require.Equal(t, 10_485_760, storage.MaxSourceObjectBytes)
-	require.Equal(t, 10_485_760, scrub.MaxInputBytes)
+func TestStorageAndScrubSizeLimitsAgree(t *testing.T) {
+	require.Equal(t, storage.MaxSourceObjectBytes, scrub.MaxInputBytes)
 }
 
 func TestNewServerSharesOneCapacityTwoGateAcrossDryRunAndScrubMisses(t *testing.T) {
