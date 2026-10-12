@@ -3,7 +3,6 @@ name: Backend Quality Checks
 on:
   pull_request:
     paths:
-      - .github/actions/backend/**
       - .github/workflows/backend-checks.yaml
       - backend/**
 
@@ -11,7 +10,6 @@ on:
     branches:
       - main
     paths:
-      - .github/actions/backend/**
       - .github/workflows/backend-checks.yaml
       - backend/**
 
@@ -22,42 +20,34 @@ concurrency:
 permissions:
   contents: read
 
+defaults:
+  run:
+    working-directory: backend
+
 jobs:
   quality-checks:
-    name: Lint, vet and test the backend
+    name: Lint, test, and scan the backend
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
 
-      - name: "Setup Go and Task"
-        uses: $/.github/actions/backend/setup-env
+      - uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
+        with:
+          go-version-file: backend/go.mod
+          cache-dependency-path: backend/go.sum
 
-      - name: "Run linting, formatting and tests"
-        uses: $/.github/actions/backend/quality-checks
+      - uses: arduino/setup-task@c0bc642852239c2689f73f4ea6459c29405f3c52 # v3.0.0
+        with:
+          version: 3.x
+          # Avoids GitHub API rate limits when resolving the Task release.
+          repo-token: ${{ github.token }}
 
-      - name: Verify modules
-        working-directory: ./backend
-        run: go mod verify
-
-      - name: Check module files are tidy
-        working-directory: ./backend
-        run: |
+      - run: task lint
+      - run: task test
+      - run: go mod verify
+      - run: |
           go mod tidy
           git diff --exit-code -- go.mod go.sum
-
-  security:
-    name: Run backend security scan
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-        with:
-          persist-credentials: false
-
-      - name: "Setup Go and Task"
-        uses: $/.github/actions/backend/setup-env
-
-      - name: Run vulnerability scan
-        working-directory: ./backend
-        run: task security
+      - run: task security
