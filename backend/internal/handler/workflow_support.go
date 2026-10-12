@@ -104,7 +104,9 @@ func (handler *Handler) writeAdmissionFailure(w http.ResponseWriter, request *ht
 		}
 		return
 	}
-	handler.writeUnexpectedFailure(w, request, err, "could not start PDF processing")
+	if writeErr := httpx.WriteError(w, http.StatusRequestTimeout, cancellationMessage); writeErr != nil {
+		handler.logger.ErrorContext(request.Context(), "could not write JSON response", "error", writeErr)
+	}
 }
 
 func (handler *Handler) writeUnexpectedFailure(w http.ResponseWriter, request *http.Request, err error, internalMessage string) {
