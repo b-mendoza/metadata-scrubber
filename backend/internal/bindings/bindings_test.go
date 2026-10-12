@@ -23,6 +23,7 @@ func TestInjectProvidesExactBindingsToNextHandlerAndPreservesContextValues(t *te
 	wantBindings := bindings.Bindings{
 		Env:     config.Config{Port: 3000},
 		Storage: storage.NewFake(),
+		Events:  bindings.DiscardWorkflowEvents{},
 	}
 
 	request := httptest.NewRequest(http.MethodGet, "/", http.NoBody)
