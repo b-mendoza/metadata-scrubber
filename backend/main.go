@@ -12,12 +12,15 @@ import (
 	"syscall"
 	"time"
 
+	"go.opentelemetry.io/otel"
+
 	"metadata-scrubber/internal/bindings"
 	"metadata-scrubber/internal/config"
 	"metadata-scrubber/internal/handler"
 	"metadata-scrubber/internal/httpx"
 	"metadata-scrubber/internal/scrub"
 	"metadata-scrubber/internal/storage"
+	"metadata-scrubber/internal/telemetry"
 )
 
 const (
@@ -34,20 +37,44 @@ func main() {
 	err := run(ctx, logger)
 	stop()
 	if err != nil {
-		logger.Error("metadata-scrubber stopped", "error", err)
 		os.Exit(1)
 	}
 }
 
-// run returns the first ready listener result or the result of graceful shutdown after cancellation.
+// run constructs clients and closes telemetry after the HTTP server stops.
 func run(ctx context.Context, logger *slog.Logger) error {
 	cfg, err := config.Load()
 	if err != nil {
+		logger.Error("metadata-scrubber stopped", "error", err)
 		return err
 	}
 
-	server := newServer(cfg, storage.NewR2(cfg), logger)
+	if cfg.PostHogProjectToken != "" {
+		// Export failures stay local so a failed export cannot create another exported log.
+		otel.SetErrorHandler(otel.ErrorHandlerFunc(func(err error) {
+			logger.Warn("could not export PostHog logs", "error", err)
+		}))
+	}
+	runtime, err := telemetry.New(ctx, cfg.PostHogProjectToken, logger)
+	if err != nil {
+		logger.Error("metadata-scrubber stopped", "error", err)
+		return err
+	}
+	slog.SetDefault(runtime.Logger)
+	server := newServer(cfg, storage.NewR2(cfg), runtime.Logger, runtime.Events)
+	err = runHTTPServer(ctx, server, runtime.Logger)
+	if err != nil {
+		runtime.Logger.Error("metadata-scrubber stopped", "error", err)
+	}
+	slog.SetDefault(logger)
+	shutdownErr := runtime.Shutdown()
+	if shutdownErr != nil {
+		logger.Error("could not close PostHog telemetry", "error", shutdownErr)
+	}
+	return errors.Join(err, shutdownErr)
+}
 
+func runHTTPServer(ctx context.Context, server *http.Server, logger *slog.Logger) error {
 	serverErr := make(chan error, 1)
 	go serveHTTPServer(server, logger, serverErr)
 
@@ -73,7 +100,7 @@ func serveHTTPServer(server *http.Server, logger *slog.Logger, serverErr chan er
 	serverErr <- err
 }
 
-func newServer(cfg config.Config, objectStorage storage.Storage, logger *slog.Logger) *http.Server {
+func newServer(cfg config.Config, objectStorage storage.Storage, logger *slog.Logger, events bindings.WorkflowEvents) *http.Server {
 	mux := http.NewServeMux()
 	workflow := handler.New(logger)
 
@@ -87,10 +114,11 @@ func newServer(cfg config.Config, objectStorage storage.Storage, logger *slog.Lo
 
 	return &http.Server{
 		Addr: fmt.Sprintf(":%d", cfg.Port),
-		Handler: httpx.RequestLogger(logger)(httpx.CORS(bindings.Inject(bindings.Bindings{
+		Handler: bindings.Inject(bindings.Bindings{
 			Env:     cfg,
 			Storage: objectStorage,
-		})(mux))),
+			Events:  events,
+		})(httpx.RequestLogger(logger)(httpx.CORS(mux))),
 		ReadHeaderTimeout: readHeaderTimeout,
 	}
 }
