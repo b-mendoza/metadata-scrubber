@@ -4,7 +4,6 @@ import (
 	"errors"
 	"net/http"
 
-	"metadata-scrubber/internal/bindings"
 	"metadata-scrubber/internal/httpx"
 	"metadata-scrubber/internal/storage"
 )
@@ -22,19 +21,18 @@ func (handler *Handler) DeleteFlow(w http.ResponseWriter, request *http.Request)
 		}
 		return
 	}
-	objectStorage := handler.storageFromRequest(w, request)
-	if objectStorage == nil {
+	requestBindings := handler.bindingsFromRequest(w, request)
+	if requestBindings.Storage == nil {
 		return
 	}
 
-	if !handler.deleteStoredFlow(w, request, objectStorage, fileID) {
+	if !handler.deleteStoredFlow(w, request, requestBindings.Storage, fileID) {
 		return
 	}
 	if err := writeJSON(w, http.StatusOK, deleteResponse{Status: "deleted"}); err != nil {
 		handler.logger.ErrorContext(request.Context(), "could not write JSON response", "error", err)
 		return
 	}
-	requestBindings, _ := bindings.FromContext(request.Context())
 	requestBindings.Events(request.Context(), "file deleted")
 }
 

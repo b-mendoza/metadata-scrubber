@@ -4,7 +4,6 @@ import (
 	"net/http"
 	"time"
 
-	"metadata-scrubber/internal/bindings"
 	"metadata-scrubber/internal/httpx"
 	"metadata-scrubber/internal/storage"
 )
@@ -19,12 +18,12 @@ func (handler *Handler) DownloadGrant(w http.ResponseWriter, request *http.Reque
 	if !ok {
 		return
 	}
-	objectStorage := handler.storageFromRequest(w, request)
-	if objectStorage == nil {
+	requestBindings := handler.bindingsFromRequest(w, request)
+	if requestBindings.Storage == nil {
 		return
 	}
 
-	exists, err := objectStorage.SanitizedExists(request.Context(), fileID, input.ETag)
+	exists, err := requestBindings.Storage.SanitizedExists(request.Context(), fileID, input.ETag)
 	if err != nil {
 		handler.writeUnexpectedFailure(w, request, err, "could not check scrubbed file")
 		return
@@ -35,7 +34,7 @@ func (handler *Handler) DownloadGrant(w http.ResponseWriter, request *http.Reque
 	}
 
 	operationTime := handler.now().UTC().Truncate(time.Second)
-	grant, err := objectStorage.PresignSanitizedDownload(
+	grant, err := requestBindings.Storage.PresignSanitizedDownload(
 		request.Context(),
 		fileID,
 		input.ETag,
@@ -53,7 +52,6 @@ func (handler *Handler) DownloadGrant(w http.ResponseWriter, request *http.Reque
 		handler.logger.ErrorContext(request.Context(), "could not write JSON response", "error", err)
 		return
 	}
-	requestBindings, _ := bindings.FromContext(request.Context())
 	requestBindings.Events(request.Context(), "download grant refreshed")
 }
 
