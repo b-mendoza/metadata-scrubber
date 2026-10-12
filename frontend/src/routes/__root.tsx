@@ -73,6 +73,11 @@ export const Route = createRootRouteWithContext<RouterContext>()({
 export function RootComponent() {
   const { apiKey, options } = Route.useLoaderData();
 
+  // Development builds do not send analytics to the PostHog project.
+  if (import.meta.env.DEV) {
+    return <Outlet />;
+  }
+
   return (
     <PostHogProvider apiKey={apiKey} options={options}>
       <Outlet />
