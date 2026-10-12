@@ -1,8 +1,7 @@
 import AwsS3 from "@uppy/aws-s3";
 import Uppy from "@uppy/core";
-import { useUppyEvent } from "@uppy/react";
-import Dashboard from "@uppy/react/dashboard";
-import { useEffect, useState } from "react";
+import Dashboard from "@uppy/dashboard";
+import { useEffect, useEffectEvent, useRef } from "react";
 import * as z from "zod";
 
 import {
@@ -31,13 +30,19 @@ interface FileUploaderProps {
   onUploadComplete: (result: { storageKey: string }) => void;
 }
 
-const useUppyInstance = (
-  createUpload: FileUploaderProps["createUpload"],
-  maxFileSizeBytes: FileUploaderProps["maxFileSizeBytes"],
-) => {
-  // The Uppy instance captures the initial `createUpload` and `maxFileSizeBytes` values.
-  // A caller must remount this component to apply changed values.
-  const [uppy] = useState(() => {
+const useUppyDashboard = (props: FileUploaderProps) => {
+  const containerRef = useRef<HTMLDivElement>(null);
+  const getInitialProps = useEffectEvent(() => props);
+  const onComplete = useEffectEvent(props.onUploadComplete);
+
+  useEffect(() => {
+    const container = containerRef.current;
+    if (container == null) {
+      return;
+    }
+
+    // Remount to change the captured `createUpload` and `maxFileSizeBytes` values.
+    const { createUpload, maxFileSizeBytes } = getInitialProps();
     const instance = new Uppy({
       restrictions: {
         allowedFileTypes: [UPLOADABLE_MIME_TYPES.PDF],
@@ -72,45 +77,40 @@ const useUppyInstance = (
       },
     });
 
-    return instance;
-  });
+    const maxFileSizeMebibytes = fileSizeFormatter.format(
+      maxFileSizeBytes / BYTES_PER_MEBIBYTE,
+    );
+    instance.use(Dashboard, {
+      id: "Dashboard",
+      inline: true,
+      target: container,
+      height: 400,
+      hideProgressAfterFinish: true,
+      note: `Upload exactly one PDF file (max ${maxFileSizeMebibytes} MiB)`,
+    });
+    instance.on("complete", (uploadResult) => {
+      const [successfulFile] = uploadResult.successful ?? [];
+      if (successfulFile == null) {
+        return;
+      }
 
-  useEffect(() => {
+      const uploadedFileMetadata = uploadedFileMetadataSchema.parse({
+        storageKey: successfulFile.meta["storageKey"],
+      });
+
+      onComplete(uploadedFileMetadata);
+    });
+
     return () => {
-      uppy.destroy();
+      instance.destroy();
     };
-  }, [uppy]);
+  }, []);
 
-  return uppy;
+  return containerRef;
 };
 
 export const FileUploader = (props: FileUploaderProps) => {
-  const { createUpload, maxFileSizeBytes, onUploadComplete } = props;
-  const uppy = useUppyInstance(createUpload, maxFileSizeBytes);
+  const containerRef = useUppyDashboard(props);
 
-  useUppyEvent(uppy, "complete", (uploadResult) => {
-    const [successfulFile] = uploadResult.successful ?? [];
-    if (successfulFile == null) {
-      return;
-    }
-
-    const uploadedFileMetadata = uploadedFileMetadataSchema.parse({
-      storageKey: successfulFile.meta["storageKey"],
-    });
-
-    onUploadComplete(uploadedFileMetadata);
-  });
-
-  const maxFileSizeMebibytes = fileSizeFormatter.format(
-    maxFileSizeBytes / BYTES_PER_MEBIBYTE,
-  );
-
-  return (
-    <Dashboard
-      height={400}
-      hideProgressAfterFinish
-      note={`Upload exactly one PDF file (max ${maxFileSizeMebibytes} MiB)`}
-      uppy={uppy}
-    />
-  );
+  return <div ref={containerRef} />;
 };
