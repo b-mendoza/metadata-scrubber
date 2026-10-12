@@ -21,8 +21,7 @@ afterEach(() => {
   vi.unstubAllEnvs();
 });
 
-test("a production build starts browser analytics with the loaded configuration", () => {
-  vi.stubEnv("DEV", false);
+function setupRoot() {
   const config: ReturnType<typeof getPostHogBrowserConfig> = {
     apiKey: "phc_test_public_token",
     options: {
@@ -37,6 +36,12 @@ test("a production build starts browser analytics with the loaded configuration"
   };
   vi.spyOn(Route, "useLoaderData").mockReturnValue(config);
   const init = vi.spyOn(posthog, "init").mockReturnValue(posthog);
+  return { config, init };
+}
+
+test("a production build starts browser analytics with the loaded configuration", () => {
+  vi.stubEnv("DEV", false);
+  const { config, init } = setupRoot();
 
   renderComponent(<RootComponent />);
 
@@ -48,20 +53,7 @@ test("a production build starts browser analytics with the loaded configuration"
 
 test("a development build renders the root without starting analytics", () => {
   vi.stubEnv("DEV", true);
-  const config: ReturnType<typeof getPostHogBrowserConfig> = {
-    apiKey: "phc_test_public_token",
-    options: {
-      defaults: "2026-08-30",
-      api_host: "/relay",
-      ui_host: "https://us.posthog.com",
-      capture_exceptions: true,
-      capture_performance: { web_vitals: true },
-      disable_session_recording: true,
-      person_profiles: "identified_only",
-    },
-  };
-  vi.spyOn(Route, "useLoaderData").mockReturnValue(config);
-  const init = vi.spyOn(posthog, "init").mockReturnValue(posthog);
+  const { init } = setupRoot();
 
   renderComponent(<RootComponent />);
 
@@ -73,20 +65,7 @@ test("a development build renders the root without starting analytics", () => {
 
 test("SSR of a production build renders the root without initializing analytics", () => {
   vi.stubEnv("DEV", false);
-  const config: ReturnType<typeof getPostHogBrowserConfig> = {
-    apiKey: "phc_test_public_token",
-    options: {
-      defaults: "2026-08-30",
-      api_host: "/relay",
-      ui_host: "https://us.posthog.com",
-      capture_exceptions: true,
-      capture_performance: { web_vitals: true },
-      disable_session_recording: true,
-      person_profiles: "identified_only",
-    },
-  };
-  vi.spyOn(Route, "useLoaderData").mockReturnValue(config);
-  const init = vi.spyOn(posthog, "init").mockReturnValue(posthog);
+  const { init } = setupRoot();
 
   const view = renderToString(<RootComponent />);
 
