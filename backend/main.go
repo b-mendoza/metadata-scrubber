@@ -58,13 +58,11 @@ func run(ctx context.Context, logger *slog.Logger) error {
 		logger.Error("metadata-scrubber stopped", "error", err)
 		return err
 	}
-	slog.SetDefault(runtime.Logger)
 	server := newServer(cfg, storage.NewR2(cfg), runtime.Logger, runtime.Events)
 	err = runHTTPServer(ctx, server, runtime.Logger)
 	if err != nil {
 		runtime.Logger.Error("metadata-scrubber stopped", "error", err)
 	}
-	slog.SetDefault(logger)
 	shutdownErr := runtime.Shutdown()
 	if shutdownErr != nil {
 		logger.Error("could not close PostHog telemetry", "error", shutdownErr)
