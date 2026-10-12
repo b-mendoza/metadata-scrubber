@@ -27,8 +27,9 @@ type Config struct {
 	R2SecretAccessKey string `env:"R2_SECRET_ACCESS_KEY" validate:"notblank"`
 	// R2Bucket is the Cloudflare R2 bucket used by the backend.
 	R2Bucket string `env:"R2_BUCKET" validate:"notblank"`
-	// PostHogProjectToken enables telemetry when it is not empty.
-	PostHogProjectToken string `env:"POSTHOG_PROJECT_TOKEN"`
+	// PostHogProjectToken is required. It authenticates PostHog events,
+	// error tracking, and logs.
+	PostHogProjectToken string `env:"POSTHOG_PROJECT_TOKEN" validate:"notblank,startswith=phc_"`
 }
 
 // R2Endpoint is the Cloudflare R2 endpoint for the configured account.
