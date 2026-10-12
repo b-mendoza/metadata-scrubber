@@ -6,16 +6,16 @@ The backend is a Go HTTP service. It grants direct uploads to private storage. I
 
 ## Internal package layout
 
-| Package    | Responsibility                                                                                                                                                                                                                                                                              |
-| ---------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `scrub`    | `scrub` parses and validates PDF bytes. It inspects metadata and removes supported metadata. It enforces the 10 MiB input limit.                                                                                                                                                            |
-| `sniff`    | `sniff` applies the strict offset-zero `%PDF-` byte policy to select PDF intake candidates. This check does not establish structural validity.                                                                                                                                              |
-| `handler`  | `handler` provides the health and file-workflow HTTP handlers. It creates upload grants. It handles workflow configuration, dry-run inspection, revision-bound scrubbing, download-grant refresh, and confirmed deletion. It applies strict JSON validation and returns safe public errors. |
-| `httpx`    | `httpx` provides HTTP helpers that handlers share. The helpers handle CORS and safe request logging. The helpers return error responses. The `httpx/header` and `httpx/mediatype` subpackages handle headers and media types.                                                               |
-| `bindings` | `bindings` provides middleware that attaches configuration, storage, and the narrow workflow-event port to each request context. It validates the anonymous analytics headers.                                                                                                                                                                                |
-| `telemetry` | `telemetry` connects workflow outcomes, slog exceptions, and OpenTelemetry logs to PostHog US Cloud. It owns the clients and bounds shutdown waits. |
-| `config`   | `config` reads service, Cloudflare R2, and PostHog configuration from the environment. It validates the configuration before startup.                                                                                                                                                      |
-| `storage`  | `storage` defines provider-neutral upload, workflow, and lifecycle ports. It includes a synchronized in-memory fake and a Cloudflare R2 adapter. Source objects are private. The R2 adapter checks exact source existence.                                                                  |
+| Package     | Responsibility                                                                                                                                                                                                                                                                              |
+| ----------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `scrub`     | `scrub` parses and validates PDF bytes. It inspects metadata and removes supported metadata. It enforces the 10 MiB input limit.                                                                                                                                                            |
+| `sniff`     | `sniff` applies the strict offset-zero `%PDF-` byte policy to select PDF intake candidates. This check does not establish structural validity.                                                                                                                                              |
+| `handler`   | `handler` provides the health and file-workflow HTTP handlers. It creates upload grants. It handles workflow configuration, dry-run inspection, revision-bound scrubbing, download-grant refresh, and confirmed deletion. It applies strict JSON validation and returns safe public errors. |
+| `httpx`     | `httpx` provides HTTP helpers that handlers share. The helpers handle CORS and safe request logging. The helpers return error responses. The `httpx/header` and `httpx/mediatype` subpackages handle headers and media types.                                                               |
+| `bindings`  | `bindings` provides middleware that attaches configuration, storage, and the narrow workflow-event port to each request context. It validates the anonymous analytics headers.                                                                                                              |
+| `telemetry` | `telemetry` connects workflow outcomes, slog exceptions, and OpenTelemetry logs to PostHog US Cloud. It owns the clients and bounds shutdown waits.                                                                                                                                         |
+| `config`    | `config` reads service, Cloudflare R2, and PostHog configuration from the environment. It validates the configuration before startup.                                                                                                                                                       |
+| `storage`   | `storage` defines provider-neutral upload, workflow, and lifecycle ports. It includes a synchronized in-memory fake and a Cloudflare R2 adapter. Source objects are private. The R2 adapter checks exact source existence.                                                                  |
 
 ## Tooling layout
 
@@ -82,13 +82,13 @@ Request bindings accept `X-POSTHOG-DISTINCT-ID` and `X-POSTHOG-SESSION-ID` only 
 
 Each successful workflow response enqueues one event:
 
-| Outcome | Event |
-| ------- | ----- |
-| Upload grant creation | `upload grant created` |
-| Dry-run completion | `dry run completed` |
-| Scrub completion, including a cache hit | `file scrubbed` |
-| Download grant refresh | `download grant refreshed` |
-| Confirmed deletion, including an already-empty flow | `file deleted` |
+| Outcome                                             | Event                      |
+| --------------------------------------------------- | -------------------------- |
+| Upload grant creation                               | `upload grant created`     |
+| Dry-run completion                                  | `dry run completed`        |
+| Scrub completion, including a cache hit             | `file scrubbed`            |
+| Download grant refresh                              | `download grant refreshed` |
+| Confirmed deletion, including an already-empty flow | `file deleted`             |
 
 Workflow events use the valid forwarded distinct ID. They set `$process_person_profile` to `false`. They set `$session_id` only when its header is valid. They contain no other application properties. An absent distinct ID skips the event. A storage, processing, or response-write failure sends no completed workflow event. Event queue failures use local logging and do not change the workflow response.
 
