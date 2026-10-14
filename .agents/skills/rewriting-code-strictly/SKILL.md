@@ -9,15 +9,15 @@ Strict-rewrite orchestrator for behavior-preserving Python, TypeScript/JavaScrip
 
 ## Inputs
 
-| Input | Required | Example |
-| --- | --- | --- |
-| `TARGET_CODE` | Yes | `src/api/users.py` or pasted code |
-| `LANGUAGE` | No | `python`, `typescript`, `go` |
-| `USER_GOAL` | No | `"make this strict and easier to maintain"` |
-| `VALIDATION_COMMAND` | No | `mypy src/api/users.py` |
-| `SCOPE_LIMITS` | No | `"do not add dependencies"` |
-| `REFERENCE_NEED` | No | `"Pydantic strict mode"` |
-| `EXTERNAL_FETCH_APPROVAL` | No | `"approved for Pydantic docs only"` |
+| Input                     | Required | Example                                     |
+| ------------------------- | -------- | ------------------------------------------- |
+| `TARGET_CODE`             | Yes      | `src/api/users.py` or pasted code           |
+| `LANGUAGE`                | No       | `python`, `typescript`, `go`                |
+| `USER_GOAL`               | No       | `"make this strict and easier to maintain"` |
+| `VALIDATION_COMMAND`      | No       | `mypy src/api/users.py`                     |
+| `SCOPE_LIMITS`            | No       | `"do not add dependencies"`                 |
+| `REFERENCE_NEED`          | No       | `"Pydantic strict mode"`                    |
+| `EXTERNAL_FETCH_APPROVAL` | No       | `"approved for Pydantic docs only"`         |
 
 Missing `TARGET_CODE` or unclear language → one focused question before dispatch.
 
@@ -31,35 +31,35 @@ Stops (`NO_CHANGE`, `NEEDS_CLARIFICATION`, `BLOCKED`, `ERROR`): status, smallest
 
 Mermaid: [`flow-diagram.md`](./flow-diagram.md). Table: [`state-machine.md`](./state-machine.md).
 
-| Group | Result |
-| --- | --- |
-| Intake gates | Target, language, scope; derive `MUTATION_LIMITS` |
-| Baseline | Mapper; `NO_CHANGE_CANDIDATE` continues (not a stop) |
-| Strategy | Strategist; only `NO_CHANGE` stops before edits |
-| Gates + approval | Check gates; `AskApproval` **resumes implement on approve** |
-| Implement / review | Mutate, review; ≤2 repairs re-enter implement |
-| Terminals | `PASS`, `NO_CHANGE`, `NEEDS_CLARIFICATION`, `BLOCKED`, `ERROR` |
+| Group              | Result                                                         |
+| ------------------ | -------------------------------------------------------------- |
+| Intake gates       | Target, language, scope; derive `MUTATION_LIMITS`              |
+| Baseline           | Mapper; `NO_CHANGE_CANDIDATE` continues (not a stop)           |
+| Strategy           | Strategist; only `NO_CHANGE` stops before edits                |
+| Gates + approval   | Check gates; `AskApproval` **resumes implement on approve**    |
+| Implement / review | Mutate, review; ≤2 repairs re-enter implement                  |
+| Terminals          | `PASS`, `NO_CHANGE`, `NEEDS_CLARIFICATION`, `BLOCKED`, `ERROR` |
 
 ## Pipeline Overview
 
-| Phase | States | Execution | Output |
-| --- | --- | --- | --- |
-| Intake | `Intake`…`DeriveLimits` | Inline; personality | Packet + limits |
-| Baseline | `DispatchBaseline`/`RouteBaseline` | `strict-baseline-mapper` | `STRICT_BASELINE` |
-| Strategy | `DispatchStrategy`/`RouteStrategy` | Strategist + one playbook | `STRICT_STRATEGY` |
-| Gates | `CheckGates`/`GateExpansion`/`AskApproval` | Inline | Proceed, block, or resume |
-| Implement | `DispatchImplement`/`RouteImplement` | `strict-rewrite-implementer` | `STRICT_IMPLEMENTATION` |
-| Review | `DispatchReview`…`GateFixCycles` | Reviewer; repair → implement | `STRICT_REVIEW` |
-| Handoff | `Handoff`→`TerminalPass` | Inline | Final response |
+| Phase     | States                                     | Execution                    | Output                    |
+| --------- | ------------------------------------------ | ---------------------------- | ------------------------- |
+| Intake    | `Intake`…`DeriveLimits`                    | Inline; personality          | Packet + limits           |
+| Baseline  | `DispatchBaseline`/`RouteBaseline`         | `strict-baseline-mapper`     | `STRICT_BASELINE`         |
+| Strategy  | `DispatchStrategy`/`RouteStrategy`         | Strategist + one playbook    | `STRICT_STRATEGY`         |
+| Gates     | `CheckGates`/`GateExpansion`/`AskApproval` | Inline                       | Proceed, block, or resume |
+| Implement | `DispatchImplement`/`RouteImplement`       | `strict-rewrite-implementer` | `STRICT_IMPLEMENTATION`   |
+| Review    | `DispatchReview`…`GateFixCycles`           | Reviewer; repair → implement | `STRICT_REVIEW`           |
+| Handoff   | `Handoff`→`TerminalPass`                   | Inline                       | Final response            |
 
 ## Subagent Registry
 
-| Subagent | Path | Purpose |
-| --- | --- | --- |
-| `strict-baseline-mapper` | `./subagents/strict-baseline-mapper.md` | Read-only baseline map |
-| `strict-rewrite-strategist` | `./subagents/strict-rewrite-strategist.md` | Playbook, optional fetch, minimal plan |
-| `strict-rewrite-implementer` | `./subagents/strict-rewrite-implementer.md` | Apply rewrite; run authorized checks |
-| `strict-rewrite-reviewer` | `./subagents/strict-rewrite-reviewer.md` | Independent review verdict |
+| Subagent                     | Path                                        | Purpose                                |
+| ---------------------------- | ------------------------------------------- | -------------------------------------- |
+| `strict-baseline-mapper`     | `./subagents/strict-baseline-mapper.md`     | Read-only baseline map                 |
+| `strict-rewrite-strategist`  | `./subagents/strict-rewrite-strategist.md`  | Playbook, optional fetch, minimal plan |
+| `strict-rewrite-implementer` | `./subagents/strict-rewrite-implementer.md` | Apply rewrite; run authorized checks   |
+| `strict-rewrite-reviewer`    | `./subagents/strict-rewrite-reviewer.md`    | Independent review verdict             |
 
 Read a subagent only when dispatching it.
 
@@ -67,14 +67,14 @@ Read a subagent only when dispatching it.
 
 Load only what the current decision needs. Paths here are relative to this `SKILL.md`; later files use their own relative paths.
 
-| Need | Load |
-| --- | --- |
-| Posture | `./references/personality.md` |
-| Python / TS/JS / Go defaults | matching `./references/*-playbook.md` |
-| External URL map | `./references/external-sources.md` (orchestrator or strategist) |
-| Examples | `./references/orchestration-examples.md` |
-| State machine | `./flow-diagram.md`, `./state-machine.md` |
-| Subagent contract | `./subagents/<name>.md` at dispatch |
+| Need                         | Load                                                            |
+| ---------------------------- | --------------------------------------------------------------- |
+| Posture                      | `./references/personality.md`                                   |
+| Python / TS/JS / Go defaults | matching `./references/*-playbook.md`                           |
+| External URL map             | `./references/external-sources.md` (orchestrator or strategist) |
+| Examples                     | `./references/orchestration-examples.md`                        |
+| State machine                | `./flow-diagram.md`, `./state-machine.md`                       |
+| Subagent contract            | `./subagents/<name>.md` at dispatch                             |
 
 One playbook after language is known. Playbooks do not chain-load `external-sources.md`; the map and strategist own that hop. Pass package-root-relative paths at dispatch; subagents may use `../references/...`.
 
@@ -86,13 +86,13 @@ Derive in `DeriveLimits`. Unless `SCOPE_LIMITS` expands them: write only in `TAR
 
 ## Critical Output Gates
 
-| Gate | Evidence |
-| --- | --- |
-| `G_STRICT_STRATEGY_APPROVAL` | Status, non-goals, approval items, validation plan |
-| `G_MUTATION_SCOPE` | Limits, planned/actual paths, expansions |
-| `G_IMPLEMENTATION_VALIDATION` | Commands, results, unavailable/unapproved notes |
-| `G_STRICT_REVIEW_PASS` | `STRICT_REVIEW: PASS` or blocked findings after repairs |
-| `G_FINAL_HANDOFF_EVIDENCE` | Gate verdicts, files, validation, references, risks |
+| Gate                          | Evidence                                                |
+| ----------------------------- | ------------------------------------------------------- |
+| `G_STRICT_STRATEGY_APPROVAL`  | Status, non-goals, approval items, validation plan      |
+| `G_MUTATION_SCOPE`            | Limits, planned/actual paths, expansions                |
+| `G_IMPLEMENTATION_VALIDATION` | Commands, results, unavailable/unapproved notes         |
+| `G_STRICT_REVIEW_PASS`        | `STRICT_REVIEW: PASS` or blocked findings after repairs |
+| `G_FINAL_HANDOFF_EVIDENCE`    | Gate verdicts, files, validation, references, risks     |
 
 ## Core Decision Rule
 

@@ -11,15 +11,15 @@ Review the changed files against the baseline, strategy, and implementation repo
 
 ## Inputs
 
-| Input | Required | Example |
-| --- | --- | --- |
-| `TARGET_CODE` | Yes | `src/api/users.py` |
-| `LANGUAGE` | Yes | `python`, `typescript`, `go` |
-| `SCOPE_LIMITS` | No | `"no new dependencies"` |
-| `MUTATION_LIMITS` | Yes | `Write only inside TARGET_CODE and direct compilation consequences` |
-| `STRICT_BASELINE` | Yes | Output from `strict-baseline-mapper` |
-| `STRICT_STRATEGY` | Yes | Output from `strict-rewrite-strategist` |
-| `STRICT_IMPLEMENTATION` | Yes | Output from `strict-rewrite-implementer` |
+| Input                   | Required | Example                                                             |
+| ----------------------- | -------- | ------------------------------------------------------------------- |
+| `TARGET_CODE`           | Yes      | `src/api/users.py`                                                  |
+| `LANGUAGE`              | Yes      | `python`, `typescript`, `go`                                        |
+| `SCOPE_LIMITS`          | No       | `"no new dependencies"`                                             |
+| `MUTATION_LIMITS`       | Yes      | `Write only inside TARGET_CODE and direct compilation consequences` |
+| `STRICT_BASELINE`       | Yes      | Output from `strict-baseline-mapper`                                |
+| `STRICT_STRATEGY`       | Yes      | Output from `strict-rewrite-strategist`                             |
+| `STRICT_IMPLEMENTATION` | Yes      | Output from `strict-rewrite-implementer`                            |
 
 ## How to Review
 

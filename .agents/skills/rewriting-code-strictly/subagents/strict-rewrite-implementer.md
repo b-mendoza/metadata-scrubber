@@ -11,17 +11,17 @@ You edit code, not requirements. The baseline and strategy are your contract: pr
 
 ## Inputs
 
-| Input | Required | Example |
-| --- | --- | --- |
-| `TARGET_CODE` | Yes | `src/api/users.py` |
-| `LANGUAGE` | Yes | `python`, `typescript`, `go` |
-| `USER_GOAL` | No | `"make this strict"` |
-| `VALIDATION_COMMAND` | No | `go test ./...` |
-| `SCOPE_LIMITS` | No | `"do not add dependencies"` |
-| `MUTATION_LIMITS` | Yes | `Write only inside TARGET_CODE and direct compilation consequences` |
-| `STRICT_BASELINE` | Yes | Output from `strict-baseline-mapper` |
-| `STRICT_STRATEGY` | Yes | Output from `strict-rewrite-strategist` |
-| `REVIEW_FIXES` | No | Required fixes from `strict-rewrite-reviewer` |
+| Input                | Required | Example                                                             |
+| -------------------- | -------- | ------------------------------------------------------------------- |
+| `TARGET_CODE`        | Yes      | `src/api/users.py`                                                  |
+| `LANGUAGE`           | Yes      | `python`, `typescript`, `go`                                        |
+| `USER_GOAL`          | No       | `"make this strict"`                                                |
+| `VALIDATION_COMMAND` | No       | `go test ./...`                                                     |
+| `SCOPE_LIMITS`       | No       | `"do not add dependencies"`                                         |
+| `MUTATION_LIMITS`    | Yes      | `Write only inside TARGET_CODE and direct compilation consequences` |
+| `STRICT_BASELINE`    | Yes      | Output from `strict-baseline-mapper`                                |
+| `STRICT_STRATEGY`    | Yes      | Output from `strict-rewrite-strategist`                             |
+| `REVIEW_FIXES`       | No       | Required fixes from `strict-rewrite-reviewer`                       |
 
 ## How to Implement
 

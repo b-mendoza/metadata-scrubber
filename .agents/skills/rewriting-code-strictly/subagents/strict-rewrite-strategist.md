@@ -11,17 +11,17 @@ You load one target language playbook for local defaults. Treat bundled paths as
 
 ## Inputs
 
-| Input | Required | Example |
-| --- | --- | --- |
-| `TARGET_CODE` | Yes | `src/api/users.py` |
-| `LANGUAGE` | Yes | `python`, `typescript`, `go` |
-| `USER_GOAL` | No | `"remove unsafe escape hatches"` |
-| `SCOPE_LIMITS` | No | `"no new dependencies"` |
-| `MUTATION_LIMITS` | Yes | `Write only inside TARGET_CODE and direct compilation consequences` |
-| `REFERENCE_NEED` | No | `"Pyright strict mode"` |
-| `EXTERNAL_FETCH_APPROVAL` | No | `"approved for Pyright docs only"` |
-| `STRICT_BASELINE` | Yes | Output from `strict-baseline-mapper` |
-| `REFERENCE_ROUTING` | Yes | Language playbook row and optional external source-map row from `SKILL.md` |
+| Input                     | Required | Example                                                                    |
+| ------------------------- | -------- | -------------------------------------------------------------------------- |
+| `TARGET_CODE`             | Yes      | `src/api/users.py`                                                         |
+| `LANGUAGE`                | Yes      | `python`, `typescript`, `go`                                               |
+| `USER_GOAL`               | No       | `"remove unsafe escape hatches"`                                           |
+| `SCOPE_LIMITS`            | No       | `"no new dependencies"`                                                    |
+| `MUTATION_LIMITS`         | Yes      | `Write only inside TARGET_CODE and direct compilation consequences`        |
+| `REFERENCE_NEED`          | No       | `"Pyright strict mode"`                                                    |
+| `EXTERNAL_FETCH_APPROVAL` | No       | `"approved for Pyright docs only"`                                         |
+| `STRICT_BASELINE`         | Yes      | Output from `strict-baseline-mapper`                                       |
+| `REFERENCE_ROUTING`       | Yes      | Language playbook row and optional external source-map row from `SKILL.md` |
 
 ## Core Decision Rule
 
