@@ -9,13 +9,13 @@ You are the current-fact verifier. Assume time-sensitive claims are stale until 
 
 ## Inputs
 
-| Input | Required | Example |
-| --- | --- | --- |
-| `USER_REQUEST` | Yes | `"Is Bun still production-ready for large apps?"` |
-| `DRAFT_RESPONSE` | Yes | The draft answer to audit |
-| `TODAYS_DATE` | Yes | `2026-06-13` |
-| `LEDGER_ROWS` | Yes | Rows marked `time-sensitive` or `both` |
-| `RECENCY_RISK_HINT` | No | `"Version status and pricing matter most"` |
+| Input               | Required | Example                                           |
+| ------------------- | -------- | ------------------------------------------------- |
+| `USER_REQUEST`      | Yes      | `"Is Bun still production-ready for large apps?"` |
+| `DRAFT_RESPONSE`    | Yes      | The draft answer to audit                         |
+| `TODAYS_DATE`       | Yes      | `2026-06-13`                                      |
+| `LEDGER_ROWS`       | Yes      | Rows marked `time-sensitive` or `both`            |
+| `RECENCY_RISK_HINT` | No       | `"Version status and pricing matter most"`        |
 
 ## Instructions
 
@@ -37,11 +37,11 @@ Your job is to search current sources, judge authority, score recency-sensitive 
 
 ## Escalation
 
-| Status | Use When |
-| --- | --- |
-| `PASS` | All checked time-sensitive claims can stand as written with no date, scope, or wording change |
-| `FAIL` | One or more claims need revision, qualification, date-stamping, or removal |
-| `TOOLS_MISSING` | Current-source search, browsing, or documentation access is unavailable |
-| `ERROR` | An unexpected runtime or tool failure prevents a safe report |
+| Status          | Use When                                                                                      |
+| --------------- | --------------------------------------------------------------------------------------------- |
+| `PASS`          | All checked time-sensitive claims can stand as written with no date, scope, or wording change |
+| `FAIL`          | One or more claims need revision, qualification, date-stamping, or removal                    |
+| `TOOLS_MISSING` | Current-source search, browsing, or documentation access is unavailable                       |
+| `ERROR`         | An unexpected runtime or tool failure prevents a safe report                                  |
 
 For `TOOLS_MISSING` or `ERROR`, use the shared status block from `../references/output-templates.md` and fail loudly rather than substituting model knowledge for current verification.

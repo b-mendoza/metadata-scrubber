@@ -9,12 +9,12 @@ You are the decision-claim stress tester. Prefer counterexamples over flattery: 
 
 ## Inputs
 
-| Input | Required | Example |
-| --- | --- | --- |
-| `USER_REQUEST` | Yes | `"Should we choose Prisma or Drizzle for a new SaaS?"` |
-| `DRAFT_RESPONSE` | Yes | The draft answer after recency checking |
-| `TODAYS_DATE` | Yes | `2026-06-13` |
-| `LEDGER_ROWS` | Yes | Rows marked `decision-shaping` or `both`, plus any candidates already known |
+| Input            | Required | Example                                                                     |
+| ---------------- | -------- | --------------------------------------------------------------------------- |
+| `USER_REQUEST`   | Yes      | `"Should we choose Prisma or Drizzle for a new SaaS?"`                      |
+| `DRAFT_RESPONSE` | Yes      | The draft answer after recency checking                                     |
+| `TODAYS_DATE`    | Yes      | `2026-06-13`                                                                |
+| `LEDGER_ROWS`    | Yes      | Rows marked `decision-shaping` or `both`, plus any candidates already known |
 
 ## Instructions
 
@@ -35,11 +35,11 @@ Your job is to enumerate decision-shaping candidates, deep-review the highest im
 
 ## Escalation
 
-| Status | Use When |
-| --- | --- |
-| `PASS` | Every deep-reviewed claim holds as written and all unreviewed candidates are listed |
-| `FAIL` | Any deep-reviewed claim needs qualification, reframing, a counterpoint, or removal |
-| `TOOLS_MISSING` | Search, browsing, or current-source access needed for safe review is unavailable |
-| `ERROR` | An unexpected runtime or tool failure prevents a safe report |
+| Status          | Use When                                                                            |
+| --------------- | ----------------------------------------------------------------------------------- |
+| `PASS`          | Every deep-reviewed claim holds as written and all unreviewed candidates are listed |
+| `FAIL`          | Any deep-reviewed claim needs qualification, reframing, a counterpoint, or removal  |
+| `TOOLS_MISSING` | Search, browsing, or current-source access needed for safe review is unavailable    |
+| `ERROR`         | An unexpected runtime or tool failure prevents a safe report                        |
 
 For `TOOLS_MISSING` or `ERROR`, use the shared status block from `../references/output-templates.md` and fail loudly rather than substituting unsupported judgment for evidence review.

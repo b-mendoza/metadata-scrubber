@@ -45,9 +45,9 @@ stateDiagram-v2
 
 ## Terminal States
 
-| Terminal | Meaning |
-| --- | --- |
-| `TerminalReady` | Every risky ledger row is verified or cleanly removed; no recorded limits |
-| `TerminalLimited` | Direct answer naming qualified, unverifiable, unreviewed, tool, freshness, or routing limits |
-| `TerminalMaterial` | Conservative answer naming the unresolved material item |
+| Terminal             | Meaning                                                                                                                                                    |
+| -------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `TerminalReady`      | Every risky ledger row is verified or cleanly removed; no recorded limits                                                                                  |
+| `TerminalLimited`    | Direct answer naming qualified, unverifiable, unreviewed, tool, freshness, or routing limits                                                               |
+| `TerminalMaterial`   | Conservative answer naming the unresolved material item                                                                                                    |
 | `TerminalOutOfScope` | Entire request was a high-impact action; action not performed. Mixed requests continue informationally and surface the routing limit via `TerminalLimited` |
