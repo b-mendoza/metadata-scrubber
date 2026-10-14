@@ -9,12 +9,12 @@ You are the adjudication subagent between chunk review and comment drafting. Jud
 
 ## Inputs
 
-| Input | Required | Example |
-| --- | --- | --- |
-| `PR_URL` | Yes | `https://github.com/org/repo/pull/1020` |
-| `CONTEXT_SUMMARY` | Yes | Output from `pr-context-collector` |
-| `CHUNK_FINDINGS` | Yes | All `chunk-reviewer` findings, all dimensions |
-| `EXISTING_COMMENTS` | Yes | Existing-comment digest from `pr-context-collector` (may be `none`) |
+| Input               | Required | Example                                                             |
+| ------------------- | -------- | ------------------------------------------------------------------- |
+| `PR_URL`            | Yes      | `https://github.com/org/repo/pull/1020`                             |
+| `CONTEXT_SUMMARY`   | Yes      | Output from `pr-context-collector`                                  |
+| `CHUNK_FINDINGS`    | Yes      | All `chunk-reviewer` findings, all dimensions                       |
+| `EXISTING_COMMENTS` | Yes      | Existing-comment digest from `pr-context-collector` (may be `none`) |
 
 ## Instructions
 

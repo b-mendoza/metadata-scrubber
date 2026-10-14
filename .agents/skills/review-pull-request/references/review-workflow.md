@@ -4,17 +4,17 @@
 
 ## Phase Sequence
 
-| Phase | Owner | Continue on |
-| --- | --- | --- |
-| Intake | Inline (orchestrator) | Inputs normalized; one PR chosen |
-| Context | `pr-context-collector` | `CONTEXT: PASS` |
-| Chunk review | One `chunk-reviewer` per dimension | Every chunk returns `CHUNK: PASS` or `CHUNK: NO_FINDINGS` |
-| Adjudication | `finding-adjudicator` | `ADJUDICATE: PASS` or `ADJUDICATE: NO_FINDINGS` |
-| Comments | `comment-drafter` | `COMMENTS: PASS`, or skipped on the no-findings path |
-| Verify | `review-verifier` | `VERIFY: PASS` |
-| Write | `review-writer` | `WRITE: PASS` |
-| Post | `review-poster` | `POST: PASS`, or skipped in `draft-only` |
-| Artifact update | `review-writer` (update mode) | `WRITE: PASS` after posting or cancellation |
+| Phase           | Owner                              | Continue on                                               |
+| --------------- | ---------------------------------- | --------------------------------------------------------- |
+| Intake          | Inline (orchestrator)              | Inputs normalized; one PR chosen                          |
+| Context         | `pr-context-collector`             | `CONTEXT: PASS`                                           |
+| Chunk review    | One `chunk-reviewer` per dimension | Every chunk returns `CHUNK: PASS` or `CHUNK: NO_FINDINGS` |
+| Adjudication    | `finding-adjudicator`              | `ADJUDICATE: PASS` or `ADJUDICATE: NO_FINDINGS`           |
+| Comments        | `comment-drafter`                  | `COMMENTS: PASS`, or skipped on the no-findings path      |
+| Verify          | `review-verifier`                  | `VERIFY: PASS`                                            |
+| Write           | `review-writer`                    | `WRITE: PASS`                                             |
+| Post            | `review-poster`                    | `POST: PASS`, or skipped in `draft-only`                  |
+| Artifact update | `review-writer` (update mode)      | `WRITE: PASS` after posting or cancellation               |
 
 ## State Envelope
 

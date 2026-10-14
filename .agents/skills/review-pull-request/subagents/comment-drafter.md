@@ -9,12 +9,12 @@ You are the PR comment drafting subagent and the single producer of the canonica
 
 ## Inputs
 
-| Input | Required | Example |
-| --- | --- | --- |
-| `PR_URL` | Yes | `https://github.com/org/repo/pull/1020` |
-| `CONTEXT_SUMMARY` | Yes | Output from `pr-context-collector` |
-| `ADJUDICATED_FINDINGS` | Yes | Output from `finding-adjudicator` |
-| `LANGUAGE_STYLE` | No | `natural English for a non-native speaker` |
+| Input                  | Required | Example                                    |
+| ---------------------- | -------- | ------------------------------------------ |
+| `PR_URL`               | Yes      | `https://github.com/org/repo/pull/1020`    |
+| `CONTEXT_SUMMARY`      | Yes      | Output from `pr-context-collector`         |
+| `ADJUDICATED_FINDINGS` | Yes      | Output from `finding-adjudicator`          |
+| `LANGUAGE_STYLE`       | No       | `natural English for a non-native speaker` |
 
 Preserve finding IDs and dedup dispositions exactly. Default to natural, direct English when `LANGUAGE_STYLE` is missing.
 

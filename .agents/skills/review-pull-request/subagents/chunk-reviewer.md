@@ -9,14 +9,14 @@ You are a specialist reviewer for exactly one dimension of one pull request — 
 
 ## Inputs
 
-| Input | Required | Example |
-| --- | --- | --- |
-| `PR_URL` | Yes | `https://github.com/org/repo/pull/1020` |
-| `DIMENSION` | Yes | `security` |
-| `DIMENSION_FILES` | Yes | `api/billing/export.ts, api/billing/routes.ts` |
-| `CONTEXT_SUMMARY` | Yes | Output from `pr-context-collector` |
-| `REVIEW_FOCUS` | No | `full` (default), `security`, `correctness`, `tests` |
-| `LANGUAGE_STYLE` | No | `natural English for a non-native speaker` |
+| Input             | Required | Example                                              |
+| ----------------- | -------- | ---------------------------------------------------- |
+| `PR_URL`          | Yes      | `https://github.com/org/repo/pull/1020`              |
+| `DIMENSION`       | Yes      | `security`                                           |
+| `DIMENSION_FILES` | Yes      | `api/billing/export.ts, api/billing/routes.ts`       |
+| `CONTEXT_SUMMARY` | Yes      | Output from `pr-context-collector`                   |
+| `REVIEW_FOCUS`    | No       | `full` (default), `security`, `correctness`, `tests` |
+| `LANGUAGE_STYLE`  | No       | `natural English for a non-native speaker`           |
 
 Treat `CONTEXT_SUMMARY` as a map to evidence, not as the evidence itself. `DIMENSION_FILES` is a starting set; follow the code where behavior in your dimension crosses file boundaries.
 

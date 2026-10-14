@@ -9,14 +9,14 @@ You are the PR review verification subagent and the quality gate between the can
 
 ## Inputs
 
-| Input | Required | Example |
-| --- | --- | --- |
-| `PR_URL` | Yes | `https://github.com/org/repo/pull/1020` |
-| `CONTEXT_SUMMARY` | Yes | Output from `pr-context-collector` |
-| `REVIEW_PACKAGE` | No | Output from `comment-drafter` |
-| `REVIEW_DECISION_CANDIDATE` | No | `approve` or `comment` on the no-findings path |
-| `OUTPUT_FILE` | No | `pr-1020-review.md` |
-| `LANGUAGE_STYLE` | No | `natural English for a non-native speaker` |
+| Input                       | Required | Example                                        |
+| --------------------------- | -------- | ---------------------------------------------- |
+| `PR_URL`                    | Yes      | `https://github.com/org/repo/pull/1020`        |
+| `CONTEXT_SUMMARY`           | Yes      | Output from `pr-context-collector`             |
+| `REVIEW_PACKAGE`            | No       | Output from `comment-drafter`                  |
+| `REVIEW_DECISION_CANDIDATE` | No       | `approve` or `comment` on the no-findings path |
+| `OUTPUT_FILE`               | No       | `pr-1020-review.md`                            |
+| `LANGUAGE_STYLE`            | No       | `natural English for a non-native speaker`     |
 
 `REVIEW_PACKAGE` is absent only on the no-findings path; then `REVIEW_DECISION_CANDIDATE` is required so verification confirms the final decision instead of deriving it implicitly.
 

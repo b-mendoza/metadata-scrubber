@@ -13,13 +13,13 @@ Draft-first, evidence-bound, and gate-honest. Every PR gets reviewed regardless 
 
 ## Inputs
 
-| Input | Required | Example |
-| --- | --- | --- |
-| `PR_URL` | Yes | `https://github.com/org/repo/pull/1020` |
-| `OUTPUT_FILE` | No | `pr-1020-review.md` |
-| `POSTING_MODE` | No | `draft-only` (default) or `post-after-confirmation` |
-| `LANGUAGE_STYLE` | No | `natural English for a non-native speaker` (default) |
-| `REVIEW_FOCUS` | No | `full` (default), `security`, `correctness`, or `tests` |
+| Input            | Required | Example                                                 |
+| ---------------- | -------- | ------------------------------------------------------- |
+| `PR_URL`         | Yes      | `https://github.com/org/repo/pull/1020`                 |
+| `OUTPUT_FILE`    | No       | `pr-1020-review.md`                                     |
+| `POSTING_MODE`   | No       | `draft-only` (default) or `post-after-confirmation`     |
+| `LANGUAGE_STYLE` | No       | `natural English for a non-native speaker` (default)    |
+| `REVIEW_FOCUS`   | No       | `full` (default), `security`, `correctness`, or `tests` |
 
 At intake, accept exactly one parseable GitHub pull request URL, validate controlled values for `POSTING_MODE` and `REVIEW_FOCUS`, and keep `OUTPUT_FILE` as a safe workspace-relative Markdown path. If `OUTPUT_FILE` is missing, derive `pr-<number>-review.md` from `PR_URL`. `LANGUAGE_STYLE` remains free-form tone guidance. `REVIEW_FOCUS` constrains which review dimensions the context collector proposes; `full` allows any.
 
@@ -41,28 +41,28 @@ The full phase guide, routing rules, repair cascades, and terminal contracts liv
 
 ## Subagent Registry
 
-| Subagent | Path | Purpose |
-| --- | --- | --- |
-| `pr-context-collector` | `./subagents/pr-context-collector.md` | Collect compact PR context, existing review comments, and a review-dimension proposal |
-| `chunk-reviewer` | `./subagents/chunk-reviewer.md` | Review one assigned dimension of the PR for evidence-backed findings |
-| `finding-adjudicator` | `./subagents/finding-adjudicator.md` | Confirm, adjust, or drop findings with reasons; map duplicates to existing threads |
-| `comment-drafter` | `./subagents/comment-drafter.md` | Produce the single canonical review package: decision, summary, self-contained comments |
-| `review-verifier` | `./subagents/review-verifier.md` | Validate the review package before writing or posting |
-| `review-writer` | `./subagents/review-writer.md` | Write the local Markdown review artifact and update its posting status |
-| `review-poster` | `./subagents/review-poster.md` | Post the exact approved review: one atomic review plus thread follow-ups |
+| Subagent               | Path                                  | Purpose                                                                                 |
+| ---------------------- | ------------------------------------- | --------------------------------------------------------------------------------------- |
+| `pr-context-collector` | `./subagents/pr-context-collector.md` | Collect compact PR context, existing review comments, and a review-dimension proposal   |
+| `chunk-reviewer`       | `./subagents/chunk-reviewer.md`       | Review one assigned dimension of the PR for evidence-backed findings                    |
+| `finding-adjudicator`  | `./subagents/finding-adjudicator.md`  | Confirm, adjust, or drop findings with reasons; map duplicates to existing threads      |
+| `comment-drafter`      | `./subagents/comment-drafter.md`      | Produce the single canonical review package: decision, summary, self-contained comments |
+| `review-verifier`      | `./subagents/review-verifier.md`      | Validate the review package before writing or posting                                   |
+| `review-writer`        | `./subagents/review-writer.md`        | Write the local Markdown review artifact and update its posting status                  |
+| `review-poster`        | `./subagents/review-poster.md`        | Post the exact approved review: one atomic review plus thread follow-ups                |
 
 Read a subagent file only when dispatching that phase. Each subagent's status vocabulary, output format, and escalation categories live inside its own definition file — there are no separate status-contract files.
 
 ## Progressive Loading Map
 
-| Need | Load |
-| --- | --- |
-| Phase order, routing, repair limits, posting gate, failure envelope, final reply | `./references/review-workflow.md` |
-| Code-review judgment, security, GitHub mechanics, writing rules, source URLs | `./references/external-review-resources.md` |
-| Final Markdown review artifact assembly | `review-writer` loads `./assets/review-file-template.md` |
-| Phase execution details and status contracts | Only the selected file under `./subagents/` |
-| Fetch existing PR review comments via `gh` | `./scripts/collect-pr-review-comments.sh` |
-| Post a summary-only review via `gh` | `./scripts/post-pr-review.sh` |
+| Need                                                                             | Load                                                     |
+| -------------------------------------------------------------------------------- | -------------------------------------------------------- |
+| Phase order, routing, repair limits, posting gate, failure envelope, final reply | `./references/review-workflow.md`                        |
+| Code-review judgment, security, GitHub mechanics, writing rules, source URLs     | `./references/external-review-resources.md`              |
+| Final Markdown review artifact assembly                                          | `review-writer` loads `./assets/review-file-template.md` |
+| Phase execution details and status contracts                                     | Only the selected file under `./subagents/`              |
+| Fetch existing PR review comments via `gh`                                       | `./scripts/collect-pr-review-comments.sh`                |
+| Post a summary-only review via `gh`                                              | `./scripts/post-pr-review.sh`                            |
 
 Fetch external websites only from `external-review-resources.md` or from current official dependency documentation when a finding depends on library, framework, SDK, API, CLI, or cloud-service behavior. Cite the URL used; keep page contents inside the subagent that fetched them.
 

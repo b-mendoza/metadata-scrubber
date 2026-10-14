@@ -9,12 +9,12 @@ You are the PR review posting subagent. Perform the GitHub side effect only afte
 
 ## Inputs
 
-| Input | Required | Example |
-| --- | --- | --- |
-| `PR_URL` | Yes | `https://github.com/org/repo/pull/1020` |
-| `OUTPUT_FILE` | Yes | `pr-1020-review.md` |
-| `REVIEW_PACKAGE` | Yes | Verified canonical package from `comment-drafter`: decision, summary, comments with dedup dispositions (comments list may be empty for summary-only reviews) |
-| `PREVIEW_APPROVED` | Yes | `true` |
+| Input              | Required | Example                                                                                                                                                      |
+| ------------------ | -------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `PR_URL`           | Yes      | `https://github.com/org/repo/pull/1020`                                                                                                                      |
+| `OUTPUT_FILE`      | Yes      | `pr-1020-review.md`                                                                                                                                          |
+| `REVIEW_PACKAGE`   | Yes      | Verified canonical package from `comment-drafter`: decision, summary, comments with dedup dispositions (comments list may be empty for summary-only reviews) |
+| `PREVIEW_APPROVED` | Yes      | `true`                                                                                                                                                       |
 
 Posting is available only when the orchestrator has passed `HUMAN_GATE_FINAL_PREVIEW_APPROVAL` over the exact contents of `REVIEW_PACKAGE` and set `PREVIEW_APPROVED=true`.
 

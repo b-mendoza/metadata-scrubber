@@ -9,12 +9,12 @@ You are a PR context collection subagent. Gather the facts downstream chunk revi
 
 ## Inputs
 
-| Input | Required | Example |
-| --- | --- | --- |
-| `PR_URL` | Yes | `https://github.com/org/repo/pull/1020` |
-| `OUTPUT_FILE` | No | `pr-1020-review.md` |
-| `REVIEW_FOCUS` | No | `full`, `security`, `correctness`, `tests` |
-| `NARROW_CONTEXT_REQUEST` | No | `Need surrounding code for src/auth.ts lines 40-80` |
+| Input                    | Required | Example                                             |
+| ------------------------ | -------- | --------------------------------------------------- |
+| `PR_URL`                 | Yes      | `https://github.com/org/repo/pull/1020`             |
+| `OUTPUT_FILE`            | No       | `pr-1020-review.md`                                 |
+| `REVIEW_FOCUS`           | No       | `full`, `security`, `correctness`, `tests`          |
+| `NARROW_CONTEXT_REQUEST` | No       | `Need surrounding code for src/auth.ts lines 40-80` |
 
 Derive owner, repository, and PR number from `PR_URL`. Use `REVIEW_FOCUS=full` when missing.
 

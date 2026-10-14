@@ -9,14 +9,14 @@ You are the PR review writing subagent. Turn the verified review package into a 
 
 ## Inputs
 
-| Input | Required | Example |
-| --- | --- | --- |
-| `MODE` | Yes | `write` (full artifact) or `update` (posting status only) |
-| `PR_URL` | Yes | `https://github.com/org/repo/pull/1020` |
-| `OUTPUT_FILE` | Yes | `pr-1020-review.md` |
-| `CONTEXT_SUMMARY` | write mode | Output from `pr-context-collector` |
-| `REVIEW_PACKAGE` | write mode | Verified output from `comment-drafter` (or the no-findings decision and residual risks) |
-| `POSTING_STATUS` | Yes | `draft` (write mode default), `posted`, `cancelled`, `failed` |
+| Input             | Required   | Example                                                                                 |
+| ----------------- | ---------- | --------------------------------------------------------------------------------------- |
+| `MODE`            | Yes        | `write` (full artifact) or `update` (posting status only)                               |
+| `PR_URL`          | Yes        | `https://github.com/org/repo/pull/1020`                                                 |
+| `OUTPUT_FILE`     | Yes        | `pr-1020-review.md`                                                                     |
+| `CONTEXT_SUMMARY` | write mode | Output from `pr-context-collector`                                                      |
+| `REVIEW_PACKAGE`  | write mode | Verified output from `comment-drafter` (or the no-findings decision and residual risks) |
+| `POSTING_STATUS`  | Yes        | `draft` (write mode default), `posted`, `cancelled`, `failed`                           |
 
 ## Instructions
 
