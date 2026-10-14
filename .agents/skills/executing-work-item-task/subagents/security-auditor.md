@@ -11,21 +11,21 @@ The active playbook (`PLAYBOOK_PATH`) supplies every platform-specific detail. D
 
 ## Inputs
 
-| Input | Required | Notes |
-| --- | --- | --- |
-| `TICKET_KEY` | Yes | `<KEY>` under the workflow-key alias |
-| `TASK_NUMBER` | Yes | Selected task only |
-| `PLAYBOOK_PATH` | Yes | `../references/<platform>-playbook.md` |
-| `MUTATION_LIMITS` | Yes | Read-only task-scoped audit boundary |
-| Execution brief path | Yes | Business context and intended behavior |
-| `EXECUTION_REPORT` | Yes | Changed-file list and tests |
-| `DOCUMENTATION_REPORT` | Yes | Documentation/tracking summary |
-| `VERIFICATION_RESULT` | Yes | Requirements verdict; must be `PASS` |
-| `CODE_REVIEW` | Yes | Earlier maintainability verdict/findings |
-| `ARCHITECTURE_REVIEW` | Yes | Earlier structural verdict/findings |
-| `REVIEW_POLICY_PATH` | Yes | `../references/review-gate-policy.md` |
-| `REVIEW_TEMPLATE_PATH` | Yes | `../references/template-security-audit.md` |
-| `EXTERNAL_SOURCES_PATH` | Yes | `../references/external-sources.md` |
+| Input                   | Required | Notes                                      |
+| ----------------------- | -------- | ------------------------------------------ |
+| `TICKET_KEY`            | Yes      | `<KEY>` under the workflow-key alias       |
+| `TASK_NUMBER`           | Yes      | Selected task only                         |
+| `PLAYBOOK_PATH`         | Yes      | `../references/<platform>-playbook.md`     |
+| `MUTATION_LIMITS`       | Yes      | Read-only task-scoped audit boundary       |
+| Execution brief path    | Yes      | Business context and intended behavior     |
+| `EXECUTION_REPORT`      | Yes      | Changed-file list and tests                |
+| `DOCUMENTATION_REPORT`  | Yes      | Documentation/tracking summary             |
+| `VERIFICATION_RESULT`   | Yes      | Requirements verdict; must be `PASS`       |
+| `CODE_REVIEW`           | Yes      | Earlier maintainability verdict/findings   |
+| `ARCHITECTURE_REVIEW`   | Yes      | Earlier structural verdict/findings        |
+| `REVIEW_POLICY_PATH`    | Yes      | `../references/review-gate-policy.md`      |
+| `REVIEW_TEMPLATE_PATH`  | Yes      | `../references/template-security-audit.md` |
+| `EXTERNAL_SOURCES_PATH` | Yes      | `../references/external-sources.md`        |
 
 ## Output Format
 
@@ -46,7 +46,7 @@ Stay read-only. Audit the selected task's changed files, tests, configs, and com
 
 ## Escalation
 
-| Category | Meaning | Typical trigger |
-| --- | --- | --- |
+| Category  | Meaning                                               | Typical trigger                                          |
+| --------- | ----------------------------------------------------- | -------------------------------------------------------- |
 | `BLOCKED` | The task-scoped change set cannot be audited reliably | Missing/incomplete input or ambiguous changed-file scope |
-| `ERROR` | Unexpected failure prevents reliable audit | Tool or read failure |
+| `ERROR`   | Unexpected failure prevents reliable audit            | Tool or read failure                                     |

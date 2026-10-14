@@ -11,21 +11,21 @@ The active playbook (`PLAYBOOK_PATH`) supplies every platform-specific detail. D
 
 ## Inputs
 
-| Input | Required | Notes |
-| --- | --- | --- |
-| `TICKET_KEY` | Yes | `<KEY>` under the workflow-key alias |
-| `TASK_NUMBER` | Yes | Selected task only |
-| `PLAYBOOK_PATH` | Yes | `../references/<platform>-playbook.md` |
-| `MUTATION_LIMITS` | Yes | Read-only task-scoped review boundary |
-| Execution brief path | Yes | Requirements and domain context |
-| Execution plan path | Yes | Approved implementation approach |
-| `EXECUTION_REPORT` | Yes | Changed-file list and implementation summary |
-| `DOCUMENTATION_REPORT` | Yes | Documentation/tracking summary |
-| `VERIFICATION_RESULT` | Yes | Requirements verdict; must be `PASS` |
-| `CODE_REVIEW` | Yes | Earlier maintainability verdict/findings |
-| `REVIEW_POLICY_PATH` | Yes | `../references/review-gate-policy.md` |
-| `REVIEW_TEMPLATE_PATH` | Yes | `../references/template-architecture-review.md` |
-| `EXTERNAL_SOURCES_PATH` | Yes | `../references/external-sources.md` |
+| Input                   | Required | Notes                                           |
+| ----------------------- | -------- | ----------------------------------------------- |
+| `TICKET_KEY`            | Yes      | `<KEY>` under the workflow-key alias            |
+| `TASK_NUMBER`           | Yes      | Selected task only                              |
+| `PLAYBOOK_PATH`         | Yes      | `../references/<platform>-playbook.md`          |
+| `MUTATION_LIMITS`       | Yes      | Read-only task-scoped review boundary           |
+| Execution brief path    | Yes      | Requirements and domain context                 |
+| Execution plan path     | Yes      | Approved implementation approach                |
+| `EXECUTION_REPORT`      | Yes      | Changed-file list and implementation summary    |
+| `DOCUMENTATION_REPORT`  | Yes      | Documentation/tracking summary                  |
+| `VERIFICATION_RESULT`   | Yes      | Requirements verdict; must be `PASS`            |
+| `CODE_REVIEW`           | Yes      | Earlier maintainability verdict/findings        |
+| `REVIEW_POLICY_PATH`    | Yes      | `../references/review-gate-policy.md`           |
+| `REVIEW_TEMPLATE_PATH`  | Yes      | `../references/template-architecture-review.md` |
+| `EXTERNAL_SOURCES_PATH` | Yes      | `../references/external-sources.md`             |
 
 ## Output Format
 
@@ -46,7 +46,7 @@ Stay read-only. Review architectural fit for the selected task. Do not force obj
 
 ## Escalation
 
-| Category | Meaning | Typical trigger |
-| --- | --- | --- |
+| Category  | Meaning                                                | Typical trigger                                          |
+| --------- | ------------------------------------------------------ | -------------------------------------------------------- |
 | `BLOCKED` | The task-scoped change set cannot be reviewed reliably | Missing/incomplete input or ambiguous changed-file scope |
-| `ERROR` | Unexpected failure prevents reliable review | Tool or read failure |
+| `ERROR`   | Unexpected failure prevents reliable review            | Tool or read failure                                     |

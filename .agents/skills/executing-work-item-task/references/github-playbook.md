@@ -4,13 +4,13 @@
 
 ## Inputs and Identifier
 
-| Input | Required | Example |
-| --- | --- | --- |
-| `TICKET_KEY` | Yes after normalization | `acme-app-42` (the GitHub `ISSUE_SLUG` value passed under the workflow-key alias) |
-| `ISSUE_SLUG` | Accepted only as a direct-call compatibility input when `TICKET_KEY` is absent | `acme-app-42` |
-| `ISSUE_URL` | Preferred tracker locator when tracker actions may run | `https://github.com/acme/app/issues/42` |
-| `OWNER` / `REPO` / `ISSUE_NUMBER` | When URL is absent and tracker actions need coordinates | `acme` / `app` / `42` |
-| `TASK_NUMBER` | Yes | `3` |
+| Input                             | Required                                                                       | Example                                                                           |
+| --------------------------------- | ------------------------------------------------------------------------------ | --------------------------------------------------------------------------------- |
+| `TICKET_KEY`                      | Yes after normalization                                                        | `acme-app-42` (the GitHub `ISSUE_SLUG` value passed under the workflow-key alias) |
+| `ISSUE_SLUG`                      | Accepted only as a direct-call compatibility input when `TICKET_KEY` is absent | `acme-app-42`                                                                     |
+| `ISSUE_URL`                       | Preferred tracker locator when tracker actions may run                         | `https://github.com/acme/app/issues/42`                                           |
+| `OWNER` / `REPO` / `ISSUE_NUMBER` | When URL is absent and tracker actions need coordinates                        | `acme` / `app` / `42`                                                             |
+| `TASK_NUMBER`                     | Yes                                                                            | `3`                                                                               |
 
 Derive `<KEY>` as the GitHub issue slug `<owner>-<repo>-<number>`. Normalize a legacy direct `ISSUE_SLUG` input by passing its value unchanged under `TICKET_KEY`; this does not create a second workflow-key alias. Do not split a slug to recover owner/repo when names contain dashes. Resolve canonical owner/repo/number from `ISSUE_URL`, structured coordinates, or the Phase 1 snapshot and task plan. If platform identity remains ambiguous, stop for input.
 
@@ -30,15 +30,15 @@ Honor `retry-after` or `x-ratelimit-reset`. For a secondary limit without explic
 
 ## Task Plan Tracking Contract
 
-| Concept | GitHub value |
-| --- | --- |
-| Workflow-level section | `## GitHub Task Issues` |
-| Per-task inline field | `GitHub Task Issue: <value>` |
-| Primary lookup precedence | Inline field first, matching table row second |
-| Concrete child reference | `owner/repo#number` |
-| Degraded references | `task-list`, `Not Created`, or missing |
-| Parent reference | Canonical parent `owner/repo#number` from the snapshot/locator |
-| Current-item mode | `current-child-issue`; use the repeated branch for the selected task row |
+| Concept                   | GitHub value                                                             |
+| ------------------------- | ------------------------------------------------------------------------ |
+| Workflow-level section    | `## GitHub Task Issues`                                                  |
+| Per-task inline field     | `GitHub Task Issue: <value>`                                             |
+| Primary lookup precedence | Inline field first, matching table row second                            |
+| Concrete child reference  | `owner/repo#number`                                                      |
+| Degraded references       | `task-list`, `Not Created`, or missing                                   |
+| Parent reference          | Canonical parent `owner/repo#number` from the snapshot/locator           |
+| Current-item mode         | `current-child-issue`; use the repeated branch for the selected task row |
 
 Accepted task-reference values are `owner/repo#number`, `task-list`, `Not Created`, or missing. A concrete child issue provides full traceability. `task-list`, `Not Created`, or missing does not block local implementation, but limits tracker actions. Never treat a task-list row as a native child issue.
 

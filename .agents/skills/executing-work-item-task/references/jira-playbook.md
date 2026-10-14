@@ -4,11 +4,11 @@
 
 ## Inputs and Identifier
 
-| Input | Required | Example |
-| --- | --- | --- |
-| `TICKET_KEY` | Yes | `JNS-6065` |
-| `JIRA_URL` | Preferred when Jira actions may run | `https://workspace.atlassian.net/browse/JNS-6065` |
-| `TASK_NUMBER` | Yes | `3` |
+| Input         | Required                            | Example                                           |
+| ------------- | ----------------------------------- | ------------------------------------------------- |
+| `TICKET_KEY`  | Yes                                 | `JNS-6065`                                        |
+| `JIRA_URL`    | Preferred when Jira actions may run | `https://workspace.atlassian.net/browse/JNS-6065` |
+| `TASK_NUMBER` | Yes                                 | `3`                                               |
 
 Workspace is the subdomain before `.atlassian.net`; project is the prefix before the numeric suffix. `<KEY>` is the Jira ticket key and is passed unchanged under the established `TICKET_KEY` alias. The parent ticket or selected subtask may be looked up through `JIRA_URL`, the ticket key, or the Phase 1 snapshot and task plan. If platform identity remains ambiguous, stop for input.
 
@@ -28,15 +28,15 @@ Honor `Retry-After` or `X-RateLimit-Reset` and preserve `RateLimit-Reason`, then
 
 ## Task Plan Tracking Contract
 
-| Concept | Jira value |
-| --- | --- |
-| Workflow-level section | `## Jira Subtasks` |
-| Per-task inline field | `Jira Subtask: <SUBTASK_KEY>` |
-| Primary lookup precedence | Inline field first, matching table row second |
-| Concrete child reference | Jira subtask key such as `JNS-6071` |
-| Degraded references | `Not Created` or missing |
-| Parent reference | Parent `TICKET_KEY` |
-| Current-item mode | `current-subtask`; use the repeated branch for the selected task row |
+| Concept                   | Jira value                                                           |
+| ------------------------- | -------------------------------------------------------------------- |
+| Workflow-level section    | `## Jira Subtasks`                                                   |
+| Per-task inline field     | `Jira Subtask: <SUBTASK_KEY>`                                        |
+| Primary lookup precedence | Inline field first, matching table row second                        |
+| Concrete child reference  | Jira subtask key such as `JNS-6071`                                  |
+| Degraded references       | `Not Created` or missing                                             |
+| Parent reference          | Parent `TICKET_KEY`                                                  |
+| Current-item mode         | `current-subtask`; use the repeated branch for the selected task row |
 
 Missing or `Not Created` linkage does not block local implementation, but limits Jira-side updates. Jira subtasks are native children; do not translate them into GitHub child issues, task lists, labels, or close/reopen operations.
 

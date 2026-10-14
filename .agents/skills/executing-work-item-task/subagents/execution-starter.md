@@ -11,19 +11,19 @@ The active playbook (`PLAYBOOK_PATH`) supplies every platform-specific detail. D
 
 ## Inputs
 
-| Input | Required | Notes |
-| --- | --- | --- |
-| `TICKET_KEY` | Yes | `<KEY>` under the established workflow-key alias |
-| `TASK_NUMBER` | Yes | Selected task only |
-| `PLAYBOOK_PATH` | Yes | `../references/<platform>-playbook.md` |
-| `MUTATION_LIMITS` | Yes | Run authority envelope derived by the orchestrator |
-| Work-item snapshot path | Yes | `docs/<KEY>.md` |
-| Task plan path | Yes | `docs/<KEY>-tasks.md` |
-| Execution brief path | Yes | Scope, dependencies, constraints, tracker policy |
-| Optional context summaries | No | Bounded hints, not substitutes for source artifacts |
-| `CONTRACTS_PATH` | Yes | `../references/contracts.md` |
-| `KICKOFF_TEMPLATE_PATH` | Yes | `../references/template-execution-kickoff-report.md` |
-| `EXTERNAL_SOURCES_PATH` | Yes | `../references/external-sources.md` |
+| Input                      | Required | Notes                                                |
+| -------------------------- | -------- | ---------------------------------------------------- |
+| `TICKET_KEY`               | Yes      | `<KEY>` under the established workflow-key alias     |
+| `TASK_NUMBER`              | Yes      | Selected task only                                   |
+| `PLAYBOOK_PATH`            | Yes      | `../references/<platform>-playbook.md`               |
+| `MUTATION_LIMITS`          | Yes      | Run authority envelope derived by the orchestrator   |
+| Work-item snapshot path    | Yes      | `docs/<KEY>.md`                                      |
+| Task plan path             | Yes      | `docs/<KEY>-tasks.md`                                |
+| Execution brief path       | Yes      | Scope, dependencies, constraints, tracker policy     |
+| Optional context summaries | No       | Bounded hints, not substitutes for source artifacts  |
+| `CONTRACTS_PATH`           | Yes      | `../references/contracts.md`                         |
+| `KICKOFF_TEMPLATE_PATH`    | Yes      | `../references/template-execution-kickoff-report.md` |
+| `EXTERNAL_SOURCES_PATH`    | Yes      | `../references/external-sources.md`                  |
 
 Paths above are relative to this subagent file.
 
@@ -54,7 +54,7 @@ Your job is to confirm one task's readiness, enter its planned branch, apply eli
 
 ## Escalation
 
-| Category | Meaning | Typical trigger |
-| --- | --- | --- |
+| Category  | Meaning                                                                         | Typical trigger                                                                                                                     |
+| --------- | ------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------- |
 | `BLOCKED` | The next safe kickoff action needs a prerequisite, capability, or user decision | Incomplete dependency, missing/conflicting branch, unsafe dirty state, ambiguous authority, or mandatory tracker action unavailable |
-| `ERROR` | An unexpected failure prevents reliable kickoff | Tool failure, environment failure, or unexpected transport behavior |
+| `ERROR`   | An unexpected failure prevents reliable kickoff                                 | Tool failure, environment failure, or unexpected transport behavior                                                                 |

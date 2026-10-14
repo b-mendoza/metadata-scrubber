@@ -6,13 +6,13 @@
 
 ## Status handling
 
-| Step / subagent | Expected statuses | Orchestrator action |
-| --- | --- | --- |
-| `execution-starter` | `READY`, `BLOCKED`, `ERROR` | Continue on `READY`; otherwise pause and resolve before implementation starts |
-| `task-executor` | `COMPLETE`, `NEEDS_CONTEXT`, `BLOCKED`, `ERROR` | Continue on `COMPLETE`; otherwise pause and resolve |
-| `documentation-writer` | `COMPLETE`, `BLOCKED`, `ERROR` | Continue on `COMPLETE`; otherwise stop and surface the blocker |
-| `requirements-verifier` | `PASS`, `FAIL`, `BLOCKED`, `ERROR` | Re-run coverage fix loop only on clear in-scope `FAIL` gaps; stop and resolve `BLOCKED` or `ERROR` cases first |
-| Review gates | `PASS`, `PASS WITH SUGGESTIONS`, `PASS WITH ADVISORIES`, `NEEDS FIXES`, `BLOCKED`, `ERROR` | Continue on non-blocking passes; targeted fix cycle on `NEEDS FIXES`; stop on `BLOCKED`/`ERROR` |
+| Step / subagent         | Expected statuses                                                                          | Orchestrator action                                                                                            |
+| ----------------------- | ------------------------------------------------------------------------------------------ | -------------------------------------------------------------------------------------------------------------- |
+| `execution-starter`     | `READY`, `BLOCKED`, `ERROR`                                                                | Continue on `READY`; otherwise pause and resolve before implementation starts                                  |
+| `task-executor`         | `COMPLETE`, `NEEDS_CONTEXT`, `BLOCKED`, `ERROR`                                            | Continue on `COMPLETE`; otherwise pause and resolve                                                            |
+| `documentation-writer`  | `COMPLETE`, `BLOCKED`, `ERROR`                                                             | Continue on `COMPLETE`; otherwise stop and surface the blocker                                                 |
+| `requirements-verifier` | `PASS`, `FAIL`, `BLOCKED`, `ERROR`                                                         | Re-run coverage fix loop only on clear in-scope `FAIL` gaps; stop and resolve `BLOCKED` or `ERROR` cases first |
+| Review gates            | `PASS`, `PASS WITH SUGGESTIONS`, `PASS WITH ADVISORIES`, `NEEDS FIXES`, `BLOCKED`, `ERROR` | Continue on non-blocking passes; targeted fix cycle on `NEEDS FIXES`; stop on `BLOCKED`/`ERROR`                |
 
 ## Recovery precondition
 

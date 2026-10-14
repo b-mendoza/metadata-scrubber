@@ -11,23 +11,23 @@ The active playbook (`PLAYBOOK_PATH`) supplies every platform-specific detail. D
 
 ## Inputs
 
-| Input | Required | Notes |
-| --- | --- | --- |
-| `Mode` | Yes | `UPDATE_TRACKING` or `FINALIZE_TRACKER` |
-| `TICKET_KEY` | Yes | `<KEY>` under the established workflow-key alias |
-| `TASK_NUMBER` | Yes | Selected task only |
-| `PLAYBOOK_PATH` | Yes | `../references/<platform>-playbook.md` |
-| `MUTATION_LIMITS` | Yes | Category A/B and tracker authority envelope |
-| `EXECUTION_REPORT` | Yes | Authoritative changed-file scope and execution status |
-| Execution brief path | Yes | Documentation and tracker policy |
-| Task plan path | Yes | `docs/<KEY>-tasks.md` |
-| Previous `DOCUMENTATION_REPORT` | `FINALIZE_TRACKER` only | Prior local tracking result |
-| `VERIFICATION_RESULT` | `FINALIZE_TRACKER` only | Must be `PASS` |
-| `CODE_REVIEW` | `FINALIZE_TRACKER` only | Must be non-blocking |
-| `ARCHITECTURE_REVIEW` | `FINALIZE_TRACKER` only | Must be non-blocking |
-| `SECURITY_AUDIT` | `FINALIZE_TRACKER` only | Must be non-blocking |
-| `DOCUMENTATION_TEMPLATE_PATH` | Yes | `../references/template-documentation-report.md` |
-| `EXTERNAL_SOURCES_PATH` | Yes | `../references/external-sources.md` |
+| Input                           | Required                | Notes                                                 |
+| ------------------------------- | ----------------------- | ----------------------------------------------------- |
+| `Mode`                          | Yes                     | `UPDATE_TRACKING` or `FINALIZE_TRACKER`               |
+| `TICKET_KEY`                    | Yes                     | `<KEY>` under the established workflow-key alias      |
+| `TASK_NUMBER`                   | Yes                     | Selected task only                                    |
+| `PLAYBOOK_PATH`                 | Yes                     | `../references/<platform>-playbook.md`                |
+| `MUTATION_LIMITS`               | Yes                     | Category A/B and tracker authority envelope           |
+| `EXECUTION_REPORT`              | Yes                     | Authoritative changed-file scope and execution status |
+| Execution brief path            | Yes                     | Documentation and tracker policy                      |
+| Task plan path                  | Yes                     | `docs/<KEY>-tasks.md`                                 |
+| Previous `DOCUMENTATION_REPORT` | `FINALIZE_TRACKER` only | Prior local tracking result                           |
+| `VERIFICATION_RESULT`           | `FINALIZE_TRACKER` only | Must be `PASS`                                        |
+| `CODE_REVIEW`                   | `FINALIZE_TRACKER` only | Must be non-blocking                                  |
+| `ARCHITECTURE_REVIEW`           | `FINALIZE_TRACKER` only | Must be non-blocking                                  |
+| `SECURITY_AUDIT`                | `FINALIZE_TRACKER` only | Must be non-blocking                                  |
+| `DOCUMENTATION_TEMPLATE_PATH`   | Yes                     | `../references/template-documentation-report.md`      |
+| `EXTERNAL_SOURCES_PATH`         | Yes                     | `../references/external-sources.md`                   |
 
 Paths above are relative to this subagent file.
 
@@ -58,7 +58,7 @@ In `UPDATE_TRACKING`, write only changed Category B documentation, standalone do
 
 ## Escalation
 
-| Category | Meaning | Typical trigger |
-| --- | --- | --- |
+| Category  | Meaning                                                                | Typical trigger                                                                                                                |
+| --------- | ---------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------ |
 | `BLOCKED` | A prerequisite or authority for safe documentation/tracking is missing | Incomplete report, missing plan, missing/failing final gate, ambiguous outward action, or mandatory tracker action unavailable |
-| `ERROR` | Unexpected failure prevents reliable completion | Documentation edit, tracking update, or transport failure |
+| `ERROR`   | Unexpected failure prevents reliable completion                        | Documentation edit, tracking update, or transport failure                                                                      |

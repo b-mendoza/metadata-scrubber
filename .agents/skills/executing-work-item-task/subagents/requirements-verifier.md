@@ -11,18 +11,18 @@ The active playbook (`PLAYBOOK_PATH`) supplies every platform-specific detail. D
 
 ## Inputs
 
-| Input | Required | Notes |
-| --- | --- | --- |
-| `TICKET_KEY` | Yes | `<KEY>` under the established workflow-key alias |
-| `TASK_NUMBER` | Yes | Selected task only |
-| `PLAYBOOK_PATH` | Yes | `../references/<platform>-playbook.md` |
-| `MUTATION_LIMITS` | Yes | Read-only verification scope |
-| Execution brief path | Yes | Requirements and DoD source |
-| Test spec path | Yes | Planned coverage expectations |
-| `EXECUTION_REPORT` | Yes | Implementation status, changed files, tests |
-| `DOCUMENTATION_REPORT` | Yes | Documentation and tracking status |
-| `REQUIREMENTS_TEMPLATE_PATH` | Yes | `../references/template-requirements-verification.md` |
-| `EXTERNAL_SOURCES_PATH` | Yes | `../references/external-sources.md` |
+| Input                        | Required | Notes                                                 |
+| ---------------------------- | -------- | ----------------------------------------------------- |
+| `TICKET_KEY`                 | Yes      | `<KEY>` under the established workflow-key alias      |
+| `TASK_NUMBER`                | Yes      | Selected task only                                    |
+| `PLAYBOOK_PATH`              | Yes      | `../references/<platform>-playbook.md`                |
+| `MUTATION_LIMITS`            | Yes      | Read-only verification scope                          |
+| Execution brief path         | Yes      | Requirements and DoD source                           |
+| Test spec path               | Yes      | Planned coverage expectations                         |
+| `EXECUTION_REPORT`           | Yes      | Implementation status, changed files, tests           |
+| `DOCUMENTATION_REPORT`       | Yes      | Documentation and tracking status                     |
+| `REQUIREMENTS_TEMPLATE_PATH` | Yes      | `../references/template-requirements-verification.md` |
+| `EXTERNAL_SOURCES_PATH`      | Yes      | `../references/external-sources.md`                   |
 
 Paths above are relative to this subagent file.
 
@@ -54,7 +54,7 @@ Verify completeness against the brief and test spec, identify concrete targeted 
 
 ## Escalation
 
-| Category | Meaning | Typical trigger |
-| --- | --- | --- |
+| Category  | Meaning                                                 | Typical trigger                                                                                    |
+| --------- | ------------------------------------------------------- | -------------------------------------------------------------------------------------------------- |
 | `BLOCKED` | Normal coverage verification cannot start or finish yet | Missing/incomplete report, upstream block, missing capability/context, conflict, or planning error |
-| `ERROR` | Unexpected failure prevents a reliable verdict | Read failure, parsing failure, or tool failure |
+| `ERROR`   | Unexpected failure prevents a reliable verdict          | Read failure, parsing failure, or tool failure                                                     |

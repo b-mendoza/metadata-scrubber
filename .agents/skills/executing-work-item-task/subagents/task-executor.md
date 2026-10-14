@@ -11,22 +11,22 @@ The active playbook (`PLAYBOOK_PATH`) supplies every platform-specific detail. D
 
 ## Inputs
 
-| Input | Required | Notes |
-| --- | --- | --- |
-| `TICKET_KEY` | Yes | `<KEY>` under the established workflow-key alias |
-| `TASK_NUMBER` | Yes | Selected task only |
-| `PLAYBOOK_PATH` | Yes | `../references/<platform>-playbook.md` |
-| `MUTATION_LIMITS` | Yes | Category B allow-list and repair-scope envelope |
-| Execution brief path | Yes | Scope, DoD, constraints |
-| Execution plan path | Yes | Approved implementation sequence |
-| Test spec path | Yes | Required behavior coverage |
-| Refactoring plan path | Yes | Approved preparation and cleanup |
-| Decisions path | Yes | `docs/<KEY>-task-<N>-decisions.md`; authoritative for clarifications |
-| Critique path | No | `docs/<KEY>-task-<N>-critique.md` |
-| Fix brief | No | Current verifier or reviewer blocking findings only |
-| Previous execution report | No | Resume or targeted-fix context |
-| `EXECUTION_TEMPLATE_PATH` | Yes | `../references/template-execution-report.md` |
-| `EXTERNAL_SOURCES_PATH` | Yes | `../references/external-sources.md` |
+| Input                     | Required | Notes                                                                |
+| ------------------------- | -------- | -------------------------------------------------------------------- |
+| `TICKET_KEY`              | Yes      | `<KEY>` under the established workflow-key alias                     |
+| `TASK_NUMBER`             | Yes      | Selected task only                                                   |
+| `PLAYBOOK_PATH`           | Yes      | `../references/<platform>-playbook.md`                               |
+| `MUTATION_LIMITS`         | Yes      | Category B allow-list and repair-scope envelope                      |
+| Execution brief path      | Yes      | Scope, DoD, constraints                                              |
+| Execution plan path       | Yes      | Approved implementation sequence                                     |
+| Test spec path            | Yes      | Required behavior coverage                                           |
+| Refactoring plan path     | Yes      | Approved preparation and cleanup                                     |
+| Decisions path            | Yes      | `docs/<KEY>-task-<N>-decisions.md`; authoritative for clarifications |
+| Critique path             | No       | `docs/<KEY>-task-<N>-critique.md`                                    |
+| Fix brief                 | No       | Current verifier or reviewer blocking findings only                  |
+| Previous execution report | No       | Resume or targeted-fix context                                       |
+| `EXECUTION_TEMPLATE_PATH` | Yes      | `../references/template-execution-report.md`                         |
+| `EXTERNAL_SOURCES_PATH`   | Yes      | `../references/external-sources.md`                                  |
 
 Paths above are relative to this subagent file.
 
@@ -56,8 +56,8 @@ Your job is to apply planned refactoring, source changes, tests, task-required s
 
 ## Escalation
 
-| Category | Meaning | Typical trigger |
-| --- | --- | --- |
-| `NEEDS_CONTEXT` | A meaningful decision or consistent artifact is missing | Unresolved business rule, scope choice, or contradictory guidance |
-| `BLOCKED` | Required capability is unavailable | Missing tool, runtime, service, credential, permission, or safe environment |
-| `ERROR` | Unexpected failure after context and capabilities are present | Tool crash, edit failure, or unexpected runtime behavior |
+| Category        | Meaning                                                       | Typical trigger                                                             |
+| --------------- | ------------------------------------------------------------- | --------------------------------------------------------------------------- |
+| `NEEDS_CONTEXT` | A meaningful decision or consistent artifact is missing       | Unresolved business rule, scope choice, or contradictory guidance           |
+| `BLOCKED`       | Required capability is unavailable                            | Missing tool, runtime, service, credential, permission, or safe environment |
+| `ERROR`         | Unexpected failure after context and capabilities are present | Tool crash, edit failure, or unexpected runtime behavior                    |
