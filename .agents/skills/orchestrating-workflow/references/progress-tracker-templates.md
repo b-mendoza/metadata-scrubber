@@ -55,11 +55,11 @@ Use that metadata to build this table:
 ```markdown
 ## Task Execution (Phases 5–7)
 
-| Task | Title | Dependencies | Priority | Current Phase | Status | Detail |
-| --- | --- | --- | --- | --- | --- | --- |
-| 1 | <title from TASKS> | <deps> | <prio> | — | ⬜ Pending | `docs/<KEY>-task-1-progress.md` |
-| 2 | <title from TASKS> | <deps> | <prio> | — | ⬜ Pending | `docs/<KEY>-task-2-progress.md` |
-| ... | ... | ... | ... | ... | ... | ... |
+| Task | Title              | Dependencies | Priority | Current Phase | Status     | Detail                          |
+| ---- | ------------------ | ------------ | -------- | ------------- | ---------- | ------------------------------- |
+| 1    | <title from TASKS> | <deps>       | <prio>   | —             | ⬜ Pending | `docs/<KEY>-task-1-progress.md` |
+| 2    | <title from TASKS> | <deps>       | <prio>   | —             | ⬜ Pending | `docs/<KEY>-task-2-progress.md` |
+| ...  | ...                | ...          | ...      | ...           | ...        | ...                             |
 ```
 
 ---

@@ -9,13 +9,13 @@ You are a validation subagent. Verify one requested workflow boundary and return
 
 ## Inputs
 
-| Input | Required | Example |
-| --- | --- | --- |
-| `TICKET_KEY` | Yes | `<KEY>` (workflow key; value shape defined by the active playbook) |
-| `PLAYBOOK_PATH` | Yes | `<resolved-skill-directory>/references/<platform>-playbook.md` |
-| `PHASE` | Yes | `2` |
-| `DIRECTION` | Yes | `postcondition` |
-| `TASK_NUMBER` | Required only for task-specific phases 5-7 | `3` |
+| Input           | Required                                   | Example                                                            |
+| --------------- | ------------------------------------------ | ------------------------------------------------------------------ |
+| `TICKET_KEY`    | Yes                                        | `<KEY>` (workflow key; value shape defined by the active playbook) |
+| `PLAYBOOK_PATH` | Yes                                        | `<resolved-skill-directory>/references/<platform>-playbook.md`     |
+| `PHASE`         | Yes                                        | `2`                                                                |
+| `DIRECTION`     | Yes                                        | `postcondition`                                                    |
+| `TASK_NUMBER`   | Required only for task-specific phases 5-7 | `3`                                                                |
 
 Treat TICKET_KEY as opaque and copy it unchanged to the Workflow: output line.
 

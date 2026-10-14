@@ -4,10 +4,10 @@
 
 ## Inputs and Identifier
 
-| Input | Required | Example |
-| --- | --- | --- |
-| `JIRA_URL` | Phase 1 and Jira writes | `https://workspace.atlassian.net/browse/JNS-6065` |
-| `TICKET_KEY` | Resume / progress fallback | `JNS-6065` |
+| Input        | Required                   | Example                                           |
+| ------------ | -------------------------- | ------------------------------------------------- |
+| `JIRA_URL`   | Phase 1 and Jira writes    | `https://workspace.atlassian.net/browse/JNS-6065` |
+| `TICKET_KEY` | Resume / progress fallback | `JNS-6065`                                        |
 
 Workspace = subdomain before `.atlassian.net`. Project = prefix before the dash. **`TICKET_KEY`** is the final URL path segment and the stable workflow key consumed by shared references and subagents.
 
@@ -17,15 +17,15 @@ Jira reads and writes use the Jira MCP server. Treat MCP unresponsiveness as tra
 
 ## Phase Skill Map
 
-| Phase | Runtime skill | Inputs | Retain |
-| --- | --- | --- | --- |
-| 1 | `fetching-work-item` | `JIRA_URL` | 12-line summary, `TICKET_KEY`, file path |
-| 2 | `planning-work-item-tasks` | `TICKET_KEY` (+ `RE_PLAN`, `DECISIONS`) | summary, tasks file path, warnings |
-| 3 | `clarifying-assumptions` | `TICKET_KEY`, `MODE=upfront`, `ITERATION` | `RE_PLAN_NEEDED`, `BLOCKERS_PRESENT`, decisions |
-| 4 | `creating-work-item-children` | `JIRA_URL` | created/linked subtask rows, warnings, failures |
-| 5 | `planning-task-execution` | `TICKET_KEY`, `TASK_NUMBER` (+ `RE_PLAN`, `DECISIONS_FILE`) | four artifact paths, approach, test shape, refactoring verdict |
-| 6 | `clarifying-assumptions` | `TICKET_KEY`, `MODE=critique`, `TASK_NUMBER`, `ITERATION` | `RE_PLAN_NEEDED`, `BLOCKERS_PRESENT`, decisions file |
-| 7 | `executing-work-item-task` | `TICKET_KEY`, `TASK_NUMBER` | `FINAL_TASK_REPORT` status, verdict, gate summary, retry counts |
+| Phase | Runtime skill                 | Inputs                                                      | Retain                                                          |
+| ----- | ----------------------------- | ----------------------------------------------------------- | --------------------------------------------------------------- |
+| 1     | `fetching-work-item`          | `JIRA_URL`                                                  | 12-line summary, `TICKET_KEY`, file path                        |
+| 2     | `planning-work-item-tasks`    | `TICKET_KEY` (+ `RE_PLAN`, `DECISIONS`)                     | summary, tasks file path, warnings                              |
+| 3     | `clarifying-assumptions`      | `TICKET_KEY`, `MODE=upfront`, `ITERATION`                   | `RE_PLAN_NEEDED`, `BLOCKERS_PRESENT`, decisions                 |
+| 4     | `creating-work-item-children` | `JIRA_URL`                                                  | created/linked subtask rows, warnings, failures                 |
+| 5     | `planning-task-execution`     | `TICKET_KEY`, `TASK_NUMBER` (+ `RE_PLAN`, `DECISIONS_FILE`) | four artifact paths, approach, test shape, refactoring verdict  |
+| 6     | `clarifying-assumptions`      | `TICKET_KEY`, `MODE=critique`, `TASK_NUMBER`, `ITERATION`   | `RE_PLAN_NEEDED`, `BLOCKERS_PRESENT`, decisions file            |
+| 7     | `executing-work-item-task`    | `TICKET_KEY`, `TASK_NUMBER`                                 | `FINAL_TASK_REPORT` status, verdict, gate summary, retry counts |
 
 ## Phase 1 Snapshot Sections
 
@@ -63,11 +63,11 @@ Workflow-level: `## Jira Subtasks` table, one row per numbered task. Per-task: o
 
 Transport: most direct Jira issue lookup the integration exposes. Output prefix: `TICKET_STATUS:`.
 
-| Query type (neutral) | Jira alias | Output body |
-| --- | --- | --- |
-| `status` | `status` | Status, Assignee, Priority, Updated |
-| `full` | `full` | Type+Status+Priority, Summary, Assignee, Labels, Sprint, Updated, Recent comments (≤5, ≤80 chars) |
-| `children` | `subtasks` | Subtasks (≤20): `<KEY>: <title> [<status>] (<assignee>)` |
+| Query type (neutral) | Jira alias | Output body                                                                                       |
+| -------------------- | ---------- | ------------------------------------------------------------------------------------------------- |
+| `status`             | `status`   | Status, Assignee, Priority, Updated                                                               |
+| `full`               | `full`     | Type+Status+Priority, Summary, Assignee, Labels, Sprint, Updated, Recent comments (≤5, ≤80 chars) |
+| `children`           | `subtasks` | Subtasks (≤20): `<KEY>: <title> [<status>] (<assignee>)`                                          |
 
 ## Preflight Transport Check
 

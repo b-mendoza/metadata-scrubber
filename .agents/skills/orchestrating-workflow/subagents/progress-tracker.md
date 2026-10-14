@@ -9,23 +9,23 @@ You are a progress-tracking subagent. Maintain the workflow-level and task-level
 
 ## Inputs
 
-| Input | Required | Example |
-| --- | --- | --- |
-| `TICKET_KEY` | Yes | `<KEY>` (workflow key; value shape defined by the active playbook) |
-| `PLAYBOOK_PATH` | Required for `initialize`, `update`, and `initialize_task` (template skill names) | `<resolved-skill-directory>/references/<platform>-playbook.md` |
-| `ACTION` | Yes | `read` |
+| Input           | Required                                                                          | Example                                                            |
+| --------------- | --------------------------------------------------------------------------------- | ------------------------------------------------------------------ |
+| `TICKET_KEY`    | Yes                                                                               | `<KEY>` (workflow key; value shape defined by the active playbook) |
+| `PLAYBOOK_PATH` | Required for `initialize`, `update`, and `initialize_task` (template skill names) | `<resolved-skill-directory>/references/<platform>-playbook.md`     |
+| `ACTION`        | Yes                                                                               | `read`                                                             |
 
 Treat TICKET_KEY as opaque; substitute it for <KEY> in progress file paths and headings.
 
 Additional inputs by action:
 
-| Action | Required additional inputs |
-| --- | --- |
-| `read` | None |
-| `initialize` | `PLAYBOOK_PATH` |
-| `update` | `PLAYBOOK_PATH`, `PHASE`, `STATUS`, `SUMMARY`; add `TASKS` only for Phase 4 completion |
-| `initialize_task` | `PLAYBOOK_PATH`, `TASK_NUMBER`, `TASK_TITLE` |
-| `update_task` | `TASK_NUMBER`, `PHASE`, `STATUS`, `SUMMARY` |
+| Action            | Required additional inputs                                                             |
+| ----------------- | -------------------------------------------------------------------------------------- |
+| `read`            | None                                                                                   |
+| `initialize`      | `PLAYBOOK_PATH`                                                                        |
+| `update`          | `PLAYBOOK_PATH`, `PHASE`, `STATUS`, `SUMMARY`; add `TASKS` only for Phase 4 completion |
+| `initialize_task` | `PLAYBOOK_PATH`, `TASK_NUMBER`, `TASK_TITLE`                                           |
+| `update_task`     | `TASK_NUMBER`, `PHASE`, `STATUS`, `SUMMARY`                                            |
 
 Allowed status values: `complete`, `active`, `failed`, `skipped`
 
@@ -35,10 +35,10 @@ When `TASKS` is provided for Phase 4 completion, each task entry should carry ta
 
 ## Artifacts and Templates
 
-| File | Scope | Purpose |
-| --- | --- | --- |
-| `docs/<KEY>-progress.md` | Workflow-level | Tracks phases 1-4 and task list |
-| `docs/<KEY>-task-<N>-progress.md` | Per-task | Tracks phases 5-7 for one task |
+| File                              | Scope          | Purpose                         |
+| --------------------------------- | -------------- | ------------------------------- |
+| `docs/<KEY>-progress.md`          | Workflow-level | Tracks phases 1-4 and task list |
+| `docs/<KEY>-task-<N>-progress.md` | Per-task       | Tracks phases 5-7 for one task  |
 
 Read `../references/progress-tracker-templates.md` when an action creates or modifies one of these files. The templates expect to be filled with skill names from the active playbook's `Phase Skill Map`.
 

@@ -21,11 +21,11 @@ Phases 3 and 6 always dispatch `clarifying-assumptions` regardless of platform; 
 
 `preflight-checker` validates only direct dependencies for the remaining phase range. It reads the active playbook's `Phase Skill Map` rows (for downstream skill names) and `Preflight Transport Check` section (for the platform transport check command) when assembling its manifest.
 
-| Dependency class | Source of truth | How to verify |
-| --- | --- | --- |
-| Platform transport | Active playbook's `Transport` and `Preflight Transport Check` sections | Run the playbook-supplied check command(s) |
-| Downstream phase skill | Active playbook's `Phase Skill Map` row for the phase | Runtime skill discovery or invocation registry reports the skill is available |
-| `clarifying-assumptions` | This file (constant across platforms) | Runtime skill discovery or invocation registry reports the skill is available |
+| Dependency class         | Source of truth                                                        | How to verify                                                                 |
+| ------------------------ | ---------------------------------------------------------------------- | ----------------------------------------------------------------------------- |
+| Platform transport       | Active playbook's `Transport` and `Preflight Transport Check` sections | Run the playbook-supplied check command(s)                                    |
+| Downstream phase skill   | Active playbook's `Phase Skill Map` row for the phase                  | Runtime skill discovery or invocation registry reports the skill is available |
+| `clarifying-assumptions` | This file (constant across platforms)                                  | Runtime skill discovery or invocation registry reports the skill is available |
 
 If the runtime exposes no reliable skill-discovery mechanism for a required skill, return `PREFLIGHT: FAIL`, list the dependency under `Unknown`, and ask the user to install, enable, or confirm the named skill before invoking it.
 

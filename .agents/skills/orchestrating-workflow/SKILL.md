@@ -19,9 +19,9 @@ This skill package is standalone: every reference and utility subagent it owns l
 
 Detect the platform from the first input the user supplies and load the matching playbook for every per-platform decision:
 
-| Signal | Platform | Playbook |
-| --- | --- | --- |
-| `JIRA_URL` matching `https://<workspace>.atlassian.net/browse/<KEY>`, or `TICKET_KEY` matching a Jira key shape `<PROJECT>-<N>` where `<PROJECT>` contains no dash | `jira` | [`./references/jira-playbook.md`](./references/jira-playbook.md) |
+| Signal                                                                                                                                                                                                                                                         | Platform | Playbook                                                             |
+| -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------- | -------------------------------------------------------------------- |
+| `JIRA_URL` matching `https://<workspace>.atlassian.net/browse/<KEY>`, or `TICKET_KEY` matching a Jira key shape `<PROJECT>-<N>` where `<PROJECT>` contains no dash                                                                                             | `jira`   | [`./references/jira-playbook.md`](./references/jira-playbook.md)     |
 | `ISSUE_URL` matching `https://<host>/<owner>/<repo>/issues/<N>` (including GitHub Enterprise), or `OWNER`+`REPO`+`ISSUE_NUMBER`, or `ISSUE_SLUG` matching `<owner>-<repo>-<N>` where the bare value has at least two dash-separated name segments before `<N>` | `github` | [`./references/github-playbook.md`](./references/github-playbook.md) |
 
 Prefer explicit URLs and structured fields over bare resume keys. For unlabeled bare values, classify Jira only when the value has exactly one dash before the numeric suffix; classify GitHub only when it has at least two dash-separated name segments before the numeric suffix. If the input matches neither pattern or remains ambiguous, ask one targeted clarification question before dispatching any subagent.
@@ -48,18 +48,18 @@ Phases 5-7 repeat per task until all tasks complete or the user stops.
 
 This is the primary navigation surface. Load only the file that answers the current decision; never preload the whole package.
 
-| Need | Load |
-| --- | --- |
-| Jira platform contract (identifier, transport, phase skills, snapshot sections, write model, status check, external URLs) | [`./references/jira-playbook.md`](./references/jira-playbook.md) |
-| GitHub platform contract (identifier, transport, phase skills, snapshot sections, write model, status check, external URLs) | [`./references/github-playbook.md`](./references/github-playbook.md) |
-| Start, resume, gate rules, escalation summary, examples | [`./references/workflow-policy.md`](./references/workflow-policy.md) |
-| Phases 1-4 procedure (linear pipeline) | [`./references/phases-1-4.md`](./references/phases-1-4.md) |
-| Phases 5-7 per-task loop | [`./references/task-loop.md`](./references/task-loop.md) |
-| Exact artifact boundary checks and validator inputs | [`./references/data-contracts.md`](./references/data-contracts.md) |
-| Error recovery, blockers, retry budgets | [`./references/error-handling.md`](./references/error-handling.md) |
-| Downstream phase skill names, dispatch inputs, dependency checks | [`./references/downstream-skills.md`](./references/downstream-skills.md) |
-| Shared concepts, runtime skill docs, web-source handling | [`./references/external-sources.md`](./references/external-sources.md), then fetch one URL at a time from the per-playbook routing section |
-| Utility work | The single subagent file from [Subagent Registry](#subagent-registry) |
+| Need                                                                                                                        | Load                                                                                                                                       |
+| --------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------ |
+| Jira platform contract (identifier, transport, phase skills, snapshot sections, write model, status check, external URLs)   | [`./references/jira-playbook.md`](./references/jira-playbook.md)                                                                           |
+| GitHub platform contract (identifier, transport, phase skills, snapshot sections, write model, status check, external URLs) | [`./references/github-playbook.md`](./references/github-playbook.md)                                                                       |
+| Start, resume, gate rules, escalation summary, examples                                                                     | [`./references/workflow-policy.md`](./references/workflow-policy.md)                                                                       |
+| Phases 1-4 procedure (linear pipeline)                                                                                      | [`./references/phases-1-4.md`](./references/phases-1-4.md)                                                                                 |
+| Phases 5-7 per-task loop                                                                                                    | [`./references/task-loop.md`](./references/task-loop.md)                                                                                   |
+| Exact artifact boundary checks and validator inputs                                                                         | [`./references/data-contracts.md`](./references/data-contracts.md)                                                                         |
+| Error recovery, blockers, retry budgets                                                                                     | [`./references/error-handling.md`](./references/error-handling.md)                                                                         |
+| Downstream phase skill names, dispatch inputs, dependency checks                                                            | [`./references/downstream-skills.md`](./references/downstream-skills.md)                                                                   |
+| Shared concepts, runtime skill docs, web-source handling                                                                    | [`./references/external-sources.md`](./references/external-sources.md), then fetch one URL at a time from the per-playbook routing section |
+| Utility work                                                                                                                | The single subagent file from [Subagent Registry](#subagent-registry)                                                                      |
 
 External URLs are optional supporting material. When a bundled contract and a fetched URL conflict, the bundled contract wins.
 
@@ -67,15 +67,15 @@ External URLs are optional supporting material. When a bundled contract and a fe
 
 Use this registry as a lookup table. Read one subagent definition only when you are about to dispatch that subagent.
 
-| Subagent | Path | Purpose |
-| --- | --- | --- |
-| `preflight-checker` | [`./subagents/preflight-checker.md`](./subagents/preflight-checker.md) | Validate workflow dependencies before starting |
-| `artifact-validator` | [`./subagents/artifact-validator.md`](./subagents/artifact-validator.md) | Verify phase preconditions and postconditions |
-| `progress-tracker` | [`./subagents/progress-tracker.md`](./subagents/progress-tracker.md) | Read, create, and update progress artifacts |
-| `status-checker` | [`./subagents/status-checker.md`](./subagents/status-checker.md) | Query the work-item platform for current state via the playbook-supplied transport |
-| `codebase-inspector` | [`./subagents/codebase-inspector.md`](./subagents/codebase-inspector.md) | Summarize git branch, changes, and recent commits |
-| `code-reference-finder` | [`./subagents/code-reference-finder.md`](./subagents/code-reference-finder.md) | Locate symbols, files, and implementation touchpoints |
-| `documentation-finder` | [`./subagents/documentation-finder.md`](./subagents/documentation-finder.md) | Find relevant docs and return concise summaries |
+| Subagent                | Path                                                                           | Purpose                                                                            |
+| ----------------------- | ------------------------------------------------------------------------------ | ---------------------------------------------------------------------------------- |
+| `preflight-checker`     | [`./subagents/preflight-checker.md`](./subagents/preflight-checker.md)         | Validate workflow dependencies before starting                                     |
+| `artifact-validator`    | [`./subagents/artifact-validator.md`](./subagents/artifact-validator.md)       | Verify phase preconditions and postconditions                                      |
+| `progress-tracker`      | [`./subagents/progress-tracker.md`](./subagents/progress-tracker.md)           | Read, create, and update progress artifacts                                        |
+| `status-checker`        | [`./subagents/status-checker.md`](./subagents/status-checker.md)               | Query the work-item platform for current state via the playbook-supplied transport |
+| `codebase-inspector`    | [`./subagents/codebase-inspector.md`](./subagents/codebase-inspector.md)       | Summarize git branch, changes, and recent commits                                  |
+| `code-reference-finder` | [`./subagents/code-reference-finder.md`](./subagents/code-reference-finder.md) | Locate symbols, files, and implementation touchpoints                              |
+| `documentation-finder`  | [`./subagents/documentation-finder.md`](./subagents/documentation-finder.md)   | Find relevant docs and return concise summaries                                    |
 
 ## Downstream Skill Dependencies
 

@@ -9,11 +9,11 @@ You are a work-item-query subagent. Retrieve the current state of a work item an
 
 ## Inputs
 
-| Input | Required | Example |
-| --- | --- | --- |
-| `TICKET_KEY` | Yes | `<KEY>` (workflow key; value shape defined by the active playbook) |
-| `PLAYBOOK_PATH` | Yes | `<resolved-skill-directory>/references/<platform>-playbook.md` |
-| `QUERY_TYPE` | No; defaults to `status` | `status` |
+| Input           | Required                 | Example                                                            |
+| --------------- | ------------------------ | ------------------------------------------------------------------ |
+| `TICKET_KEY`    | Yes                      | `<KEY>` (workflow key; value shape defined by the active playbook) |
+| `PLAYBOOK_PATH` | Yes                      | `<resolved-skill-directory>/references/<platform>-playbook.md`     |
+| `QUERY_TYPE`    | No; defaults to `status` | `status`                                                           |
 
 Supported neutral `QUERY_TYPE` values: `status`, `full`, `children`. The active playbook may accept additional platform-native aliases for these neutral names; consult the playbook's `Status-Check Contract` section for the accepted alias list.
 

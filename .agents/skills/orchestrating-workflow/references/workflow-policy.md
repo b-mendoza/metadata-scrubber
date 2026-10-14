@@ -40,15 +40,15 @@ When a phase has a targeted fix or re-plan loop, re-run only the failing phase a
 
 ## Gate Rules
 
-| Boundary | Gate type | Rule |
-| --- | --- | --- |
-| 1 → 2 | Automatic | Proceed when validation passes |
-| 2 → 3 | Automatic | Proceed when validation passes |
-| 3 → 4 | User gate | Proceed only when validation passes, `BLOCKERS_PRESENT=false`, and the user explicitly approves platform writes |
-| 4 → 5 | User gate | User selects the next task to execute |
-| 5 → 6 | Automatic | Proceed when planning artifacts validate |
-| 6 → 7 | User gate | Proceed only when validation passes, `BLOCKERS_PRESENT=false`, and the user confirms the critiqued task plan is ready for real execution |
-| 7 → next task | User gate | User chooses the next task or stops |
+| Boundary      | Gate type | Rule                                                                                                                                     |
+| ------------- | --------- | ---------------------------------------------------------------------------------------------------------------------------------------- |
+| 1 → 2         | Automatic | Proceed when validation passes                                                                                                           |
+| 2 → 3         | Automatic | Proceed when validation passes                                                                                                           |
+| 3 → 4         | User gate | Proceed only when validation passes, `BLOCKERS_PRESENT=false`, and the user explicitly approves platform writes                          |
+| 4 → 5         | User gate | User selects the next task to execute                                                                                                    |
+| 5 → 6         | Automatic | Proceed when planning artifacts validate                                                                                                 |
+| 6 → 7         | User gate | Proceed only when validation passes, `BLOCKERS_PRESENT=false`, and the user confirms the critiqued task plan is ready for real execution |
+| 7 → next task | User gate | User chooses the next task or stops                                                                                                      |
 
 For Phases 3 and 6, gate decisions use both the validator verdict and the `clarifying-assumptions` final summary. `BLOCKERS_PRESENT=true` is a hard stop. `RE_PLAN_NEEDED=true` reopens the relevant planning phase before the gate can advance.
 
@@ -56,16 +56,16 @@ For Phases 3 and 6, gate decisions use both the validator verdict and the `clari
 
 After dispatching `progress-tracker` with the workflow key and `ACTION=read`, choose a resume point from this table, then dispatch `preflight-checker` with the workflow key, `PLAYBOOK_PATH=<active playbook path>`, and only the remaining phase range.
 
-| Progress indicates | Resume from | Preflight `PHASES` |
-| --- | --- | --- |
-| No artifacts found | Phase 1 | `1-7` |
-| Phase 1 complete, Phase 2 not started | Phase 2 | `2-7` |
-| Phases 1-2 complete, Phase 3 not done | Phase 3 | `3-7` |
-| Phases 1-3 complete, Phase 4 not done | Phase 4 | `4-7` |
-| Phases 1-4 complete, no tasks started | Phase 5 (task selection) | `5-7` |
-| Task N at Phase 5 complete, Phase 6 not done | Phase 6, Task N | `6-7` |
-| Task N at Phase 6 complete, Phase 7 not done | Phase 7, Task N | `7` |
-| Task N complete, other tasks remaining | Phase 5 (task selection) | `5-7` |
+| Progress indicates                           | Resume from              | Preflight `PHASES` |
+| -------------------------------------------- | ------------------------ | ------------------ |
+| No artifacts found                           | Phase 1                  | `1-7`              |
+| Phase 1 complete, Phase 2 not started        | Phase 2                  | `2-7`              |
+| Phases 1-2 complete, Phase 3 not done        | Phase 3                  | `3-7`              |
+| Phases 1-3 complete, Phase 4 not done        | Phase 4                  | `4-7`              |
+| Phases 1-4 complete, no tasks started        | Phase 5 (task selection) | `5-7`              |
+| Task N at Phase 5 complete, Phase 6 not done | Phase 6, Task N          | `6-7`              |
+| Task N at Phase 6 complete, Phase 7 not done | Phase 7, Task N          | `7`                |
+| Task N complete, other tasks remaining       | Phase 5 (task selection) | `5-7`              |
 
 Confirm with the user before resuming past Phase 1, then load the matching playbook (`./phases-1-4.md` for Phases 1-4, `./task-loop.md` for Phases 5-7).
 

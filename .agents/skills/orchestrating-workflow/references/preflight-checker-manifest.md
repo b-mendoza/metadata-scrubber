@@ -16,26 +16,26 @@ Any requested required dependency confirmed as `MISSING` produces `PREFLIGHT: FA
 
 For each phase the preflight checker validates the following dependency classes. The active playbook supplies the concrete names and check commands.
 
-| Phase | Dependency class | Source of concrete value |
-| --- | --- | --- |
-| 1 | Platform transport | Active playbook's `Transport` and `Preflight Transport Check` |
-| 1 | Phase 1 downstream skill | Active playbook's `Phase Skill Map` row for Phase 1 |
-| 2 | Phase 2 downstream skill | Active playbook's `Phase Skill Map` row for Phase 2 |
-| 3 | `clarifying-assumptions` | Constant across platforms |
-| 4 | Platform transport | Active playbook's `Transport` and `Preflight Transport Check` |
-| 4 | Phase 4 downstream skill | Active playbook's `Phase Skill Map` row for Phase 4 |
-| 5 | Phase 5 downstream skill | Active playbook's `Phase Skill Map` row for Phase 5 |
-| 6 | `clarifying-assumptions` | Constant across platforms |
-| 7 | Platform transport (when the playbook lists it for Phase 7) | Active playbook's `Transport` and `Preflight Transport Check` |
-| 7 | Phase 7 downstream skill | Active playbook's `Phase Skill Map` row for Phase 7 |
+| Phase | Dependency class                                            | Source of concrete value                                      |
+| ----- | ----------------------------------------------------------- | ------------------------------------------------------------- |
+| 1     | Platform transport                                          | Active playbook's `Transport` and `Preflight Transport Check` |
+| 1     | Phase 1 downstream skill                                    | Active playbook's `Phase Skill Map` row for Phase 1           |
+| 2     | Phase 2 downstream skill                                    | Active playbook's `Phase Skill Map` row for Phase 2           |
+| 3     | `clarifying-assumptions`                                    | Constant across platforms                                     |
+| 4     | Platform transport                                          | Active playbook's `Transport` and `Preflight Transport Check` |
+| 4     | Phase 4 downstream skill                                    | Active playbook's `Phase Skill Map` row for Phase 4           |
+| 5     | Phase 5 downstream skill                                    | Active playbook's `Phase Skill Map` row for Phase 5           |
+| 6     | `clarifying-assumptions`                                    | Constant across platforms                                     |
+| 7     | Platform transport (when the playbook lists it for Phase 7) | Active playbook's `Transport` and `Preflight Transport Check` |
+| 7     | Phase 7 downstream skill                                    | Active playbook's `Phase Skill Map` row for Phase 7           |
 
 ## How to Check Each Class
 
-| Dependency class | Type | How to verify | Configure |
-| --- | --- | --- | --- |
-| Platform transport | Tool / MCP / CLI | Run the active playbook's `Preflight Transport Check` command(s) | Follow the playbook's `External-Source Routing` setup section |
-| Downstream phase skill | Skill | Runtime reports skill available / invokable | Install or enable the named downstream skill |
-| `clarifying-assumptions` | Skill | Runtime reports skill available / invokable | Install or enable the skill |
+| Dependency class         | Type             | How to verify                                                    | Configure                                                     |
+| ------------------------ | ---------------- | ---------------------------------------------------------------- | ------------------------------------------------------------- |
+| Platform transport       | Tool / MCP / CLI | Run the active playbook's `Preflight Transport Check` command(s) | Follow the playbook's `External-Source Routing` setup section |
+| Downstream phase skill   | Skill            | Runtime reports skill available / invokable                      | Install or enable the named downstream skill                  |
+| `clarifying-assumptions` | Skill            | Runtime reports skill available / invokable                      | Install or enable the skill                                   |
 
 ## Quick Reference
 

@@ -9,11 +9,11 @@ You are a code-search subagent. Locate the smallest set of code references that 
 
 ## Inputs
 
-| Input | Required | Example |
-| --- | --- | --- |
-| `QUERY` | Yes | `validateInput` |
-| `SCOPE` | No; defaults to the whole repository | `src/` |
-| `CONTEXT` | No | `find likely touchpoints for task 2` |
+| Input     | Required                             | Example                              |
+| --------- | ------------------------------------ | ------------------------------------ |
+| `QUERY`   | Yes                                  | `validateInput`                      |
+| `SCOPE`   | No; defaults to the whole repository | `src/`                               |
+| `CONTEXT` | No                                   | `find likely touchpoints for task 2` |
 
 ## Instructions
 
