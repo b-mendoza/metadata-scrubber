@@ -4,12 +4,12 @@
 
 ## Inputs and Identifier
 
-| Input | Required | Example |
-| --- | --- | --- |
-| `TICKET_KEY` | Preferred shared workflow alias | `acme-app-42` |
-| `ISSUE_SLUG` | Direct-invocation compatibility when the alias is absent | `acme-app-42` |
-| `TASK_NUMBER` | Yes | `3` |
-| `INVOCATION_MODE` | Yes for readiness validation | `orchestrated` or `standalone` |
+| Input             | Required                                                 | Example                        |
+| ----------------- | -------------------------------------------------------- | ------------------------------ |
+| `TICKET_KEY`      | Preferred shared workflow alias                          | `acme-app-42`                  |
+| `ISSUE_SLUG`      | Direct-invocation compatibility when the alias is absent | `acme-app-42`                  |
+| `TASK_NUMBER`     | Yes                                                      | `3`                            |
+| `INVOCATION_MODE` | Yes for readiness validation                             | `orchestrated` or `standalone` |
 
 Validate the GitHub issue slug as `<owner>-<repo>-<number>`, with at least two name segments before the numeric suffix. Preserve the supplied normalized slug as **`<KEY>`**. When only `ISSUE_SLUG` is supplied, pass the same value under `TICKET_KEY` for every shared reference and subagent.
 

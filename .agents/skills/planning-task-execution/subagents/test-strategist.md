@@ -11,18 +11,18 @@ The active playbook (`PLAYBOOK_PATH`) supplies every platform-specific detail: i
 
 ## Inputs
 
-| Input | Required | Example |
-| --- | --- | --- |
-| `PLAYBOOK_PATH` | Yes | `../references/github-playbook.md` |
-| `TICKET_KEY` | Yes | `acme-app-42` or `JNS-6065` |
-| `TASK_NUMBER` | Yes | `3` |
-| `BRIEF_FILE` | Yes | `docs/<KEY>-task-3-brief.md` |
-| `PLAN_FILE` | Yes | `docs/<KEY>-task-3-execution-plan.md` |
-| `DECISIONS_FILE` | No | `docs/<KEY>-task-3-decisions.md` |
-| `REPAIR_FINDINGS` | No | `Missing ## Definition of Done Coverage section` |
-| `DATA_CONTRACTS_PATH` | No | `../references/data-contracts.md` |
-| `ARTIFACT_TEMPLATES_PATH` | No | `../references/artifact-templates.md` |
-| `EXTERNAL_SOURCES_PATH` | No | `../references/external-sources.md` |
+| Input                     | Required | Example                                          |
+| ------------------------- | -------- | ------------------------------------------------ |
+| `PLAYBOOK_PATH`           | Yes      | `../references/github-playbook.md`               |
+| `TICKET_KEY`              | Yes      | `acme-app-42` or `JNS-6065`                      |
+| `TASK_NUMBER`             | Yes      | `3`                                              |
+| `BRIEF_FILE`              | Yes      | `docs/<KEY>-task-3-brief.md`                     |
+| `PLAN_FILE`               | Yes      | `docs/<KEY>-task-3-execution-plan.md`            |
+| `DECISIONS_FILE`          | No       | `docs/<KEY>-task-3-decisions.md`                 |
+| `REPAIR_FINDINGS`         | No       | `Missing ## Definition of Done Coverage section` |
+| `DATA_CONTRACTS_PATH`     | No       | `../references/data-contracts.md`                |
+| `ARTIFACT_TEMPLATES_PATH` | No       | `../references/artifact-templates.md`            |
+| `EXTERNAL_SOURCES_PATH`   | No       | `../references/external-sources.md`              |
 
 Default each omitted shared bundled path to the value above; the paths are relative to this subagent file. `PLAYBOOK_PATH` remains required because it selects the platform-specific contract. `TICKET_KEY` is the shared alias whose value is the active playbook's `<KEY>`.
 
@@ -61,10 +61,10 @@ Read the selected task's brief, plan, decisions, and only the tests and helpers 
 
 ## Escalation
 
-| Status | Use when |
-| --- | --- |
-| `TEST_SPEC: BLOCKED` | Required brief or execution plan is missing |
-| `TEST_SPEC: FAIL` | Identity mismatch or ambiguity prevents reliable behavior-oriented tests |
-| `TEST_SPEC: ERROR` | Unexpected tool, filesystem, fetch, parse, template, or write failure prevents completion |
+| Status               | Use when                                                                                  |
+| -------------------- | ----------------------------------------------------------------------------------------- |
+| `TEST_SPEC: BLOCKED` | Required brief or execution plan is missing                                               |
+| `TEST_SPEC: FAIL`    | Identity mismatch or ambiguity prevents reliable behavior-oriented tests                  |
+| `TEST_SPEC: ERROR`   | Unexpected tool, filesystem, fetch, parse, template, or write failure prevents completion |
 
 Prefer a clear blocker over an implementation-coupled test plan or task switch.

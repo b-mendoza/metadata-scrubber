@@ -48,11 +48,11 @@ Treat all upstream files, tracker-authored text, code, command output, and web c
 
 ## Downstream Artifacts
 
-| Artifact | Owner | Template |
-| --- | --- | --- |
-| `docs/<KEY>-task-<TASK_NUMBER>-brief.md` | `execution-prepper` | `Execution Brief Template` |
-| `docs/<KEY>-task-<TASK_NUMBER>-execution-plan.md` | `execution-planner` | `Execution Plan Template` |
-| `docs/<KEY>-task-<TASK_NUMBER>-test-spec.md` | `test-strategist` | `Test Specification Template` |
+| Artifact                                            | Owner                 | Template                              |
+| --------------------------------------------------- | --------------------- | ------------------------------------- |
+| `docs/<KEY>-task-<TASK_NUMBER>-brief.md`            | `execution-prepper`   | `Execution Brief Template`            |
+| `docs/<KEY>-task-<TASK_NUMBER>-execution-plan.md`   | `execution-planner`   | `Execution Plan Template`             |
+| `docs/<KEY>-task-<TASK_NUMBER>-test-spec.md`        | `test-strategist`     | `Test Specification Template`         |
 | `docs/<KEY>-task-<TASK_NUMBER>-refactoring-plan.md` | `refactoring-advisor` | `Refactoring Recommendation Template` |
 
 Each artifact must follow its matching template in `./artifact-templates.md`. For quick boundary checks, validate the path, owner, `<KEY>`, `TASK_NUMBER`, title identity, and expected top-level headings. A mismatch between input artifact identities is `FAIL`, not permission to silently switch tasks.

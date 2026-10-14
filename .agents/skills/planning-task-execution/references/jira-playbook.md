@@ -4,10 +4,10 @@
 
 ## Inputs and Identifier
 
-| Input | Required | Example |
-| --- | --- | --- |
-| `TICKET_KEY` | Yes | `JNS-6065` |
-| `TASK_NUMBER` | Yes | `3` |
+| Input             | Required                     | Example                        |
+| ----------------- | ---------------------------- | ------------------------------ |
+| `TICKET_KEY`      | Yes                          | `JNS-6065`                     |
+| `TASK_NUMBER`     | Yes                          | `3`                            |
 | `INVOCATION_MODE` | Yes for readiness validation | `orchestrated` or `standalone` |
 
 Validate `TICKET_KEY` as a Jira key `<PROJECT>-<number>` with exactly one dash before the numeric suffix and no dash inside the project segment. Preserve the validated ticket key as **`<KEY>`** for every shared reference, subagent input, and artifact path.

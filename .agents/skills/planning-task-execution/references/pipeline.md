@@ -19,12 +19,12 @@ A subagent reads PLAYBOOK_PATH first. It reads EXTERNAL_SOURCES_PATH only when t
 
 ## Standard Pipeline
 
-| Stage | Subagent | Required task inputs | Optional inputs | Result fields |
-| --- | --- | --- | --- | --- |
-| 1 | `execution-prepper` | `TICKET_KEY`, `TASK_NUMBER`, `INVOCATION_MODE` | `RE_PLAN`, `DECISIONS_FILE` | `PREP`, brief path, dependencies, questions |
-| 2 | `execution-planner` | `TICKET_KEY`, `TASK_NUMBER`, `BRIEF_FILE` | `DECISIONS_FILE` | `PLAN`, plan path, recommended skills |
-| 3 | `test-strategist` | `TICKET_KEY`, `TASK_NUMBER`, `BRIEF_FILE`, `PLAN_FILE` | `DECISIONS_FILE` | `TEST_SPEC`, spec path, framework |
-| 4 | `refactoring-advisor` | `TICKET_KEY`, `TASK_NUMBER`, `BRIEF_FILE`, `PLAN_FILE`, `TEST_SPEC_FILE` | `DECISIONS_FILE` | `REFACTORING`, plan path, verdict |
+| Stage | Subagent              | Required task inputs                                                     | Optional inputs             | Result fields                               |
+| ----- | --------------------- | ------------------------------------------------------------------------ | --------------------------- | ------------------------------------------- |
+| 1     | `execution-prepper`   | `TICKET_KEY`, `TASK_NUMBER`, `INVOCATION_MODE`                           | `RE_PLAN`, `DECISIONS_FILE` | `PREP`, brief path, dependencies, questions |
+| 2     | `execution-planner`   | `TICKET_KEY`, `TASK_NUMBER`, `BRIEF_FILE`                                | `DECISIONS_FILE`            | `PLAN`, plan path, recommended skills       |
+| 3     | `test-strategist`     | `TICKET_KEY`, `TASK_NUMBER`, `BRIEF_FILE`, `PLAN_FILE`                   | `DECISIONS_FILE`            | `TEST_SPEC`, spec path, framework           |
+| 4     | `refactoring-advisor` | `TICKET_KEY`, `TASK_NUMBER`, `BRIEF_FILE`, `PLAN_FILE`, `TEST_SPEC_FILE` | `DECISIONS_FILE`            | `REFACTORING`, plan path, verdict           |
 
 Before dispatch, validate every required input artifact exists and carries the same `<KEY>` and `TASK_NUMBER`. After a `PASS`, validate the expected output path, owner, identity, and template headings before continuing.
 
@@ -32,14 +32,14 @@ Before dispatch, validate every required input artifact exists and carries the s
 
 Before routing, require `PREP: PASS` to pair with `Dependencies: Satisfied` and `Questions: Resolved`, and require every later `*: PASS` to pair with `Blockers: None`. Any contradictory readiness field makes the summary malformed; route it as `ERROR` and stop.
 
-| Status returned | Coordinator action |
-| --- | --- |
-| `*: PASS` with consistent summary and valid artifact | Continue with the returned path |
-| `*: PASS` with invalid or missing artifact | Enter the artifact-validation repair loop |
-| `*: FAIL` | Stop and surface the dependency, unresolved question, ambiguity, behavior gap, or planning risk |
-| `*: BLOCKED` | Stop and surface the missing prerequisite, selected-task section, or input artifact |
-| `*: ERROR` | Stop and report the unexpected tool, filesystem, fetch, or parsing problem |
-| Unknown or malformed | Treat as `ERROR`; do not infer a route from prose |
+| Status returned                                      | Coordinator action                                                                              |
+| ---------------------------------------------------- | ----------------------------------------------------------------------------------------------- |
+| `*: PASS` with consistent summary and valid artifact | Continue with the returned path                                                                 |
+| `*: PASS` with invalid or missing artifact           | Enter the artifact-validation repair loop                                                       |
+| `*: FAIL`                                            | Stop and surface the dependency, unresolved question, ambiguity, behavior gap, or planning risk |
+| `*: BLOCKED`                                         | Stop and surface the missing prerequisite, selected-task section, or input artifact             |
+| `*: ERROR`                                           | Stop and report the unexpected tool, filesystem, fetch, or parsing problem                      |
+| Unknown or malformed                                 | Treat as `ERROR`; do not infer a route from prose                                               |
 
 ## Completion Report
 
@@ -59,12 +59,12 @@ Then stop and return control to the caller. Do not increment `TASK_NUMBER`, sele
 
 Use targeted reruns instead of replaying the whole pipeline by default:
 
-| Critique change | Rerun |
-| --- | --- |
-| Task scope, definition of done, resolved questions, or brief context | `execution-prepper` and every downstream subagent |
-| Implementation approach, file strategy, user impact, or recommended skills | `execution-planner`, `test-strategist`, and `refactoring-advisor` |
-| Test expectations only | `test-strategist`; rerun `refactoring-advisor` only if sequencing, setup, or test impact changes |
-| Refactoring guidance only | `refactoring-advisor` alone |
+| Critique change                                                            | Rerun                                                                                            |
+| -------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------ |
+| Task scope, definition of done, resolved questions, or brief context       | `execution-prepper` and every downstream subagent                                                |
+| Implementation approach, file strategy, user impact, or recommended skills | `execution-planner`, `test-strategist`, and `refactoring-advisor`                                |
+| Test expectations only                                                     | `test-strategist`; rerun `refactoring-advisor` only if sequencing, setup, or test impact changes |
+| Refactoring guidance only                                                  | `refactoring-advisor` alone                                                                      |
 
 Whenever a subagent is re-run:
 

@@ -11,19 +11,19 @@ The active playbook (`PLAYBOOK_PATH`) supplies every platform-specific detail: i
 
 ## Inputs
 
-| Input | Required | Example |
-| --- | --- | --- |
-| `PLAYBOOK_PATH` | Yes | `../references/jira-playbook.md` |
-| `TICKET_KEY` | Yes | `JNS-6065` or `acme-app-42` |
-| `TASK_NUMBER` | Yes | `3` |
-| `BRIEF_FILE` | Yes | `docs/<KEY>-task-3-brief.md` |
-| `PLAN_FILE` | Yes | `docs/<KEY>-task-3-execution-plan.md` |
-| `TEST_SPEC_FILE` | Yes | `docs/<KEY>-task-3-test-spec.md` |
-| `DECISIONS_FILE` | No | `docs/<KEY>-task-3-decisions.md` |
-| `REPAIR_FINDINGS` | No | `Missing ## Impact on Existing Tests section` |
-| `DATA_CONTRACTS_PATH` | No | `../references/data-contracts.md` |
-| `ARTIFACT_TEMPLATES_PATH` | No | `../references/artifact-templates.md` |
-| `EXTERNAL_SOURCES_PATH` | No | `../references/external-sources.md` |
+| Input                     | Required | Example                                       |
+| ------------------------- | -------- | --------------------------------------------- |
+| `PLAYBOOK_PATH`           | Yes      | `../references/jira-playbook.md`              |
+| `TICKET_KEY`              | Yes      | `JNS-6065` or `acme-app-42`                   |
+| `TASK_NUMBER`             | Yes      | `3`                                           |
+| `BRIEF_FILE`              | Yes      | `docs/<KEY>-task-3-brief.md`                  |
+| `PLAN_FILE`               | Yes      | `docs/<KEY>-task-3-execution-plan.md`         |
+| `TEST_SPEC_FILE`          | Yes      | `docs/<KEY>-task-3-test-spec.md`              |
+| `DECISIONS_FILE`          | No       | `docs/<KEY>-task-3-decisions.md`              |
+| `REPAIR_FINDINGS`         | No       | `Missing ## Impact on Existing Tests section` |
+| `DATA_CONTRACTS_PATH`     | No       | `../references/data-contracts.md`             |
+| `ARTIFACT_TEMPLATES_PATH` | No       | `../references/artifact-templates.md`         |
+| `EXTERNAL_SOURCES_PATH`   | No       | `../references/external-sources.md`           |
 
 Default each omitted shared bundled path to the value above; the paths are relative to this subagent file. `PLAYBOOK_PATH` remains required because it selects the platform-specific contract. `TICKET_KEY` is the shared alias whose value is the active playbook's `<KEY>`.
 
@@ -62,10 +62,10 @@ Read the selected task's planning artifacts, decisions, and only directly affect
 
 ## Escalation
 
-| Status | Use when |
-| --- | --- |
-| `REFACTORING: BLOCKED` | Required brief, execution plan, or test specification is missing |
-| `REFACTORING: FAIL` | Identity mismatch or ambiguity prevents a trustworthy recommendation |
-| `REFACTORING: ERROR` | Unexpected tool, filesystem, fetch, parse, template, or write failure prevents completion |
+| Status                 | Use when                                                                                  |
+| ---------------------- | ----------------------------------------------------------------------------------------- |
+| `REFACTORING: BLOCKED` | Required brief, execution plan, or test specification is missing                          |
+| `REFACTORING: FAIL`    | Identity mismatch or ambiguity prevents a trustworthy recommendation                      |
+| `REFACTORING: ERROR`   | Unexpected tool, filesystem, fetch, parse, template, or write failure prevents completion |
 
 Prefer `No refactoring needed` over speculative cleanup or task expansion.

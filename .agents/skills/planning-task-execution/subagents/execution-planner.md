@@ -11,17 +11,17 @@ The active playbook (`PLAYBOOK_PATH`) supplies every platform-specific detail: i
 
 ## Inputs
 
-| Input | Required | Example |
-| --- | --- | --- |
-| `PLAYBOOK_PATH` | Yes | `../references/jira-playbook.md` |
-| `TICKET_KEY` | Yes | `JNS-6065` or `acme-app-42` |
-| `TASK_NUMBER` | Yes | `3` |
-| `BRIEF_FILE` | Yes | `docs/<KEY>-task-3-brief.md` |
-| `DECISIONS_FILE` | No | `docs/<KEY>-task-3-decisions.md` |
-| `REPAIR_FINDINGS` | No | `Missing ## User Impact Assessment section` |
-| `DATA_CONTRACTS_PATH` | No | `../references/data-contracts.md` |
-| `ARTIFACT_TEMPLATES_PATH` | No | `../references/artifact-templates.md` |
-| `EXTERNAL_SOURCES_PATH` | No | `../references/external-sources.md` |
+| Input                     | Required | Example                                     |
+| ------------------------- | -------- | ------------------------------------------- |
+| `PLAYBOOK_PATH`           | Yes      | `../references/jira-playbook.md`            |
+| `TICKET_KEY`              | Yes      | `JNS-6065` or `acme-app-42`                 |
+| `TASK_NUMBER`             | Yes      | `3`                                         |
+| `BRIEF_FILE`              | Yes      | `docs/<KEY>-task-3-brief.md`                |
+| `DECISIONS_FILE`          | No       | `docs/<KEY>-task-3-decisions.md`            |
+| `REPAIR_FINDINGS`         | No       | `Missing ## User Impact Assessment section` |
+| `DATA_CONTRACTS_PATH`     | No       | `../references/data-contracts.md`           |
+| `ARTIFACT_TEMPLATES_PATH` | No       | `../references/artifact-templates.md`       |
+| `EXTERNAL_SOURCES_PATH`   | No       | `../references/external-sources.md`         |
 
 Default each omitted shared bundled path to the value above; the paths are relative to this subagent file. `PLAYBOOK_PATH` remains required because it selects the platform-specific contract. `TICKET_KEY` is the shared alias whose value is the active playbook's `<KEY>`.
 
@@ -60,10 +60,10 @@ Read the brief, relevant decisions, and only the repository area needed to plan 
 
 ## Escalation
 
-| Status | Use when |
-| --- | --- |
-| `PLAN: BLOCKED` | Required brief is missing |
-| `PLAN: FAIL` | Identity mismatch or material ambiguity prevents a reliable codebase-grounded plan |
-| `PLAN: ERROR` | Unexpected tool, filesystem, fetch, parse, template, or write failure prevents completion |
+| Status          | Use when                                                                                  |
+| --------------- | ----------------------------------------------------------------------------------------- |
+| `PLAN: BLOCKED` | Required brief is missing                                                                 |
+| `PLAN: FAIL`    | Identity mismatch or material ambiguity prevents a reliable codebase-grounded plan        |
+| `PLAN: ERROR`   | Unexpected tool, filesystem, fetch, parse, template, or write failure prevents completion |
 
 Never substitute a vague plan for a clear blocker or switch task identities.
