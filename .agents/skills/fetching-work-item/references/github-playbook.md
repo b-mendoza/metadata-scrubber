@@ -4,10 +4,10 @@
 
 ## Inputs and Identifier
 
-| Input | Required | Example |
-| --- | --- | --- |
-| `ISSUE_URL` | Preferred | `https://github.com/acme/app/issues/42` |
-| `OWNER` / `REPO` / `ISSUE_NUMBER` | When URL absent | `acme` / `app` / `42` |
+| Input                             | Required        | Example                                 |
+| --------------------------------- | --------------- | --------------------------------------- |
+| `ISSUE_URL`                       | Preferred       | `https://github.com/acme/app/issues/42` |
+| `OWNER` / `REPO` / `ISSUE_NUMBER` | When URL absent | `acme` / `app` / `42`                   |
 
 Derive owner/repo/number from `ISSUE_URL` when present; lowercase owner and repo. **`ISSUE_SLUG = <owner>-<repo>-<number>`** is the `<KEY>` that names `docs/<KEY>.md`. If coordinates are missing or the URL is not an issue path, return `FETCH: FAIL` with `Failure category: BAD_INPUT`.
 
@@ -15,13 +15,13 @@ Derive owner/repo/number from `ISSUE_URL` when present; lowercase owner and repo
 
 GitHub reads use `gh` by default (`gh api` for paginated REST/GraphQL). Use `--repo owner/repo` when not passing a full URL; preserve a non-`github.com` host for `gh api`/GraphQL.
 
-| Operation | Required capability |
-| --- | --- |
-| Parent issue | `gh issue view` by URL or number with explicit repo scope |
-| Comments | Inline `comments` JSON or paginated issue-comments REST |
-| Child issues | REST sub-issues endpoint or documented GraphQL equivalent |
+| Operation     | Required capability                                                  |
+| ------------- | -------------------------------------------------------------------- |
+| Parent issue  | `gh issue view` by URL or number with explicit repo scope            |
+| Comments      | Inline `comments` JSON or paginated issue-comments REST              |
+| Child issues  | REST sub-issues endpoint or documented GraphQL equivalent            |
 | Linked issues | Timeline events, cross-references, or documented relationship source |
-| Projects | `gh issue view` project fields or a small GraphQL query |
+| Projects      | `gh issue view` project fields or a small GraphQL query              |
 
 Return `AUTH` for missing/inadequate auth; `TOOLS_MISSING` when no read path covers parent issue retrieval.
 

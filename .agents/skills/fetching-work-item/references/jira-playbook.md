@@ -14,12 +14,12 @@ Workspace = subdomain before `.atlassian.net`. Project = prefix before the dash.
 
 Jira reads use read-only Jira tools (Jira MCP or equivalent). Prefer the most specific read-only tool per operation, then keep the mapping stable.
 
-| Operation | Required capability |
-| --- | --- |
-| Parent issue | Read one Jira issue by key with fields and relationships |
-| Comments | Read parent and related-item comments with pagination |
-| Related issues | Retrieve subtasks and linked issues by key, parent fields, or verified search |
-| Metadata | Resolve field names, attachment metadata, and custom fields without downloading binaries |
+| Operation      | Required capability                                                                      |
+| -------------- | ---------------------------------------------------------------------------------------- |
+| Parent issue   | Read one Jira issue by key with fields and relationships                                 |
+| Comments       | Read parent and related-item comments with pagination                                    |
+| Related issues | Retrieve subtasks and linked issues by key, parent fields, or verified search            |
+| Metadata       | Resolve field names, attachment metadata, and custom fields without downloading binaries |
 
 Return `AUTH` on denied access; `TOOLS_MISSING` when no Jira-capable read path covers the required operations.
 

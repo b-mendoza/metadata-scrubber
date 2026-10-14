@@ -23,15 +23,15 @@ This contract defines the complete Phase 1 handoff. The coordinator and any top-
 
 ## Summary Semantics
 
-| Field | Meaning |
-| --- | --- |
-| `FETCH: PASS` | Retrieval and validation succeeded with no known gaps |
-| `FETCH: PARTIAL` | A valid artifact was written, but comments, related items, or discovery are incomplete (the active playbook enumerates the platform's partial-eligible sections) |
-| `FETCH: FAIL` | Deterministic blocker: bad input, not found, auth, missing tools, or rate limit |
-| `FETCH: ERROR` | Unexpected tool, schema, environment, or validation failure |
-| `Validation: PASS` | Written artifact satisfies the template contract |
-| `Validation: FAIL` | Artifact violates the contract after repair attempts |
-| `Validation: NOT_RUN` | Retrieval stopped before assembly or validation |
+| Field                 | Meaning                                                                                                                                                          |
+| --------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `FETCH: PASS`         | Retrieval and validation succeeded with no known gaps                                                                                                            |
+| `FETCH: PARTIAL`      | A valid artifact was written, but comments, related items, or discovery are incomplete (the active playbook enumerates the platform's partial-eligible sections) |
+| `FETCH: FAIL`         | Deterministic blocker: bad input, not found, auth, missing tools, or rate limit                                                                                  |
+| `FETCH: ERROR`        | Unexpected tool, schema, environment, or validation failure                                                                                                      |
+| `Validation: PASS`    | Written artifact satisfies the template contract                                                                                                                 |
+| `Validation: FAIL`    | Artifact violates the contract after repair attempts                                                                                                             |
+| `Validation: NOT_RUN` | Retrieval stopped before assembly or validation                                                                                                                  |
 
 Failure categories: `NONE`, `BAD_INPUT`, `NOT_FOUND`, `AUTH`, `TOOLS_MISSING`, `RATE_LIMIT`, `UNEXPECTED`.
 

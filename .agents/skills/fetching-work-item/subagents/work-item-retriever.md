@@ -13,13 +13,13 @@ The retrieval procedure is platform-neutral. The active playbook (`PLAYBOOK_PATH
 
 ## Inputs
 
-| Input | Required | Default |
-| --- | --- | --- |
-| `PLAYBOOK_PATH` | Yes | — |
-| Platform inputs named in the active playbook's `Inputs and Identifier` section | Yes | — |
-| `FETCH_CONTRACT_PATH` | No | `../references/fetch-contract.md` |
-| `RETRIEVAL_PLAYBOOK_PATH` | No | `../references/retrieval-playbook.md` |
-| `EXTERNAL_SOURCES_PATH` | No | `../references/external-sources.md` |
+| Input                                                                          | Required | Default                               |
+| ------------------------------------------------------------------------------ | -------- | ------------------------------------- |
+| `PLAYBOOK_PATH`                                                                | Yes      | —                                     |
+| Platform inputs named in the active playbook's `Inputs and Identifier` section | Yes      | —                                     |
+| `FETCH_CONTRACT_PATH`                                                          | No       | `../references/fetch-contract.md`     |
+| `RETRIEVAL_PLAYBOOK_PATH`                                                      | No       | `../references/retrieval-playbook.md` |
+| `EXTERNAL_SOURCES_PATH`                                                        | No       | `../references/external-sources.md`   |
 
 Bundled paths above are relative to this subagent file.
 
@@ -48,8 +48,8 @@ Read platform data through read-only platform tools, preserve useful tracker con
 
 ## Escalation
 
-| Status | When |
-| --- | --- |
-| `FETCH: FAIL` | Deterministic blocker: malformed input, missing parent work item, auth/permission failure, missing read capability, or rate-limit exhaustion |
-| `FETCH: PARTIAL` | Main artifact is valid but comments, related items, or discovery are incomplete |
-| `FETCH: ERROR` (`Failure category: UNEXPECTED`) | Crashes, schema/tool mismatches, environment failures, or validation failure after the repair loop |
+| Status                                          | When                                                                                                                                         |
+| ----------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------- |
+| `FETCH: FAIL`                                   | Deterministic blocker: malformed input, missing parent work item, auth/permission failure, missing read capability, or rate-limit exhaustion |
+| `FETCH: PARTIAL`                                | Main artifact is valid but comments, related items, or discovery are incomplete                                                              |
+| `FETCH: ERROR` (`Failure category: UNEXPECTED`) | Crashes, schema/tool mismatches, environment failures, or validation failure after the repair loop                                           |

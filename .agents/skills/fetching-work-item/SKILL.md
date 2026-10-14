@@ -15,9 +15,9 @@ Workflow role: this is the Phase 1 fetch-work-item step for the orchestration wo
 
 Detect the platform from the input and load the matching playbook for every per-platform decision:
 
-| Signal | Platform | Playbook |
-| --- | --- | --- |
-| `JIRA_URL` matching `https://<workspace>.atlassian.net/browse/<KEY>` | `jira` | [`./references/jira-playbook.md`](./references/jira-playbook.md) |
+| Signal                                                                                                                          | Platform | Playbook                                                             |
+| ------------------------------------------------------------------------------------------------------------------------------- | -------- | -------------------------------------------------------------------- |
+| `JIRA_URL` matching `https://<workspace>.atlassian.net/browse/<KEY>`                                                            | `jira`   | [`./references/jira-playbook.md`](./references/jira-playbook.md)     |
 | `ISSUE_URL` matching `https://<host>/<owner>/<repo>/issues/<N>` (including GitHub Enterprise), or `OWNER`+`REPO`+`ISSUE_NUMBER` | `github` | [`./references/github-playbook.md`](./references/github-playbook.md) |
 
 If the input matches neither pattern, ask one targeted clarification question before dispatching the retriever. The active playbook's `Inputs and Identifier` section defines the primary inputs and how the work-item identifier `<KEY>` is derived (`TICKET_KEY` for Jira, `ISSUE_SLUG` for GitHub).
@@ -28,24 +28,24 @@ Primary inputs live in each playbook. Pass the platform inputs the active playbo
 
 ## Subagent Registry
 
-| Subagent | Path | Purpose |
-| --- | --- | --- |
+| Subagent              | Path                                 | Purpose                                                                                                                        |
+| --------------------- | ------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------ |
 | `work-item-retriever` | `./subagents/work-item-retriever.md` | Reads platform data via the playbook-supplied transport, writes and validates `docs/<KEY>.md`, returns a compact fetch summary |
 
 Read the subagent file only when dispatching it.
 
 ## Progressive Disclosure Map
 
-| Need | Load |
-| --- | --- |
-| Coordinate routing and dispatch | This `SKILL.md` |
-| Jira platform contract (inputs, transport, capture, sections, summary fields, rate limits, URLs) | `./references/jira-playbook.md` |
-| GitHub platform contract (inputs, transport, capture, sections, summary fields, rate limits, URLs) | `./references/github-playbook.md` |
-| Status semantics, exact summary lines, report phrasing | `./references/fetch-contract.md` |
-| Shared retrieval procedure and validation gate | `./references/retrieval-playbook.md` inside `work-item-retriever` |
-| Markdown snapshot shape | The active playbook's snapshot-template file, only during assembly |
-| Current public docs or source-backed rationale | `./references/external-sources.md`, then fetch only the relevant URL |
-| Retriever behavior | `./subagents/work-item-retriever.md` only when dispatching |
+| Need                                                                                               | Load                                                                 |
+| -------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------- |
+| Coordinate routing and dispatch                                                                    | This `SKILL.md`                                                      |
+| Jira platform contract (inputs, transport, capture, sections, summary fields, rate limits, URLs)   | `./references/jira-playbook.md`                                      |
+| GitHub platform contract (inputs, transport, capture, sections, summary fields, rate limits, URLs) | `./references/github-playbook.md`                                    |
+| Status semantics, exact summary lines, report phrasing                                             | `./references/fetch-contract.md`                                     |
+| Shared retrieval procedure and validation gate                                                     | `./references/retrieval-playbook.md` inside `work-item-retriever`    |
+| Markdown snapshot shape                                                                            | The active playbook's snapshot-template file, only during assembly   |
+| Current public docs or source-backed rationale                                                     | `./references/external-sources.md`, then fetch only the relevant URL |
+| Retriever behavior                                                                                 | `./subagents/work-item-retriever.md` only when dispatching           |
 
 The coordinator passes reference paths and the active playbook path to the retriever instead of loading detailed playbooks or raw platform data. Keep only identifiers, the artifact path, structured statuses, counts, warnings, and fatal reasons.
 
@@ -65,13 +65,13 @@ The retriever reads the snapshot-template path from the active playbook's `Snaps
 
 Branch on the structured summary, not prose:
 
-| Summary state | Coordinator action |
-| --- | --- |
-| `FETCH: PASS` with `Validation: PASS` | Report success and continue |
+| Summary state                            | Coordinator action                                                                                |
+| ---------------------------------------- | ------------------------------------------------------------------------------------------------- |
+| `FETCH: PASS` with `Validation: PASS`    | Report success and continue                                                                       |
 | `FETCH: PARTIAL` with `Validation: PASS` | Report success with visible warnings; continue only if downstream phases tolerate partial context |
-| `Validation: FAIL` | Stop and report the contract failure |
-| `FETCH: FAIL` | Stop and report `Failure category` plus `Reason` |
-| `FETCH: ERROR` | Stop and report the unexpected failure |
+| `Validation: FAIL`                       | Stop and report the contract failure                                                              |
+| `FETCH: FAIL`                            | Stop and report `Failure category` plus `Reason`                                                  |
+| `FETCH: ERROR`                           | Stop and report the unexpected failure                                                            |
 
 If a returned status pairing is inconsistent, load `./references/fetch-contract.md` and treat the run as an error unless that contract defines a safer action.
 

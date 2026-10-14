@@ -17,14 +17,14 @@
 
 Use this six-stage pipeline for every retrieval run. The stages are platform-neutral; the active playbook supplies the read-path operations, capture rules, and relationship vocabulary each stage uses.
 
-| Stage | Name | Exit condition |
-| --- | --- | --- |
-| 1 | Validate the input and establish identifiers | The active playbook's identifier (`<KEY>`) and any required coordinates are known, or `BAD_INPUT` is returned |
-| 2 | Establish the tracker read path | A supported read-only path covers the playbook's read-path operations, or `AUTH`/`TOOLS_MISSING`/`RATE_LIMIT` is returned |
-| 3 | Retrieve the parent work item | Parent fields, description, comments, and the playbook's parent-capture set are retrieved or the run stops with a deterministic failure |
-| 4 | Retrieve related items | The playbook's related-item totals are verified, hydrated, marked unknown, or recorded as partial |
-| 5 | Assemble the document | `docs/<KEY>.md` is written from the playbook's snapshot template |
-| 6 | Post-write validation gate: validate, repair, and re-check | Artifact satisfies the contract or validation fails after the repair limit |
+| Stage | Name                                                       | Exit condition                                                                                                                          |
+| ----- | ---------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------- |
+| 1     | Validate the input and establish identifiers               | The active playbook's identifier (`<KEY>`) and any required coordinates are known, or `BAD_INPUT` is returned                           |
+| 2     | Establish the tracker read path                            | A supported read-only path covers the playbook's read-path operations, or `AUTH`/`TOOLS_MISSING`/`RATE_LIMIT` is returned               |
+| 3     | Retrieve the parent work item                              | Parent fields, description, comments, and the playbook's parent-capture set are retrieved or the run stops with a deterministic failure |
+| 4     | Retrieve related items                                     | The playbook's related-item totals are verified, hydrated, marked unknown, or recorded as partial                                       |
+| 5     | Assemble the document                                      | `docs/<KEY>.md` is written from the playbook's snapshot template                                                                        |
+| 6     | Post-write validation gate: validate, repair, and re-check | Artifact satisfies the contract or validation fails after the repair limit                                                              |
 
 Apply the active playbook's `Transport / Read Path`, `Capture Rules`, and `Relationships` sections inside stages 2–4. Determine related-item totals before claiming full success: use `0/0` only when absence is verified; when discovery cannot be verified after the parent was retrieved, render the template's unknown marker, add the same warning under `## Retrieval Warnings`, report `<retrieved>/UNKNOWN`, and return `FETCH: PARTIAL`.
 
