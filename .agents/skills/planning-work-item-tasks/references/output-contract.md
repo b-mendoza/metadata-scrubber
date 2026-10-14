@@ -14,11 +14,11 @@ The playbook's child-work section is the only child-coverage source: `## Child I
 
 ## Written Artifacts and Lifecycle
 
-| Path | Class | Purpose |
-| --- | --- | --- |
-| `docs/<KEY>-stage-1-detailed.md` | A1 | Resume/re-plan state after detailed decomposition |
-| `docs/<KEY>-stage-2-prioritized.md` | A1 | Resume/re-plan state after ordering and branch naming |
-| `docs/<KEY>-tasks.md` | B | Durable Phase 2 task-plan deliverable for downstream phases |
+| Path                                | Class | Purpose                                                     |
+| ----------------------------------- | ----- | ----------------------------------------------------------- |
+| `docs/<KEY>-stage-1-detailed.md`    | A1    | Resume/re-plan state after detailed decomposition           |
+| `docs/<KEY>-stage-2-prioritized.md` | A1    | Resume/re-plan state after ordering and branch naming       |
+| `docs/<KEY>-tasks.md`               | B     | Durable Phase 2 task-plan deliverable for downstream phases |
 
 Preserve all three paths on success and preserve any path already written on failure. Leave them unstaged. Lifecycle classification does not authorize staging, committing, pushing, or platform mutation.
 

@@ -95,28 +95,28 @@ Validate the complete downstream contract of `docs/<KEY>-tasks.md`.
 
 Run all 20 checks against the original snapshot and Stage 2 plan. Check 3 reads only the active playbook's child-work section.
 
-| # | Check | Severity |
-| --- | --- | --- |
-| 1 | Every requirement in `## Description` is addressed | FAIL |
-| 2 | Every acceptance criterion maps to at least one task's definition of done | FAIL |
-| 3 | Every retrieved child item in the playbook's child-work section is accounted for, merged, referenced, or explicitly out of scope | WARN |
-| 4 | Actionable comments are reflected | WARN |
-| 5 | Every task has all carried-forward Stage 1 subsections | FAIL |
-| 6 | Every task has a dependencies annotation | FAIL |
-| 7 | Every task has a priority annotation | FAIL |
-| 8 | Every task has a branch name | FAIL |
-| 9 | Task numbering is sequential with no gaps | FAIL |
-| 10 | Execution Order Summary is present, complete, and includes branches | WARN |
-| 11 | Dependency Graph is present | WARN |
-| 12 | No circular dependencies exist | FAIL |
-| 13 | Hard dependency references point to valid task numbers | FAIL |
-| 14 | No task is ordered before its hard dependency | FAIL |
-| 15 | No two tasks have identical objectives | WARN |
-| 16 | Cross-cutting questions do not duplicate per-task questions | WARN |
-| 17 | No vague definition-of-done items such as `works`, `is complete`, or `functions properly` | WARN |
-| 18 | Task count is appropriate for scope | WARN |
-| 19 | No empty or `TBD` implementation notes remain | WARN |
-| 20 | Branch names are legal, exactly deterministic, and obey the active playbook's single-branch mode | FAIL |
+| #   | Check                                                                                                                            | Severity |
+| --- | -------------------------------------------------------------------------------------------------------------------------------- | -------- |
+| 1   | Every requirement in `## Description` is addressed                                                                               | FAIL     |
+| 2   | Every acceptance criterion maps to at least one task's definition of done                                                        | FAIL     |
+| 3   | Every retrieved child item in the playbook's child-work section is accounted for, merged, referenced, or explicitly out of scope | WARN     |
+| 4   | Actionable comments are reflected                                                                                                | WARN     |
+| 5   | Every task has all carried-forward Stage 1 subsections                                                                           | FAIL     |
+| 6   | Every task has a dependencies annotation                                                                                         | FAIL     |
+| 7   | Every task has a priority annotation                                                                                             | FAIL     |
+| 8   | Every task has a branch name                                                                                                     | FAIL     |
+| 9   | Task numbering is sequential with no gaps                                                                                        | FAIL     |
+| 10  | Execution Order Summary is present, complete, and includes branches                                                              | WARN     |
+| 11  | Dependency Graph is present                                                                                                      | WARN     |
+| 12  | No circular dependencies exist                                                                                                   | FAIL     |
+| 13  | Hard dependency references point to valid task numbers                                                                           | FAIL     |
+| 14  | No task is ordered before its hard dependency                                                                                    | FAIL     |
+| 15  | No two tasks have identical objectives                                                                                           | WARN     |
+| 16  | Cross-cutting questions do not duplicate per-task questions                                                                      | WARN     |
+| 17  | No vague definition-of-done items such as `works`, `is complete`, or `functions properly`                                        | WARN     |
+| 18  | Task count is appropriate for scope                                                                                              | WARN     |
+| 19  | No empty or `TBD` implementation notes remain                                                                                    | WARN     |
+| 20  | Branch names are legal, exactly deterministic, and obey the active playbook's single-branch mode                                 | FAIL     |
 
 ## Result Handling
 

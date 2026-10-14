@@ -11,19 +11,19 @@ The active playbook (`PLAYBOOK_PATH`) supplies every platform-specific detail. D
 
 ## Inputs
 
-| Input | Required | Example |
-| --- | --- | --- |
-| `TICKET_KEY` | Yes | `<KEY>`: Jira key or GitHub issue slug |
-| `PLAYBOOK_PATH` | Yes | `../references/github-playbook.md` |
-| `TASK_PLANNING_GUIDE_PATH` | Yes | `../references/task-planning-guide.md` |
-| `TASK_PLANNER_TEMPLATE_PATH` | Yes | `../references/task-planner-template.md` |
-| `OUTPUT_CONTRACT_PATH` | Yes | `../references/output-contract.md` |
-| `EXTERNAL_SOURCES_PATH` | Yes | `../references/external-sources.md` |
-| `MUTATION_LIMITS` | Yes | Write only the declared Stage 1 output; no other mutation |
-| `INPUT_PATH` | Yes | `docs/<KEY>.md` |
-| `OUTPUT_PATH` | Yes | `docs/<KEY>-stage-1-detailed.md` |
-| `DECISIONS` | No | `Task C depends on the approved SSO choice` |
-| `VALIDATION_ISSUES` | No | `Task B is missing Definition of done` |
+| Input                        | Required | Example                                                   |
+| ---------------------------- | -------- | --------------------------------------------------------- |
+| `TICKET_KEY`                 | Yes      | `<KEY>`: Jira key or GitHub issue slug                    |
+| `PLAYBOOK_PATH`              | Yes      | `../references/github-playbook.md`                        |
+| `TASK_PLANNING_GUIDE_PATH`   | Yes      | `../references/task-planning-guide.md`                    |
+| `TASK_PLANNER_TEMPLATE_PATH` | Yes      | `../references/task-planner-template.md`                  |
+| `OUTPUT_CONTRACT_PATH`       | Yes      | `../references/output-contract.md`                        |
+| `EXTERNAL_SOURCES_PATH`      | Yes      | `../references/external-sources.md`                       |
+| `MUTATION_LIMITS`            | Yes      | Write only the declared Stage 1 output; no other mutation |
+| `INPUT_PATH`                 | Yes      | `docs/<KEY>.md`                                           |
+| `OUTPUT_PATH`                | Yes      | `docs/<KEY>-stage-1-detailed.md`                          |
+| `DECISIONS`                  | No       | `Task C depends on the approved SSO choice`               |
+| `VALIDATION_ISSUES`          | No       | `Task B is missing Definition of done`                    |
 
 `INPUT_PATH` is the authoritative work-item snapshot. `DECISIONS` is an approved Phase 3 overlay when re-planning. `VALIDATION_ISSUES` authorizes only targeted repair of the named gaps.
 
@@ -70,10 +70,10 @@ Out of scope: source-code edits, package edits, git staging/commits, work-item p
 
 ## Escalation
 
-| Status | When |
-| --- | --- |
-| `BLOCKED` | Required input/path is missing, mismatched, or unreadable |
-| `FAIL` | The authoritative inputs are too vague or contradictory for an actionable plan |
-| `ERROR` | Unexpected filesystem, tool, or template failure |
+| Status    | When                                                                           |
+| --------- | ------------------------------------------------------------------------------ |
+| `BLOCKED` | Required input/path is missing, mismatched, or unreadable                      |
+| `FAIL`    | The authoritative inputs are too vague or contradictory for an actionable plan |
+| `ERROR`   | Unexpected filesystem, tool, or template failure                               |
 
 Return the same eight-line schema for every status. On `BLOCKED` or `ERROR`, do not write `OUTPUT_PATH`.

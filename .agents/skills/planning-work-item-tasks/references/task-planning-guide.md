@@ -6,13 +6,13 @@ Read this file when `task-planner` converts a work-item snapshot into the Stage 
 
 ## Optional Source Lookups
 
-| Need | Source key in `EXTERNAL_SOURCES_PATH` |
-| --- | --- |
-| Underlying-need analysis | `five-whys` |
-| Traceability expectations | `requirements-traceability` |
-| Concrete completion criteria | `definition-of-done` |
-| Task-quality sanity check | `invest-criteria` |
-| Avoiding speculative scope | `yagni` |
+| Need                                       | Source key in `EXTERNAL_SOURCES_PATH`           |
+| ------------------------------------------ | ----------------------------------------------- |
+| Underlying-need analysis                   | `five-whys`                                     |
+| Traceability expectations                  | `requirements-traceability`                     |
+| Concrete completion criteria               | `definition-of-done`                            |
+| Task-quality sanity check                  | `invest-criteria`                               |
+| Avoiding speculative scope                 | `yagni`                                         |
 | Platform parent / child hierarchy behavior | Active playbook's `External-Source Routing` key |
 
 ## Problem Framing
@@ -21,14 +21,14 @@ Capture the problem the work item is trying to solve, not only the prescribed so
 
 Required subsections:
 
-| Subsection | What to capture |
-| --- | --- |
-| `### End User` | Who directly experiences the outcome |
-| `### Underlying Need` | The problem in user terms |
-| `### Proposed Solution` | What the work item asks to build or change |
-| `### Solution-Problem Fit` | How directly the solution addresses the need |
-| `### Alternative Approaches Not Explored` | Plausible options not discussed |
-| `### Evidence Basis` | Evidence cited for why the solution is correct |
+| Subsection                                | What to capture                                |
+| ----------------------------------------- | ---------------------------------------------- |
+| `### End User`                            | Who directly experiences the outcome           |
+| `### Underlying Need`                     | The problem in user terms                      |
+| `### Proposed Solution`                   | What the work item asks to build or change     |
+| `### Solution-Problem Fit`                | How directly the solution addresses the need   |
+| `### Alternative Approaches Not Explored` | Plausible options not discussed                |
+| `### Evidence Basis`                      | Evidence cited for why the solution is correct |
 
 Use the template's playbook-rendered `Not stated in <work-item noun>` wording when the snapshot does not answer a subsection.
 

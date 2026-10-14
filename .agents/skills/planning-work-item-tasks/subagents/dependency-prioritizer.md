@@ -11,19 +11,19 @@ The active playbook (`PLAYBOOK_PATH`) supplies every platform-specific detail. D
 
 ## Inputs
 
-| Input | Required | Example |
-| --- | --- | --- |
-| `TICKET_KEY` | Yes | `<KEY>`: Jira key or GitHub issue slug |
-| `PLAYBOOK_PATH` | Yes | `../references/jira-playbook.md` |
-| `DEPENDENCY_GUIDE_PATH` | Yes | `../references/dependency-and-branch-guide.md` |
-| `DEPENDENCY_TEMPLATE_PATH` | Yes | `../references/dependency-prioritizer-template.md` |
-| `OUTPUT_CONTRACT_PATH` | Yes | `../references/output-contract.md` |
-| `EXTERNAL_SOURCES_PATH` | Yes | `../references/external-sources.md` |
-| `MUTATION_LIMITS` | Yes | Write only the declared Stage 2 output; no other mutation |
-| `INPUT_PATH` | Yes | `docs/<KEY>-stage-1-detailed.md` |
-| `OUTPUT_PATH` | Yes | `docs/<KEY>-stage-2-prioritized.md` |
-| `DECISIONS` | No | `Task 3 depends on the approved SSO choice` |
-| `VALIDATION_ISSUES` | No | `Task 2 has a non-deterministic branch` |
+| Input                      | Required | Example                                                   |
+| -------------------------- | -------- | --------------------------------------------------------- |
+| `TICKET_KEY`               | Yes      | `<KEY>`: Jira key or GitHub issue slug                    |
+| `PLAYBOOK_PATH`            | Yes      | `../references/jira-playbook.md`                          |
+| `DEPENDENCY_GUIDE_PATH`    | Yes      | `../references/dependency-and-branch-guide.md`            |
+| `DEPENDENCY_TEMPLATE_PATH` | Yes      | `../references/dependency-prioritizer-template.md`        |
+| `OUTPUT_CONTRACT_PATH`     | Yes      | `../references/output-contract.md`                        |
+| `EXTERNAL_SOURCES_PATH`    | Yes      | `../references/external-sources.md`                       |
+| `MUTATION_LIMITS`          | Yes      | Write only the declared Stage 2 output; no other mutation |
+| `INPUT_PATH`               | Yes      | `docs/<KEY>-stage-1-detailed.md`                          |
+| `OUTPUT_PATH`              | Yes      | `docs/<KEY>-stage-2-prioritized.md`                       |
+| `DECISIONS`                | No       | `Task 3 depends on the approved SSO choice`               |
+| `VALIDATION_ISSUES`        | No       | `Task 2 has a non-deterministic branch`                   |
 
 ## Output Contract
 
@@ -70,10 +70,10 @@ Out of scope: source-code or package edits, git staging/commits, platform calls 
 
 ## Escalation
 
-| Status | When |
-| --- | --- |
-| `BLOCKED` | Required input/path is missing, mismatched, or unreadable |
-| `FAIL` | A cycle, incomplete dependency evidence, or ambiguous plan requires human judgment |
-| `ERROR` | Unexpected filesystem, tool, or template failure |
+| Status    | When                                                                               |
+| --------- | ---------------------------------------------------------------------------------- |
+| `BLOCKED` | Required input/path is missing, mismatched, or unreadable                          |
+| `FAIL`    | A cycle, incomplete dependency evidence, or ambiguous plan requires human judgment |
+| `ERROR`   | Unexpected filesystem, tool, or template failure                                   |
 
 Return the same nine-line schema for every status. On `BLOCKED` or `ERROR`, do not write `OUTPUT_PATH`.

@@ -11,19 +11,19 @@ The active playbook (`PLAYBOOK_PATH`) supplies every platform-specific detail. D
 
 ## Inputs
 
-| Input | Required | Example |
-| --- | --- | --- |
-| `TICKET_KEY` | Yes | `<KEY>`: Jira key or GitHub issue slug |
-| `PLAYBOOK_PATH` | Yes | `../references/github-playbook.md` |
-| `VALIDATION_CHECKS_PATH` | Yes | `../references/validation-checks.md` |
-| `OUTPUT_CONTRACT_PATH` | Yes | `../references/output-contract.md` |
-| `EXTERNAL_SOURCES_PATH` | Yes | `../references/external-sources.md` |
-| `MUTATION_LIMITS` | Yes | Write only the declared final-plan output; no other mutation |
-| `SNAPSHOT_PATH` | Yes | `docs/<KEY>.md` |
-| `PLAN_PATH` | Yes | `docs/<KEY>-stage-2-prioritized.md` |
-| `OUTPUT_PATH` | Yes | `docs/<KEY>-tasks.md` |
-| `DECISIONS` | No | `Use the approved downstream handoff wording` |
-| `VALIDATION_ISSUES` | No | `Task 2 branch cannot be reconstructed` |
+| Input                    | Required | Example                                                      |
+| ------------------------ | -------- | ------------------------------------------------------------ |
+| `TICKET_KEY`             | Yes      | `<KEY>`: Jira key or GitHub issue slug                       |
+| `PLAYBOOK_PATH`          | Yes      | `../references/github-playbook.md`                           |
+| `VALIDATION_CHECKS_PATH` | Yes      | `../references/validation-checks.md`                         |
+| `OUTPUT_CONTRACT_PATH`   | Yes      | `../references/output-contract.md`                           |
+| `EXTERNAL_SOURCES_PATH`  | Yes      | `../references/external-sources.md`                          |
+| `MUTATION_LIMITS`        | Yes      | Write only the declared final-plan output; no other mutation |
+| `SNAPSHOT_PATH`          | Yes      | `docs/<KEY>.md`                                              |
+| `PLAN_PATH`              | Yes      | `docs/<KEY>-stage-2-prioritized.md`                          |
+| `OUTPUT_PATH`            | Yes      | `docs/<KEY>-tasks.md`                                        |
+| `DECISIONS`              | No       | `Use the approved downstream handoff wording`                |
+| `VALIDATION_ISSUES`      | No       | `Task 2 branch cannot be reconstructed`                      |
 
 `DECISIONS` is an approved Phase 3 overlay during Stage 3 re-planning. Apply it only to mechanical final structure, validation-report content, or downstream contract wording; do not change Stage 2 planning judgment.
 

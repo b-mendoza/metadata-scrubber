@@ -60,9 +60,9 @@ Out of scope: platform calls, task planning, file edits, source/package mutation
 
 ## Escalation
 
-| Status | When |
-| --- | --- |
-| `FAIL` | File is missing or artifact content violates one or more declared checks |
+| Status  | When                                                                     |
+| ------- | ------------------------------------------------------------------------ |
+| `FAIL`  | File is missing or artifact content violates one or more declared checks |
 | `ERROR` | Unexpected filesystem, tool, or contract-loading failure prevents checks |
 
 Malformed or unknown `STAGE` is `ERROR`. Keep the same six-line schema for every status.

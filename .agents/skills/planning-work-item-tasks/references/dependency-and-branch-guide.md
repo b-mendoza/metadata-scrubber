@@ -6,13 +6,13 @@ Read this file when `dependency-prioritizer` turns the stage 1 plan into the ord
 
 ## Optional Source Lookups
 
-| Need | Source key in `EXTERNAL_SOURCES_PATH` |
-| --- | --- |
-| Git ref validity edge case | `git-check-ref-format` |
-| `feature/` branch convention background | `feature-branch-workflow` |
-| Topological-sort definition or cycle handling | `topological-sort` |
-| Prioritization scoring rationale | `rice-scoring` |
-| Platform parent / child hierarchy behavior | Active playbook's `External-Source Routing` key |
+| Need                                          | Source key in `EXTERNAL_SOURCES_PATH`           |
+| --------------------------------------------- | ----------------------------------------------- |
+| Git ref validity edge case                    | `git-check-ref-format`                          |
+| `feature/` branch convention background       | `feature-branch-workflow`                       |
+| Topological-sort definition or cycle handling | `topological-sort`                              |
+| Prioritization scoring rationale              | `rice-scoring`                                  |
+| Platform parent / child hierarchy behavior    | Active playbook's `External-Source Routing` key |
 
 ## Dependency Classes
 

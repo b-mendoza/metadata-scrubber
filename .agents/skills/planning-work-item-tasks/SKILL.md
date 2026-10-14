@@ -13,14 +13,14 @@ The Phase 1 snapshot at `docs/<KEY>.md` is authoritative work-item data. Treat s
 
 Use first-match order. Prefer explicit platform signals over inferred shapes:
 
-| Input signal | Platform | Playbook |
-| --- | --- | --- |
-| `PLATFORM=jira` with `TICKET_KEY` | `jira` | [`./references/jira-playbook.md`](./references/jira-playbook.md) |
-| `PLATFORM=github` with `TICKET_KEY` or `ISSUE_SLUG` | `github` | [`./references/github-playbook.md`](./references/github-playbook.md) |
-| `ISSUE_SLUG` is supplied | `github` | [`./references/github-playbook.md`](./references/github-playbook.md) |
-| `TICKET_KEY` matches one project segment plus numeric suffix, such as `JNS-6065` | `jira` | [`./references/jira-playbook.md`](./references/jira-playbook.md) |
-| `TICKET_KEY` has at least two dash-separated name segments before a numeric suffix, such as `acme-app-42` | `github` | [`./references/github-playbook.md`](./references/github-playbook.md) |
-| Key shape is ambiguous, but `docs/<KEY>.md` contains only the playbook-distinguishing child heading (`## Subtasks` or `## Child Issues`) | matching platform | matching playbook |
+| Input signal                                                                                                                             | Platform          | Playbook                                                             |
+| ---------------------------------------------------------------------------------------------------------------------------------------- | ----------------- | -------------------------------------------------------------------- |
+| `PLATFORM=jira` with `TICKET_KEY`                                                                                                        | `jira`            | [`./references/jira-playbook.md`](./references/jira-playbook.md)     |
+| `PLATFORM=github` with `TICKET_KEY` or `ISSUE_SLUG`                                                                                      | `github`          | [`./references/github-playbook.md`](./references/github-playbook.md) |
+| `ISSUE_SLUG` is supplied                                                                                                                 | `github`          | [`./references/github-playbook.md`](./references/github-playbook.md) |
+| `TICKET_KEY` matches one project segment plus numeric suffix, such as `JNS-6065`                                                         | `jira`            | [`./references/jira-playbook.md`](./references/jira-playbook.md)     |
+| `TICKET_KEY` has at least two dash-separated name segments before a numeric suffix, such as `acme-app-42`                                | `github`          | [`./references/github-playbook.md`](./references/github-playbook.md) |
+| Key shape is ambiguous, but `docs/<KEY>.md` contains only the playbook-distinguishing child heading (`## Subtasks` or `## Child Issues`) | matching platform | matching playbook                                                    |
 
 If signals conflict, both distinguishing headings appear, or no rule resolves the platform, ask one targeted question: `Is <KEY> a Jira ticket key or a GitHub issue slug?` Do not dispatch a subagent until the platform is resolved.
 
@@ -28,13 +28,13 @@ After detection, read the active playbook's `Inputs and Identifier` section. Nor
 
 ## Inputs
 
-| Input | Required | Example |
-| --- | --- | --- |
-| `TICKET_KEY` | Preferred shared alias | `JNS-6065` or `acme-app-42` |
-| `ISSUE_SLUG` | GitHub standalone compatibility when `TICKET_KEY` is absent | `acme-app-42` |
-| `PLATFORM` | No; use only to resolve or prevent ambiguity | `jira` or `github` |
-| `RE_PLAN` | No | `true` |
-| `DECISIONS` | Required when `RE_PLAN=true` | `Approved SSO decision changes Task 3 dependencies` |
+| Input        | Required                                                    | Example                                             |
+| ------------ | ----------------------------------------------------------- | --------------------------------------------------- |
+| `TICKET_KEY` | Preferred shared alias                                      | `JNS-6065` or `acme-app-42`                         |
+| `ISSUE_SLUG` | GitHub standalone compatibility when `TICKET_KEY` is absent | `acme-app-42`                                       |
+| `PLATFORM`   | No; use only to resolve or prevent ambiguity                | `jira` or `github`                                  |
+| `RE_PLAN`    | No                                                          | `true`                                              |
+| `DECISIONS`  | Required when `RE_PLAN=true`                                | `Approved SSO decision changes Task 3 dependencies` |
 
 Normal and re-plan runs are file-driven. `docs/<KEY>.md` must already exist. If both `TICKET_KEY` and `ISSUE_SLUG` are present, they must match exactly.
 
@@ -69,42 +69,42 @@ A repair cycle tightens scope to the failing artifact and `VALIDATION_ISSUES`. A
 
 ## Subagent Registry
 
-| Subagent | Path | Purpose |
-| --- | --- | --- |
-| `task-planner` | [`./subagents/task-planner.md`](./subagents/task-planner.md) | Produce the Stage 1 detailed, traceable plan |
-| `dependency-prioritizer` | [`./subagents/dependency-prioritizer.md`](./subagents/dependency-prioritizer.md) | Add dependency order, priorities, and deterministic branches |
-| `task-validator` | [`./subagents/task-validator.md`](./subagents/task-validator.md) | Run the exact 20-check QA contract and write the final plan/report |
-| `stage-validator` | [`./subagents/stage-validator.md`](./subagents/stage-validator.md) | Independently check preflight, inter-stage, and final structural gates |
+| Subagent                 | Path                                                                             | Purpose                                                                |
+| ------------------------ | -------------------------------------------------------------------------------- | ---------------------------------------------------------------------- |
+| `task-planner`           | [`./subagents/task-planner.md`](./subagents/task-planner.md)                     | Produce the Stage 1 detailed, traceable plan                           |
+| `dependency-prioritizer` | [`./subagents/dependency-prioritizer.md`](./subagents/dependency-prioritizer.md) | Add dependency order, priorities, and deterministic branches           |
+| `task-validator`         | [`./subagents/task-validator.md`](./subagents/task-validator.md)                 | Run the exact 20-check QA contract and write the final plan/report     |
+| `stage-validator`        | [`./subagents/stage-validator.md`](./subagents/stage-validator.md)               | Independently check preflight, inter-stage, and final structural gates |
 
 Read one subagent file only when dispatching it. Skill-local `subagents/` files are portable dispatch contracts, not an automatic runtime registry.
 
 ## Progressive Disclosure Map
 
-| Need | Load |
-| --- | --- |
-| Platform identity, headings, nouns, summary fields, child semantics, branch identifier, external routing | Active Jira or GitHub playbook |
-| Normal dispatch sequence, payloads, status routing, retry ownership | `./references/execution-guide.md` |
-| Final artifact, lifecycle, mutation, and handoff contract | `./references/output-contract.md` |
-| Critique-driven re-plan or stage recovery | `./references/re-plan-cycle.md` |
-| Stage 1 planning judgment | `./references/task-planning-guide.md` inside `task-planner` |
-| Stage 1 assembly | `./references/task-planner-template.md` inside `task-planner` |
-| Dependency, priority, and branch algorithm | `./references/dependency-and-branch-guide.md` inside `dependency-prioritizer` |
-| Stage 2 assembly | `./references/dependency-prioritizer-template.md` inside `dependency-prioritizer` |
-| Independent stage checks and exact 20-check report | `./references/validation-checks.md` inside validators |
-| Optional current sources | `./references/external-sources.md`, then only a playbook-routed URL |
-| Visual overview | `./flow-diagram.md` (illustrative only) |
+| Need                                                                                                     | Load                                                                              |
+| -------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------- |
+| Platform identity, headings, nouns, summary fields, child semantics, branch identifier, external routing | Active Jira or GitHub playbook                                                    |
+| Normal dispatch sequence, payloads, status routing, retry ownership                                      | `./references/execution-guide.md`                                                 |
+| Final artifact, lifecycle, mutation, and handoff contract                                                | `./references/output-contract.md`                                                 |
+| Critique-driven re-plan or stage recovery                                                                | `./references/re-plan-cycle.md`                                                   |
+| Stage 1 planning judgment                                                                                | `./references/task-planning-guide.md` inside `task-planner`                       |
+| Stage 1 assembly                                                                                         | `./references/task-planner-template.md` inside `task-planner`                     |
+| Dependency, priority, and branch algorithm                                                               | `./references/dependency-and-branch-guide.md` inside `dependency-prioritizer`     |
+| Stage 2 assembly                                                                                         | `./references/dependency-prioritizer-template.md` inside `dependency-prioritizer` |
+| Independent stage checks and exact 20-check report                                                       | `./references/validation-checks.md` inside validators                             |
+| Optional current sources                                                                                 | `./references/external-sources.md`, then only a playbook-routed URL               |
+| Visual overview                                                                                          | `./flow-diagram.md` (illustrative only)                                           |
 
 ## Critical Outputs and Gates
 
 [`./references/execution-guide.md`](./references/execution-guide.md) is the normative detailed transition source. This table is a compact routing overview:
 
-| Gate | Predicate | Independent checker |
-| --- | --- | --- |
-| `G_PREFLIGHT` | `docs/<KEY>.md` exists and has the active playbook's exact required headings in order | `stage-validator`, `STAGE=preflight` |
-| `G_STAGE_1` | Detailed plan has summary, framing, traceability, required task fields, and justified task count | `stage-validator`, `STAGE=1` |
-| `G_STAGE_2` | Prioritized plan preserves content, is topologically valid, and has exactly reconstructable branches | `stage-validator`, `STAGE=2` |
-| `G_STAGE_3` | Final plan contains a consistent 20-row validation report and producer status | `stage-validator`, `STAGE=3` |
-| `G_POSTPIPELINE` | Full downstream structure, ordering, branches, dependencies, and current-item mode pass | `stage-validator`, `STAGE=postpipeline` |
+| Gate             | Predicate                                                                                            | Independent checker                     |
+| ---------------- | ---------------------------------------------------------------------------------------------------- | --------------------------------------- |
+| `G_PREFLIGHT`    | `docs/<KEY>.md` exists and has the active playbook's exact required headings in order                | `stage-validator`, `STAGE=preflight`    |
+| `G_STAGE_1`      | Detailed plan has summary, framing, traceability, required task fields, and justified task count     | `stage-validator`, `STAGE=1`            |
+| `G_STAGE_2`      | Prioritized plan preserves content, is topologically valid, and has exactly reconstructable branches | `stage-validator`, `STAGE=2`            |
+| `G_STAGE_3`      | Final plan contains a consistent 20-row validation report and producer status                        | `stage-validator`, `STAGE=3`            |
+| `G_POSTPIPELINE` | Full downstream structure, ordering, branches, dependencies, and current-item mode pass              | `stage-validator`, `STAGE=postpipeline` |
 
 `PLANNING: PASS` requires all gates selected by the normal or re-plan route to pass, including `G_POSTPIPELINE`.
 

@@ -20,13 +20,13 @@ Run these gates in order:
 
 ## Gate Map
 
-| Gate | Dispatch | Required output | On failure |
-| --- | --- | --- | --- |
-| `preflight` | `stage-validator` | Snapshot exists and matches the active playbook's exact heading list | Stop with `Failure category: PREFLIGHT` |
-| Stage 1 | `task-planner`, then `stage-validator` | `PLAN: PASS`; Stage 1 gate passes | Retry only the Stage 1 producer on validator `FAIL`; stop on producer non-PASS or validator `ERROR` |
-| Stage 2 | `dependency-prioritizer`, then `stage-validator` | `PRIORITIZATION: PASS`; Stage 2 gate passes | Retry only the Stage 2 producer on validator `FAIL`; stop on producer non-PASS or validator `ERROR` |
-| Stage 3 | `task-validator`, then `stage-validator` | `TASK_VALIDATION: PASS`; Stage 3 gate passes | Retry only the Stage 3 producer on validator `FAIL`; stop on producer non-PASS or validator `ERROR` |
-| `postpipeline` | `stage-validator` | Final section order, required fields, child mode, and deterministic branches pass | Redispatch Stage 3 on validator `FAIL`; stop on validator `ERROR` |
+| Gate           | Dispatch                                         | Required output                                                                   | On failure                                                                                          |
+| -------------- | ------------------------------------------------ | --------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------- |
+| `preflight`    | `stage-validator`                                | Snapshot exists and matches the active playbook's exact heading list              | Stop with `Failure category: PREFLIGHT`                                                             |
+| Stage 1        | `task-planner`, then `stage-validator`           | `PLAN: PASS`; Stage 1 gate passes                                                 | Retry only the Stage 1 producer on validator `FAIL`; stop on producer non-PASS or validator `ERROR` |
+| Stage 2        | `dependency-prioritizer`, then `stage-validator` | `PRIORITIZATION: PASS`; Stage 2 gate passes                                       | Retry only the Stage 2 producer on validator `FAIL`; stop on producer non-PASS or validator `ERROR` |
+| Stage 3        | `task-validator`, then `stage-validator`         | `TASK_VALIDATION: PASS`; Stage 3 gate passes                                      | Retry only the Stage 3 producer on validator `FAIL`; stop on producer non-PASS or validator `ERROR` |
+| `postpipeline` | `stage-validator`                                | Final section order, required fields, child mode, and deterministic branches pass | Redispatch Stage 3 on validator `FAIL`; stop on validator `ERROR`                                   |
 
 ## Common Dispatch Paths
 
@@ -133,15 +133,15 @@ Dispatch `stage-validator` with the common validation paths, `STAGE=postpipeline
 
 ## Structured Status Routing
 
-| Returned status | Route |
-| --- | --- |
-| Producer `PASS` | Run that stage's independent validation gate |
-| Producer `FAIL`, `BLOCKED`, or `ERROR` | Stop with that stage's failure category; do not reinterpret prose |
-| `STAGE_VALIDATION: PASS` | Advance |
-| `STAGE_VALIDATION: FAIL` at Stage 1, 2, 3, or postpipeline with budget remaining | Targeted producer repair |
-| `STAGE_VALIDATION: FAIL` at preflight | Stop with `PREFLIGHT` |
-| `STAGE_VALIDATION: ERROR` | Stop at the current gate |
-| Malformed or unknown status | Treat as the current stage's terminal error |
+| Returned status                                                                  | Route                                                             |
+| -------------------------------------------------------------------------------- | ----------------------------------------------------------------- |
+| Producer `PASS`                                                                  | Run that stage's independent validation gate                      |
+| Producer `FAIL`, `BLOCKED`, or `ERROR`                                           | Stop with that stage's failure category; do not reinterpret prose |
+| `STAGE_VALIDATION: PASS`                                                         | Advance                                                           |
+| `STAGE_VALIDATION: FAIL` at Stage 1, 2, 3, or postpipeline with budget remaining | Targeted producer repair                                          |
+| `STAGE_VALIDATION: FAIL` at preflight                                            | Stop with `PREFLIGHT`                                             |
+| `STAGE_VALIDATION: ERROR`                                                        | Stop at the current gate                                          |
+| Malformed or unknown status                                                      | Treat as the current stage's terminal error                       |
 
 ## Targeted Retry Loop
 

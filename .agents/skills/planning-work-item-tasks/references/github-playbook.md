@@ -4,9 +4,9 @@
 
 ## Inputs and Identifier
 
-| Input | Required | Example |
-| --- | --- | --- |
-| `TICKET_KEY` | Preferred shared alias | `acme-app-42` |
+| Input        | Required                                             | Example       |
+| ------------ | ---------------------------------------------------- | ------------- |
+| `TICKET_KEY` | Preferred shared alias                               | `acme-app-42` |
 | `ISSUE_SLUG` | Standalone compatibility when `TICKET_KEY` is absent | `acme-app-42` |
 
 Exactly one workflow-key value is required. When `ISSUE_SLUG` is supplied, normalize it internally to `TICKET_KEY=<ISSUE_SLUG>`. If both are supplied, they must match exactly. The value must have at least two dash-separated name segments before a numeric suffix. The normalized value is `<KEY>` and names `docs/<KEY>.md` plus every Phase 2 artifact.
@@ -83,11 +83,11 @@ The shared dependency guide defines `prefix` selection and the deterministic slu
 
 ## External-Source Routing
 
-| Need | Key in `./external-sources.md` |
-| --- | --- |
-| GitHub parent / sub-issue hierarchy semantics | `github-sub-issues` |
-| GitHub issue types and label behavior | `github-issue-types` |
-| Git branch ref-name validity | `git-check-ref-format` |
+| Need                                          | Key in `./external-sources.md` |
+| --------------------------------------------- | ------------------------------ |
+| GitHub parent / sub-issue hierarchy semantics | `github-sub-issues`            |
+| GitHub issue types and label behavior         | `github-issue-types`           |
+| Git branch ref-name validity                  | `git-check-ref-format`         |
 
 ## Example Invocation
 

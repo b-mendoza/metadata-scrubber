@@ -17,36 +17,36 @@ Bundled references are the binding workflow contract. External sources replace l
 
 ## Shared Source Routing
 
-| Reference key | Use when | URL |
-| --- | --- | --- |
-| `progressive-disclosure-skill` | Maintaining or explaining the staged loading model | https://skills.sh/flpbalada/fb-skills/progressive-disclosure |
-| `progressive-disclosure-ux` | Short public explanation of revealing only phase-relevant information | https://www.nngroup.com/articles/progressive-disclosure/ |
-| `agent-skills-overview` | Agent Skills loading model, anatomy, descriptions | https://platform.claude.com/docs/en/agents-and-tools/agent-skills/overview |
-| `agent-skills-best-practices` | Skill authoring guidance, file organization, validation | https://docs.claude.com/en/docs/agents-and-tools/agent-skills/best-practices |
-| `claude-code-subagents` | Subagent frontmatter, tool controls, delegation patterns | https://code.claude.com/docs/en/sub-agents |
-| `git-check-ref-format` | Branch-name validity rules: forbidden characters, sequences, and edge cases | https://git-scm.com/docs/git-check-ref-format |
-| `feature-branch-workflow` | Background on the `feature/<slug>` convention | https://www.atlassian.com/git/tutorials/comparing-workflows/feature-branch-workflow |
-| `conventional-branches` | Optional branch-prefix conventions when a team prefix is not provided | https://conventional-branches.com |
-| `topological-sort` | Background for ordering tasks under hard dependencies | https://en.wikipedia.org/wiki/Topological_sorting |
-| `requirements-traceability` | Calibrating the `Traces to` requirement and acceptance-criteria coverage | https://en.wikipedia.org/wiki/Requirements_traceability |
-| `five-whys` | Background for `## Problem Framing` and the underlying-need subsection | https://en.wikipedia.org/wiki/Five_whys |
-| `rice-scoring` | Background for the Risk / Complexity / Value-unlock / Dependency scoring rubric | https://www.productplan.com/glossary/rice-scoring-model/ |
-| `yagni` | Calibrating "scope creep" or speculative tasks during planning | https://martinfowler.com/bliki/Yagni.html |
-| `definition-of-done` | Calibrating per-task `Definition of done` items so they are concrete and verifiable | https://www.scrum.org/resources/what-definition-done |
-| `invest-criteria` | Sanity-checking task quality with INVEST | https://en.wikipedia.org/wiki/INVEST_(mnemonic) |
+| Reference key                  | Use when                                                                            | URL                                                                                 |
+| ------------------------------ | ----------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------- |
+| `progressive-disclosure-skill` | Maintaining or explaining the staged loading model                                  | https://skills.sh/flpbalada/fb-skills/progressive-disclosure                        |
+| `progressive-disclosure-ux`    | Short public explanation of revealing only phase-relevant information               | https://www.nngroup.com/articles/progressive-disclosure/                            |
+| `agent-skills-overview`        | Agent Skills loading model, anatomy, descriptions                                   | https://platform.claude.com/docs/en/agents-and-tools/agent-skills/overview          |
+| `agent-skills-best-practices`  | Skill authoring guidance, file organization, validation                             | https://docs.claude.com/en/docs/agents-and-tools/agent-skills/best-practices        |
+| `claude-code-subagents`        | Subagent frontmatter, tool controls, delegation patterns                            | https://code.claude.com/docs/en/sub-agents                                          |
+| `git-check-ref-format`         | Branch-name validity rules: forbidden characters, sequences, and edge cases         | https://git-scm.com/docs/git-check-ref-format                                       |
+| `feature-branch-workflow`      | Background on the `feature/<slug>` convention                                       | https://www.atlassian.com/git/tutorials/comparing-workflows/feature-branch-workflow |
+| `conventional-branches`        | Optional branch-prefix conventions when a team prefix is not provided               | https://conventional-branches.com                                                   |
+| `topological-sort`             | Background for ordering tasks under hard dependencies                               | https://en.wikipedia.org/wiki/Topological_sorting                                   |
+| `requirements-traceability`    | Calibrating the `Traces to` requirement and acceptance-criteria coverage            | https://en.wikipedia.org/wiki/Requirements_traceability                             |
+| `five-whys`                    | Background for `## Problem Framing` and the underlying-need subsection              | https://en.wikipedia.org/wiki/Five_whys                                             |
+| `rice-scoring`                 | Background for the Risk / Complexity / Value-unlock / Dependency scoring rubric     | https://www.productplan.com/glossary/rice-scoring-model/                            |
+| `yagni`                        | Calibrating "scope creep" or speculative tasks during planning                      | https://martinfowler.com/bliki/Yagni.html                                           |
+| `definition-of-done`           | Calibrating per-task `Definition of done` items so they are concrete and verifiable | https://www.scrum.org/resources/what-definition-done                                |
+| `invest-criteria`              | Sanity-checking task quality with INVEST                                            | https://en.wikipedia.org/wiki/INVEST_(mnemonic)                                     |
 
 ## Jira Source Routing
 
-| Reference key | Use when | URL |
-| --- | --- | --- |
+| Reference key   | Use when                                                                   | URL                                                                               |
+| --------------- | -------------------------------------------------------------------------- | --------------------------------------------------------------------------------- |
 | `jira-subtasks` | Jira subtask hierarchy: parent ticket vs subtask, conversion, restrictions | https://support.atlassian.com/jira-cloud-administration/docs/configure-sub-tasks/ |
 
 ## GitHub Source Routing
 
-| Reference key | Use when | URL |
-| --- | --- | --- |
-| `github-sub-issues` | GitHub issue hierarchy: parent issue vs sub-issue and limits | https://docs.github.com/en/issues/tracking-your-work-with-issues/using-issues/adding-sub-issues |
-| `github-issue-types` | GitHub issue types and labels behavior in modern issues | https://docs.github.com/en/issues/tracking-your-work-with-issues/configuring-issues/managing-issue-types-in-an-organization |
+| Reference key        | Use when                                                     | URL                                                                                                                         |
+| -------------------- | ------------------------------------------------------------ | --------------------------------------------------------------------------------------------------------------------------- |
+| `github-sub-issues`  | GitHub issue hierarchy: parent issue vs sub-issue and limits | https://docs.github.com/en/issues/tracking-your-work-with-issues/using-issues/adding-sub-issues                             |
+| `github-issue-types` | GitHub issue types and labels behavior in modern issues      | https://docs.github.com/en/issues/tracking-your-work-with-issues/configuring-issues/managing-issue-types-in-an-organization |
 
 ## How To Use Returned Web Content
 

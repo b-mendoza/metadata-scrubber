@@ -17,11 +17,11 @@ If `DECISIONS` is missing, stop with `PLANNING: FAIL` and `Failure category: PRE
 
 ## Earliest Affected Stage
 
-| Start at | Decisions affect |
-| --- | --- |
-| Stage 1 | Interpretation, scope, assumptions, task decomposition, child coverage, or current-item detection |
-| Stage 2 | Ordering, dependency classes, priority, prefix, branch names, or child-item-vs-single-branch mode while task content remains valid |
-| Stage 3 | Mechanical final structure, validation report, or downstream contract wording only |
+| Start at | Decisions affect                                                                                                                   |
+| -------- | ---------------------------------------------------------------------------------------------------------------------------------- |
+| Stage 1  | Interpretation, scope, assumptions, task decomposition, child coverage, or current-item detection                                  |
+| Stage 2  | Ordering, dependency classes, priority, prefix, branch names, or child-item-vs-single-branch mode while task content remains valid |
+| Stage 3  | Mechanical final structure, validation report, or downstream contract wording only                                                 |
 
 After the earliest affected stage, rerun every downstream stage and finish with postpipeline validation. Skip preflight only when the authoritative snapshot is unchanged and was already validated in this workflow state.
 
@@ -35,8 +35,8 @@ Critique-driven re-plan iteration limits belong to the parent orchestrator. This
 
 Local validator repair budget:
 
-| Loop | Limit | Counts |
-| --- | --- | --- |
+| Loop                      | Limit                    | Counts                                             |
+| ------------------------- | ------------------------ | -------------------------------------------------- |
 | Targeted validator repair | 3 failed cycles per gate | Repeated `STAGE_VALIDATION: FAIL` at the same gate |
 
 At the cap, stop with `PLANNING: FAIL`, the gate's failure category, and the preserved artifact paths.

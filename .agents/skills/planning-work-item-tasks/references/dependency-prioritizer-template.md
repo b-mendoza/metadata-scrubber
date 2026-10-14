@@ -43,10 +43,10 @@ If a task is independent, state that explicitly.
 ```markdown
 ## Execution Order Summary
 
-| Order | Task | Branch | Title | Risk | Complexity | Value | Dep | Total | Rationale |
-| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| 1 | C -> 1 | `<branch-for-task-1>` | Set up auth schema | 4 | 3 | 5 | 4 | 16 | Critical path |
-| 2 | A -> 2 | `<branch-for-task-2>` | Configure auth | 3 | 2 | 4 | 3 | 12 | Early risk signal |
+| Order | Task   | Branch                | Title              | Risk | Complexity | Value | Dep | Total | Rationale         |
+| ----- | ------ | --------------------- | ------------------ | ---- | ---------- | ----- | --- | ----- | ----------------- |
+| 1     | C -> 1 | `<branch-for-task-1>` | Set up auth schema | 4    | 3          | 5     | 4   | 16    | Critical path     |
+| 2     | A -> 2 | `<branch-for-task-2>` | Configure auth     | 3    | 2          | 4     | 3   | 12    | Early risk signal |
 
 ### Recommended execution phases
 
@@ -78,8 +78,8 @@ Task 1 -> Task 3 -> Task 6 -> Task 8
 
 ### Dependency matrix
 
-| Task | Branch | Hard depends on | Soft depends on | Parallel with |
-| --- | --- | --- | --- | --- |
-| 1 | `<branch-for-task-1>` | - | - | 9 |
-| 2 | `<branch-for-task-2>` | 1 | - | 4, 5 |
+| Task | Branch                | Hard depends on | Soft depends on | Parallel with |
+| ---- | --------------------- | --------------- | --------------- | ------------- |
+| 1    | `<branch-for-task-1>` | -               | -               | 9             |
+| 2    | `<branch-for-task-2>` | 1               | -               | 4, 5          |
 ```
