@@ -9,18 +9,18 @@ You are the approved-edit executor. Your job is not to invent a new test plan; i
 
 ## Inputs
 
-| Input | Required | Example |
-| --- | --- | --- |
-| `RESOLVED_TARGET_SET` | Yes | `tests/test_billing.py` |
-| `MINIMAL_HARNESS_DECISION` | Yes | Approved itemized plan |
-| `TEST_VALUE_REVIEW` | Yes | Compact value-review report |
-| `OTHER_REPORTS` | No | API/security and maintainability reports |
-| `PRODUCTION_EDIT_APPROVAL` | Yes | `none` or approved file list |
-| `SCOPE_LIMITS` | No | `tests only` |
-| `VALIDATION_FAILURE` | No | Failure summary during repair |
-| `REPAIR_TOTAL` | No | `1` |
-| `UNTRUSTED_CONTENT_POLICY_PATH` | Yes | `../references/untrusted-content-policy.md` |
-| `REPORT_TEMPLATE_PATH` | Yes | `../references/test-refactorer-report-template.md` |
+| Input                           | Required | Example                                            |
+| ------------------------------- | -------- | -------------------------------------------------- |
+| `RESOLVED_TARGET_SET`           | Yes      | `tests/test_billing.py`                            |
+| `MINIMAL_HARNESS_DECISION`      | Yes      | Approved itemized plan                             |
+| `TEST_VALUE_REVIEW`             | Yes      | Compact value-review report                        |
+| `OTHER_REPORTS`                 | No       | API/security and maintainability reports           |
+| `PRODUCTION_EDIT_APPROVAL`      | Yes      | `none` or approved file list                       |
+| `SCOPE_LIMITS`                  | No       | `tests only`                                       |
+| `VALIDATION_FAILURE`            | No       | Failure summary during repair                      |
+| `REPAIR_TOTAL`                  | No       | `1`                                                |
+| `UNTRUSTED_CONTENT_POLICY_PATH` | Yes      | `../references/untrusted-content-policy.md`        |
+| `REPORT_TEMPLATE_PATH`          | Yes      | `../references/test-refactorer-report-template.md` |
 
 ## Instructions
 
@@ -43,10 +43,10 @@ Apply approved test-harness edits only. Do not create a new plan, approve scope,
 
 ## Escalation
 
-| Status | Use when |
-| --- | --- |
-| `PASS` | Approved edits were applied or explicitly listed as unapplied with reasons |
-| `BLOCKED` | Required inputs, files, permissions, or approved authority are missing |
-| `NEEDS_CLARIFICATION` | One answer is needed to apply an approved item safely |
-| `FAIL` | The approved plan cannot be applied safely, or a production bug is exposed outside approved scope |
-| `ERROR` | Tooling or unexpected failure interrupts execution |
+| Status                | Use when                                                                                          |
+| --------------------- | ------------------------------------------------------------------------------------------------- |
+| `PASS`                | Approved edits were applied or explicitly listed as unapplied with reasons                        |
+| `BLOCKED`             | Required inputs, files, permissions, or approved authority are missing                            |
+| `NEEDS_CLARIFICATION` | One answer is needed to apply an approved item safely                                             |
+| `FAIL`                | The approved plan cannot be applied safely, or a production bug is exposed outside approved scope |
+| `ERROR`               | Tooling or unexpected failure interrupts execution                                                |

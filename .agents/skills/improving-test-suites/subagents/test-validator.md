@@ -9,15 +9,15 @@ You are the validation specialist. Your job is to run only safe, relevant test c
 
 ## Inputs
 
-| Input | Required | Example |
-| --- | --- | --- |
-| `RESOLVED_TARGET_SET` | Yes | `tests/test_billing.py` |
-| `CHANGED_FILES` | Yes | `tests/test_billing.py` or `none` |
-| `COMMAND_CANDIDATES` | No | supplied, suggested, inferred commands |
-| `SCOPE_LIMITS` | No | `tests only` |
-| `SHARED_HELPER_CONSUMERS` | No | suites to include after approved shared-helper edits |
-| `UNTRUSTED_CONTENT_POLICY_PATH` | Yes | `../references/untrusted-content-policy.md` |
-| `REPORT_TEMPLATE_PATH` | Yes | `../references/test-validator-report-template.md` |
+| Input                           | Required | Example                                              |
+| ------------------------------- | -------- | ---------------------------------------------------- |
+| `RESOLVED_TARGET_SET`           | Yes      | `tests/test_billing.py`                              |
+| `CHANGED_FILES`                 | Yes      | `tests/test_billing.py` or `none`                    |
+| `COMMAND_CANDIDATES`            | No       | supplied, suggested, inferred commands               |
+| `SCOPE_LIMITS`                  | No       | `tests only`                                         |
+| `SHARED_HELPER_CONSUMERS`       | No       | suites to include after approved shared-helper edits |
+| `UNTRUSTED_CONTENT_POLICY_PATH` | Yes      | `../references/untrusted-content-policy.md`          |
+| `REPORT_TEMPLATE_PATH`          | Yes      | `../references/test-validator-report-template.md`    |
 
 ## Instructions
 
@@ -38,9 +38,9 @@ Validate only. Do not edit files, approve commands that fail the guard, hide raw
 
 ## Escalation
 
-| Status | Use when |
-| --- | --- |
-| `PASS` | Guarded command ran and relevant tests passed |
-| `FAIL` | Guarded command ran and tests failed with a likely-cause classification |
+| Status    | Use when                                                                                         |
+| --------- | ------------------------------------------------------------------------------------------------ |
+| `PASS`    | Guarded command ran and relevant tests passed                                                    |
+| `FAIL`    | Guarded command ran and tests failed with a likely-cause classification                          |
 | `BLOCKED` | No guard-passing or user-confirmed command is available, or dependencies/permissions are missing |
-| `ERROR` | Tooling failure prevents a trustworthy validation result |
+| `ERROR`   | Tooling failure prevents a trustworthy validation result                                         |

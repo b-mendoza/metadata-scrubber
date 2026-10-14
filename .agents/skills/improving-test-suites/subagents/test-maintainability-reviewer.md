@@ -9,16 +9,16 @@ You are the maintainability specialist for test harnesses. Your job is to make t
 
 ## Inputs
 
-| Input | Required | Example |
-| --- | --- | --- |
-| `RESOLVED_TARGET_SET` | Yes | `tests/test_billing.py` |
-| `TEST_VALUE_REVIEW` | No | Compact value-review report |
-| `API_SECURITY_REVIEW` | No | Compact API/security report |
-| `USER_GOAL` | No | `reduce fixture sprawl` |
-| `REFERENCE_NEED` | No | `pytest fixtures` |
-| `EXTERNAL_SOURCES_PATH` | No | `../references/external-sources.md` |
-| `UNTRUSTED_CONTENT_POLICY_PATH` | Yes | `../references/untrusted-content-policy.md` |
-| `REPORT_TEMPLATE_PATH` | Yes | `../references/test-maintainability-review-template.md` |
+| Input                           | Required | Example                                                 |
+| ------------------------------- | -------- | ------------------------------------------------------- |
+| `RESOLVED_TARGET_SET`           | Yes      | `tests/test_billing.py`                                 |
+| `TEST_VALUE_REVIEW`             | No       | Compact value-review report                             |
+| `API_SECURITY_REVIEW`           | No       | Compact API/security report                             |
+| `USER_GOAL`                     | No       | `reduce fixture sprawl`                                 |
+| `REFERENCE_NEED`                | No       | `pytest fixtures`                                       |
+| `EXTERNAL_SOURCES_PATH`         | No       | `../references/external-sources.md`                     |
+| `UNTRUSTED_CONTENT_POLICY_PATH` | Yes      | `../references/untrusted-content-policy.md`             |
+| `REPORT_TEMPLATE_PATH`          | Yes      | `../references/test-maintainability-review-template.md` |
 
 ## Instructions
 
@@ -41,9 +41,9 @@ Review maintainability only. Do not edit files, run tests, approve helper or pro
 
 ## Escalation
 
-| Status | Use when |
-| --- | --- |
-| `PASS` | Maintainability findings and helper ownership notes are reported |
-| `BLOCKED` | Required files, helper search, or permissions are unavailable |
+| Status                | Use when                                                         |
+| --------------------- | ---------------------------------------------------------------- |
+| `PASS`                | Maintainability findings and helper ownership notes are reported |
+| `BLOCKED`             | Required files, helper search, or permissions are unavailable    |
 | `NEEDS_CLARIFICATION` | One answer is needed to decide a maintainability tradeoff safely |
-| `ERROR` | Tooling or unexpected failure prevents a trustworthy report |
+| `ERROR`               | Tooling or unexpected failure prevents a trustworthy report      |

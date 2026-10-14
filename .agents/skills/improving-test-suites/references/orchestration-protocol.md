@@ -4,16 +4,16 @@ Companion to the finite-state machine. State names, transitions, guards, and ter
 
 ## State Fields
 
-| Field | Meaning |
-| --- | --- |
-| `RESOLVED_TARGET_SET` | Concrete existing test files from `TARGET_TEST_FILES` |
-| `DISPATCH_PACKET` | Inputs, resolved targets, reference/template paths, approvals |
-| `REPORTS` | Compact subagent reports, statuses, URLs, paths, decisions |
-| `MINIMAL_HARNESS_DECISION` | Itemized keep/rewrite/delete/consolidate/add plan |
-| `PRODUCTION_EDIT_APPROVAL` | `none` or user-approved production/shared-helper file list |
-| `WORKSPACE_RISK_ACK` | Acknowledgment for dirty files or no version control |
-| `REPAIR_TOTAL` | Total repair attempts; max three; never reset |
-| `RESUME_PACKET` | Inputs, reports, approvals, pending question, next step, repair count |
+| Field                      | Meaning                                                               |
+| -------------------------- | --------------------------------------------------------------------- |
+| `RESOLVED_TARGET_SET`      | Concrete existing test files from `TARGET_TEST_FILES`                 |
+| `DISPATCH_PACKET`          | Inputs, resolved targets, reference/template paths, approvals         |
+| `REPORTS`                  | Compact subagent reports, statuses, URLs, paths, decisions            |
+| `MINIMAL_HARNESS_DECISION` | Itemized keep/rewrite/delete/consolidate/add plan                     |
+| `PRODUCTION_EDIT_APPROVAL` | `none` or user-approved production/shared-helper file list            |
+| `WORKSPACE_RISK_ACK`       | Acknowledgment for dirty files or no version control                  |
+| `REPAIR_TOTAL`             | Total repair attempts; max three; never reset                         |
+| `RESUME_PACKET`            | Inputs, reports, approvals, pending question, next step, repair count |
 
 ## Universal Rules
 
@@ -37,12 +37,12 @@ Companion to the finite-state machine. State names, transitions, guards, and ter
 
 Dispatch `test-value-reviewer` in `ValueReview`.
 
-| `VALUE_STATUS` | Route |
-| --- | --- |
-| `PASS` | Record report → `ReviewFanout` |
-| `BLOCKED` | `AskValue`; retry on answer |
-| `NEEDS_CLARIFICATION` | `AskValue`; retry on answer |
-| `ERROR` | One same-dispatch retry if `REPAIR_TOTAL < 3` (increment); else `TerminalError` |
+| `VALUE_STATUS`        | Route                                                                           |
+| --------------------- | ------------------------------------------------------------------------------- |
+| `PASS`                | Record report → `ReviewFanout`                                                  |
+| `BLOCKED`             | `AskValue`; retry on answer                                                     |
+| `NEEDS_CLARIFICATION` | `AskValue`; retry on answer                                                     |
+| `ERROR`               | One same-dispatch retry if `REPAIR_TOTAL < 3` (increment); else `TerminalError` |
 
 The value report must include per-test categories, high-value behaviors with coverage ratings (`none`, `weak`, `good`), and API/security plus maintainability routes (`required`, `optional`, `not needed`) with reasons.
 
@@ -52,13 +52,13 @@ The value report must include per-test categories, high-value behaviors with cov
 
 `ReviewJoin` waits for every dispatched report, then resolves each per this table (a crashed or missing dispatch counts as `ERROR`; join outcome must not depend on completion order):
 
-| Review status | Required route | Optional route |
-| --- | --- | --- |
-| `PASS` | Resolved | Resolved |
-| `NOT_APPLICABLE` | Resolved | Resolved |
-| `BLOCKED` | `AskReview` and redispatch that review | Sufficiency checklist: pass → record remaining risk, resolved; fail → `AskReview` |
-| `NEEDS_CLARIFICATION` | `AskReview` and redispatch that review | Same as `BLOCKED` |
-| `ERROR` | One same-dispatch retry if `REPAIR_TOTAL < 3` (increment); then `AskReview` if a recoverable question exists, else `TerminalError` | Same retry; then sufficiency checklist → risk / `AskReview` / `TerminalError` |
+| Review status         | Required route                                                                                                                     | Optional route                                                                    |
+| --------------------- | ---------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------- |
+| `PASS`                | Resolved                                                                                                                           | Resolved                                                                          |
+| `NOT_APPLICABLE`      | Resolved                                                                                                                           | Resolved                                                                          |
+| `BLOCKED`             | `AskReview` and redispatch that review                                                                                             | Sufficiency checklist: pass → record remaining risk, resolved; fail → `AskReview` |
+| `NEEDS_CLARIFICATION` | `AskReview` and redispatch that review                                                                                             | Same as `BLOCKED`                                                                 |
+| `ERROR`               | One same-dispatch retry if `REPAIR_TOTAL < 3` (increment); then `AskReview` if a recoverable question exists, else `TerminalError` | Same retry; then sufficiency checklist → risk / `AskReview` / `TerminalError`     |
 
 Only when every routed review is resolved does `ReviewJoin` advance to `Synthesis`. `AskReview` asks one focused question, then re-enters `ReviewFanout` redispatching only the affected reviews; already-resolved reports are kept.
 
@@ -86,16 +86,16 @@ Record the checklist result in the handoff. If any item fails, treat the review 
 
 Dispatch `test-refactorer` only from `Refactor` after plan approval or recorded auto-approval. The packet must include all required inputs: resolved targets, approved decision, value review, optional reports, `PRODUCTION_EDIT_APPROVAL`, scope limits, template path, and, during repair, `VALIDATION_FAILURE` plus `REPAIR_TOTAL`.
 
-| `REFACTOR_STATUS` | Route |
-| --- | --- |
-| `PASS` | → `Conformance` |
-| `BLOCKED` | `AskRefactor`; retry on answer |
-| `NEEDS_CLARIFICATION` | `AskRefactor`; retry on answer |
-| `FAIL` with production bug outside approved scope | `TerminalBug` |
-| `FAIL` otherwise | `TerminalBlocked` with resume packet |
-| `ERROR` during active repair and `REPAIR_TOTAL < 3` | → `Repair` then retry |
+| `REFACTOR_STATUS`                                                   | Route                                              |
+| ------------------------------------------------------------------- | -------------------------------------------------- |
+| `PASS`                                                              | → `Conformance`                                    |
+| `BLOCKED`                                                           | `AskRefactor`; retry on answer                     |
+| `NEEDS_CLARIFICATION`                                               | `AskRefactor`; retry on answer                     |
+| `FAIL` with production bug outside approved scope                   | `TerminalBug`                                      |
+| `FAIL` otherwise                                                    | `TerminalBlocked` with resume packet               |
+| `ERROR` during active repair and `REPAIR_TOTAL < 3`                 | → `Repair` then retry                              |
 | `ERROR` outside repair, first for this dispatch, `REPAIR_TOTAL < 3` | One same-dispatch retry (increment `REPAIR_TOTAL`) |
-| `ERROR` otherwise | `TerminalError` |
+| `ERROR` otherwise                                                   | `TerminalError`                                    |
 
 ## Conformance Check
 
@@ -113,16 +113,16 @@ Repairable mismatches → `Repair`. User-decision mismatches → `AskConform` th
 
 Dispatch `test-validator` in `Validate` with resolved targets, changed files or `none`, command candidates, scope limits, and template path. Prefer [`../scripts/check-test-command.sh`](../scripts/check-test-command.sh) for the allowlist check. Widen validation when approved shared-helper edits could affect non-target suites.
 
-| `VALIDATION_STATUS` | Route |
-| --- | --- |
-| `PASS` with changed files | `TerminalChanged` |
-| `PASS` with no changes | `TerminalNoChange` |
-| `BLOCKED` | `AskValidate`; retry on answer |
-| `ERROR` outside repair, first for this dispatch, `REPAIR_TOTAL < 3` | One same-dispatch retry (increment `REPAIR_TOTAL`) |
-| `ERROR` otherwise | `TerminalError` |
-| `FAIL` with no changes and likely cause `production bug exposed` | `TerminalBug` |
-| `FAIL` with no changes otherwise | `TerminalNoChange` with pre-existing risk (a pre-existing failure lands in `TerminalFailed` only when files changed and repair ran) |
-| `FAIL` with changed files | `Repair` (load repair protocol) |
+| `VALIDATION_STATUS`                                                 | Route                                                                                                                               |
+| ------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------- |
+| `PASS` with changed files                                           | `TerminalChanged`                                                                                                                   |
+| `PASS` with no changes                                              | `TerminalNoChange`                                                                                                                  |
+| `BLOCKED`                                                           | `AskValidate`; retry on answer                                                                                                      |
+| `ERROR` outside repair, first for this dispatch, `REPAIR_TOTAL < 3` | One same-dispatch retry (increment `REPAIR_TOTAL`)                                                                                  |
+| `ERROR` otherwise                                                   | `TerminalError`                                                                                                                     |
+| `FAIL` with no changes and likely cause `production bug exposed`    | `TerminalBug`                                                                                                                       |
+| `FAIL` with no changes otherwise                                    | `TerminalNoChange` with pre-existing risk (a pre-existing failure lands in `TerminalFailed` only when files changed and repair ran) |
+| `FAIL` with changed files                                           | `Repair` (load repair protocol)                                                                                                     |
 
 ## Handoff Readiness
 

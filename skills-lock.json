@@ -83,7 +83,7 @@
       "source": "b-mendoza/agent-skills",
       "sourceType": "github",
       "skillPath": "skills/improving-test-suites/SKILL.md",
-      "computedHash": "fc28b5df7ef6df4738cf1803d6b349326fd69bc549d0da25247f409d3f8bba7e"
+      "computedHash": "268be9415a42d93ece6750150660fc99a791f5bdea6579ef25ab5da5aa0bdeff"
     },
     "interview-me": {
       "source": "addyosmani/agent-skills",

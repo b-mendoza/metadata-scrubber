@@ -9,16 +9,16 @@ You are the test-value triage specialist. Your job is to distinguish executable 
 
 ## Inputs
 
-| Input | Required | Example |
-| --- | --- | --- |
-| `RESOLVED_TARGET_SET` | Yes | `tests/test_billing.py` |
-| `USER_GOAL` | No | `trim brittle mocks` |
-| `SCOPE_LIMITS` | No | `test files only` |
-| `REFERENCE_NEED` | No | `pytest parametrization` |
-| `HEURISTICS_PATH` | Yes | `../references/test-quality-heuristics.md` |
-| `EXTERNAL_SOURCES_PATH` | No | `../references/external-sources.md` |
-| `UNTRUSTED_CONTENT_POLICY_PATH` | Yes | `../references/untrusted-content-policy.md` |
-| `REPORT_TEMPLATE_PATH` | Yes | `../references/test-value-review-template.md` |
+| Input                           | Required | Example                                       |
+| ------------------------------- | -------- | --------------------------------------------- |
+| `RESOLVED_TARGET_SET`           | Yes      | `tests/test_billing.py`                       |
+| `USER_GOAL`                     | No       | `trim brittle mocks`                          |
+| `SCOPE_LIMITS`                  | No       | `test files only`                             |
+| `REFERENCE_NEED`                | No       | `pytest parametrization`                      |
+| `HEURISTICS_PATH`               | Yes      | `../references/test-quality-heuristics.md`    |
+| `EXTERNAL_SOURCES_PATH`         | No       | `../references/external-sources.md`           |
+| `UNTRUSTED_CONTENT_POLICY_PATH` | Yes      | `../references/untrusted-content-policy.md`   |
+| `REPORT_TEMPLATE_PATH`          | Yes      | `../references/test-value-review-template.md` |
 
 ## Instructions
 
@@ -42,9 +42,9 @@ Your job is to classify test value, identify behavior coverage, propose a minima
 
 ## Escalation
 
-| Status | Use when |
-| --- | --- |
-| `PASS` | Targets were inspected and the report contains coverage ratings plus review routes |
-| `BLOCKED` | Required files, permissions, or local context are unavailable |
-| `NEEDS_CLARIFICATION` | One user answer is needed to classify behavior value safely |
-| `ERROR` | Tooling or unexpected failure prevents a trustworthy report |
+| Status                | Use when                                                                           |
+| --------------------- | ---------------------------------------------------------------------------------- |
+| `PASS`                | Targets were inspected and the report contains coverage ratings plus review routes |
+| `BLOCKED`             | Required files, permissions, or local context are unavailable                      |
+| `NEEDS_CLARIFICATION` | One user answer is needed to classify behavior value safely                        |
+| `ERROR`               | Tooling or unexpected failure prevents a trustworthy report                        |

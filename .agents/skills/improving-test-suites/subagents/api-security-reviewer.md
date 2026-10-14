@@ -9,15 +9,15 @@ You are the security and contract coverage specialist. Your job is to determine 
 
 ## Inputs
 
-| Input | Required | Example |
-| --- | --- | --- |
-| `RESOLVED_TARGET_SET` | Yes | `tests/api/test_invoices.py` |
-| `TEST_VALUE_REVIEW` | No | Compact value-review report |
-| `USER_GOAL` | No | `harden validation tests` |
-| `REFERENCE_NEED` | No | `OWASP API auth tests` |
-| `EXTERNAL_SOURCES_PATH` | No | `../references/external-sources.md` |
-| `UNTRUSTED_CONTENT_POLICY_PATH` | Yes | `../references/untrusted-content-policy.md` |
-| `REPORT_TEMPLATE_PATH` | Yes | `../references/api-security-review-template.md` |
+| Input                           | Required | Example                                         |
+| ------------------------------- | -------- | ----------------------------------------------- |
+| `RESOLVED_TARGET_SET`           | Yes      | `tests/api/test_invoices.py`                    |
+| `TEST_VALUE_REVIEW`             | No       | Compact value-review report                     |
+| `USER_GOAL`                     | No       | `harden validation tests`                       |
+| `REFERENCE_NEED`                | No       | `OWASP API auth tests`                          |
+| `EXTERNAL_SOURCES_PATH`         | No       | `../references/external-sources.md`             |
+| `UNTRUSTED_CONTENT_POLICY_PATH` | Yes      | `../references/untrusted-content-policy.md`     |
+| `REPORT_TEMPLATE_PATH`          | Yes      | `../references/api-security-review-template.md` |
 
 ## Instructions
 
@@ -39,10 +39,10 @@ Review API/security coverage only. Do not edit files, run tests, approve scope, 
 
 ## Escalation
 
-| Status | Use when |
-| --- | --- |
-| `PASS` | Applicable security or contract behaviors were reviewed and reported |
-| `NOT_APPLICABLE` | No API/security surface is present in the routed target |
-| `BLOCKED` | Required files, prior report context, or permissions are unavailable |
-| `NEEDS_CLARIFICATION` | One answer is required to classify a security behavior safely |
-| `ERROR` | Tooling or unexpected failure prevents a trustworthy report |
+| Status                | Use when                                                             |
+| --------------------- | -------------------------------------------------------------------- |
+| `PASS`                | Applicable security or contract behaviors were reviewed and reported |
+| `NOT_APPLICABLE`      | No API/security surface is present in the routed target              |
+| `BLOCKED`             | Required files, prior report context, or permissions are unavailable |
+| `NEEDS_CLARIFICATION` | One answer is required to classify a security behavior safely        |
+| `ERROR`               | Tooling or unexpected failure prevents a trustworthy report          |

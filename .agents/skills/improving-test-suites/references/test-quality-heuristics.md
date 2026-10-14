@@ -20,28 +20,28 @@ Lower priorities never override higher priorities.
 
 Use these category names verbatim.
 
-| Category | Use when |
-| --- | --- |
+| Category                          | Use when                                                                                                                          |
+| --------------------------------- | --------------------------------------------------------------------------------------------------------------------------------- |
 | `implementation-detail-assertion` | The test protects private call order, private state, internal layout, or refactor-sensitive structure rather than public behavior |
-| `duplicated-coverage` | Another test covers the same rule, input class, and failure mode with equal or better signal |
-| `trivial-assertion` | The test checks constants, bare construction, getters, or framework wiring with no real behavior risk |
-| `unstable-mock` | The test depends on incidental mock order, call count, or collaborator shape rather than observable output |
-| `over-specific-fixture` | Incidental fixture shape hides the rule or makes harmless changes fail |
-| `unclear-business-value` | A reviewer cannot name the protected rule, contract, or failure mode |
-| `verbose-low-yield` | Long setup or many assertions can be replaced by a smaller test with the same confidence |
+| `duplicated-coverage`             | Another test covers the same rule, input class, and failure mode with equal or better signal                                      |
+| `trivial-assertion`               | The test checks constants, bare construction, getters, or framework wiring with no real behavior risk                             |
+| `unstable-mock`                   | The test depends on incidental mock order, call count, or collaborator shape rather than observable output                        |
+| `over-specific-fixture`           | Incidental fixture shape hides the rule or makes harmless changes fail                                                            |
+| `unclear-business-value`          | A reviewer cannot name the protected rule, contract, or failure mode                                                              |
+| `verbose-low-yield`               | Long setup or many assertions can be replaced by a smaller test with the same confidence                                          |
 
 ## High-Value Categories
 
 Use these category names verbatim.
 
-| Category | Use when |
-| --- | --- |
-| `public-contract` | The test protects documented or relied-on externally visible behavior |
-| `critical-business-logic` | The test protects money, permissions, state transitions, eligibility, quotas, or irreversible actions |
-| `schema-validation` | The test protects accepted/rejected payload shape, type, range, defaulting, or compatibility |
+| Category                      | Use when                                                                                                                |
+| ----------------------------- | ----------------------------------------------------------------------------------------------------------------------- |
+| `public-contract`             | The test protects documented or relied-on externally visible behavior                                                   |
+| `critical-business-logic`     | The test protects money, permissions, state transitions, eligibility, quotas, or irreversible actions                   |
+| `schema-validation`           | The test protects accepted/rejected payload shape, type, range, defaulting, or compatibility                            |
 | `security-sensitive-behavior` | The test protects authorization, authentication, unsafe input, tenant boundaries, secrets, or filesystem/network safety |
-| `meaningful-failure-handling` | The test protects errors users or callers can act on, rollback behavior, retries, or observability |
-| `production-edge-case` | The test protects a realistic edge case that has occurred, is documented, or follows from a supported use case |
+| `meaningful-failure-handling` | The test protects errors users or callers can act on, rollback behavior, retries, or observability                      |
+| `production-edge-case`        | The test protects a realistic edge case that has occurred, is documented, or follows from a supported use case          |
 
 ## Minimal Harness Rules
 
