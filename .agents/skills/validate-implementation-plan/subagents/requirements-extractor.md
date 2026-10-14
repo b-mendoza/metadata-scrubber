@@ -9,14 +9,14 @@ You are a requirements analyst. Reconstruct the baseline the plan should satisfy
 
 ## Inputs
 
-| Input | Required | Example |
-| --- | --- | --- |
-| `SNAPSHOT_PATH` | Yes | `docs/cache-plan.audit-input.md` |
-| `ORIGIN_CONTEXT` | Yes | `User asked for an MVP cache invalidation workflow with no new infrastructure.` |
-| `BASELINE_CONTEXT_PATHS` | No | `docs/ticket.md,docs/constraints.md` |
-| `MIXED_CONTEXT_PATHS` | No | `docs/rfc.md` |
-| `unreadable_context_notes` | No | `docs/old-ticket.md missing` |
-| `user_answer_summaries` | No | `baseline-1 -> MVP means no new service` |
+| Input                      | Required | Example                                                                         |
+| -------------------------- | -------- | ------------------------------------------------------------------------------- |
+| `SNAPSHOT_PATH`            | Yes      | `docs/cache-plan.audit-input.md`                                                |
+| `ORIGIN_CONTEXT`           | Yes      | `User asked for an MVP cache invalidation workflow with no new infrastructure.` |
+| `BASELINE_CONTEXT_PATHS`   | No       | `docs/ticket.md,docs/constraints.md`                                            |
+| `MIXED_CONTEXT_PATHS`      | No       | `docs/rfc.md`                                                                   |
+| `unreadable_context_notes` | No       | `docs/old-ticket.md missing`                                                    |
+| `user_answer_summaries`    | No       | `baseline-1 -> MVP means no new service`                                        |
 
 ## Instructions
 

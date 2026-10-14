@@ -4,34 +4,34 @@ Read this file before the first dispatch and whenever a stage output needs inter
 
 ## Operational Definitions
 
-| Term | Operational meaning |
-| --- | --- |
-| `ORIGIN_CONTEXT` adequate | The text states a user-request outcome (what to build or change) without requiring inference from the plan. Missing, empty, or plan-only restatements are inadequate. |
+| Term                      | Operational meaning                                                                                                                                                                                 |
+| ------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `ORIGIN_CONTEXT` adequate | The text states a user-request outcome (what to build or change) without requiring inference from the plan. Missing, empty, or plan-only restatements are inadequate.                               |
 | core audit remains viable | `SNAPSHOT_PATH` exists with `SNAPSHOT: PASS`, numbered requirements exist with `REQUIREMENTS: PASS`, and discovery payloads exist for `TRACEABILITY: PASS`, `YAGNI: PASS`, and `ASSUMPTIONS: PASS`. |
-| decision-relevant | Resolving the assumption or question could change the final `AUDIT: PASS \| FAIL \| BLOCKED \| ERROR` outcome or could raise or lower a finding between `critical` and `warning`. |
+| decision-relevant         | Resolving the assumption or question could change the final `AUDIT: PASS \| FAIL \| BLOCKED \| ERROR` outcome or could raise or lower a finding between `critical` and `warning`.                   |
 
 ## Status Codes
 
-| Status | Meaning | Orchestrator action |
-| --- | --- | --- |
-| `PASS` | Stage completed and returned usable output | Continue |
-| `BLOCKED` | Missing prerequisite, unreadable authorized path, declined user input, or unapproved artifact collision | Stop if the stage is a hard gate; otherwise record a gap |
-| `FAIL` | Stage ran but output cannot support reliable downstream use | Retry the named failed branch, or record the optional evidence gap |
-| `ERROR` | Unexpected tool, filesystem, parsing, or execution failure | Retry the named failed branch, then escalate or record if optional |
+| Status    | Meaning                                                                                                 | Orchestrator action                                                |
+| --------- | ------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------ |
+| `PASS`    | Stage completed and returned usable output                                                              | Continue                                                           |
+| `BLOCKED` | Missing prerequisite, unreadable authorized path, declined user input, or unapproved artifact collision | Stop if the stage is a hard gate; otherwise record a gap           |
+| `FAIL`    | Stage ran but output cannot support reliable downstream use                                             | Retry the named failed branch, or record the optional evidence gap |
+| `ERROR`   | Unexpected tool, filesystem, parsing, or execution failure                                              | Retry the named failed branch, then escalate or record if optional |
 
 ## Stage Contracts
 
 Accept a stage output only when the stage-specific success label and payload shape are present.
 
-| Stage | Success label | Expected payload |
-| --- | --- | --- |
-| Snapshot | `SNAPSHOT: PASS` | Snapshot path, section count, redaction state, sensitive categories, technical claim count, artifact action |
-| Requirements | `REQUIREMENTS: PASS` | Numbered source requirements, baseline notes, context paths used, unreadable paths |
-| Technical evidence | `EVIDENCE: PASS` | JSON array of local-evidence claim reviews plus reviewed path list |
-| Traceability audit | `TRACEABILITY: PASS` | JSON object with `req_annotations`, `requirement_gaps`, and `coverage_summary` |
-| Scope audit | `YAGNI: PASS` | JSON array of scope findings with smaller alternatives |
-| Assumptions audit | `ASSUMPTIONS: PASS` | Discovery or resolution JSON matching the assumptions contract |
-| Report assembly | `REPORT: PASS` | Written `OUTPUT_PATH` with all required sections present (use `None.` for empty sections) |
+| Stage              | Success label        | Expected payload                                                                                            |
+| ------------------ | -------------------- | ----------------------------------------------------------------------------------------------------------- |
+| Snapshot           | `SNAPSHOT: PASS`     | Snapshot path, section count, redaction state, sensitive categories, technical claim count, artifact action |
+| Requirements       | `REQUIREMENTS: PASS` | Numbered source requirements, baseline notes, context paths used, unreadable paths                          |
+| Technical evidence | `EVIDENCE: PASS`     | JSON array of local-evidence claim reviews plus reviewed path list                                          |
+| Traceability audit | `TRACEABILITY: PASS` | JSON object with `req_annotations`, `requirement_gaps`, and `coverage_summary`                              |
+| Scope audit        | `YAGNI: PASS`        | JSON array of scope findings with smaller alternatives                                                      |
+| Assumptions audit  | `ASSUMPTIONS: PASS`  | Discovery or resolution JSON matching the assumptions contract                                              |
+| Report assembly    | `REPORT: PASS`       | Written `OUTPUT_PATH` with all required sections present (use `None.` for empty sections)                   |
 
 Malformed JSON, missing required fields, wrong status labels, or payloads that cite unauthorized evidence are failed stage contracts.
 
@@ -39,17 +39,17 @@ The annotator returns `REPORT: PASS` only for a successful write. The orchestrat
 
 ## Hard And Optional Gates
 
-| Gate | Type | Recovery |
-| --- | --- | --- |
-| `PLAN_PATH` access by `plan-snapshotter` | Hard | Return `AUDIT: BLOCKED` or retry on transient error |
-| Artifact write authorization | Hard | Ask for overwrite approval or alternate path |
-| `ORIGIN_CONTEXT` baseline | Hard | Ask one baseline question; continue only when adequate |
-| Snapshot creation | Hard | Retry snapshot branch only |
-| Requirement extraction | Hard | Retry requirements branch only |
-| Technical evidence review | Optional | Retry, then record an evidence gap when core audit remains viable |
-| Traceability, YAGNI, assumptions discovery | Hard | Retry the named auditor branch only (re-enter dispatch) |
-| Assumption resolution for decision-relevant questions | Hard | Ask user; unresolved decision questions block |
-| Report assembly | Hard | Retry report branch only |
+| Gate                                                  | Type     | Recovery                                                          |
+| ----------------------------------------------------- | -------- | ----------------------------------------------------------------- |
+| `PLAN_PATH` access by `plan-snapshotter`              | Hard     | Return `AUDIT: BLOCKED` or retry on transient error               |
+| Artifact write authorization                          | Hard     | Ask for overwrite approval or alternate path                      |
+| `ORIGIN_CONTEXT` baseline                             | Hard     | Ask one baseline question; continue only when adequate            |
+| Snapshot creation                                     | Hard     | Retry snapshot branch only                                        |
+| Requirement extraction                                | Hard     | Retry requirements branch only                                    |
+| Technical evidence review                             | Optional | Retry, then record an evidence gap when core audit remains viable |
+| Traceability, YAGNI, assumptions discovery            | Hard     | Retry the named auditor branch only (re-enter dispatch)           |
+| Assumption resolution for decision-relevant questions | Hard     | Ask user; unresolved decision questions block                     |
+| Report assembly                                       | Hard     | Retry report branch only                                          |
 
 ## Artifact Policy
 
@@ -63,11 +63,11 @@ The source plan is never overwritten. Retries reuse the same artifact policy unl
 
 ## Severity Levels
 
-| Severity | Use for |
-| --- | --- |
+| Severity   | Use for                                                                                                      |
+| ---------- | ------------------------------------------------------------------------------------------------------------ |
 | `critical` | The plan likely fails the request, adds unsafe scope, or depends on a disproven decision-relevant assumption |
-| `warning` | The plan has material risk, weak support, or avoidable complexity that may still be salvageable |
-| `info` | The plan is supported, a caveat is minor, or the finding is explanatory |
+| `warning`  | The plan has material risk, weak support, or avoidable complexity that may still be salvageable              |
+| `info`     | The plan is supported, a caveat is minor, or the finding is explanatory                                      |
 
 ## Retry Loop
 

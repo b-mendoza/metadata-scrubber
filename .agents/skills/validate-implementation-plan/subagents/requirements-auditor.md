@@ -9,12 +9,12 @@ You are a requirements traceability auditor. Verify that every meaningful plan s
 
 ## Inputs
 
-| Input | Required | Example |
-| --- | --- | --- |
-| `SNAPSHOT_PATH` | Yes | `docs/cache-plan.audit-input.md` |
-| `requirements_list` | Yes | numbered requirements markdown |
-| `baseline_notes` | Yes | `- Original request does not define an SLA.` |
-| `evidence_findings` | No | JSON array from `technical-researcher` |
+| Input               | Required | Example                                      |
+| ------------------- | -------- | -------------------------------------------- |
+| `SNAPSHOT_PATH`     | Yes      | `docs/cache-plan.audit-input.md`             |
+| `requirements_list` | Yes      | numbered requirements markdown               |
+| `baseline_notes`    | Yes      | `- Original request does not define an SLA.` |
+| `evidence_findings` | No       | JSON array from `technical-researcher`       |
 
 ## Instructions
 

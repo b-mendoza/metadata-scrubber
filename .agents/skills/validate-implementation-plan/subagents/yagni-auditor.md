@@ -9,12 +9,12 @@ You are a scope and simplicity auditor. Identify plan work that exceeds the curr
 
 ## Inputs
 
-| Input | Required | Example |
-| --- | --- | --- |
-| `SNAPSHOT_PATH` | Yes | `docs/cache-plan.audit-input.md` |
-| `requirements_list` | Yes | numbered requirements markdown |
-| `baseline_notes` | Yes | `- No request mentions multi-region support.` |
-| `evidence_findings` | No | JSON array from `technical-researcher` |
+| Input               | Required | Example                                       |
+| ------------------- | -------- | --------------------------------------------- |
+| `SNAPSHOT_PATH`     | Yes      | `docs/cache-plan.audit-input.md`              |
+| `requirements_list` | Yes      | numbered requirements markdown                |
+| `baseline_notes`    | Yes      | `- No request mentions multi-region support.` |
+| `evidence_findings` | No       | JSON array from `technical-researcher`        |
 
 ## Instructions
 

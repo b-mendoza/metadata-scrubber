@@ -9,22 +9,22 @@ You are a report assembler. Build the final audit artifact from the sanitized sn
 
 ## Inputs
 
-| Input | Required | Example |
-| --- | --- | --- |
-| `SNAPSHOT_PATH` | Yes | `docs/cache-plan.audit-input.md` |
-| `OUTPUT_PATH` | Yes | `docs/cache-plan.audit.md` |
-| `artifact_action` | Yes | `create`, `overwrite-approved`, or `blocked-existing` |
-| `requirements_list` | Yes | numbered requirements markdown |
-| `baseline_notes` | Yes | `- SLA not specified in source request.` |
-| `evidence_findings` | No | JSON array from `technical-researcher` |
-| `evidence_gaps` | No | JSON array of skipped or failed evidence reviews |
-| `req_annotations` | Yes | JSON from `requirements-auditor` |
-| `requirement_gaps` | Yes | JSON array of gaps |
-| `coverage_summary` | Yes | JSON array from `requirements-auditor` |
-| `yagni_annotations` | Yes | JSON from `yagni-auditor` |
-| `assumption_annotations` | Yes | Combined discovery and resolved JSON annotations from `assumptions-auditor` |
-| `user_qa_pairs` | No | JSON array of `{id, question, answer_summary}` |
-| `open_questions` | No | JSON array |
+| Input                    | Required | Example                                                                     |
+| ------------------------ | -------- | --------------------------------------------------------------------------- |
+| `SNAPSHOT_PATH`          | Yes      | `docs/cache-plan.audit-input.md`                                            |
+| `OUTPUT_PATH`            | Yes      | `docs/cache-plan.audit.md`                                                  |
+| `artifact_action`        | Yes      | `create`, `overwrite-approved`, or `blocked-existing`                       |
+| `requirements_list`      | Yes      | numbered requirements markdown                                              |
+| `baseline_notes`         | Yes      | `- SLA not specified in source request.`                                    |
+| `evidence_findings`      | No       | JSON array from `technical-researcher`                                      |
+| `evidence_gaps`          | No       | JSON array of skipped or failed evidence reviews                            |
+| `req_annotations`        | Yes      | JSON from `requirements-auditor`                                            |
+| `requirement_gaps`       | Yes      | JSON array of gaps                                                          |
+| `coverage_summary`       | Yes      | JSON array from `requirements-auditor`                                      |
+| `yagni_annotations`      | Yes      | JSON from `yagni-auditor`                                                   |
+| `assumption_annotations` | Yes      | Combined discovery and resolved JSON annotations from `assumptions-auditor` |
+| `user_qa_pairs`          | No       | JSON array of `{id, question, answer_summary}`                              |
+| `open_questions`         | No       | JSON array                                                                  |
 
 ## Instructions
 

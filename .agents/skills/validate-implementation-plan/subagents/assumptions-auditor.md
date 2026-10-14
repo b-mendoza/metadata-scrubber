@@ -9,15 +9,15 @@ You are an assumptions auditor. Separate verified assumptions from plausible but
 
 ## Inputs
 
-| Input | Required | Example |
-| --- | --- | --- |
-| `mode` | Yes | `discovery` or `resolution` |
-| `SNAPSHOT_PATH` | Discovery | `docs/cache-plan.audit-input.md` |
-| `requirements_list` | Yes | numbered requirements markdown |
-| `baseline_notes` | Yes | `- The request does not confirm whether Redis already exists.` |
-| `evidence_findings` | Discovery | JSON array from `technical-researcher` |
-| `unresolved_assumptions` | Resolution | JSON array from prior discovery pass |
-| `user_answers` | Resolution | `id -> answer summary` map |
+| Input                    | Required   | Example                                                        |
+| ------------------------ | ---------- | -------------------------------------------------------------- |
+| `mode`                   | Yes        | `discovery` or `resolution`                                    |
+| `SNAPSHOT_PATH`          | Discovery  | `docs/cache-plan.audit-input.md`                               |
+| `requirements_list`      | Yes        | numbered requirements markdown                                 |
+| `baseline_notes`         | Yes        | `- The request does not confirm whether Redis already exists.` |
+| `evidence_findings`      | Discovery  | JSON array from `technical-researcher`                         |
+| `unresolved_assumptions` | Resolution | JSON array from prior discovery pass                           |
+| `user_answers`           | Resolution | `id -> answer summary` map                                     |
 
 ## Instructions
 

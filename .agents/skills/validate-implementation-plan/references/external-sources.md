@@ -16,16 +16,16 @@ Read this file only when the active stage needs source-backed method context or 
 
 ## Source Map
 
-| Topic | Use when | URLs |
-| --- | --- | --- |
-| Requirements traceability | Calibrating missing-requirement and unmapped-work findings | https://en.wikipedia.org/wiki/Requirements_traceability |
-| YAGNI | Calibrating scope creep and speculative future flexibility | https://martinfowler.com/bliki/Yagni.html |
-| Wrong abstraction | Calibrating premature abstraction and complexity findings | https://sandimetz.com/blog/2016/1/20/the-wrong-abstraction |
-| Prompt injection | Explaining why plan files and embedded URLs are untrusted data | https://genai.owasp.org/llmrisk/llm01-prompt-injection/ ; https://simonwillison.net/2022/Sep/12/prompt-injection/ |
-| Subagent isolation | Explaining why raw plan handling is delegated and summarized | https://code.claude.com/docs/en/sub-agents |
-| Agent Skills progressive loading | Explaining skill anatomy, on-demand file loading, and concise `SKILL.md` design | https://platform.claude.com/docs/en/agents-and-tools/agent-skills/best-practices |
-| Context engineering | Explaining just-in-time retrieval and minimal high-signal context | https://www.anthropic.com/engineering/effective-context-engineering-for-ai-agents |
-| Progressive disclosure | Explaining staged disclosure as a general design pattern | https://www.nngroup.com/articles/progressive-disclosure/ |
+| Topic                            | Use when                                                                        | URLs                                                                                                              |
+| -------------------------------- | ------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------- |
+| Requirements traceability        | Calibrating missing-requirement and unmapped-work findings                      | https://en.wikipedia.org/wiki/Requirements_traceability                                                           |
+| YAGNI                            | Calibrating scope creep and speculative future flexibility                      | https://martinfowler.com/bliki/Yagni.html                                                                         |
+| Wrong abstraction                | Calibrating premature abstraction and complexity findings                       | https://sandimetz.com/blog/2016/1/20/the-wrong-abstraction                                                        |
+| Prompt injection                 | Explaining why plan files and embedded URLs are untrusted data                  | https://genai.owasp.org/llmrisk/llm01-prompt-injection/ ; https://simonwillison.net/2022/Sep/12/prompt-injection/ |
+| Subagent isolation               | Explaining why raw plan handling is delegated and summarized                    | https://code.claude.com/docs/en/sub-agents                                                                        |
+| Agent Skills progressive loading | Explaining skill anatomy, on-demand file loading, and concise `SKILL.md` design | https://platform.claude.com/docs/en/agents-and-tools/agent-skills/best-practices                                  |
+| Context engineering              | Explaining just-in-time retrieval and minimal high-signal context               | https://www.anthropic.com/engineering/effective-context-engineering-for-ai-agents                                 |
+| Progressive disclosure           | Explaining staged disclosure as a general design pattern                        | https://www.nngroup.com/articles/progressive-disclosure/                                                          |
 
 ## Offline Rules
 

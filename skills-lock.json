@@ -204,7 +204,7 @@
       "source": "b-mendoza/agent-skills",
       "sourceType": "github",
       "skillPath": "skills/validate-implementation-plan/SKILL.md",
-      "computedHash": "a9358f80310fb6f3ed115342795b3bccda7ee6355d00f2987c66e2ad553a04fd"
+      "computedHash": "97f673dfe14e30d447de63478c20062389dd4edcc9b4550f98fc6025b316b913"
     },
     "vitest": {
       "source": "antfu/skills",

@@ -9,12 +9,12 @@ Plan-audit orchestrator. Coordinate a safe review, write a sanitized snapshot, a
 
 ## Inputs
 
-| Input | Required | Example |
-| --- | --- | --- |
-| `PLAN_PATH` | Yes | `docs/cache-refactor-plan.md` |
-| `ORIGIN_CONTEXT` | Yes, or ask before dispatch | `Add an MVP cache invalidation workflow with no new infrastructure.` |
-| `OUTPUT_PATH` | No | `docs/cache-refactor-plan.audit.md` |
-| `SOURCE_CONTEXT_PATHS` | No | `docs/ticket.md,docs/requirements.md,docs/library-notes.md` |
+| Input                  | Required                    | Example                                                              |
+| ---------------------- | --------------------------- | -------------------------------------------------------------------- |
+| `PLAN_PATH`            | Yes                         | `docs/cache-refactor-plan.md`                                        |
+| `ORIGIN_CONTEXT`       | Yes, or ask before dispatch | `Add an MVP cache invalidation workflow with no new infrastructure.` |
+| `OUTPUT_PATH`          | No                          | `docs/cache-refactor-plan.audit.md`                                  |
+| `SOURCE_CONTEXT_PATHS` | No                          | `docs/ticket.md,docs/requirements.md,docs/library-notes.md`          |
 
 Defaults: `OUTPUT_PATH` sibling `.audit.md`; `SNAPSHOT_PATH` sibling `.audit-input.md`. Classify each `SOURCE_CONTEXT_PATHS` entry as `baseline-context`, `local-technical-evidence`, `mixed`, or `unreadable`. Do not widen the allow-list. Do not infer the baseline from the plan.
 
@@ -33,39 +33,39 @@ Reason: <one line>
 
 Mermaid: [`flow-diagram.md`](./flow-diagram.md). Table: [`state-machine.md`](./state-machine.md). Status, retry, report sections, and final `AUDIT:*` mapping: [`references/audit-protocol.md`](./references/audit-protocol.md).
 
-| Region | Result |
-| --- | --- |
-| Intake | Contracts loaded, paths normalized, artifacts authorized, origin adequate, context classified |
-| Snapshot / Requirements | Sanitized snapshot; numbered requirements |
-| Evidence | Optional local claim review or recorded evidence gap |
-| Audit / Resolution | Traceability, YAGNI, assumptions; optional user Q&A |
-| Report | `REPORT: PASS` then orchestrator maps final `AUDIT:*` |
+| Region                  | Result                                                                                        |
+| ----------------------- | --------------------------------------------------------------------------------------------- |
+| Intake                  | Contracts loaded, paths normalized, artifacts authorized, origin adequate, context classified |
+| Snapshot / Requirements | Sanitized snapshot; numbered requirements                                                     |
+| Evidence                | Optional local claim review or recorded evidence gap                                          |
+| Audit / Resolution      | Traceability, YAGNI, assumptions; optional user Q&A                                           |
+| Report                  | `REPORT: PASS` then orchestrator maps final `AUDIT:*`                                         |
 
 ## Subagent Registry
 
-| Subagent | Path | Purpose |
-| --- | --- | --- |
-| `plan-snapshotter` | `./subagents/plan-snapshotter.md` | Redacted snapshot from `PLAN_PATH` |
+| Subagent                 | Path                                    | Purpose                                  |
+| ------------------------ | --------------------------------------- | ---------------------------------------- |
+| `plan-snapshotter`       | `./subagents/plan-snapshotter.md`       | Redacted snapshot from `PLAN_PATH`       |
 | `requirements-extractor` | `./subagents/requirements-extractor.md` | Numbered requirements and baseline notes |
-| `technical-researcher` | `./subagents/technical-researcher.md` | Local technical claim review |
-| `requirements-auditor` | `./subagents/requirements-auditor.md` | Traceability vs numbered requirements |
-| `yagni-auditor` | `./subagents/yagni-auditor.md` | Speculative scope / avoidable complexity |
-| `assumptions-auditor` | `./subagents/assumptions-auditor.md` | Weak or unresolved assumptions |
-| `plan-annotator` | `./subagents/plan-annotator.md` | Standalone report at `OUTPUT_PATH` |
+| `technical-researcher`   | `./subagents/technical-researcher.md`   | Local technical claim review             |
+| `requirements-auditor`   | `./subagents/requirements-auditor.md`   | Traceability vs numbered requirements    |
+| `yagni-auditor`          | `./subagents/yagni-auditor.md`          | Speculative scope / avoidable complexity |
+| `assumptions-auditor`    | `./subagents/assumptions-auditor.md`    | Weak or unresolved assumptions           |
+| `plan-annotator`         | `./subagents/plan-annotator.md`         | Standalone report at `OUTPUT_PATH`       |
 
 Read a subagent only when dispatching it. Keep statuses, paths, counts, requirements, structured findings, roles, evidence gaps, open questions, and answer summaries — not raw plan text.
 
 ## Progressive Disclosure Map
 
-| Need | Load |
-| --- | --- |
-| State diagram | `./flow-diagram.md` |
-| State-transition table | `./state-machine.md` |
-| Trust boundary | `./references/trust-boundary.md` |
-| Status, retry, report, definitions | `./references/audit-protocol.md` |
-| Method background URLs | `./references/external-sources.md` |
-| Report layout example | `./references/report-example.md` (annotator, on demand) |
-| Specialist details | Matching `./subagents/` file at dispatch |
+| Need                               | Load                                                    |
+| ---------------------------------- | ------------------------------------------------------- |
+| State diagram                      | `./flow-diagram.md`                                     |
+| State-transition table             | `./state-machine.md`                                    |
+| Trust boundary                     | `./references/trust-boundary.md`                        |
+| Status, retry, report, definitions | `./references/audit-protocol.md`                        |
+| Method background URLs             | `./references/external-sources.md`                      |
+| Report layout example              | `./references/report-example.md` (annotator, on demand) |
+| Specialist details                 | Matching `./subagents/` file at dispatch                |
 
 External URLs are optional method background only. Project-specific website proof is never evidence.
 

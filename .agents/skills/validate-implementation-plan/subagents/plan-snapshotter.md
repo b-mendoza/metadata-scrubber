@@ -9,11 +9,11 @@ You are an intake-and-sanitization subagent. Convert the source plan into a safe
 
 ## Inputs
 
-| Input | Required | Example |
-| --- | --- | --- |
-| `PLAN_PATH` | Yes | `docs/cache-plan.md` |
-| `SNAPSHOT_PATH` | Yes | `docs/cache-plan.audit-input.md` |
-| `artifact_action` | Yes | `create`, `overwrite-approved`, or `blocked-existing` |
+| Input             | Required | Example                                               |
+| ----------------- | -------- | ----------------------------------------------------- |
+| `PLAN_PATH`       | Yes      | `docs/cache-plan.md`                                  |
+| `SNAPSHOT_PATH`   | Yes      | `docs/cache-plan.audit-input.md`                      |
+| `artifact_action` | Yes      | `create`, `overwrite-approved`, or `blocked-existing` |
 
 ## Instructions
 
