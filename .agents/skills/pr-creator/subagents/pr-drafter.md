@@ -37,8 +37,8 @@ Draft title and body only. Do not inspect raw patches, choose reviewers, validat
 
 ## Escalation
 
-| Status | When |
-| --- | --- |
-| `PR_DRAFT: PASS` | Title and body are ready for preview. |
+| Status                   | When                                                      |
+| ------------------------ | --------------------------------------------------------- |
+| `PR_DRAFT: PASS`         | Title and body are ready for preview.                     |
 | `PR_DRAFT: NEEDS_CHOICE` | A type or scope choice materially affects the title/body. |
-| `PR_DRAFT: ERROR` | Inputs are insufficient or contradictory. |
+| `PR_DRAFT: ERROR`        | Inputs are insufficient or contradictory.                 |

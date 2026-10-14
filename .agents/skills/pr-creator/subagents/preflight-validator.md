@@ -9,16 +9,16 @@ You are the pre-create safety gate. Prove the head and base are comparable, dete
 
 ## Inputs
 
-| Input | Required | Example |
-| --- | --- | --- |
-| `PLATFORM` | Yes | `github` |
-| `HEAD_REMOTE` | Yes | `origin` |
-| `BASE_REMOTE` | Yes | `upstream` |
-| `CURRENT_BRANCH` | Yes | `feature/pr-v2` |
-| `TARGET_BRANCH` | Yes | `main` |
-| `PUSH_APPROVED` | No | `true` |
-| `APPROVAL_RECORD` | Conditional | `gate=push; digest=...` |
-| `CONTRACT_PATH` | Yes | `./references/preflight-validator-contract.md` |
+| Input             | Required    | Example                                        |
+| ----------------- | ----------- | ---------------------------------------------- |
+| `PLATFORM`        | Yes         | `github`                                       |
+| `HEAD_REMOTE`     | Yes         | `origin`                                       |
+| `BASE_REMOTE`     | Yes         | `upstream`                                     |
+| `CURRENT_BRANCH`  | Yes         | `feature/pr-v2`                                |
+| `TARGET_BRANCH`   | Yes         | `main`                                         |
+| `PUSH_APPROVED`   | No          | `true`                                         |
+| `APPROVAL_RECORD` | Conditional | `gate=push; digest=...`                        |
+| `CONTRACT_PATH`   | Yes         | `./references/preflight-validator-contract.md` |
 
 ## Instructions
 
@@ -40,14 +40,14 @@ Validate preconditions and perform an approved plain push only. Do not analyze d
 
 ## Escalation
 
-| Status | When |
-| --- | --- |
-| `PREFLIGHT: PASS` | Auth works, refs are comparable, no existing PR exists, and base/head SHAs are pinned. |
-| `PREFLIGHT: PUSH_REQUIRED` | Publishing the head branch is needed and no valid approval record was supplied. |
-| `PREFLIGHT: PUSH_REJECTED` | Approved plain push was rejected by divergence, protection, or permissions. |
-| `PREFLIGHT: PR_EXISTS` | An open PR/MR already targets the same head/base. |
-| `PREFLIGHT: AUTH` | Platform authentication is unavailable or insufficient. |
-| `PREFLIGHT: BASE_BRANCH_MISSING` | The base remote branch cannot be found. |
-| `PREFLIGHT: HEAD_BRANCH_UNPUSHED` | The head branch remains unavailable and cannot be safely pushed. |
-| `PREFLIGHT: BLOCKED` | Required inputs or safe platform commands are missing. |
-| `PREFLIGHT: ERROR` | Unexpected command or API failure prevents a reliable verdict. |
+| Status                            | When                                                                                   |
+| --------------------------------- | -------------------------------------------------------------------------------------- |
+| `PREFLIGHT: PASS`                 | Auth works, refs are comparable, no existing PR exists, and base/head SHAs are pinned. |
+| `PREFLIGHT: PUSH_REQUIRED`        | Publishing the head branch is needed and no valid approval record was supplied.        |
+| `PREFLIGHT: PUSH_REJECTED`        | Approved plain push was rejected by divergence, protection, or permissions.            |
+| `PREFLIGHT: PR_EXISTS`            | An open PR/MR already targets the same head/base.                                      |
+| `PREFLIGHT: AUTH`                 | Platform authentication is unavailable or insufficient.                                |
+| `PREFLIGHT: BASE_BRANCH_MISSING`  | The base remote branch cannot be found.                                                |
+| `PREFLIGHT: HEAD_BRANCH_UNPUSHED` | The head branch remains unavailable and cannot be safely pushed.                       |
+| `PREFLIGHT: BLOCKED`              | Required inputs or safe platform commands are missing.                                 |
+| `PREFLIGHT: ERROR`                | Unexpected command or API failure prevents a reliable verdict.                         |

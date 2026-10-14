@@ -129,20 +129,20 @@ stateDiagram-v2
 
 ## Terminal States
 
-| State | Envelope / meaning | Terminal? |
-| --- | --- | --- |
-| `TerminalSuccess` | Verified PR/MR URL; platform fields match freeze | yes |
-| `TerminalAwaitingUser` | `AWAITING_USER` — focused question pending | suspend |
-| `TerminalPrExists` | `PR_EXISTS` | yes |
-| `TerminalAuth` | `AUTH` | yes |
-| `TerminalBaseMissing` | `BASE_BRANCH_MISSING` | yes |
-| `TerminalHeadUnpushed` | `HEAD_BRANCH_UNPUSHED` | yes |
-| `TerminalEmptyDiff` | `EMPTY_DIFF` | yes |
-| `TerminalBlocked` | `BLOCKED` | yes |
-| `TerminalCancelled` | `CANCELLED` | yes |
-| `TerminalCreateError` | `CREATE_ERROR` | yes |
-| `TerminalCreateUncertain` | `CREATE_UNCERTAIN` | yes |
-| `TerminalEscalated` | `ESCALATED` | yes |
+| State                     | Envelope / meaning                               | Terminal? |
+| ------------------------- | ------------------------------------------------ | --------- |
+| `TerminalSuccess`         | Verified PR/MR URL; platform fields match freeze | yes       |
+| `TerminalAwaitingUser`    | `AWAITING_USER` — focused question pending       | suspend   |
+| `TerminalPrExists`        | `PR_EXISTS`                                      | yes       |
+| `TerminalAuth`            | `AUTH`                                           | yes       |
+| `TerminalBaseMissing`     | `BASE_BRANCH_MISSING`                            | yes       |
+| `TerminalHeadUnpushed`    | `HEAD_BRANCH_UNPUSHED`                           | yes       |
+| `TerminalEmptyDiff`       | `EMPTY_DIFF`                                     | yes       |
+| `TerminalBlocked`         | `BLOCKED`                                        | yes       |
+| `TerminalCancelled`       | `CANCELLED`                                      | yes       |
+| `TerminalCreateError`     | `CREATE_ERROR`                                   | yes       |
+| `TerminalCreateUncertain` | `CREATE_UNCERTAIN`                               | yes       |
+| `TerminalEscalated`       | `ESCALATED`                                      | yes       |
 
 ## Invariants
 

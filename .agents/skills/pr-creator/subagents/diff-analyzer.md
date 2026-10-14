@@ -40,9 +40,9 @@ Analyze the trusted diff only. Do not create PR text beyond summary facts, choos
 
 ## Escalation
 
-| Status | When |
-| --- | --- |
-| `DIFF_ANALYSIS: PASS` | Diff is non-empty, pins match, and no unapproved scope gate is required. |
+| Status                                          | When                                                                       |
+| ----------------------------------------------- | -------------------------------------------------------------------------- |
+| `DIFF_ANALYSIS: PASS`                           | Diff is non-empty, pins match, and no unapproved scope gate is required.   |
 | `DIFF_ANALYSIS: LARGE_PR_CONFIRMATION_REQUIRED` | A measurable size or mixed-purpose rule fired and approval is not present. |
-| `DIFF_ANALYSIS: EMPTY_DIFF` | Trusted compare range contains no PR-relevant changes. |
-| `DIFF_ANALYSIS: ERROR` | Pins mismatch or diff inspection cannot produce reliable evidence. |
+| `DIFF_ANALYSIS: EMPTY_DIFF`                     | Trusted compare range contains no PR-relevant changes.                     |
+| `DIFF_ANALYSIS: ERROR`                          | Pins mismatch or diff inspection cannot produce reliable evidence.         |

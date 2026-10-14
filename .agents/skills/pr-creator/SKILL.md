@@ -28,30 +28,30 @@ Default `PR_STATE` to `draft`. Ask for invalid `PR_STATE`. Ask for `TARGET_BRANC
 
 Execution is a finite-state machine. Mermaid: [`flow-diagram.md`](./flow-diagram.md). Table: [`state-machine.md`](./state-machine.md).
 
-| State | Result |
-| --- | --- |
-| `ResolveMode` / `NormalizeInputs` | `EXECUTION_MODE`; defaults |
-| `InspectRepo` → topology/target/platform gates | Remotes, platform, safe path, state capability |
-| `RunPreflight` → push gates | Auth, existing PR, pinned SHAs, optional plain push |
-| `AnalyzeDiff` → `GateScope` | Pinned trusted diff; measurable scope |
-| `DraftPr` → `GateTypeScope` | Title and body |
-| `SuggestMetadata` → reviewer/label gates | Reviewers and labels |
-| `ShowPreview` → `GatePreview` → `FreezeApproval` | Frozen fields + preview `APPROVAL_RECORD` |
-| `SubmitPr` → `VerifySubmit` | Created or found PR/MR, field-verified |
-| Terminals | Success URL or failure envelope codes below |
+| State                                            | Result                                              |
+| ------------------------------------------------ | --------------------------------------------------- |
+| `ResolveMode` / `NormalizeInputs`                | `EXECUTION_MODE`; defaults                          |
+| `InspectRepo` → topology/target/platform gates   | Remotes, platform, safe path, state capability      |
+| `RunPreflight` → push gates                      | Auth, existing PR, pinned SHAs, optional plain push |
+| `AnalyzeDiff` → `GateScope`                      | Pinned trusted diff; measurable scope               |
+| `DraftPr` → `GateTypeScope`                      | Title and body                                      |
+| `SuggestMetadata` → reviewer/label gates         | Reviewers and labels                                |
+| `ShowPreview` → `GatePreview` → `FreezeApproval` | Frozen fields + preview `APPROVAL_RECORD`           |
+| `SubmitPr` → `VerifySubmit`                      | Created or found PR/MR, field-verified              |
+| Terminals                                        | Success URL or failure envelope codes below         |
 
 Six specialists stay separate on purpose: each owns a distinct status prefix and failure mode. Do not collapse them into the orchestrator.
 
 ## Subagent Registry
 
-| Subagent | Path | Contract | Purpose |
-| --- | --- | --- | --- |
-| `repo-state-inspector` | `./subagents/repo-state-inspector.md` | `./references/repo-state-inspector-contract.md` | Git state, remotes, topology, platform, target candidate |
-| `preflight-validator` | `./subagents/preflight-validator.md` | `./references/preflight-validator-contract.md` | Auth, refs, existing PRs, safe push, pinned SHAs |
-| `diff-analyzer` | `./subagents/diff-analyzer.md` | `./references/diff-analyzer-contract.md` | Pinned trusted diff; measurable scope gates |
-| `pr-drafter` | `./subagents/pr-drafter.md` | `./references/pr-drafter-contract.md` | Conventional-Commit title and grounded body |
-| `review-metadata-suggester` | `./subagents/review-metadata-suggester.md` | `./references/review-metadata-suggester-contract.md` | Requestable reviewers, `none`, existing labels |
-| `pr-submitter` | `./subagents/pr-submitter.md` | `./references/pr-submitter-contract.md` | Post-approval submit; uncertain-create; field verify |
+| Subagent                    | Path                                       | Contract                                             | Purpose                                                  |
+| --------------------------- | ------------------------------------------ | ---------------------------------------------------- | -------------------------------------------------------- |
+| `repo-state-inspector`      | `./subagents/repo-state-inspector.md`      | `./references/repo-state-inspector-contract.md`      | Git state, remotes, topology, platform, target candidate |
+| `preflight-validator`       | `./subagents/preflight-validator.md`       | `./references/preflight-validator-contract.md`       | Auth, refs, existing PRs, safe push, pinned SHAs         |
+| `diff-analyzer`             | `./subagents/diff-analyzer.md`             | `./references/diff-analyzer-contract.md`             | Pinned trusted diff; measurable scope gates              |
+| `pr-drafter`                | `./subagents/pr-drafter.md`                | `./references/pr-drafter-contract.md`                | Conventional-Commit title and grounded body              |
+| `review-metadata-suggester` | `./subagents/review-metadata-suggester.md` | `./references/review-metadata-suggester-contract.md` | Requestable reviewers, `none`, existing labels           |
+| `pr-submitter`              | `./subagents/pr-submitter.md`              | `./references/pr-submitter-contract.md`              | Post-approval submit; uncertain-create; field verify     |
 
 When dispatch is unavailable, run the specialist inline and still emit its exact contract block. Pass specialist path and contract path. Specialists never dispatch other specialists.
 
@@ -61,16 +61,16 @@ Fork-aware, idempotent, approval-bound. Trusted compare range after preflight: `
 
 ## Progressive Loading Map
 
-| Need | Load |
-| --- | --- |
-| Phase routing, gates, status taxonomy | This file |
-| States, transitions, guards, terminals | `./state-machine.md` |
-| Mermaid state diagram | `./flow-diagram.md` |
-| Failure envelope, preview, body template, approval record, cycle ledger | `./references/execution-contracts.md` |
-| Non-GitHub / state capability | `./references/platform-adaptation.md` |
-| CLI/API syntax or writing guidance | `./references/external-resources.md`, then fetch ≤1 URL |
-| Specialist execution | Selected `./subagents/*.md` |
-| Specialist return shape | Matching `./references/*-contract.md` |
+| Need                                                                    | Load                                                    |
+| ----------------------------------------------------------------------- | ------------------------------------------------------- |
+| Phase routing, gates, status taxonomy                                   | This file                                               |
+| States, transitions, guards, terminals                                  | `./state-machine.md`                                    |
+| Mermaid state diagram                                                   | `./flow-diagram.md`                                     |
+| Failure envelope, preview, body template, approval record, cycle ledger | `./references/execution-contracts.md`                   |
+| Non-GitHub / state capability                                           | `./references/platform-adaptation.md`                   |
+| CLI/API syntax or writing guidance                                      | `./references/external-resources.md`, then fetch ≤1 URL |
+| Specialist execution                                                    | Selected `./subagents/*.md`                             |
+| Specialist return shape                                                 | Matching `./references/*-contract.md`                   |
 
 ## Execution
 
@@ -88,14 +88,14 @@ Advance states in [`state-machine.md`](./state-machine.md). Summary:
 
 ## Status Routing
 
-| Source | Continue | User gate or retry | Failure envelope |
-| --- | --- | --- | --- |
-| `REPO_STATE` | `PASS` | topology; target branch | `BLOCKED`/`ERROR` → `BLOCKED` |
-| `PREFLIGHT` | `PASS` | `PUSH_REQUIRED`; `PUSH_REJECTED` | `PR_EXISTS`, `AUTH`, `BASE_BRANCH_MISSING`, `HEAD_BRANCH_UNPUSHED`, `BLOCKED` |
-| `DIFF_ANALYSIS` | `PASS` | `LARGE_PR_CONFIRMATION_REQUIRED` | `EMPTY_DIFF`; declined scope → `CANCELLED`; `ERROR` → `BLOCKED` |
-| `PR_DRAFT` | `PASS` | `NEEDS_CHOICE` | unresolved/`ERROR` → `BLOCKED` |
-| `REVIEW_METADATA` | `PASS` | `NEEDS_REVIEWER`; `INVALID_LABELS` | `AUTH`; `ERROR` → `BLOCKED` |
-| `PR_SUBMIT` | `PASS` | `HEAD_MOVED` → `AnalyzeDiff` | `CREATE_UNCERTAIN`, `CREATE_ERROR`, `AUTH`, `BLOCKED` |
+| Source            | Continue | User gate or retry                 | Failure envelope                                                              |
+| ----------------- | -------- | ---------------------------------- | ----------------------------------------------------------------------------- |
+| `REPO_STATE`      | `PASS`   | topology; target branch            | `BLOCKED`/`ERROR` → `BLOCKED`                                                 |
+| `PREFLIGHT`       | `PASS`   | `PUSH_REQUIRED`; `PUSH_REJECTED`   | `PR_EXISTS`, `AUTH`, `BASE_BRANCH_MISSING`, `HEAD_BRANCH_UNPUSHED`, `BLOCKED` |
+| `DIFF_ANALYSIS`   | `PASS`   | `LARGE_PR_CONFIRMATION_REQUIRED`   | `EMPTY_DIFF`; declined scope → `CANCELLED`; `ERROR` → `BLOCKED`               |
+| `PR_DRAFT`        | `PASS`   | `NEEDS_CHOICE`                     | unresolved/`ERROR` → `BLOCKED`                                                |
+| `REVIEW_METADATA` | `PASS`   | `NEEDS_REVIEWER`; `INVALID_LABELS` | `AUTH`; `ERROR` → `BLOCKED`                                                   |
+| `PR_SUBMIT`       | `PASS`   | `HEAD_MOVED` → `AnalyzeDiff`       | `CREATE_UNCERTAIN`, `CREATE_ERROR`, `AUTH`, `BLOCKED`                         |
 
 Envelope codes: `AUTH`, `BASE_BRANCH_MISSING`, `HEAD_BRANCH_UNPUSHED`, `EMPTY_DIFF`, `PR_EXISTS`, `BLOCKED`, `AWAITING_USER`, `CANCELLED`, `CREATE_ERROR`, `CREATE_UNCERTAIN`, `ESCALATED`. `AWAITING_USER` is non-terminal; do not use `BLOCKED` for a pending question.
 

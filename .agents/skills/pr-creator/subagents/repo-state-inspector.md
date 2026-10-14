@@ -37,8 +37,8 @@ Inspect repository topology only. Do not push, fetch large data, read patches, i
 
 ## Escalation
 
-| Status | When |
-| --- | --- |
-| `REPO_STATE: PASS` | Repository, current branch, remotes, platform classification, and topology facts are reportable. |
+| Status                | When                                                                                                           |
+| --------------------- | -------------------------------------------------------------------------------------------------------------- |
+| `REPO_STATE: PASS`    | Repository, current branch, remotes, platform classification, and topology facts are reportable.               |
 | `REPO_STATE: BLOCKED` | Not a git repository, detached HEAD, invalid `PR_STATE`, no safely nameable branch, or no usable remote facts. |
-| `REPO_STATE: ERROR` | An inspection command fails unexpectedly and no safe partial block can be produced. |
+| `REPO_STATE: ERROR`   | An inspection command fails unexpectedly and no safe partial block can be produced.                            |

@@ -46,12 +46,12 @@ Submit or verify the approved PR/MR only. Do not modify commits, push branches, 
 
 ## Escalation
 
-| Status | When |
-| --- | --- |
-| `PR_SUBMIT: PASS` | PR/MR exists and all platform-returned values match the frozen preview. |
-| `PR_SUBMIT: HEAD_MOVED` | Remote head SHA changed after preview approval. |
-| `PR_SUBMIT: CREATE_UNCERTAIN` | Outcome remains unknown after query and one bounded retry. |
-| `PR_SUBMIT: BLOCKED` | Approval record or required safe create path is missing or mismatched. |
-| `PR_SUBMIT: CREATE_ERROR` | Create fails definitively or verification finds a mismatched field. |
-| `PR_SUBMIT: AUTH` | Auth is missing or insufficient at create/verify time. |
-| `PR_SUBMIT: ERROR` | Unexpected failure prevents reliable create or verification. |
+| Status                        | When                                                                    |
+| ----------------------------- | ----------------------------------------------------------------------- |
+| `PR_SUBMIT: PASS`             | PR/MR exists and all platform-returned values match the frozen preview. |
+| `PR_SUBMIT: HEAD_MOVED`       | Remote head SHA changed after preview approval.                         |
+| `PR_SUBMIT: CREATE_UNCERTAIN` | Outcome remains unknown after query and one bounded retry.              |
+| `PR_SUBMIT: BLOCKED`          | Approval record or required safe create path is missing or mismatched.  |
+| `PR_SUBMIT: CREATE_ERROR`     | Create fails definitively or verification finds a mismatched field.     |
+| `PR_SUBMIT: AUTH`             | Auth is missing or insufficient at create/verify time.                  |
+| `PR_SUBMIT: ERROR`            | Unexpected failure prevents reliable create or verification.            |

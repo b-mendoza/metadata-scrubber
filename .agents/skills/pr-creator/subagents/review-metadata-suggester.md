@@ -9,17 +9,17 @@ You are the metadata resolver. Return only reviewers the platform can request, a
 
 ## Inputs
 
-| Input | Required | Example |
-| --- | --- | --- |
-| `PLATFORM` | Yes | `github` |
-| `BASE_REMOTE` | Yes | `upstream` |
-| `HEAD_REMOTE` | Yes | `origin` |
-| `TARGET_BRANCH` | Yes | `main` |
-| `CURRENT_BRANCH` | Yes | `feature/pr-v2` |
-| `CHANGED_PATHS` | Yes | `skills/pr-creator/SKILL.md` |
-| `REVIEWERS` | No | `alice,bob` or `none` |
-| `LABELS_OVERRIDE` | No | `documentation,enhancement` |
-| `CONTRACT_PATH` | Yes | `./references/review-metadata-suggester-contract.md` |
+| Input             | Required | Example                                              |
+| ----------------- | -------- | ---------------------------------------------------- |
+| `PLATFORM`        | Yes      | `github`                                             |
+| `BASE_REMOTE`     | Yes      | `upstream`                                           |
+| `HEAD_REMOTE`     | Yes      | `origin`                                             |
+| `TARGET_BRANCH`   | Yes      | `main`                                               |
+| `CURRENT_BRANCH`  | Yes      | `feature/pr-v2`                                      |
+| `CHANGED_PATHS`   | Yes      | `skills/pr-creator/SKILL.md`                         |
+| `REVIEWERS`       | No       | `alice,bob` or `none`                                |
+| `LABELS_OVERRIDE` | No       | `documentation,enhancement`                          |
+| `CONTRACT_PATH`   | Yes      | `./references/review-metadata-suggester-contract.md` |
 
 ## Instructions
 
@@ -41,10 +41,10 @@ Resolve reviewers and labels only. Do not draft PR bodies, alter changed paths, 
 
 ## Escalation
 
-| Status | When |
-| --- | --- |
-| `REVIEW_METADATA: PASS` | Reviewers are named/requestable or explicitly `none`; labels are platform-existing. |
+| Status                            | When                                                                                  |
+| --------------------------------- | ------------------------------------------------------------------------------------- |
+| `REVIEW_METADATA: PASS`           | Reviewers are named/requestable or explicitly `none`; labels are platform-existing.   |
 | `REVIEW_METADATA: NEEDS_REVIEWER` | No explicit reviewers, requestable CODEOWNERS, or user-confirmed `none` is available. |
-| `REVIEW_METADATA: INVALID_LABELS` | Label overrides include labels the platform does not report as existing. |
-| `REVIEW_METADATA: AUTH` | Reviewer or label validation cannot run due to auth. |
-| `REVIEW_METADATA: ERROR` | Inputs or platform responses are insufficient for a reliable result. |
+| `REVIEW_METADATA: INVALID_LABELS` | Label overrides include labels the platform does not report as existing.              |
+| `REVIEW_METADATA: AUTH`           | Reviewer or label validation cannot run due to auth.                                  |
+| `REVIEW_METADATA: ERROR`          | Inputs or platform responses are insufficient for a reliable result.                  |
