@@ -33,12 +33,12 @@ Normal orchestration supplies `APPROVED_MUTATION_SCOPE`. On direct invocation, a
 
 The normal workflow plan contains:
 
-| Required or expected element | Rule |
-| --- | --- |
-| `## Tasks` | Required |
-| Numbered `## Task <N>:` headings | At least one required; each maps to one child row |
-| `## Execution Order Summary` | Preserve when present |
-| `## Decisions Log` | Missing is warning-eligible, not blocking, when tasks remain parseable |
+| Required or expected element     | Rule                                                                   |
+| -------------------------------- | ---------------------------------------------------------------------- |
+| `## Tasks`                       | Required                                                               |
+| Numbered `## Task <N>:` headings | At least one required; each maps to one child row                      |
+| `## Execution Order Summary`     | Preserve when present                                                  |
+| `## Decisions Log`               | Missing is warning-eligible, not blocking, when tasks remain parseable |
 
 A missing file, missing `## Tasks`, or no numbered task headings returns the playbook's `BLOCKED` status with `Validation: NOT_RUN`.
 
@@ -90,12 +90,12 @@ A fully satisfied, structurally valid plan is success without duplicate remote o
 
 ## Critical Gates
 
-| Gate | Predicate | Checker |
-| --- | --- | --- |
-| `G_APPROVED_SCOPE` | Exact remote actions and the one local plan path are approved | Coordinator and creator precondition |
-| `G_PARENT_AND_LINKAGE` | Parent exists; every reused concrete child ref is safe for that parent | Creator using playbook transport |
-| `G_PLAN_LINKAGE` | One playbook-defined row and matching inline value exist per task | Creator post-write validation |
-| `G_MUTATION_BOUNDARY` | No local path outside `docs/<KEY>-tasks.md` changed in this run | Write ledger plus available baseline evidence |
+| Gate                   | Predicate                                                              | Checker                                       |
+| ---------------------- | ---------------------------------------------------------------------- | --------------------------------------------- |
+| `G_APPROVED_SCOPE`     | Exact remote actions and the one local plan path are approved          | Coordinator and creator precondition          |
+| `G_PARENT_AND_LINKAGE` | Parent exists; every reused concrete child ref is safe for that parent | Creator using playbook transport              |
+| `G_PLAN_LINKAGE`       | One playbook-defined row and matching inline value exist per task      | Creator post-write validation                 |
+| `G_MUTATION_BOUNDARY`  | No local path outside `docs/<KEY>-tasks.md` changed in this run        | Write ledger plus available baseline evidence |
 
 On a structural failure, repair only the local Markdown once and re-run only the failed checks. Make no additional remote writes during repair. If validation still fails, return the active playbook's `FAIL` status with `Validation: FAIL`.
 
@@ -117,14 +117,14 @@ PASS | WARN | FAIL | BLOCKED | ERROR
 PASS | FAIL | NOT_RUN
 ```
 
-| Pair | Meaning |
-| --- | --- |
-| `PASS` + `PASS` | Every task has verified concrete playbook-accepted linkage and all gates passed |
-| `WARN` + `PASS` | Artifact is structurally valid; concrete rows are usable, while playbook-defined warnings, degraded values, or unresolved rows remain visible |
-| `BLOCKED` + `NOT_RUN` | Approval, input, plan, existing linkage, or a required user choice made mutation unsafe |
-| `FAIL` + `NOT_RUN` | Deterministic platform/transport/configuration/create failure happened before local validation |
-| `FAIL` + `FAIL` | Local artifact or mutation-boundary validation failed |
-| `ERROR` + `NOT_RUN` | Unexpected tool, filesystem, schema, or environment failure interrupted the run |
+| Pair                  | Meaning                                                                                                                                       |
+| --------------------- | --------------------------------------------------------------------------------------------------------------------------------------------- |
+| `PASS` + `PASS`       | Every task has verified concrete playbook-accepted linkage and all gates passed                                                               |
+| `WARN` + `PASS`       | Artifact is structurally valid; concrete rows are usable, while playbook-defined warnings, degraded values, or unresolved rows remain visible |
+| `BLOCKED` + `NOT_RUN` | Approval, input, plan, existing linkage, or a required user choice made mutation unsafe                                                       |
+| `FAIL` + `NOT_RUN`    | Deterministic platform/transport/configuration/create failure happened before local validation                                                |
+| `FAIL` + `FAIL`       | Local artifact or mutation-boundary validation failed                                                                                         |
+| `ERROR` + `NOT_RUN`   | Unexpected tool, filesystem, schema, or environment failure interrupted the run                                                               |
 
 Any other pairing is a contract error. `Validation: NOT_RUN` never represents a completed Phase 4 handoff.
 

@@ -11,15 +11,15 @@ The active playbook (`PLAYBOOK_PATH`) supplies every platform-specific detail: c
 
 ## Inputs
 
-| Input | Required | Example |
-| --- | --- | --- |
-| `PLAYBOOK_PATH` | Yes | `../references/github-playbook.md` |
-| Canonical parent URL named by the active playbook | Yes | `ISSUE_URL=https://github.com/acme/app/issues/42` |
-| `TICKET_KEY` | Yes | `<KEY>` derived by the playbook; GitHub passes `ISSUE_SLUG` under this alias |
-| `APPROVED_MUTATION_SCOPE` | Yes before any mutation | Exact approved remote Phase 4 actions plus `docs/<KEY>-tasks.md` |
-| `CREATION_PLAYBOOK_PATH` | No | `../references/child-creation-playbook.md` |
-| `IO_CONTRACT_PATH` | No | `../references/phase-4-io-contracts.md` |
-| `EXTERNAL_SOURCES_PATH` | No | `../references/external-sources.md` |
+| Input                                             | Required                | Example                                                                      |
+| ------------------------------------------------- | ----------------------- | ---------------------------------------------------------------------------- |
+| `PLAYBOOK_PATH`                                   | Yes                     | `../references/github-playbook.md`                                           |
+| Canonical parent URL named by the active playbook | Yes                     | `ISSUE_URL=https://github.com/acme/app/issues/42`                            |
+| `TICKET_KEY`                                      | Yes                     | `<KEY>` derived by the playbook; GitHub passes `ISSUE_SLUG` under this alias |
+| `APPROVED_MUTATION_SCOPE`                         | Yes before any mutation | Exact approved remote Phase 4 actions plus `docs/<KEY>-tasks.md`             |
+| `CREATION_PLAYBOOK_PATH`                          | No                      | `../references/child-creation-playbook.md`                                   |
+| `IO_CONTRACT_PATH`                                | No                      | `../references/phase-4-io-contracts.md`                                      |
+| `EXTERNAL_SOURCES_PATH`                           | No                      | `../references/external-sources.md`                                          |
 
 Bundled paths are relative to this subagent file. Read `PLAYBOOK_PATH` first and confirm the passed `TICKET_KEY` matches the playbook-derived `<KEY>`. The canonical parent URL remains authoritative for remote coordinates.
 
@@ -71,11 +71,11 @@ If baseline evidence shows this run changed another local path, return the playb
 
 ## Escalation
 
-| Status | When |
-| --- | --- |
-| Playbook `BLOCKED` | Approval/input is missing; plan or existing linkage is unsafe; or a required platform choice needs the user |
-| Playbook `FAIL` | Deterministic transport, auth, permission, capability, configuration, create/link/transition, mutation-boundary, or validation failure |
-| Playbook `WARN` | Validation passed with playbook-defined nonfatal, degraded, uncertain, or unresolved rows |
-| Playbook `ERROR` | Unexpected tool, filesystem, schema, or environment failure interrupted the run |
+| Status             | When                                                                                                                                   |
+| ------------------ | -------------------------------------------------------------------------------------------------------------------------------------- |
+| Playbook `BLOCKED` | Approval/input is missing; plan or existing linkage is unsafe; or a required platform choice needs the user                            |
+| Playbook `FAIL`    | Deterministic transport, auth, permission, capability, configuration, create/link/transition, mutation-boundary, or validation failure |
+| Playbook `WARN`    | Validation passed with playbook-defined nonfatal, degraded, uncertain, or unresolved rows                                              |
+| Playbook `ERROR`   | Unexpected tool, filesystem, schema, or environment failure interrupted the run                                                        |
 
 Use only categories declared by the active playbook. Fail loudly when a missing capability defeats safe reconciliation; never invent a cross-platform fallback.

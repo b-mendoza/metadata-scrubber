@@ -4,11 +4,11 @@
 
 ## Inputs and Identifier
 
-| Input | Required | Example |
-| --- | --- | --- |
-| `ISSUE_URL` | Yes for Phase 4 writes | `https://github.com/acme/app/issues/42` |
-| `TICKET_KEY` | Yes at dispatch; value must equal derived `ISSUE_SLUG` | `acme-app-42` |
-| `APPROVED_MUTATION_SCOPE` | Yes before mutation | `Create/reuse GitHub child issues for planned tasks and update docs/acme-app-42-tasks.md` |
+| Input                     | Required                                               | Example                                                                                   |
+| ------------------------- | ------------------------------------------------------ | ----------------------------------------------------------------------------------------- |
+| `ISSUE_URL`               | Yes for Phase 4 writes                                 | `https://github.com/acme/app/issues/42`                                                   |
+| `TICKET_KEY`              | Yes at dispatch; value must equal derived `ISSUE_SLUG` | `acme-app-42`                                                                             |
+| `APPROVED_MUTATION_SCOPE` | Yes before mutation                                    | `Create/reuse GitHub child issues for planned tasks and update docs/acme-app-42-tasks.md` |
 
 Parse `https://<host>/<owner>/<repo>/issues/<number>` directly. Preserve `<host>` for GitHub Enterprise. Lowercase owner/repo only for stable slug construction:
 
@@ -40,15 +40,15 @@ GitHub reads and writes use `gh`; use `gh api --hostname <host>` or the current 
 
 Keep these failures distinguishable in `Reason:` and `Failures:` using the tag shown:
 
-| Tag | Condition | Route |
-| --- | --- | --- |
-| `GH_MISSING` | `gh` executable is unavailable | `TASK_ISSUES: FAIL`, `Validation: NOT_RUN` |
-| `GH_LOGGED_OUT` | No authenticated account/token for the URL host | `TASK_ISSUES: FAIL`, `Validation: NOT_RUN` |
-| `GH_WRONG_HOST` | Authenticated host does not match `ISSUE_URL`, or host targeting is unavailable | `TASK_ISSUES: FAIL`, `Validation: NOT_RUN` |
-| `GH_SCOPE_INSUFFICIENT` | Token/repository permissions cannot read, create, or link as required | `TASK_ISSUES: FAIL`, `Validation: NOT_RUN` |
-| `GH_PARENT_NOT_FOUND` | Parent is missing/inaccessible or repo coordinates conflict | `TASK_ISSUES: FAIL`, `Validation: NOT_RUN` |
-| `GH_RATE_LIMIT` | One 5-second retry is exhausted | Per-task failure; continue safely when possible, otherwise `FAIL` |
-| `GH_CAPABILITY_UNAVAILABLE` | No safe approved write path can satisfy a missing task | `TASK_ISSUES: FAIL`, `Validation: NOT_RUN` |
+| Tag                         | Condition                                                                       | Route                                                             |
+| --------------------------- | ------------------------------------------------------------------------------- | ----------------------------------------------------------------- |
+| `GH_MISSING`                | `gh` executable is unavailable                                                  | `TASK_ISSUES: FAIL`, `Validation: NOT_RUN`                        |
+| `GH_LOGGED_OUT`             | No authenticated account/token for the URL host                                 | `TASK_ISSUES: FAIL`, `Validation: NOT_RUN`                        |
+| `GH_WRONG_HOST`             | Authenticated host does not match `ISSUE_URL`, or host targeting is unavailable | `TASK_ISSUES: FAIL`, `Validation: NOT_RUN`                        |
+| `GH_SCOPE_INSUFFICIENT`     | Token/repository permissions cannot read, create, or link as required           | `TASK_ISSUES: FAIL`, `Validation: NOT_RUN`                        |
+| `GH_PARENT_NOT_FOUND`       | Parent is missing/inaccessible or repo coordinates conflict                     | `TASK_ISSUES: FAIL`, `Validation: NOT_RUN`                        |
+| `GH_RATE_LIMIT`             | One 5-second retry is exhausted                                                 | Per-task failure; continue safely when possible, otherwise `FAIL` |
+| `GH_CAPABILITY_UNAVAILABLE` | No safe approved write path can satisfy a missing task                          | `TASK_ISSUES: FAIL`, `Validation: NOT_RUN`                        |
 
 Do not collapse wrong-host, logged-out, missing CLI, and insufficient-scope into a generic auth message.
 
@@ -224,13 +224,13 @@ After a valid URL but missing approval, use the derived parent and `ISSUE_SLUG`,
 
 ## Status Semantics
 
-| Status | Meaning |
-| --- | --- |
-| `PASS` | Every task has a verified concrete GitHub issue ref and validation passed |
-| `WARN` | Validation passed with missing decisions log, mixed linkage, intentional `task-list`, or failed individual creates represented as `Not Created` |
-| `BLOCKED` | Approval, input, plan shape, existing refs, fallback acceptance, or identity is unsafe |
-| `FAIL` | Parent verification, transport/auth, capability, create/link, all expected creates, boundary, or post-write validation failed |
-| `ERROR` | Unexpected tool, filesystem, schema, or environment failure interrupted the run |
+| Status    | Meaning                                                                                                                                         |
+| --------- | ----------------------------------------------------------------------------------------------------------------------------------------------- |
+| `PASS`    | Every task has a verified concrete GitHub issue ref and validation passed                                                                       |
+| `WARN`    | Validation passed with missing decisions log, mixed linkage, intentional `task-list`, or failed individual creates represented as `Not Created` |
+| `BLOCKED` | Approval, input, plan shape, existing refs, fallback acceptance, or identity is unsafe                                                          |
+| `FAIL`    | Parent verification, transport/auth, capability, create/link, all expected creates, boundary, or post-write validation failed                   |
+| `ERROR`   | Unexpected tool, filesystem, schema, or environment failure interrupted the run                                                                 |
 
 ## Child-Reference Values and Downstream Readiness
 

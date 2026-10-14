@@ -13,10 +13,10 @@ This skill mutates a real remote tracker and one local workflow plan. The creato
 
 Detect the platform from the canonical parent URL and load the matching playbook for every platform-specific decision:
 
-| Input signal | Platform | Playbook |
-| --- | --- | --- |
+| Input signal                                                                                  | Platform | Playbook                                                             |
+| --------------------------------------------------------------------------------------------- | -------- | -------------------------------------------------------------------- |
 | `ISSUE_URL` matching `https://<host>/<owner>/<repo>/issues/<N>` (including GitHub Enterprise) | `github` | [`./references/github-playbook.md`](./references/github-playbook.md) |
-| `JIRA_URL` matching `https://<workspace>.atlassian.net/browse/<KEY>` | `jira` | [`./references/jira-playbook.md`](./references/jira-playbook.md) |
+| `JIRA_URL` matching `https://<workspace>.atlassian.net/browse/<KEY>`                          | `jira`   | [`./references/jira-playbook.md`](./references/jira-playbook.md)     |
 
 If neither signal is present or the reference is ambiguous, ask one targeted clarification question before any dispatch or mutation. Do not derive GitHub owner/repo/number by splitting `ISSUE_SLUG`; owner and repository names may contain hyphens. Phase 4 GitHub runs require the full `ISSUE_URL`.
 
@@ -24,10 +24,10 @@ The shared workflow key is `<KEY>`. Pass it under the established alias `TICKET_
 
 ## Inputs
 
-| Input | Required | Example |
-| --- | --- | --- |
-| Canonical parent URL named by the active playbook | Yes | `ISSUE_URL=https://github.com/acme/app/issues/42` or `JIRA_URL=https://workspace.atlassian.net/browse/PROJ-123` |
-| `APPROVED_MUTATION_SCOPE` | Normal orchestrated runs; may be collected once on direct invocation | `Create missing child work items for Tasks 1-3 and update docs/<KEY>-tasks.md` |
+| Input                                             | Required                                                             | Example                                                                                                         |
+| ------------------------------------------------- | -------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------- |
+| Canonical parent URL named by the active playbook | Yes                                                                  | `ISSUE_URL=https://github.com/acme/app/issues/42` or `JIRA_URL=https://workspace.atlassian.net/browse/PROJ-123` |
+| `APPROVED_MUTATION_SCOPE`                         | Normal orchestrated runs; may be collected once on direct invocation | `Create missing child work items for Tasks 1-3 and update docs/<KEY>-tasks.md`                                  |
 
 The approval must cover the active playbook's exact remote write model and the single local file `docs/<KEY>-tasks.md`. If direct invocation has unclear approval, ask once. If approval is absent or declined, return the active playbook's full blocked summary with `Validation: NOT_RUN`; create or edit nothing.
 
@@ -52,21 +52,21 @@ On successful or partial reconciliation, `docs/<KEY>-tasks.md` contains exactly 
 
 ## Subagent Registry
 
-| Subagent | Path | Purpose |
-| --- | --- | --- |
+| Subagent                  | Path                                                                               | Purpose                                                                                                                                                                   |
+| ------------------------- | ---------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `child-work-item-creator` | [`./subagents/child-work-item-creator.md`](./subagents/child-work-item-creator.md) | Observes current state, reconciles missing remote child work items through the active playbook, updates the one plan file, validates it, and returns the platform summary |
 
 Read the subagent file only when dispatching it.
 
 ## Progressive Disclosure Map
 
-| Need | Load |
-| --- | --- |
-| Platform inputs, identifier derivation, transport, auth/capability categories, write model, exact headings, summary shape, terminology, and templates | Active `./references/<platform>-playbook.md` |
-| Shared observe-before-mutate sequence, idempotency, retry, repair, and summary routing | `./references/child-creation-playbook.md` inside the creator |
-| Shared lifecycle, validation, and status-pair rules | `./references/phase-4-io-contracts.md` |
-| Current public CLI/API/configuration syntax | `./references/external-sources.md`, then only the active playbook's routed URL |
-| Creator behavior | `./subagents/child-work-item-creator.md` only when dispatching |
+| Need                                                                                                                                                  | Load                                                                           |
+| ----------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------ |
+| Platform inputs, identifier derivation, transport, auth/capability categories, write model, exact headings, summary shape, terminology, and templates | Active `./references/<platform>-playbook.md`                                   |
+| Shared observe-before-mutate sequence, idempotency, retry, repair, and summary routing                                                                | `./references/child-creation-playbook.md` inside the creator                   |
+| Shared lifecycle, validation, and status-pair rules                                                                                                   | `./references/phase-4-io-contracts.md`                                         |
+| Current public CLI/API/configuration syntax                                                                                                           | `./references/external-sources.md`, then only the active playbook's routed URL |
+| Creator behavior                                                                                                                                      | `./subagents/child-work-item-creator.md` only when dispatching                 |
 
 ## Dispatch Pattern
 
@@ -92,13 +92,13 @@ These paths are relative to `./subagents/child-work-item-creator.md`, the file t
 
 ## Routing Rules
 
-| Result | Coordinator action |
-| --- | --- |
-| Playbook status `PASS` with `Validation: PASS` | Report complete verified linkage and proceed |
-| Playbook status `WARN` with `Validation: PASS` | Report usable concrete linkage and surface every degraded or unresolved row before task selection |
-| Playbook status `BLOCKED` | Stop and surface the approval, input, plan-shape, linkage, or platform-choice blocker |
-| Playbook status `FAIL` | Stop and surface the categorized transport, permission, configuration, create/link, boundary, or validation failure |
-| Playbook status `ERROR`, `Validation: FAIL`, or an undefined status pairing | Stop and surface the unexpected or contract failure |
+| Result                                                                      | Coordinator action                                                                                                  |
+| --------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------- |
+| Playbook status `PASS` with `Validation: PASS`                              | Report complete verified linkage and proceed                                                                        |
+| Playbook status `WARN` with `Validation: PASS`                              | Report usable concrete linkage and surface every degraded or unresolved row before task selection                   |
+| Playbook status `BLOCKED`                                                   | Stop and surface the approval, input, plan-shape, linkage, or platform-choice blocker                               |
+| Playbook status `FAIL`                                                      | Stop and surface the categorized transport, permission, configuration, create/link, boundary, or validation failure |
+| Playbook status `ERROR`, `Validation: FAIL`, or an undefined status pairing | Stop and surface the unexpected or contract failure                                                                 |
 
 `Validation: NOT_RUN` is incomplete Phase 4 output even when the top-level status is already `BLOCKED`, `FAIL`, or `ERROR`. Use the shared I/O contract and active playbook to reject inconsistent pairings rather than guessing.
 

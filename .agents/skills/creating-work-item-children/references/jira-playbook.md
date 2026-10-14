@@ -4,11 +4,11 @@
 
 ## Inputs and Identifier
 
-| Input | Required | Example |
-| --- | --- | --- |
-| `JIRA_URL` | Yes for Phase 4 writes | `https://workspace.atlassian.net/browse/PROJ-123` |
-| `TICKET_KEY` | Yes at dispatch; must equal URL ticket key | `PROJ-123` |
-| `APPROVED_MUTATION_SCOPE` | Yes before mutation | `Create/reuse Jira subtasks for planned tasks and update docs/PROJ-123-tasks.md` |
+| Input                     | Required                                   | Example                                                                          |
+| ------------------------- | ------------------------------------------ | -------------------------------------------------------------------------------- |
+| `JIRA_URL`                | Yes for Phase 4 writes                     | `https://workspace.atlassian.net/browse/PROJ-123`                                |
+| `TICKET_KEY`              | Yes at dispatch; must equal URL ticket key | `PROJ-123`                                                                       |
+| `APPROVED_MUTATION_SCOPE` | Yes before mutation                        | `Create/reuse Jira subtasks for planned tasks and update docs/PROJ-123-tasks.md` |
 
 Parse `https://<workspace>.atlassian.net/browse/<TICKET_KEY>` directly:
 
@@ -42,16 +42,16 @@ Use the Jira MCP server or the most direct Jira-capable integration exposed by t
 
 Keep these failures distinguishable in `Reason:` and `Failures:` using the tag shown:
 
-| Tag | Condition | Route |
-| --- | --- | --- |
-| `JIRA_MCP_DISCONNECTED` | Jira MCP/integration is unavailable or unresponsive | `SUBTASKS: FAIL`, `Validation: NOT_RUN` |
-| `JIRA_ACCESS_DENIED` | Parent or metadata read is denied or inaccessible | `SUBTASKS: FAIL`, `Validation: NOT_RUN` |
-| `JIRA_PERMISSION_FAILURE` | Create, parent assignment, or required field write is forbidden | `SUBTASKS: FAIL`, `Validation: NOT_RUN` or per-task failure when safely representable |
-| `JIRA_PARENT_NOT_FOUND` | Parent does not exist or URL/key conflicts with returned identity | `SUBTASKS: FAIL`, `Validation: NOT_RUN` |
-| `JIRA_SUBTASKS_DISABLED` | No createable subtask type exists or project disables subtasks | `SUBTASKS: FAIL`, `Validation: NOT_RUN` |
-| `JIRA_SUBTASK_TYPE_AMBIGUOUS` | Multiple createable subtask types lack a deterministic approved choice | `SUBTASKS: BLOCKED`, `Validation: NOT_RUN` |
-| `JIRA_REQUIRED_FIELD_UNAVAILABLE` | A required create field cannot be safely supplied | `SUBTASKS: FAIL`, `Validation: NOT_RUN` |
-| `JIRA_RATE_LIMIT` | One 5-second retry is exhausted | Per-task failure; continue safely when possible, otherwise `FAIL` |
+| Tag                               | Condition                                                              | Route                                                                                 |
+| --------------------------------- | ---------------------------------------------------------------------- | ------------------------------------------------------------------------------------- |
+| `JIRA_MCP_DISCONNECTED`           | Jira MCP/integration is unavailable or unresponsive                    | `SUBTASKS: FAIL`, `Validation: NOT_RUN`                                               |
+| `JIRA_ACCESS_DENIED`              | Parent or metadata read is denied or inaccessible                      | `SUBTASKS: FAIL`, `Validation: NOT_RUN`                                               |
+| `JIRA_PERMISSION_FAILURE`         | Create, parent assignment, or required field write is forbidden        | `SUBTASKS: FAIL`, `Validation: NOT_RUN` or per-task failure when safely representable |
+| `JIRA_PARENT_NOT_FOUND`           | Parent does not exist or URL/key conflicts with returned identity      | `SUBTASKS: FAIL`, `Validation: NOT_RUN`                                               |
+| `JIRA_SUBTASKS_DISABLED`          | No createable subtask type exists or project disables subtasks         | `SUBTASKS: FAIL`, `Validation: NOT_RUN`                                               |
+| `JIRA_SUBTASK_TYPE_AMBIGUOUS`     | Multiple createable subtask types lack a deterministic approved choice | `SUBTASKS: BLOCKED`, `Validation: NOT_RUN`                                            |
+| `JIRA_REQUIRED_FIELD_UNAVAILABLE` | A required create field cannot be safely supplied                      | `SUBTASKS: FAIL`, `Validation: NOT_RUN`                                               |
+| `JIRA_RATE_LIMIT`                 | One 5-second retry is exhausted                                        | Per-task failure; continue safely when possible, otherwise `FAIL`                     |
 
 Do not collapse disconnected MCP, denied read access, and permission failure into a generic Jira error.
 
@@ -193,13 +193,13 @@ After a valid URL but missing approval, use the derived key for `Parent:` and `T
 
 ## Status Semantics
 
-| Status | Meaning |
-| --- | --- |
-| `PASS` | Every task is linked to a verified Jira subtask and validation passed |
-| `WARN` | Validation passed with missing decisions log, deterministic subtask-type warning, status uncertainty, optional nonfatal caveat, or individual creates represented as `Not Created` |
-| `BLOCKED` | Approval, input, plan shape, existing linkage, identity, or ambiguous subtask-type choice is unsafe |
-| `FAIL` | Parent lookup, transport/access/permission, configuration, required fields, all expected creates, boundary, or post-write validation failed |
-| `ERROR` | Unexpected tool, filesystem, schema, or environment failure interrupted the run |
+| Status    | Meaning                                                                                                                                                                            |
+| --------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `PASS`    | Every task is linked to a verified Jira subtask and validation passed                                                                                                              |
+| `WARN`    | Validation passed with missing decisions log, deterministic subtask-type warning, status uncertainty, optional nonfatal caveat, or individual creates represented as `Not Created` |
+| `BLOCKED` | Approval, input, plan shape, existing linkage, identity, or ambiguous subtask-type choice is unsafe                                                                                |
+| `FAIL`    | Parent lookup, transport/access/permission, configuration, required fields, all expected creates, boundary, or post-write validation failed                                        |
+| `ERROR`   | Unexpected tool, filesystem, schema, or environment failure interrupted the run                                                                                                    |
 
 ## Child-Reference Values and Downstream Readiness
 
