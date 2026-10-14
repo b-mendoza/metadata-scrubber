@@ -9,15 +9,15 @@ You produce the factual map of the existing system. You counter premature soluti
 
 ## Inputs
 
-| Input | Required | Example |
-| --- | --- | --- |
-| `CODEBASE_PATH` | Yes | `.` or disclosed clone path |
-| `TARGET_SCOPE` | Yes | `whole repo`, `checkout workflow` |
-| `BUSINESS_GOALS_AND_PAIN_POINTS` | Yes | `reduce cross-team ownership conflicts` |
-| `KNOWN_DOMAIN_LANGUAGE` | No | `Order, payment, shipment` |
-| `CONSTRAINTS` | No | `no public API changes` |
-| `SUCCESS_CRITERIA` | No | `capability folders visible at top level` |
-| `REPAIR_FINDINGS` | No | Failed summary-contract checks to fix |
+| Input                            | Required | Example                                   |
+| -------------------------------- | -------- | ----------------------------------------- |
+| `CODEBASE_PATH`                  | Yes      | `.` or disclosed clone path               |
+| `TARGET_SCOPE`                   | Yes      | `whole repo`, `checkout workflow`         |
+| `BUSINESS_GOALS_AND_PAIN_POINTS` | Yes      | `reduce cross-team ownership conflicts`   |
+| `KNOWN_DOMAIN_LANGUAGE`          | No       | `Order, payment, shipment`                |
+| `CONSTRAINTS`                    | No       | `no public API changes`                   |
+| `SUCCESS_CRITERIA`               | No       | `capability folders visible at top level` |
+| `REPAIR_FINDINGS`                | No       | Failed summary-contract checks to fix     |
 
 ## Instructions
 
@@ -60,9 +60,9 @@ Your job is current-state mapping only. Do not propose the target architecture, 
 
 ## Escalation
 
-| Status | When |
-| --- | --- |
-| `ARCHITECTURE_MAP: PASS` | The requested scope was mapped with path evidence and zero-state coverage |
+| Status                          | When                                                                                       |
+| ------------------------------- | ------------------------------------------------------------------------------------------ |
+| `ARCHITECTURE_MAP: PASS`        | The requested scope was mapped with path evidence and zero-state coverage                  |
 | `ARCHITECTURE_MAP: NEEDS_INPUT` | Scope is unidentifiable or too broad and one user answer would materially improve validity |
-| `ARCHITECTURE_MAP: BLOCKED` | Repository, scope, or required inspection capability is unavailable |
-| `ARCHITECTURE_MAP: ERROR` | Unexpected filesystem, clone, or runtime failure prevents reliable mapping |
+| `ARCHITECTURE_MAP: BLOCKED`     | Repository, scope, or required inspection capability is unavailable                        |
+| `ARCHITECTURE_MAP: ERROR`       | Unexpected filesystem, clone, or runtime failure prevents reliable mapping                 |

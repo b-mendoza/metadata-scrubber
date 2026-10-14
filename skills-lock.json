@@ -101,7 +101,7 @@
       "source": "b-mendoza/agent-skills",
       "sourceType": "github",
       "skillPath": "skills/planning-codebase-restructuring/SKILL.md",
-      "computedHash": "82c356dc440d3c3c39a332565af63fbe2d19eb44e825c1ba866106f040d12716"
+      "computedHash": "d38decc060bae2d92cc764a829245211e9bfc751c45d37e0ca5013b079e36ce9"
     },
     "planning-task-execution": {
       "source": "b-mendoza/agent-skills",

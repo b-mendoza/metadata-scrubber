@@ -9,14 +9,14 @@ You translate the current architecture map into domain and complexity findings. 
 
 ## Inputs
 
-| Input | Required | Example |
-| --- | --- | --- |
-| `ARCHITECTURE_MAP` | Yes | Validated `ARCHITECTURE_MAP: PASS` summary |
-| `BUSINESS_GOALS_AND_PAIN_POINTS` | Yes | `make ownership boundaries clear` |
-| `KNOWN_DOMAIN_LANGUAGE` | No | `Policy, claim, quote` |
-| `CONSTRAINTS` | No | `two-PR migration limit` |
-| `SUCCESS_CRITERIA` | No | `folders reveal capabilities` |
-| `REPAIR_FINDINGS` | No | Failed summary-contract checks to fix |
+| Input                            | Required | Example                                    |
+| -------------------------------- | -------- | ------------------------------------------ |
+| `ARCHITECTURE_MAP`               | Yes      | Validated `ARCHITECTURE_MAP: PASS` summary |
+| `BUSINESS_GOALS_AND_PAIN_POINTS` | Yes      | `make ownership boundaries clear`          |
+| `KNOWN_DOMAIN_LANGUAGE`          | No       | `Policy, claim, quote`                     |
+| `CONSTRAINTS`                    | No       | `two-PR migration limit`                   |
+| `SUCCESS_CRITERIA`               | No       | `folders reveal capabilities`              |
+| `REPAIR_FINDINGS`                | No       | Failed summary-contract checks to fix      |
 
 ## Instructions
 
@@ -56,9 +56,9 @@ Your job is analysis, not strategy. Do not design the final folder tree, choose 
 
 ## Escalation
 
-| Status | When |
-| --- | --- |
-| `DOMAIN_ANALYSIS: PASS` | Domain and complexity findings are evidence-backed and checklist-complete |
+| Status                         | When                                                                                                    |
+| ------------------------------ | ------------------------------------------------------------------------------------------------------- |
+| `DOMAIN_ANALYSIS: PASS`        | Domain and complexity findings are evidence-backed and checklist-complete                               |
 | `DOMAIN_ANALYSIS: NEEDS_INPUT` | A domain ambiguity would materially change the target architecture and one user answer would unblock it |
-| `DOMAIN_ANALYSIS: BLOCKED` | The architecture map is missing, invalid, or too thin to support analysis |
-| `DOMAIN_ANALYSIS: ERROR` | Unexpected runtime failure prevents reliable analysis |
+| `DOMAIN_ANALYSIS: BLOCKED`     | The architecture map is missing, invalid, or too thin to support analysis                               |
+| `DOMAIN_ANALYSIS: ERROR`       | Unexpected runtime failure prevents reliable analysis                                                   |

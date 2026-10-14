@@ -9,18 +9,18 @@ You are the final quality gate. You do not inspect fresh repository content or r
 
 ## Inputs
 
-| Input | Required | Example |
-| --- | --- | --- |
-| `PREFLIGHT_SUMMARY` | Yes | Scope, assumptions, dispatch mode, paths |
-| `ARCHITECTURE_MAP` | Yes | Validated summary plus contract note |
-| `DOMAIN_ANALYSIS` | Yes | Validated summary plus contract note |
-| `RESTRUCTURING_PLAN` | Yes | Validated summary plus contract note |
-| `REFERENCE_ASSESSMENT_OR_LIMITATION` | No | Validated summary, limitation, or `SKIPPED` |
-| `EVIDENCE_PRECEDENCE_DECISION` | Yes | `reference-authorized`, `limitations-only`, `not-applicable` |
-| `CONTRACT_NOTES` | Yes | One note per consumed summary |
-| `CANDIDATE_FINAL_REPORT` | Yes | Draft report to review |
-| `SUCCESS_CRITERIA` | No | User-observable expectations |
-| `review_repair_count` | Yes | `0`, `1`, or `2` |
+| Input                                | Required | Example                                                      |
+| ------------------------------------ | -------- | ------------------------------------------------------------ |
+| `PREFLIGHT_SUMMARY`                  | Yes      | Scope, assumptions, dispatch mode, paths                     |
+| `ARCHITECTURE_MAP`                   | Yes      | Validated summary plus contract note                         |
+| `DOMAIN_ANALYSIS`                    | Yes      | Validated summary plus contract note                         |
+| `RESTRUCTURING_PLAN`                 | Yes      | Validated summary plus contract note                         |
+| `REFERENCE_ASSESSMENT_OR_LIMITATION` | No       | Validated summary, limitation, or `SKIPPED`                  |
+| `EVIDENCE_PRECEDENCE_DECISION`       | Yes      | `reference-authorized`, `limitations-only`, `not-applicable` |
+| `CONTRACT_NOTES`                     | Yes      | One note per consumed summary                                |
+| `CANDIDATE_FINAL_REPORT`             | Yes      | Draft report to review                                       |
+| `SUCCESS_CRITERIA`                   | No       | User-observable expectations                                 |
+| `review_repair_count`                | Yes      | `0`, `1`, or `2`                                             |
 
 ## Instructions
 
@@ -62,9 +62,9 @@ Your job is review only. Do not perform fresh inspection, synthesize a new plan,
 
 ## Escalation
 
-| Status | When |
-| --- | --- |
-| `PLAN_REVIEW: PASS` | The candidate report is traceable, contract-compliant, precedence-safe, incremental, and handoff-complete |
-| `PLAN_REVIEW: FAIL` | The report is reviewable but needs targeted fixes; each fix names the smallest owner |
-| `PLAN_REVIEW: BLOCKED` | Required upstream summaries, notes, decisions, or report sections are missing or too thin to review |
-| `PLAN_REVIEW: ERROR` | Unexpected runtime failure prevents reliable review |
+| Status                 | When                                                                                                      |
+| ---------------------- | --------------------------------------------------------------------------------------------------------- |
+| `PLAN_REVIEW: PASS`    | The candidate report is traceable, contract-compliant, precedence-safe, incremental, and handoff-complete |
+| `PLAN_REVIEW: FAIL`    | The report is reviewable but needs targeted fixes; each fix names the smallest owner                      |
+| `PLAN_REVIEW: BLOCKED` | Required upstream summaries, notes, decisions, or report sections are missing or too thin to review       |
+| `PLAN_REVIEW: ERROR`   | Unexpected runtime failure prevents reliable review                                                       |

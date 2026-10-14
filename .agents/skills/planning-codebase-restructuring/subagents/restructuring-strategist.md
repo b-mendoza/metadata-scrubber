@@ -9,16 +9,16 @@ You convert validated evidence into a practical restructuring plan. Your bias is
 
 ## Inputs
 
-| Input | Required | Example |
-| --- | --- | --- |
-| `ARCHITECTURE_MAP` | Yes | Validated `ARCHITECTURE_MAP: PASS` summary |
-| `DOMAIN_ANALYSIS` | Yes | Validated `DOMAIN_ANALYSIS: PASS` summary |
-| `EVIDENCE_PRECEDENCE_DECISION` | Yes | `reference-authorized`, `limitations-only`, `not-applicable` |
-| `REFERENCE_CONTENT_ALLOWED_BY_GATE` | No | Confirmed patterns or limitation notes only |
-| `BUSINESS_GOALS_AND_PAIN_POINTS` | Yes | `clarify capability ownership` |
-| `CONSTRAINTS` | No | `no public API changes` |
-| `SUCCESS_CRITERIA` | No | `migration fits two PRs` |
-| `REPAIR_FINDINGS` | No | Failed summary-contract checks to fix |
+| Input                               | Required | Example                                                      |
+| ----------------------------------- | -------- | ------------------------------------------------------------ |
+| `ARCHITECTURE_MAP`                  | Yes      | Validated `ARCHITECTURE_MAP: PASS` summary                   |
+| `DOMAIN_ANALYSIS`                   | Yes      | Validated `DOMAIN_ANALYSIS: PASS` summary                    |
+| `EVIDENCE_PRECEDENCE_DECISION`      | Yes      | `reference-authorized`, `limitations-only`, `not-applicable` |
+| `REFERENCE_CONTENT_ALLOWED_BY_GATE` | No       | Confirmed patterns or limitation notes only                  |
+| `BUSINESS_GOALS_AND_PAIN_POINTS`    | Yes      | `clarify capability ownership`                               |
+| `CONSTRAINTS`                       | No       | `no public API changes`                                      |
+| `SUCCESS_CRITERIA`                  | No       | `migration fits two PRs`                                     |
+| `REPAIR_FINDINGS`                   | No       | Failed summary-contract checks to fix                        |
 
 ## Instructions
 
@@ -61,9 +61,9 @@ Your job is planning only. Do not implement moves, change files, run tests, broa
 
 ## Escalation
 
-| Status | When |
-| --- | --- |
-| `RESTRUCTURING_PLAN: PASS` | The proposal is evidence-backed, incremental, and handoff-ready |
-| `RESTRUCTURING_PLAN: NEEDS_INPUT` | One user decision would materially change strategy or a handoff gate |
-| `RESTRUCTURING_PLAN: BLOCKED` | Inputs are too thin, missing, contradictory, or lack an evidence precedence decision |
-| `RESTRUCTURING_PLAN: ERROR` | Unexpected runtime failure prevents reliable planning |
+| Status                            | When                                                                                 |
+| --------------------------------- | ------------------------------------------------------------------------------------ |
+| `RESTRUCTURING_PLAN: PASS`        | The proposal is evidence-backed, incremental, and handoff-ready                      |
+| `RESTRUCTURING_PLAN: NEEDS_INPUT` | One user decision would materially change strategy or a handoff gate                 |
+| `RESTRUCTURING_PLAN: BLOCKED`     | Inputs are too thin, missing, contradictory, or lack an evidence precedence decision |
+| `RESTRUCTURING_PLAN: ERROR`       | Unexpected runtime failure prevents reliable planning                                |

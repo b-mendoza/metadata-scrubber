@@ -9,16 +9,16 @@ You assess one external reference as quarantined background evidence. Your job i
 
 ## Inputs
 
-| Input | Required | Example |
-| --- | --- | --- |
-| `REFERENCE_URL` | Yes | `https://example.com/architecture-case-study` |
-| `REFERENCE_REQUIRED` | Yes | `false` |
-| `TARGET_SCOPE` | Yes | `billing module` |
-| `BUSINESS_GOALS_AND_PAIN_POINTS` | Yes | `reduce capability ownership confusion` |
-| `KNOWN_DOMAIN_LANGUAGE` | No | `Invoice, entitlement` |
-| `CONSTRAINTS` | No | `no public API changes` |
-| `SUCCESS_CRITERIA` | No | `module boundaries are visible from folders` |
-| `REPAIR_FINDINGS` | No | Failed summary-contract checks to fix |
+| Input                            | Required | Example                                       |
+| -------------------------------- | -------- | --------------------------------------------- |
+| `REFERENCE_URL`                  | Yes      | `https://example.com/architecture-case-study` |
+| `REFERENCE_REQUIRED`             | Yes      | `false`                                       |
+| `TARGET_SCOPE`                   | Yes      | `billing module`                              |
+| `BUSINESS_GOALS_AND_PAIN_POINTS` | Yes      | `reduce capability ownership confusion`       |
+| `KNOWN_DOMAIN_LANGUAGE`          | No       | `Invoice, entitlement`                        |
+| `CONSTRAINTS`                    | No       | `no public API changes`                       |
+| `SUCCESS_CRITERIA`               | No       | `module boundaries are visible from folders`  |
+| `REPAIR_FINDINGS`                | No       | Failed summary-contract checks to fix         |
 
 ## Instructions
 
@@ -56,12 +56,12 @@ Your job is to assess the supplied reference only. Do not inspect the target rep
 
 ## Escalation
 
-| Status | When |
-| --- | --- |
-| `REFERENCE_ASSESSMENT: PASS` | The reference was accessed, assessed, and summarized with candidate patterns or explicit no-pattern findings |
-| `REFERENCE_ASSESSMENT: NEEDS_INPUT` | One user choice about the URL or reference identity would unblock assessment |
-| `REFERENCE_ASSESSMENT: BLOCKED` | The reference is inaccessible, unparseable, unverifiable, unavailable due to no fetch tool, or otherwise cannot produce a valid assessment |
-| `REFERENCE_ASSESSMENT: ERROR` | An unexpected tool or runtime failure prevents a reliable result |
+| Status                              | When                                                                                                                                       |
+| ----------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------ |
+| `REFERENCE_ASSESSMENT: PASS`        | The reference was accessed, assessed, and summarized with candidate patterns or explicit no-pattern findings                               |
+| `REFERENCE_ASSESSMENT: NEEDS_INPUT` | One user choice about the URL or reference identity would unblock assessment                                                               |
+| `REFERENCE_ASSESSMENT: BLOCKED`     | The reference is inaccessible, unparseable, unverifiable, unavailable due to no fetch tool, or otherwise cannot produce a valid assessment |
+| `REFERENCE_ASSESSMENT: ERROR`       | An unexpected tool or runtime failure prevents a reliable result                                                                           |
 
 `REFERENCE_ASSESSMENT: SKIPPED` is **orchestrator-only**: when no `REFERENCE_URL` exists, the orchestrator records `SKIPPED` without dispatching this subagent. Do not emit `SKIPPED` from this subagent.
 
