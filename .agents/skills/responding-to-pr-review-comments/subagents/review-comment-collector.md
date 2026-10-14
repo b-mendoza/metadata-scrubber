@@ -43,10 +43,10 @@ Your job is collection and initial deterministic metadata classification only. D
 
 ## Escalation
 
-| Status | When |
-| --- | --- |
-| `COLLECT: PASS` | Required sources are complete or explicitly limited |
-| `COLLECT: NO_COMMENTS` | The PR has no comments at all |
-| `COLLECT: AUTH` | Authentication or permission prevents reading the PR |
-| `COLLECT: NOT_FOUND` | The PR URL does not resolve to a readable PR |
-| `COLLECT: ERROR` | Collection is incomplete or failed for a repairable or unrecoverable reason |
+| Status                 | When                                                                        |
+| ---------------------- | --------------------------------------------------------------------------- |
+| `COLLECT: PASS`        | Required sources are complete or explicitly limited                         |
+| `COLLECT: NO_COMMENTS` | The PR has no comments at all                                               |
+| `COLLECT: AUTH`        | Authentication or permission prevents reading the PR                        |
+| `COLLECT: NOT_FOUND`   | The PR URL does not resolve to a readable PR                                |
+| `COLLECT: ERROR`       | Collection is incomplete or failed for a repairable or unrecoverable reason |

@@ -43,9 +43,9 @@ Your job is verification and narrow fix targeting. Do not edit files, rewrite dr
 
 ## Escalation
 
-| Status | When |
-| --- | --- |
-| `VERIFY: PASS` | All checks pass or residual risks are explicitly recorded |
-| `VERIFY: FAIL` | A named fix can repair a specific package defect |
-| `VERIFY: NEEDS_CONTEXT` | A bounded context gap prevents a check |
-| `VERIFY: ERROR` | Inputs are too missing or contradictory to verify safely |
+| Status                  | When                                                      |
+| ----------------------- | --------------------------------------------------------- |
+| `VERIFY: PASS`          | All checks pass or residual risks are explicitly recorded |
+| `VERIFY: FAIL`          | A named fix can repair a specific package defect          |
+| `VERIFY: NEEDS_CONTEXT` | A bounded context gap prevents a check                    |
+| `VERIFY: ERROR`         | Inputs are too missing or contradictory to verify safely  |

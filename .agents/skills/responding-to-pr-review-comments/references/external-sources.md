@@ -4,33 +4,33 @@ Load this file only when a phase needs GitHub API mechanics, current external do
 
 ## GitHub Data And Posting Sources
 
-| Phase key | Source | Use |
-| --- | --- | --- |
-| `gh-rest-pull-comments` | <https://docs.github.com/en/rest/pulls/comments> | Pull request review comments and direct reply endpoint for `review-comment-reply:<root-id>` |
-| `gh-rest-pull-reviews` | <https://docs.github.com/en/rest/pulls/reviews> | Review summaries that must remain `requires-user-choice:review-summary` |
-| `gh-rest-issue-comments` | <https://docs.github.com/en/rest/issues/comments> | Top-level PR conversation comments that must remain `requires-user-choice:issue-comment` |
-| `gh-graphql-review-thread` | <https://docs.github.com/en/graphql/reference/objects#pullrequestreviewthread> | `isResolved`, root comment, thread state, and freshness checks |
-| `gh-rest-pagination` | <https://docs.github.com/en/rest/using-the-rest-api/using-pagination-in-the-rest-api> | Collector-owned pagination completeness |
-| `gh-rest-best-practices` | <https://docs.github.com/en/rest/using-the-rest-api/best-practices-for-using-the-rest-api> | Serial mutative requests and secondary-rate-limit handling |
-| `gh-cli-api` | <https://cli.github.com/manual/gh_api> | `gh api --paginate` and GraphQL calls; optional helpers `../scripts/collect-review-threads.sh` and `../scripts/post-review-reply.sh` |
-| `gh-cli-pr-view` | <https://cli.github.com/manual/gh_pr_view> | Compact PR metadata |
-| `github-about-reviews` | <https://docs.github.com/en/pull-requests/collaborating-with-pull-requests/reviewing-changes-in-pull-requests/about-pull-request-reviews> | User-facing distinction between review comments, review summaries, and conversation comments |
+| Phase key                  | Source                                                                                                                                    | Use                                                                                                                                  |
+| -------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------ |
+| `gh-rest-pull-comments`    | <https://docs.github.com/en/rest/pulls/comments>                                                                                          | Pull request review comments and direct reply endpoint for `review-comment-reply:<root-id>`                                          |
+| `gh-rest-pull-reviews`     | <https://docs.github.com/en/rest/pulls/reviews>                                                                                           | Review summaries that must remain `requires-user-choice:review-summary`                                                              |
+| `gh-rest-issue-comments`   | <https://docs.github.com/en/rest/issues/comments>                                                                                         | Top-level PR conversation comments that must remain `requires-user-choice:issue-comment`                                             |
+| `gh-graphql-review-thread` | <https://docs.github.com/en/graphql/reference/objects#pullrequestreviewthread>                                                            | `isResolved`, root comment, thread state, and freshness checks                                                                       |
+| `gh-rest-pagination`       | <https://docs.github.com/en/rest/using-the-rest-api/using-pagination-in-the-rest-api>                                                     | Collector-owned pagination completeness                                                                                              |
+| `gh-rest-best-practices`   | <https://docs.github.com/en/rest/using-the-rest-api/best-practices-for-using-the-rest-api>                                                | Serial mutative requests and secondary-rate-limit handling                                                                           |
+| `gh-cli-api`               | <https://cli.github.com/manual/gh_api>                                                                                                    | `gh api --paginate` and GraphQL calls; optional helpers `../scripts/collect-review-threads.sh` and `../scripts/post-review-reply.sh` |
+| `gh-cli-pr-view`           | <https://cli.github.com/manual/gh_pr_view>                                                                                                | Compact PR metadata                                                                                                                  |
+| `github-about-reviews`     | <https://docs.github.com/en/pull-requests/collaborating-with-pull-requests/reviewing-changes-in-pull-requests/about-pull-request-reviews> | User-facing distinction between review comments, review summaries, and conversation comments                                         |
 
 ## Review Judgment And Style Sources
 
-| Phase key | Source | Use |
-| --- | --- | --- |
-| `google-handling-comments` | <https://google.github.io/eng-practices/review/developer/handling-comments.html> | Accept, clarify, and push-back model |
-| `google-review-standard` | <https://google.github.io/eng-practices/review/reviewer/standard.html> | Evidence-over-preference standard |
-| `conventional-comments` | <https://conventionalcomments.org/> | Reviewer intent labels |
-| `conventional-comments-communication` | <https://conventionalcomments.org/communication/> | Clear, calm, specific reply tone |
+| Phase key                             | Source                                                                           | Use                                  |
+| ------------------------------------- | -------------------------------------------------------------------------------- | ------------------------------------ |
+| `google-handling-comments`            | <https://google.github.io/eng-practices/review/developer/handling-comments.html> | Accept, clarify, and push-back model |
+| `google-review-standard`              | <https://google.github.io/eng-practices/review/reviewer/standard.html>           | Evidence-over-preference standard    |
+| `conventional-comments`               | <https://conventionalcomments.org/>                                              | Reviewer intent labels               |
+| `conventional-comments-communication` | <https://conventionalcomments.org/communication/>                                | Clear, calm, specific reply tone     |
 
 ## Untrusted Content Sources
 
-| Phase key | Source | Use |
-| --- | --- | --- |
-| `owasp-prompt-injection` | <https://genai.owasp.org/llmrisk/llm01-prompt-injection/> | Threat model for comments and fetched pages as attacker-controlled inputs |
-| `willison-prompt-injection` | <https://simonwillison.net/series/prompt-injection/> | Practical prompt-injection patterns and delimiter guidance |
+| Phase key                   | Source                                                    | Use                                                                       |
+| --------------------------- | --------------------------------------------------------- | ------------------------------------------------------------------------- |
+| `owasp-prompt-injection`    | <https://genai.owasp.org/llmrisk/llm01-prompt-injection/> | Threat model for comments and fetched pages as attacker-controlled inputs |
+| `willison-prompt-injection` | <https://simonwillison.net/series/prompt-injection/>      | Practical prompt-injection patterns and delimiter guidance                |
 
 ## Fetch Policy
 

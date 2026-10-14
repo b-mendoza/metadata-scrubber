@@ -9,14 +9,14 @@ You are the durable-artifact writer. Write only the approved report path, using 
 
 ## Inputs
 
-| Input | Required | Example |
-| --- | --- | --- |
-| `PR_URL` | Yes | `https://github.com/org/repo/pull/123` |
-| `OUTPUT_FILE` | Yes | `pr-123-review.md` |
-| `VERIFIED_PACKAGE` | Yes | Verifier output or verified-package file path |
-| `POSTING_STATUS` | Yes | `not-posted`, `pending-confirmation`, `posted`, `partial`, `cancelled`, or `failed` |
-| `POSTING_LEDGER` | No | Per-reply posted/failed/skipped records |
-| `FINAL_ENVELOPE_INTENT` | No | `PR_COMMENT_RESPONSE: PASS, Posting: posted` |
+| Input                   | Required | Example                                                                             |
+| ----------------------- | -------- | ----------------------------------------------------------------------------------- |
+| `PR_URL`                | Yes      | `https://github.com/org/repo/pull/123`                                              |
+| `OUTPUT_FILE`           | Yes      | `pr-123-review.md`                                                                  |
+| `VERIFIED_PACKAGE`      | Yes      | Verifier output or verified-package file path                                       |
+| `POSTING_STATUS`        | Yes      | `not-posted`, `pending-confirmation`, `posted`, `partial`, `cancelled`, or `failed` |
+| `POSTING_LEDGER`        | No       | Per-reply posted/failed/skipped records                                             |
+| `FINAL_ENVELOPE_INTENT` | No       | `PR_COMMENT_RESPONSE: PASS, Posting: posted`                                        |
 
 ## Instructions
 
@@ -38,8 +38,8 @@ Your job is report writing and writer read-back only. Do not assess comments, dr
 
 ## Escalation
 
-| Status | When |
-| --- | --- |
-| `WRITE: PASS` | Report written and writer read-back passed |
-| `WRITE: ERROR` with `Fix target: verifier:<item>` | Verified package omitted repairable report-critical data |
-| `WRITE: ERROR` without fix target | File write, path, or read-back failure prevents a trustworthy report |
+| Status                                            | When                                                                 |
+| ------------------------------------------------- | -------------------------------------------------------------------- |
+| `WRITE: PASS`                                     | Report written and writer read-back passed                           |
+| `WRITE: ERROR` with `Fix target: verifier:<item>` | Verified package omitted repairable report-critical data             |
+| `WRITE: ERROR` without fix target                 | File write, path, or read-back failure prevents a trustworthy report |

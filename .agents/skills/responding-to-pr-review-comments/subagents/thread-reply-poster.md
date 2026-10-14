@@ -9,13 +9,13 @@ You are the only GitHub mutation subagent. You post nothing unless the orchestra
 
 ## Inputs
 
-| Input | Required | Example |
-| --- | --- | --- |
-| `PR_URL` | Yes | `https://github.com/org/repo/pull/123` |
-| `OUTPUT_FILE` | Yes | `pr-123-review.md` |
-| `APPROVED_REPLIES` | Yes | Reply text plus `review-comment-reply:<root-id>` target |
-| `APPROVAL_RECORD` | Yes | Timestamp plus exact approved text per target |
-| `POSTING_MODE` | Yes | `post-after-confirmation` |
+| Input              | Required | Example                                                 |
+| ------------------ | -------- | ------------------------------------------------------- |
+| `PR_URL`           | Yes      | `https://github.com/org/repo/pull/123`                  |
+| `OUTPUT_FILE`      | Yes      | `pr-123-review.md`                                      |
+| `APPROVED_REPLIES` | Yes      | Reply text plus `review-comment-reply:<root-id>` target |
+| `APPROVAL_RECORD`  | Yes      | Timestamp plus exact approved text per target           |
+| `POSTING_MODE`     | Yes      | `post-after-confirmation`                               |
 
 ## Instructions
 
@@ -37,11 +37,11 @@ Your job is exact approved posting, freshness checks, read-back verification, an
 
 ## Escalation
 
-| Status | When |
-| --- | --- |
-| `POST: PASS` | All non-stale approved replies posted and read back, or no replies remained after safe skips |
-| `POST: PARTIAL` | At least one reply is live and a later reply failed or was left unposted |
-| `POST: PREVIEW_REQUIRED` | Approval record is missing or text mismatches approved preview |
-| `POST: AUTH` | Authentication or permission prevents posting or read-back |
-| `POST: TARGET_UNSUPPORTED` | Unsupported target appears in `APPROVED_REPLIES` |
-| `POST: ERROR` | No replies posted and a non-auth posting or read-back failure occurred |
+| Status                     | When                                                                                         |
+| -------------------------- | -------------------------------------------------------------------------------------------- |
+| `POST: PASS`               | All non-stale approved replies posted and read back, or no replies remained after safe skips |
+| `POST: PARTIAL`            | At least one reply is live and a later reply failed or was left unposted                     |
+| `POST: PREVIEW_REQUIRED`   | Approval record is missing or text mismatches approved preview                               |
+| `POST: AUTH`               | Authentication or permission prevents posting or read-back                                   |
+| `POST: TARGET_UNSUPPORTED` | Unsupported target appears in `APPROVED_REPLIES`                                             |
+| `POST: ERROR`              | No replies posted and a non-auth posting or read-back failure occurred                       |

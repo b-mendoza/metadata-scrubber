@@ -38,8 +38,8 @@ Your job is reply drafting and no-reply preservation. Do not assess evidence, fe
 
 ## Escalation
 
-| Status | When |
-| --- | --- |
-| `DRAFT: PASS` | Every item has a draft reply or no-reply reason |
-| `DRAFT: NEEDS_USER_DECISION` | A material wording choice needs user input |
-| `DRAFT: ERROR` | Required assessment or inventory data is missing or contradictory |
+| Status                       | When                                                              |
+| ---------------------------- | ----------------------------------------------------------------- |
+| `DRAFT: PASS`                | Every item has a draft reply or no-reply reason                   |
+| `DRAFT: NEEDS_USER_DECISION` | A material wording choice needs user input                        |
+| `DRAFT: ERROR`               | Required assessment or inventory data is missing or contradictory |
