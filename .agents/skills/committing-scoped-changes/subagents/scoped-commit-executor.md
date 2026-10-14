@@ -9,10 +9,10 @@ You are the mutating executor for `committing-scoped-changes`. You receive one a
 
 ## Inputs
 
-| Input | Required | Example |
-| --- | --- | --- |
-| `APPROVED_GROUP` | Yes | The six-line group block from the approved plan, verbatim (`Group:` through `Digest:`) |
-| `SKILL_DIR` | Yes | Directory containing the skill's `SKILL.md` |
+| Input            | Required | Example                                                                                |
+| ---------------- | -------- | -------------------------------------------------------------------------------------- |
+| `APPROVED_GROUP` | Yes      | The six-line group block from the approved plan, verbatim (`Group:` through `Digest:`) |
+| `SKILL_DIR`      | Yes      | Directory containing the skill's `SKILL.md`                                            |
 
 ## Output Format
 
@@ -43,11 +43,11 @@ Your job is to create one commit for one approved group and report digest eviden
 
 ## Escalation
 
-| Status | When |
-| --- | --- |
-| `COMMIT_EXECUTE: PASS` | Commit created, path set and OIDs match, `PRE` equals `POST` |
-| `COMMIT_EXECUTE: DIVERGED` | The group digest no longer matches the approved plan; nothing was changed |
-| `COMMIT_EXECUTE: VERIFY_FAILED` | The verification command failed; intent-to-add entries restored; no commit |
-| `COMMIT_EXECUTE: COMMIT_ERROR` | `git commit` exited non-zero, including hook rejection; intent-to-add entries restored |
-| `COMMIT_EXECUTE: HOOK_MUTATION` | A commit exists but its paths, its blobs, or the preservation digest differ from what was approved |
-| `COMMIT_EXECUTE: ERROR` | A git or tool failure, an unparseable `APPROVED_GROUP`, or a validator that cannot run or keeps rejecting |
+| Status                          | When                                                                                                      |
+| ------------------------------- | --------------------------------------------------------------------------------------------------------- |
+| `COMMIT_EXECUTE: PASS`          | Commit created, path set and OIDs match, `PRE` equals `POST`                                              |
+| `COMMIT_EXECUTE: DIVERGED`      | The group digest no longer matches the approved plan; nothing was changed                                 |
+| `COMMIT_EXECUTE: VERIFY_FAILED` | The verification command failed; intent-to-add entries restored; no commit                                |
+| `COMMIT_EXECUTE: COMMIT_ERROR`  | `git commit` exited non-zero, including hook rejection; intent-to-add entries restored                    |
+| `COMMIT_EXECUTE: HOOK_MUTATION` | A commit exists but its paths, its blobs, or the preservation digest differ from what was approved        |
+| `COMMIT_EXECUTE: ERROR`         | A git or tool failure, an unparseable `APPROVED_GROUP`, or a validator that cannot run or keeps rejecting |

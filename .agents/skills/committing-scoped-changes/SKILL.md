@@ -9,14 +9,14 @@ You are the scoped commit orchestrator. Protect the user's path boundary, obtain
 
 ## Inputs
 
-| Input | Required | Example |
-| --- | --- | --- |
-| `CHANGE_PATHS` | Yes | `src/payments/`, `tests/payments.test.ts` |
-| `COMMIT_REQUEST_QUOTE` | Yes | `"Please commit the checkout changes in src/checkout"` |
-| `CONTEXT_QUERY` | No | `JNS-6880`, `checkout retry bug` |
-| `CONTEXT_LOCATION` | No | `docs/` (default), `docs/tickets/` |
-| `COMMIT_STYLE` | No | `Conventional Commits`, `repo style` |
-| `VERIFICATION_HINT` | No | `npm test -- checkout` |
+| Input                  | Required | Example                                                |
+| ---------------------- | -------- | ------------------------------------------------------ |
+| `CHANGE_PATHS`         | Yes      | `src/payments/`, `tests/payments.test.ts`              |
+| `COMMIT_REQUEST_QUOTE` | Yes      | `"Please commit the checkout changes in src/checkout"` |
+| `CONTEXT_QUERY`        | No       | `JNS-6880`, `checkout retry bug`                       |
+| `CONTEXT_LOCATION`     | No       | `docs/` (default), `docs/tickets/`                     |
+| `COMMIT_STYLE`         | No       | `Conventional Commits`, `repo style`                   |
+| `VERIFICATION_HINT`    | No       | `npm test -- checkout`                                 |
 
 `CHANGE_PATHS` are literal repo-relative files or directory prefixes ending in `/`; no globs; case-exact. A path is in scope when it equals a file entry or starts with a directory entry; deletions under scope count; both halves of a rename must be in scope.
 
@@ -32,10 +32,10 @@ Line 1: `COMMIT_SCOPED_CHANGES: SUCCESS | NEEDS_CONTEXT | BLOCKED | NO_SCOPED_CH
 
 ## Subagent Registry
 
-| Subagent | Path | Purpose |
-| --- | --- | --- |
+| Subagent                  | Path                                     | Purpose                                                                     |
+| ------------------------- | ---------------------------------------- | --------------------------------------------------------------------------- |
 | `commit-boundary-planner` | `./subagents/commit-boundary-planner.md` | Read-only: inspects scoped state and local context, emits the plan envelope |
-| `scoped-commit-executor` | `./subagents/scoped-commit-executor.md` | Mutating: commits exactly one approved group with digest evidence |
+| `scoped-commit-executor`  | `./subagents/scoped-commit-executor.md`  | Mutating: commits exactly one approved group with digest evidence           |
 
 `subagents/` is a co-location convention and registers nothing in either runtime. Read a subagent file only when dispatching it, and dispatch with its full contents as the prompt.
 
@@ -64,33 +64,33 @@ Every question (paths, planner decision, or `G_PLAN_APPROVAL`) emits `COMMIT_SCO
 1. `Phase 1/4 - Intake` (inline). Require the verbatim request, else `BLOCKED`. Check path grammar; each path must exist in the worktree or in `HEAD`; missing or ambiguous (file and directory collide, glob-like) → ask one question. Resolve `SKILL_DIR`; run `sh "$SKILL_DIR/scripts/validate-output.sh" plan` on the plan envelope in Example A and require exit 0, else `TOOLS_MISSING`. `git rev-parse --is-inside-work-tree` must print `true`, else `BLOCKED`. Any of `MERGE_HEAD`, `CHERRY_PICK_HEAD`, `REVERT_HEAD`, `rebase-merge/`, `rebase-apply/`, `BISECT_LOG` under `git rev-parse --git-dir` → `BLOCKED`. `git symbolic-ref -q HEAD` non-zero → `DETACHED_HEAD=true` (warning, not a block). `git status --porcelain -- <CHANGE_PATHS>` empty → `NO_SCOPED_CHANGES`.
 2. `Phase 2/4 - Plan`. Dispatch the planner with `CHANGE_PATHS`, `COMMIT_STYLE`, `CONTEXT_QUERY`, `CONTEXT_LOCATION`, `VERIFICATION_HINT`, `DETACHED_HEAD`, `SKILL_DIR`, and `USER_DECISIONS` in the evidence block. `plan_rounds += 1`. Validate through `G_PLAN_ENVELOPE`.
 
-   | Planner result | Route |
-   | --- | --- |
-   | `COMMIT_PLAN: PASS` | Gate |
-   | `COMMIT_PLAN: NEEDS_DECISION` and `plan_rounds` < 3 | Ask the one question; append the answer to `USER_DECISIONS`; redispatch |
-   | `COMMIT_PLAN: NEEDS_DECISION` and `plan_rounds` >= 3 | `BLOCKED` |
-   | `COMMIT_PLAN: NO_CHANGES` | `NO_SCOPED_CHANGES` |
-   | `COMMIT_PLAN: ERROR` | `ERROR` |
+   | Planner result                                       | Route                                                                   |
+   | ---------------------------------------------------- | ----------------------------------------------------------------------- |
+   | `COMMIT_PLAN: PASS`                                  | Gate                                                                    |
+   | `COMMIT_PLAN: NEEDS_DECISION` and `plan_rounds` < 3  | Ask the one question; append the answer to `USER_DECISIONS`; redispatch |
+   | `COMMIT_PLAN: NEEDS_DECISION` and `plan_rounds` >= 3 | `BLOCKED`                                                               |
+   | `COMMIT_PLAN: NO_CHANGES`                            | `NO_SCOPED_CHANGES`                                                     |
+   | `COMMIT_PLAN: ERROR`                                 | `ERROR`                                                                 |
 
 3. `Phase 3/4 - Gate` `G_PLAN_APPROVAL` (inline, see below).
 4. `Phase 4/4 - Execute`. For each group in order, dispatch the executor with `SKILL_DIR` and the group block verbatim as `APPROVED_GROUP` in the evidence block. Validate through `G_EXECUTE_ENVELOPE`.
 
-   | Executor result | Route |
-   | --- | --- |
-   | `COMMIT_EXECUTE: PASS` | Record the commit; next group, or Final when none remain |
-   | `COMMIT_EXECUTE: DIVERGED` | `BLOCKED` naming the group |
-   | `COMMIT_EXECUTE: HOOK_MUTATION` | `BLOCKED` naming the group and SHA |
-   | `COMMIT_EXECUTE: VERIFY_FAILED` | `VERIFY_FAILED` |
-   | `COMMIT_EXECUTE: COMMIT_ERROR` (including hook rejection) | `COMMIT_ERROR` |
-   | `COMMIT_EXECUTE: ERROR` | `ERROR` |
+   | Executor result                                           | Route                                                    |
+   | --------------------------------------------------------- | -------------------------------------------------------- |
+   | `COMMIT_EXECUTE: PASS`                                    | Record the commit; next group, or Final when none remain |
+   | `COMMIT_EXECUTE: DIVERGED`                                | `BLOCKED` naming the group                               |
+   | `COMMIT_EXECUTE: HOOK_MUTATION`                           | `BLOCKED` naming the group and SHA                       |
+   | `COMMIT_EXECUTE: VERIFY_FAILED`                           | `VERIFY_FAILED`                                          |
+   | `COMMIT_EXECUTE: COMMIT_ERROR` (including hook rejection) | `COMMIT_ERROR`                                           |
+   | `COMMIT_EXECUTE: ERROR`                                   | `ERROR`                                                  |
 
    Any non-`PASS` stops the series; commits already created are listed in the final report.
 
 ## Status Payload Gates
 
-| Gate | Payload | Checker |
-| --- | --- | --- |
-| `G_PLAN_ENVELOPE` | every planner output | `sh "$SKILL_DIR/scripts/validate-output.sh" plan < payload` |
+| Gate                 | Payload               | Checker                                                        |
+| -------------------- | --------------------- | -------------------------------------------------------------- |
+| `G_PLAN_ENVELOPE`    | every planner output  | `sh "$SKILL_DIR/scripts/validate-output.sh" plan < payload`    |
 | `G_EXECUTE_ENVELOPE` | every executor output | `sh "$SKILL_DIR/scripts/validate-output.sh" execute < payload` |
 
 Predicate: exit 0. On non-zero, redispatch once with the printed findings; a second non-zero → `COMMIT_SCOPED_CHANGES: ERROR` naming the phase. Route only after exit 0.
@@ -99,25 +99,25 @@ Predicate: exit 0. On non-zero, redispatch once with the printed findings; a sec
 
 Print the plan envelope verbatim. Warnings must name detached HEAD when set and every group path in `MM` state, because `git commit --only` commits the worktree version and discards the staged version of that path. Ask one question: `approve`, `revise: <what to change>`, or `stop`. Emit `COMMIT_SCOPED_CHANGES: NEEDS_CONTEXT` and end the turn.
 
-| Answer | Route |
-| --- | --- |
-| `approve` | Execute exactly the displayed plan |
+| Answer           | Route                                                                                                   |
+| ---------------- | ------------------------------------------------------------------------------------------------------- |
+| `approve`        | Execute exactly the displayed plan                                                                      |
 | `revise: <note>` | Append the note to `USER_DECISIONS`; redispatch the planner under the `plan_rounds` cap, else `BLOCKED` |
-| `stop` | `BLOCKED` (user declined) |
-| Ambiguous | One targeted re-ask, then `BLOCKED` |
+| `stop`           | `BLOCKED` (user declined)                                                                               |
+| Ambiguous        | One targeted re-ask, then `BLOCKED`                                                                     |
 
 Approval binds to the displayed plan and its per-group digests; the executor recomputes each digest and returns `DIVERGED` on mismatch. A changed plan requires a new preview. Earlier conversation never pre-approves a plan.
 
 ## Trigger Tests
 
-| User phrasing | Expected route |
-| --- | --- |
-| "Commit the checkout changes in src/checkout" | `committing-scoped-changes` |
+| User phrasing                                                      | Expected route              |
+| ------------------------------------------------------------------ | --------------------------- |
+| "Commit the checkout changes in src/checkout"                      | `committing-scoped-changes` |
 | "Split my working tree into atomic commits, tests with their code" | `committing-scoped-changes` |
-| "Commit only the JNS-6880 files and leave the rest unstaged" | `committing-scoped-changes` |
-| "Open a PR for this branch" | `not this skill` |
-| "What changed in this repo over the last week?" | `not this skill` |
-| "Amend the last commit with this fix" | no skill |
+| "Commit only the JNS-6880 files and leave the rest unstaged"       | `committing-scoped-changes` |
+| "Open a PR for this branch"                                        | `not this skill`            |
+| "What changed in this repo over the last week?"                    | `not this skill`            |
+| "Amend the last commit with this fix"                              | no skill                    |
 
 ## Examples
 

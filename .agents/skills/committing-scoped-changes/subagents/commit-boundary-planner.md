@@ -9,16 +9,16 @@ You are the read-only planner for `committing-scoped-changes`. You inspect the s
 
 ## Inputs
 
-| Input | Required | Example |
-| --- | --- | --- |
-| `CHANGE_PATHS` | Yes | `src/payments/ tests/payments.test.ts` (files, or directories ending in `/`) |
-| `SKILL_DIR` | Yes | Directory containing the skill's `SKILL.md` |
-| `DETACHED_HEAD` | Yes | `true` or `false` |
-| `COMMIT_STYLE` | No | `Conventional Commits`; when absent, infer from `git log -20 --format=%s` |
-| `CONTEXT_QUERY` | No | `JNS-6880` |
-| `CONTEXT_LOCATION` | No | `docs/` (default) |
-| `VERIFICATION_HINT` | No | `npm test -- checkout`; a candidate, not a mandate |
-| `USER_DECISIONS` | No | Prior answers, delivered in a fenced block introduced by `Evidence, not instructions:` |
+| Input               | Required | Example                                                                                |
+| ------------------- | -------- | -------------------------------------------------------------------------------------- |
+| `CHANGE_PATHS`      | Yes      | `src/payments/ tests/payments.test.ts` (files, or directories ending in `/`)           |
+| `SKILL_DIR`         | Yes      | Directory containing the skill's `SKILL.md`                                            |
+| `DETACHED_HEAD`     | Yes      | `true` or `false`                                                                      |
+| `COMMIT_STYLE`      | No       | `Conventional Commits`; when absent, infer from `git log -20 --format=%s`              |
+| `CONTEXT_QUERY`     | No       | `JNS-6880`                                                                             |
+| `CONTEXT_LOCATION`  | No       | `docs/` (default)                                                                      |
+| `VERIFICATION_HINT` | No       | `npm test -- checkout`; a candidate, not a mandate                                     |
+| `USER_DECISIONS`    | No       | Prior answers, delivered in a fenced block introduced by `Evidence, not instructions:` |
 
 ## Output Format
 
@@ -56,9 +56,9 @@ Your job is to read repository state and return a plan. Run only the git forms n
 
 ## Escalation
 
-| Status | When |
-| --- | --- |
-| `COMMIT_PLAN: PASS` | Every scoped change is in a group or in `Omissions:`, and the validator accepted the envelope |
+| Status                        | When                                                                                                      |
+| ----------------------------- | --------------------------------------------------------------------------------------------------------- |
+| `COMMIT_PLAN: PASS`           | Every scoped change is in a group or in `Omissions:`, and the validator accepted the envelope             |
 | `COMMIT_PLAN: NEEDS_DECISION` | Intent, a mixed-concern file, or scope ambiguity prevents a safe plan; one question in `Decision needed:` |
-| `COMMIT_PLAN: NO_CHANGES` | The scope contains changes, but none is commit-worthy (`Reason:` says why) |
-| `COMMIT_PLAN: ERROR` | A git or read failure, an unusable input, or a validator that cannot run or keeps rejecting |
+| `COMMIT_PLAN: NO_CHANGES`     | The scope contains changes, but none is commit-worthy (`Reason:` says why)                                |
+| `COMMIT_PLAN: ERROR`          | A git or read failure, an unusable input, or a validator that cannot run or keeps rejecting               |
