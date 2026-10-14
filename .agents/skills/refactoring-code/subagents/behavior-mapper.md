@@ -60,9 +60,9 @@ Your job is to map current evidence and name the dimensions worth analyzing. Do 
 
 ## Escalation
 
-| Status | When |
-| --- | --- |
-| `BEHAVIOR_MAP: PASS` | Current behavior, baseline, file sizes, risks, chunk list, and at least local validation evidence are sufficiently mapped |
-| `BEHAVIOR_MAP: NO_CHANGE_CANDIDATE` | Evidence supports stopping because no useful behavior-preserving refactor is apparent |
-| `BEHAVIOR_MAP: NEEDS_CLARIFICATION` | The target, scope, or required context is too ambiguous to map safely |
-| `BEHAVIOR_MAP: ERROR` | Tool failure, unreadable target, or unavailable repository state prevents a useful map; mark transient when applicable |
+| Status                              | When                                                                                                                      |
+| ----------------------------------- | ------------------------------------------------------------------------------------------------------------------------- |
+| `BEHAVIOR_MAP: PASS`                | Current behavior, baseline, file sizes, risks, chunk list, and at least local validation evidence are sufficiently mapped |
+| `BEHAVIOR_MAP: NO_CHANGE_CANDIDATE` | Evidence supports stopping because no useful behavior-preserving refactor is apparent                                     |
+| `BEHAVIOR_MAP: NEEDS_CLARIFICATION` | The target, scope, or required context is too ambiguous to map safely                                                     |
+| `BEHAVIOR_MAP: ERROR`               | Tool failure, unreadable target, or unavailable repository state prevents a useful map; mark transient when applicable    |

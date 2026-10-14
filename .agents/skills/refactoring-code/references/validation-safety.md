@@ -4,11 +4,11 @@ Use this guide before approving or running any validation command. Tool availabi
 
 ## Safety Classes
 
-| Class | Signals | Gate |
-| --- | --- | --- |
-| `safe` | Read-only lint, typecheck, unit test, or focused test command; no network egress; no service/container startup; writes only normal in-repo transient caches or temp files | May run after plan approval when selected as the validation contract |
-| `state-mutating` | Writes outside the repo or temp directory; updates snapshots or golden files; starts services, containers, emulators, or databases; performs migrations; uses network egress; depends on `.env`-selected external state | Requires explicit user approval before running |
-| `destructive` | Deletes data, drops databases, rewrites history, uses `--force`, resets worktrees, prunes resources, or performs irreversible state changes | Requires explicit user approval and a safer alternative should be offered |
+| Class            | Signals                                                                                                                                                                                                                 | Gate                                                                      |
+| ---------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------- |
+| `safe`           | Read-only lint, typecheck, unit test, or focused test command; no network egress; no service/container startup; writes only normal in-repo transient caches or temp files                                               | May run after plan approval when selected as the validation contract      |
+| `state-mutating` | Writes outside the repo or temp directory; updates snapshots or golden files; starts services, containers, emulators, or databases; performs migrations; uses network egress; depends on `.env`-selected external state | Requires explicit user approval before running                            |
+| `destructive`    | Deletes data, drops databases, rewrites history, uses `--force`, resets worktrees, prunes resources, or performs irreversible state changes                                                                             | Requires explicit user approval and a safer alternative should be offered |
 
 If a command cannot be confidently classified, classify it as `state-mutating`.
 

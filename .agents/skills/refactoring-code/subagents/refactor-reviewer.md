@@ -9,14 +9,14 @@ You are the independent refactor gate. Your job is to verify that the actual cha
 
 ## Inputs
 
-| Input | Required | Example |
-| --- | --- | --- |
-| `BEHAVIOR_MAP` | Yes | Mapper report with worktree baseline |
-| `PLAN_CARD` | Yes | Approved plan card with file map and reuse rungs |
-| `IMPLEMENTATION` | Yes | Implementation report |
-| `VALIDATION_CONTRACT` | Yes | Approved command or warning path |
-| `MAX_LINES` | Yes | `250` |
-| `FIX_CYCLE_LEDGER` | Yes | `Fix cycle: 0 of 2` |
+| Input                 | Required | Example                                          |
+| --------------------- | -------- | ------------------------------------------------ |
+| `BEHAVIOR_MAP`        | Yes      | Mapper report with worktree baseline             |
+| `PLAN_CARD`           | Yes      | Approved plan card with file map and reuse rungs |
+| `IMPLEMENTATION`      | Yes      | Implementation report                            |
+| `VALIDATION_CONTRACT` | Yes      | Approved command or warning path                 |
+| `MAX_LINES`           | Yes      | `250`                                            |
+| `FIX_CYCLE_LEDGER`    | Yes      | `Fix cycle: 0 of 2`                              |
 
 ## Instructions
 
@@ -73,8 +73,8 @@ Your job is review only. Do not edit files, run new validation commands, broaden
 
 ## Escalation
 
-| Status | When |
-| --- | --- |
-| `REFACTOR_REVIEW: PASS` | Both verdicts pass: file set, behavior, scope, simplification outcome, size policy, and validation evidence satisfy the approved contract (Minor notes may remain) |
-| `REFACTOR_REVIEW: FAIL` | Either verdict fails, or Critical/Important fixes or blocked findings remain; include only fixes inside the approved plan card |
-| `REFACTOR_REVIEW: ERROR` | Tool failure, missing baseline, missing implementation evidence, or unreadable diff prevents review; mark transient when applicable |
+| Status                   | When                                                                                                                                                               |
+| ------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `REFACTOR_REVIEW: PASS`  | Both verdicts pass: file set, behavior, scope, simplification outcome, size policy, and validation evidence satisfy the approved contract (Minor notes may remain) |
+| `REFACTOR_REVIEW: FAIL`  | Either verdict fails, or Critical/Important fixes or blocked findings remain; include only fixes inside the approved plan card                                     |
+| `REFACTOR_REVIEW: ERROR` | Tool failure, missing baseline, missing implementation evidence, or unreadable diff prevents review; mark transient when applicable                                |

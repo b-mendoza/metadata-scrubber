@@ -30,24 +30,24 @@ Finals: `PASS`, `PASS_WITH_WARNINGS`, `NO_CHANGE`, `NEEDS_CLARIFICATION`, `BLOCK
 
 One shared enum across all subagents; each role returns the subset that applies, with its role prefix (`BEHAVIOR_MAP:`, `CHUNK_ANALYSIS:`, `IMPLEMENTATION:`, `REFACTOR_REVIEW:`):
 
-| Status | Meaning | Orchestrator route |
-| --- | --- | --- |
-| `PASS` | Phase completed with sufficient evidence | Next phase |
-| `PASS_WITH_WARNINGS` | Completed, but a warning (e.g. validation not run) must survive to the final | Next phase; cap final at `PASS_WITH_WARNINGS` |
-| `NO_CHANGE_CANDIDATE` | Mapper only: no useful refactor is evident | `NO_CHANGE` terminal with recommendation; user may override with a recorded objective |
-| `FAIL` | Reviewer only: required fixes remain | Fix loop (≤2 cycles) |
-| `NEEDS_CLARIFICATION` | A user decision or missing input blocks progress | Relay the one smallest question, or terminal |
-| `BLOCKED` | Continuing would cross scope, boundary, or approval | Failure handoff with worktree state |
-| `ERROR` | Tool or state failure | Retry once only if plausibly transient (timeout, cancelled tool, unavailable VCS metadata — and the report itself marks it transient); else failure handoff |
+| Status                | Meaning                                                                      | Orchestrator route                                                                                                                                          |
+| --------------------- | ---------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `PASS`                | Phase completed with sufficient evidence                                     | Next phase                                                                                                                                                  |
+| `PASS_WITH_WARNINGS`  | Completed, but a warning (e.g. validation not run) must survive to the final | Next phase; cap final at `PASS_WITH_WARNINGS`                                                                                                               |
+| `NO_CHANGE_CANDIDATE` | Mapper only: no useful refactor is evident                                   | `NO_CHANGE` terminal with recommendation; user may override with a recorded objective                                                                       |
+| `FAIL`                | Reviewer only: required fixes remain                                         | Fix loop (≤2 cycles)                                                                                                                                        |
+| `NEEDS_CLARIFICATION` | A user decision or missing input blocks progress                             | Relay the one smallest question, or terminal                                                                                                                |
+| `BLOCKED`             | Continuing would cross scope, boundary, or approval                          | Failure handoff with worktree state                                                                                                                         |
+| `ERROR`               | Tool or state failure                                                        | Retry once only if plausibly transient (timeout, cancelled tool, unavailable VCS metadata — and the report itself marks it transient); else failure handoff |
 
 ## Subagent Registry
 
-| Subagent | Path | Purpose |
-| --- | --- | --- |
-| `behavior-mapper` | `./subagents/behavior-mapper.md` | Read-only behavior, baseline, validation candidates, sizes, risks, chunk list |
-| `chunk-analyst` | `./subagents/chunk-analyst.md` | Read-only findings for one analysis dimension; one instance per chunk, run concurrently |
-| `refactor-implementer` | `./subagents/refactor-implementer.md` | Apply approved plan or ledgered fixes; record dispositions and validation evidence |
-| `refactor-reviewer` | `./subagents/refactor-reviewer.md` | Baseline-scoped dual verdict: behavior preservation and simplification outcome |
+| Subagent               | Path                                  | Purpose                                                                                 |
+| ---------------------- | ------------------------------------- | --------------------------------------------------------------------------------------- |
+| `behavior-mapper`      | `./subagents/behavior-mapper.md`      | Read-only behavior, baseline, validation candidates, sizes, risks, chunk list           |
+| `chunk-analyst`        | `./subagents/chunk-analyst.md`        | Read-only findings for one analysis dimension; one instance per chunk, run concurrently |
+| `refactor-implementer` | `./subagents/refactor-implementer.md` | Apply approved plan or ledgered fixes; record dispositions and validation evidence      |
+| `refactor-reviewer`    | `./subagents/refactor-reviewer.md`    | Baseline-scoped dual verdict: behavior preservation and simplification outcome          |
 
 Read a subagent only when dispatching it. Every dispatch names the role, its inputs, the expected report path under `.handoffs/refactoring-code/`, and the required compact-reply keys. Handoff files are working artifacts: never stage or commit them; delete them at terminal cleanup.
 
@@ -77,13 +77,13 @@ Validation is a contract: commands only from `TEST_COMMAND`, mapper candidates, 
 
 ## Progressive Loading Map
 
-| Need | Load |
-| --- | --- |
-| Canonical mutation boundary | `./references/protected-surfaces.md` |
+| Need                                                        | Load                                        |
+| ----------------------------------------------------------- | ------------------------------------------- |
+| Canonical mutation boundary                                 | `./references/protected-surfaces.md`        |
 | Reuse ladder, deletion test, clarity rules, outcome metrics | `./references/simplification-heuristics.md` |
-| Command safety and validation evidence | `./references/validation-safety.md` |
-| File-size waivers, exemptions, and split guidance | `./references/file-size-policy.md` |
-| Dispatch examples, plan card, and handoff samples | `./references/workflow-examples.md` |
+| Command safety and validation evidence                      | `./references/validation-safety.md`         |
+| File-size waivers, exemptions, and split guidance           | `./references/file-size-policy.md`          |
+| Dispatch examples, plan card, and handoff samples           | `./references/workflow-examples.md`         |
 
 ## Example
 

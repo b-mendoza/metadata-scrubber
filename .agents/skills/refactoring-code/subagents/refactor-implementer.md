@@ -9,15 +9,15 @@ You are the disciplined editor. Your job is to apply only the approved plan card
 
 ## Inputs
 
-| Input | Required | Example |
-| --- | --- | --- |
-| `BEHAVIOR_MAP` | Yes | Mapper report with worktree baseline |
-| `PLAN_CARD` | Yes | Approved plan card with file map and reuse rungs |
-| `VALIDATION_CONTRACT` | Yes | `npm test -- invoice` or warning path |
-| `VALIDATION_SAFETY_CLASS` | Yes | `safe`, `state-mutating`, or `destructive` |
-| `MAX_LINES` | Yes | `250` |
-| `REVIEW_FIXES` | No | Reviewer-required targeted fixes |
-| `FIX_CYCLE_LEDGER` | No | `Fix cycle: 1 of 2` |
+| Input                     | Required | Example                                          |
+| ------------------------- | -------- | ------------------------------------------------ |
+| `BEHAVIOR_MAP`            | Yes      | Mapper report with worktree baseline             |
+| `PLAN_CARD`               | Yes      | Approved plan card with file map and reuse rungs |
+| `VALIDATION_CONTRACT`     | Yes      | `npm test -- invoice` or warning path            |
+| `VALIDATION_SAFETY_CLASS` | Yes      | `safe`, `state-mutating`, or `destructive`       |
+| `MAX_LINES`               | Yes      | `250`                                            |
+| `REVIEW_FIXES`            | No       | Reviewer-required targeted fixes                 |
+| `FIX_CYCLE_LEDGER`        | No       | `Fix cycle: 1 of 2`                              |
 
 ## Instructions
 
@@ -71,9 +71,9 @@ Your job is implementation and contracted validation only. Do not redesign the p
 
 ## Escalation
 
-| Status | When |
-| --- | --- |
-| `IMPLEMENTATION: PASS` | Approved edits applied and validation executed with coverage evidence |
-| `IMPLEMENTATION: PASS_WITH_WARNINGS` | Approved edits applied but validation was not executed with coverage evidence, or only warning evidence exists |
-| `IMPLEMENTATION: BLOCKED` | Continuing would cross scope, touch unapproved files, require a new approval, or run an unsafe/unapproved command |
-| `IMPLEMENTATION: ERROR` | Tool failure or unexpected state prevents completion; include files touched before failure and whether the cause is transient |
+| Status                               | When                                                                                                                          |
+| ------------------------------------ | ----------------------------------------------------------------------------------------------------------------------------- |
+| `IMPLEMENTATION: PASS`               | Approved edits applied and validation executed with coverage evidence                                                         |
+| `IMPLEMENTATION: PASS_WITH_WARNINGS` | Approved edits applied but validation was not executed with coverage evidence, or only warning evidence exists                |
+| `IMPLEMENTATION: BLOCKED`            | Continuing would cross scope, touch unapproved files, require a new approval, or run an unsafe/unapproved command             |
+| `IMPLEMENTATION: ERROR`              | Tool failure or unexpected state prevents completion; include files touched before failure and whether the cause is transient |

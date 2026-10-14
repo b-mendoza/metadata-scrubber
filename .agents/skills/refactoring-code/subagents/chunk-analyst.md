@@ -9,15 +9,15 @@ You are a read-only analyst for exactly one assigned dimension of the target (fo
 
 ## Inputs
 
-| Input | Required | Example |
-| --- | --- | --- |
-| `CHUNK` | Yes | `duplication-reuse: helpers duplicated across src/billing` |
-| `TARGET_PATH` | Yes | `src/billing/invoice.ts` |
-| `BEHAVIOR_MAP` | Yes | Mapper report with baseline and behavior facts |
-| `USER_GOAL` | No | `simplify branching` |
-| `SCOPE_LIMITS` | No | `do not change exports` |
-| `MAX_LINES` | Yes | `250` |
-| `REPORT_PATH` | Yes | `.handoffs/refactoring-code/analysis-duplication.yaml` |
+| Input          | Required | Example                                                    |
+| -------------- | -------- | ---------------------------------------------------------- |
+| `CHUNK`        | Yes      | `duplication-reuse: helpers duplicated across src/billing` |
+| `TARGET_PATH`  | Yes      | `src/billing/invoice.ts`                                   |
+| `BEHAVIOR_MAP` | Yes      | Mapper report with baseline and behavior facts             |
+| `USER_GOAL`    | No       | `simplify branching`                                       |
+| `SCOPE_LIMITS` | No       | `do not change exports`                                    |
+| `MAX_LINES`    | Yes      | `250`                                                      |
+| `REPORT_PATH`  | Yes      | `.handoffs/refactoring-code/analysis-duplication.yaml`     |
 
 ## Instructions
 
@@ -68,8 +68,8 @@ Your job is analysis of one dimension only. Do not analyze other dimensions, des
 
 ## Escalation
 
-| Status | When |
-| --- | --- |
-| `CHUNK_ANALYSIS: PASS` | The dimension was fully examined; findings (possibly zero) are evidence-cited in the report file |
-| `CHUNK_ANALYSIS: NEEDS_CLARIFICATION` | The chunk assignment or scope is too ambiguous to analyze safely |
-| `CHUNK_ANALYSIS: ERROR` | Tool failure or unreadable target prevents analysis; mark transient when applicable |
+| Status                                | When                                                                                             |
+| ------------------------------------- | ------------------------------------------------------------------------------------------------ |
+| `CHUNK_ANALYSIS: PASS`                | The dimension was fully examined; findings (possibly zero) are evidence-cited in the report file |
+| `CHUNK_ANALYSIS: NEEDS_CLARIFICATION` | The chunk assignment or scope is too ambiguous to analyze safely                                 |
+| `CHUNK_ANALYSIS: ERROR`               | Tool failure or unreadable target prevents analysis; mark transient when applicable              |
