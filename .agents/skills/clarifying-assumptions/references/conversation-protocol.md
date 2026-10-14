@@ -69,12 +69,12 @@ Use Model B for critique items, user-impact items, assumptions, cross-cutting qu
 
 When the interface supports structured choices, use the smallest fitting set. Otherwise use numbered options.
 
-| Item type | Choices |
-| --- | --- |
-| Critique or user-impact item | `Keep current approach`; `Switch to <alternative>`; `I need more information`; `Acknowledge but proceed` |
-| Assumption | `Confirm`; `Revise`; `Skip` |
-| Open question or deferred question | Free-text answer; `Skip` when `Skippable=Yes` |
-| Validation item | `Resolved`; `Action needed` |
+| Item type                          | Choices                                                                                                  |
+| ---------------------------------- | -------------------------------------------------------------------------------------------------------- |
+| Critique or user-impact item       | `Keep current approach`; `Switch to <alternative>`; `I need more information`; `Acknowledge but proceed` |
+| Assumption                         | `Confirm`; `Revise`; `Skip`                                                                              |
+| Open question or deferred question | Free-text answer; `Skip` when `Skippable=Yes`                                                            |
+| Validation item                    | `Resolved`; `Action needed`                                                                              |
 
 Treat `I need more information` and `Action needed` as the canonical `blocked` outcome for the recorder.
 
@@ -82,14 +82,14 @@ Treat `I need more information` and `Action needed` as the canonical `blocked` o
 
 Maintain only the active manifest item, developer response, decision list, `RE_PLAN_NEEDED`, `BLOCKERS_PRESENT`, and critique artifact path in the conversation layer.
 
-| Response | Recording effect |
-| --- | --- |
-| `Switch to <alternative>` or `Revise` | `outcome=revised`; set `RE_PLAN_NEEDED=true` |
-| `blocked` | set `RE_PLAN_NEEDED=true`; set `BLOCKERS_PRESENT=true`; stop after recording the blocker |
-| `Acknowledge but proceed` | `outcome=override`; no re-plan |
-| `Skip` on a skippable item | record fallback and warning |
-| New current-scope question | append to the live manifest before asking |
-| New future-task question | add to `DEFERRED_QUESTIONS` |
+| Response                              | Recording effect                                                                         |
+| ------------------------------------- | ---------------------------------------------------------------------------------------- |
+| `Switch to <alternative>` or `Revise` | `outcome=revised`; set `RE_PLAN_NEEDED=true`                                             |
+| `blocked`                             | set `RE_PLAN_NEEDED=true`; set `BLOCKERS_PRESENT=true`; stop after recording the blocker |
+| `Acknowledge but proceed`             | `outcome=override`; no re-plan                                                           |
+| `Skip` on a skippable item            | record fallback and warning                                                              |
+| New current-scope question            | append to the live manifest before asking                                                |
+| New future-task question              | add to `DEFERRED_QUESTIONS`                                                              |
 
 Follow the manifest `Skippable` field. Tier 3 hard gates and items marked `Skippable=No` are not skipped.
 

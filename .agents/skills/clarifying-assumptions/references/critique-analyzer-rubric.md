@@ -38,23 +38,23 @@ In `MODE=critique`, look for these categories:
 
 Inspect enough of the real project to anchor the critique in the current codebase rather than generic advice.
 
-| Check | Look for |
-| --- | --- |
-| Dependency manifest | Package manager, runtime, framework, top relevant dependencies |
-| Config files | Build, lint, test, framework, deployment, or language settings |
+| Check                       | Look for                                                               |
+| --------------------------- | ---------------------------------------------------------------------- |
+| Dependency manifest         | Package manager, runtime, framework, top relevant dependencies         |
+| Config files                | Build, lint, test, framework, deployment, or language settings         |
 | Representative source files | Import patterns, routing, data access, state management, testing style |
-| Existing architecture | Conventions the plan should preserve or intentionally change |
+| Existing architecture       | Conventions the plan should preserve or intentionally change           |
 
 ## Evidence Policy
 
 Use current evidence only for decisions that materially affect framework, library, architecture, testing, security, performance, or maintainability.
 
-| Evidence need | Source |
-| --- | --- |
-| Exact API or framework behavior | Official project documentation or vendor guidance |
+| Evidence need                             | Source                                                                                |
+| ----------------------------------------- | ------------------------------------------------------------------------------------- |
+| Exact API or framework behavior           | Official project documentation or vendor guidance                                     |
 | Maintenance, adoption, or maturity signal | Official release notes, project repository, vendor status page, or Thoughtworks Radar |
-| Method rationale | `./external-sources.md` source map |
-| Alternative comparison | Current source that names concrete trade-offs relevant to this project |
+| Method rationale                          | `./external-sources.md` source map                                                    |
+| Alternative comparison                    | Current source that names concrete trade-offs relevant to this project                |
 
 Keep evidence short in the artifact. Cite enough for downstream review, but do not paste raw search output or whole pages.
 
@@ -62,11 +62,11 @@ When sources disagree, first try to resolve the conflict by checking source auth
 
 ## Severity Rubric
 
-| Severity | Meaning |
-| --- | --- |
-| `HIGH` | A core assumption is unvalidated, the default choice looks unjustified, a clearly better fit exists for this project, or credible current sources materially contradict each other after research |
-| `MEDIUM` | Real alternatives or trade-offs exist and were not considered deeply enough |
-| `LOW` | Worth recording for awareness in the critique artifact, but not worth interrupting the developer |
+| Severity | Meaning                                                                                                                                                                                           |
+| -------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `HIGH`   | A core assumption is unvalidated, the default choice looks unjustified, a clearly better fit exists for this project, or credible current sources materially contradict each other after research |
+| `MEDIUM` | Real alternatives or trade-offs exist and were not considered deeply enough                                                                                                                       |
+| `LOW`    | Worth recording for awareness in the critique artifact, but not worth interrupting the developer                                                                                                  |
 
 `HIGH` is the user-surfacing threshold. Treat `HIGH` and any future severity explicitly above `HIGH` as eligible for the clarification manifest. `MEDIUM` and `LOW` items remain in the critique artifact for auditability, but they are not user-facing questions.
 

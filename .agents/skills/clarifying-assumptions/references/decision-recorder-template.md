@@ -51,10 +51,10 @@ Create or update `## Decisions Log` with this exact table schema:
 ```markdown
 ## Decisions Log
 
-| Iteration | Scope | Item ID | Category | Outcome | Summary | Re-plan | Artifact |
-| --- | --- | --- | --- | --- | --- | --- | --- |
-| 1 | Plan-wide | PF1 | problem-framing | revised | End user narrowed to admins managing sync failures | Yes | - |
-| 1 | Task 3 | TASK-3-DECISIONS | critique | revised | See per-task decisions file | Yes | docs/JNS-6065-task-3-decisions.md |
+| Iteration | Scope     | Item ID          | Category        | Outcome | Summary                                            | Re-plan | Artifact                          |
+| --------- | --------- | ---------------- | --------------- | ------- | -------------------------------------------------- | ------- | --------------------------------- |
+| 1         | Plan-wide | PF1              | problem-framing | revised | End user narrowed to admins managing sync failures | Yes     | -                                 |
+| 1         | Task 3    | TASK-3-DECISIONS | critique        | revised | See per-task decisions file                        | Yes     | docs/JNS-6065-task-3-decisions.md |
 ```
 
 Rows are idempotent:

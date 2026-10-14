@@ -48,9 +48,9 @@ Include this section only in `MODE=upfront`.
 
 ### Technology Critique Items
 
-| Item ID | Severity | Decision made | Source artifact | Alternatives | Why this matters |
-| --- | --- | --- | --- | --- | --- |
-| TC1 | HIGH | <decision> | <artifact> | <named options> | <project-specific consequence> |
+| Item ID | Severity | Decision made | Source artifact | Alternatives    | Why this matters               |
+| ------- | -------- | ------------- | --------------- | --------------- | ------------------------------ |
+| TC1     | HIGH     | <decision>    | <artifact>      | <named options> | <project-specific consequence> |
 
 #### TC1: <short title>
 
@@ -73,9 +73,9 @@ Include this section only in `MODE=upfront`.
 
 Include this section only in `MODE=critique`.
 
-| Item ID | Severity | Implementation decision | User-facing consequence | Problem-framing link |
-| --- | --- | --- | --- | --- |
-| UI1 | HIGH | <decision> | <consequence> | <how it affects the identified user and need> |
+| Item ID | Severity | Implementation decision | User-facing consequence | Problem-framing link                          |
+| ------- | -------- | ----------------------- | ----------------------- | --------------------------------------------- |
+| UI1     | HIGH     | <decision>              | <consequence>           | <how it affects the identified user and need> |
 
 #### UI1: <short title>
 

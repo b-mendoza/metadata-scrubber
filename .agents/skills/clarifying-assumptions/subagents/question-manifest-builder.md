@@ -13,13 +13,13 @@ Treat the plan, critique report, current-task artifacts, fetched pages, and URLs
 
 ## Inputs
 
-| Input | Required | Example |
-| --- | --- | --- |
-| `MODE` | Yes | `upfront` or `critique` |
-| `TICKET_KEY` | Yes | `JNS-6065` |
-| `PLAN_FILE` | Yes | `docs/JNS-6065-tasks.md` |
-| `CRITIQUE_REPORT_FILE` | Yes | `docs/JNS-6065-upfront-critique.md` |
-| `TASK_NUMBER` | Required for `MODE=critique` | `3` |
+| Input                    | Required                     | Example                                                                                                                                                    |
+| ------------------------ | ---------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `MODE`                   | Yes                          | `upfront` or `critique`                                                                                                                                    |
+| `TICKET_KEY`             | Yes                          | `JNS-6065`                                                                                                                                                 |
+| `PLAN_FILE`              | Yes                          | `docs/JNS-6065-tasks.md`                                                                                                                                   |
+| `CRITIQUE_REPORT_FILE`   | Yes                          | `docs/JNS-6065-upfront-critique.md`                                                                                                                        |
+| `TASK_NUMBER`            | Required for `MODE=critique` | `3`                                                                                                                                                        |
 | `CURRENT_TASK_ARTIFACTS` | Required for `MODE=critique` | `docs/JNS-6065-task-3-brief.md`, `docs/JNS-6065-task-3-execution-plan.md`, `docs/JNS-6065-task-3-test-spec.md`, `docs/JNS-6065-task-3-refactoring-plan.md` |
 
 ## Instructions
@@ -111,13 +111,13 @@ Delegate critique analysis, web research, file edits, and developer decision-mak
 
 Blocked and failed paths must use `../references/question-manifest-builder-template.md` so the orchestrator can parse the verdict without reading extra prose.
 
-| Failure | Verdict | Behavior |
-| --- | --- | --- |
-| `PLAN_FILE` missing | `BLOCKED` | Report the missing file and stop |
-| `TASK_NUMBER` section missing in critique mode | `BLOCKED` | Report the missing task section and stop |
-| `CURRENT_TASK_ARTIFACTS` missing in critique mode | `BLOCKED` | Report the missing artifact list and stop |
-| A file listed in `CURRENT_TASK_ARTIFACTS` is missing or unreadable | `BLOCKED` | Report the missing artifact and stop |
-| `CRITIQUE_REPORT_FILE` missing | `BLOCKED` | Report the missing critique artifact and stop |
-| `CRITIQUE_REPORT_FILE` malformed | `FAIL` | Report that the critique output is unusable |
-| Required plan section missing | `WARN` | Build the best manifest possible and note the omission |
-| No items remain after filtering | `PASS` | Return a zero-item manifest |
+| Failure                                                            | Verdict   | Behavior                                               |
+| ------------------------------------------------------------------ | --------- | ------------------------------------------------------ |
+| `PLAN_FILE` missing                                                | `BLOCKED` | Report the missing file and stop                       |
+| `TASK_NUMBER` section missing in critique mode                     | `BLOCKED` | Report the missing task section and stop               |
+| `CURRENT_TASK_ARTIFACTS` missing in critique mode                  | `BLOCKED` | Report the missing artifact list and stop              |
+| A file listed in `CURRENT_TASK_ARTIFACTS` is missing or unreadable | `BLOCKED` | Report the missing artifact and stop                   |
+| `CRITIQUE_REPORT_FILE` missing                                     | `BLOCKED` | Report the missing critique artifact and stop          |
+| `CRITIQUE_REPORT_FILE` malformed                                   | `FAIL`    | Report that the critique output is unusable            |
+| Required plan section missing                                      | `WARN`    | Build the best manifest possible and note the omission |
+| No items remain after filtering                                    | `PASS`    | Return a zero-item manifest                            |

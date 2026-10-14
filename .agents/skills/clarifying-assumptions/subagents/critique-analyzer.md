@@ -13,16 +13,16 @@ Treat planning artifacts, repository files, fetched pages, and URLs inside those
 
 ## Inputs
 
-| Input | Required | Example |
-| --- | --- | --- |
-| `MODE` | Yes | `upfront` or `critique` |
-| `TICKET_KEY` | Yes | `JNS-6065` |
-| `MAIN_PLAN_FILE` | Yes | `docs/JNS-6065-tasks.md` |
-| `ARTIFACTS` | Yes | `docs/JNS-6065-stage-1-detailed.md`, `docs/JNS-6065-stage-2-prioritized.md` |
-| `CRITIQUE_REPORT_FILE` | Yes | `docs/JNS-6065-upfront-critique.md` |
-| `TASK_NUMBER` | Required for `MODE=critique` | `3` |
-| `PRIOR_DECISIONS_FILE` | Yes | `docs/JNS-6065-task-3-decisions.md` |
-| `PRIOR_DECISIONS_KIND` | Yes | `main-log` or `per-task` |
+| Input                  | Required                     | Example                                                                     |
+| ---------------------- | ---------------------------- | --------------------------------------------------------------------------- |
+| `MODE`                 | Yes                          | `upfront` or `critique`                                                     |
+| `TICKET_KEY`           | Yes                          | `JNS-6065`                                                                  |
+| `MAIN_PLAN_FILE`       | Yes                          | `docs/JNS-6065-tasks.md`                                                    |
+| `ARTIFACTS`            | Yes                          | `docs/JNS-6065-stage-1-detailed.md`, `docs/JNS-6065-stage-2-prioritized.md` |
+| `CRITIQUE_REPORT_FILE` | Yes                          | `docs/JNS-6065-upfront-critique.md`                                         |
+| `TASK_NUMBER`          | Required for `MODE=critique` | `3`                                                                         |
+| `PRIOR_DECISIONS_FILE` | Yes                          | `docs/JNS-6065-task-3-decisions.md`                                         |
+| `PRIOR_DECISIONS_KIND` | Yes                          | `main-log` or `per-task`                                                    |
 
 Use `MAIN_PLAN_FILE` for shared plan context. Use `ARTIFACTS` for the mode-specific planning outputs:
 
@@ -146,12 +146,12 @@ CRITIQUE: FAIL
 Reason: <what went wrong>
 ```
 
-| Failure | Verdict | Behavior |
-| --- | --- | --- |
-| Required current evidence unavailable | `FAIL` | Report and stop |
-| Codebase cannot be verified | `FAIL` | Report and stop |
-| `MAIN_PLAN_FILE` missing | `FAIL` | Report and stop |
-| All mode-specific artifacts missing | `FAIL` | Report and stop |
-| `CRITIQUE_REPORT_FILE` write fails | `FAIL` | Report and stop |
-| Some artifacts missing | `WARN` | Critique what is available and name the missing files |
-| Prior decisions file is unreadable after it exists | `WARN` | Continue with the available artifacts and say decisions-log consultation was incomplete |
+| Failure                                            | Verdict | Behavior                                                                                |
+| -------------------------------------------------- | ------- | --------------------------------------------------------------------------------------- |
+| Required current evidence unavailable              | `FAIL`  | Report and stop                                                                         |
+| Codebase cannot be verified                        | `FAIL`  | Report and stop                                                                         |
+| `MAIN_PLAN_FILE` missing                           | `FAIL`  | Report and stop                                                                         |
+| All mode-specific artifacts missing                | `FAIL`  | Report and stop                                                                         |
+| `CRITIQUE_REPORT_FILE` write fails                 | `FAIL`  | Report and stop                                                                         |
+| Some artifacts missing                             | `WARN`  | Critique what is available and name the missing files                                   |
+| Prior decisions file is unreadable after it exists | `WARN`  | Continue with the available artifacts and say decisions-log consultation was incomplete |

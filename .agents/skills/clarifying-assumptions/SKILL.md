@@ -26,25 +26,25 @@ This package is standalone. Bundled files are authoritative for execution; publi
 
 Load only the file needed for the current stage. Paths are relative to the file that contains them.
 
-| Need | Load |
-| --- | --- |
-| Shared clarification posture | `./references/design-thinking-mindset.md` |
-| Plan-wide execution | `./references/upfront-mode.md` |
-| Task-level execution | `./references/critique-mode.md` |
-| Stage 4 turns and final summary | `./references/conversation-protocol.md` |
-| Artifact paths, preconditions, or output contracts | `./references/clarification-contracts.md` |
-| Dispatch and failure examples | `./references/examples.md` |
-| Public rationale or current-source policy | `./references/external-sources.md`, then fetch the smallest relevant URL |
+| Need                                               | Load                                                                     |
+| -------------------------------------------------- | ------------------------------------------------------------------------ |
+| Shared clarification posture                       | `./references/design-thinking-mindset.md`                                |
+| Plan-wide execution                                | `./references/upfront-mode.md`                                           |
+| Task-level execution                               | `./references/critique-mode.md`                                          |
+| Stage 4 turns and final summary                    | `./references/conversation-protocol.md`                                  |
+| Artifact paths, preconditions, or output contracts | `./references/clarification-contracts.md`                                |
+| Dispatch and failure examples                      | `./references/examples.md`                                               |
+| Public rationale or current-source policy          | `./references/external-sources.md`, then fetch the smallest relevant URL |
 
 Read subagent definitions only when dispatching that specific subagent.
 
 ## Subagent Registry
 
-| Subagent | Path | Purpose |
-| --- | --- | --- |
-| `critique-analyzer` | `./subagents/critique-analyzer.md` | Reads planning artifacts, consults prior decisions, verifies the codebase, gathers current evidence, writes the critique artifact, and returns a concise verdict plus path |
-| `question-manifest-builder` | `./subagents/question-manifest-builder.md` | Reads the task plan plus critique report and returns the ordered manifest of what to ask now, defer, or mark irrelevant |
-| `decision-recorder` | `./subagents/decision-recorder.md` | Writes clarification decisions into workflow artifacts, creates per-task decisions files when needed, validates writes, and returns a concise summary |
+| Subagent                    | Path                                       | Purpose                                                                                                                                                                    |
+| --------------------------- | ------------------------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `critique-analyzer`         | `./subagents/critique-analyzer.md`         | Reads planning artifacts, consults prior decisions, verifies the codebase, gathers current evidence, writes the critique artifact, and returns a concise verdict plus path |
+| `question-manifest-builder` | `./subagents/question-manifest-builder.md` | Reads the task plan plus critique report and returns the ordered manifest of what to ask now, defer, or mark irrelevant                                                    |
+| `decision-recorder`         | `./subagents/decision-recorder.md`         | Writes clarification decisions into workflow artifacts, creates per-task decisions files when needed, validates writes, and returns a concise summary                      |
 
 ## Workflow
 
@@ -54,13 +54,13 @@ At run entry, set `RE_PLAN_NEEDED=false` and `BLOCKERS_PRESENT=false`. Both flag
 
 Before Stage 1, validate that `MODE` is `upfront` or `critique` and that `TASK_NUMBER` is present for `MODE=critique`. On invalid inputs, skip subagent dispatch and emit the blocked summary in the canonical order with `Critique artifact: -`, `Files updated: -`, `Blocking verdict: INPUT: BLOCKED`, and `Reason:`.
 
-| Stage | Action | Routing |
-| --- | --- | --- |
-| 1 | Load guidance | Read `./references/design-thinking-mindset.md` and the active mode playbook |
-| 2 | Analyze artifacts | Dispatch `critique-analyzer` using the active playbook's inputs and the derived path contract |
-| 3 | Build manifest | Dispatch `question-manifest-builder` with the critique artifact path, plan context, and active mode artifacts |
-| 4 | Clarify inline | Read `./references/conversation-protocol.md`, then ask one manifest item at a time |
-| 5 | Record decisions | Dispatch `decision-recorder` once; present the stable final summary |
+| Stage | Action            | Routing                                                                                                       |
+| ----- | ----------------- | ------------------------------------------------------------------------------------------------------------- |
+| 1     | Load guidance     | Read `./references/design-thinking-mindset.md` and the active mode playbook                                   |
+| 2     | Analyze artifacts | Dispatch `critique-analyzer` using the active playbook's inputs and the derived path contract                 |
+| 3     | Build manifest    | Dispatch `question-manifest-builder` with the critique artifact path, plan context, and active mode artifacts |
+| 4     | Clarify inline    | Read `./references/conversation-protocol.md`, then ask one manifest item at a time                            |
+| 5     | Record decisions  | Dispatch `decision-recorder` once; present the stable final summary                                           |
 
 Load `./references/clarification-contracts.md` only when a path, precondition, or output-contract question must be checked. A zero-item manifest is valid; skip the question loop and still run Stage 5.
 
@@ -93,17 +93,17 @@ Keep these rules in force across both modes. Load the conversation protocol only
 
 Expect parseable verdicts from subagents and route them like this:
 
-| Source | Verdicts to expect | Orchestrator action |
-| --- | --- | --- |
-| `critique-analyzer` | `CRITIQUE: PASS` | Continue to manifest building with the returned artifact path |
-| `critique-analyzer` | `CRITIQUE: FAIL` | Capture the required `Reason:` line and emit the stable summary with blocking details |
-| `critique-analyzer` | `CRITIQUE: WARN` | Continue only if the missing context does not invalidate the critique |
-| `question-manifest-builder` | `MANIFEST: PASS` | Continue to the Stage 4 preview and question loop |
-| `question-manifest-builder` | `MANIFEST: BLOCKED` or `MANIFEST: FAIL` | Capture the manifest issue and emit the stable summary with blocking details |
-| `question-manifest-builder` | `MANIFEST: WARN` | Continue, but mention what was omitted or guessed |
-| `decision-recorder` | `RECORDING: PASS` | Present the stable final summary |
-| `decision-recorder` | `RECORDING: BLOCKED` or `RECORDING: ERROR` | Capture the recorder reason and emit the stable summary with blocking details |
-| `decision-recorder` | `RECORDING: WARN` | Present warnings in the final summary and continue |
+| Source                      | Verdicts to expect                         | Orchestrator action                                                                   |
+| --------------------------- | ------------------------------------------ | ------------------------------------------------------------------------------------- |
+| `critique-analyzer`         | `CRITIQUE: PASS`                           | Continue to manifest building with the returned artifact path                         |
+| `critique-analyzer`         | `CRITIQUE: FAIL`                           | Capture the required `Reason:` line and emit the stable summary with blocking details |
+| `critique-analyzer`         | `CRITIQUE: WARN`                           | Continue only if the missing context does not invalidate the critique                 |
+| `question-manifest-builder` | `MANIFEST: PASS`                           | Continue to the Stage 4 preview and question loop                                     |
+| `question-manifest-builder` | `MANIFEST: BLOCKED` or `MANIFEST: FAIL`    | Capture the manifest issue and emit the stable summary with blocking details          |
+| `question-manifest-builder` | `MANIFEST: WARN`                           | Continue, but mention what was omitted or guessed                                     |
+| `decision-recorder`         | `RECORDING: PASS`                          | Present the stable final summary                                                      |
+| `decision-recorder`         | `RECORDING: BLOCKED` or `RECORDING: ERROR` | Capture the recorder reason and emit the stable summary with blocking details         |
+| `decision-recorder`         | `RECORDING: WARN`                          | Present warnings in the final summary and continue                                    |
 
 Rerun only the failed stage after a targeted fix. Stop after three failed fix cycles for the same issue and ask the user how to proceed.
 
@@ -124,15 +124,15 @@ For `MODE=upfront`, include `Accepted decisions summary:` after the four require
 
 Both flags start `false` at run entry. Apply every transition that fires during the run; a flag already set to `true` stays `true`.
 
-| Event | `RE_PLAN_NEEDED` | `BLOCKERS_PRESENT` |
-| --- | --- | --- |
-| Run entry | `false` | `false` |
-| Invalid top-level inputs | unchanged | `true` |
-| Subagent `BLOCKED`, `FAIL`, or `ERROR` before Stage 4 | unchanged | `true` |
-| Developer response `revised` | `true` | unchanged |
-| Developer response `blocked` | `true` | `true` |
-| `decision-recorder` failure after Stage 4 | unchanged | `true` |
-| Normal completion | unchanged | unchanged |
+| Event                                                 | `RE_PLAN_NEEDED` | `BLOCKERS_PRESENT` |
+| ----------------------------------------------------- | ---------------- | ------------------ |
+| Run entry                                             | `false`          | `false`            |
+| Invalid top-level inputs                              | unchanged        | `true`             |
+| Subagent `BLOCKED`, `FAIL`, or `ERROR` before Stage 4 | unchanged        | `true`             |
+| Developer response `revised`                          | `true`           | unchanged          |
+| Developer response `blocked`                          | `true`           | `true`             |
+| `decision-recorder` failure after Stage 4             | unchanged        | `true`             |
+| Normal completion                                     | unchanged        | unchanged          |
 
 A blocked run that never reached the developer therefore reports `RE_PLAN_NEEDED: false` with `BLOCKERS_PRESENT: true`. That pair is correct: nothing in the plan has been revised.
 

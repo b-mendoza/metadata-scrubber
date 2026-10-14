@@ -10,15 +10,15 @@ Use `SKILL.md`'s escalation table for verdict routing. Load `./clarification-con
 
 Read `../subagents/critique-analyzer.md`, then dispatch `critique-analyzer` with:
 
-| Input | Value |
-| --- | --- |
-| `MODE` | `upfront` |
-| `TICKET_KEY` | `<TICKET_KEY>` |
-| `MAIN_PLAN_FILE` | `docs/<TICKET_KEY>-tasks.md` |
-| `ARTIFACTS` | `docs/<TICKET_KEY>-stage-1-detailed.md`, `docs/<TICKET_KEY>-stage-2-prioritized.md` |
-| `CRITIQUE_REPORT_FILE` | `docs/<TICKET_KEY>-upfront-critique.md` |
-| `PRIOR_DECISIONS_FILE` | `docs/<TICKET_KEY>-tasks.md` |
-| `PRIOR_DECISIONS_KIND` | `main-log` |
+| Input                  | Value                                                                               |
+| ---------------------- | ----------------------------------------------------------------------------------- |
+| `MODE`                 | `upfront`                                                                           |
+| `TICKET_KEY`           | `<TICKET_KEY>`                                                                      |
+| `MAIN_PLAN_FILE`       | `docs/<TICKET_KEY>-tasks.md`                                                        |
+| `ARTIFACTS`            | `docs/<TICKET_KEY>-stage-1-detailed.md`, `docs/<TICKET_KEY>-stage-2-prioritized.md` |
+| `CRITIQUE_REPORT_FILE` | `docs/<TICKET_KEY>-upfront-critique.md`                                             |
+| `PRIOR_DECISIONS_FILE` | `docs/<TICKET_KEY>-tasks.md`                                                        |
+| `PRIOR_DECISIONS_KIND` | `main-log`                                                                          |
 
 The analyzer consults the main `## Decisions Log` on every run, including `ITERATION=1`. It judges by substance, so changed wording or reassigned item IDs do not justify re-asking an already answered concern.
 
@@ -50,13 +50,13 @@ Upfront-specific rules:
 
 Read `../subagents/decision-recorder.md`, then dispatch `decision-recorder` with:
 
-| Input | Value |
-| --- | --- |
-| `TICKET_KEY` | `<TICKET_KEY>` |
-| `MODE` | `upfront` |
-| `ITERATION` | `<ITERATION or 1>` |
-| `DECISIONS` | resolved decisions from Stage 4 |
-| `DEFERRED_QUESTIONS` | all deferred questions from the manifest and discussion |
-| `IMPLEMENTATION_UPDATES` | implementation-note edits caused by revised decisions |
+| Input                    | Value                                                   |
+| ------------------------ | ------------------------------------------------------- |
+| `TICKET_KEY`             | `<TICKET_KEY>`                                          |
+| `MODE`                   | `upfront`                                               |
+| `ITERATION`              | `<ITERATION or 1>`                                      |
+| `DECISIONS`              | resolved decisions from Stage 4                         |
+| `DEFERRED_QUESTIONS`     | all deferred questions from the manifest and discussion |
+| `IMPLEMENTATION_UPDATES` | implementation-note edits caused by revised decisions   |
 
 `decision-recorder` owns file writes and validation. After it returns, use `./conversation-protocol.md` to present the final summary, including the `Accepted decisions summary:` retained by the parent orchestrator.
