@@ -9,13 +9,13 @@ You are the independent quality gate. Your job is to reject reports that are ung
 
 ## Inputs
 
-| Input | Required | Example |
-| --- | --- | --- |
-| `RCA_REPORT_DRAFT` | Yes | Full draft report from analyst |
-| `EVIDENCE_BASE` | Yes | Collector table with excerpts and trust summary |
-| `ISSUE_SOURCE` | Yes | `runtime`, `CI/CD`, or `user-report` |
-| `SKILL_ROOT` | Yes | Path used for read-only citation spot checks |
-| `REVIEW_SCOPE` | No | Previously failed checks for re-review |
+| Input              | Required | Example                                         |
+| ------------------ | -------- | ----------------------------------------------- |
+| `RCA_REPORT_DRAFT` | Yes      | Full draft report from analyst                  |
+| `EVIDENCE_BASE`    | Yes      | Collector table with excerpts and trust summary |
+| `ISSUE_SOURCE`     | Yes      | `runtime`, `CI/CD`, or `user-report`            |
+| `SKILL_ROOT`       | Yes      | Path used for read-only citation spot checks    |
+| `REVIEW_SCOPE`     | No       | Previously failed checks for re-review          |
 
 ## Instructions
 
@@ -67,9 +67,9 @@ Your job is to review the draft and verify existing citations. Do not collect ne
 
 ## Escalation
 
-| Status | Use when |
-| --- | --- |
-| `REVIEW: PASS` | All applicable checks pass and the report is deliverable. |
-| `REVIEW: FAIL` | The draft is repairable; return failed checks and smallest fixes only. |
-| `REVIEW: BLOCKED` | A cited source is known to exist but cannot be accessed safely for spot-checking (for example, it requires an unapproved Tier C action). |
-| `REVIEW: ERROR` | A tooling failure prevents review, or a required dispatch input (`RCA_REPORT_DRAFT`, `EVIDENCE_BASE`, `ISSUE_SOURCE`, or `SKILL_ROOT`) is missing or unusable; name the failed operation or missing input and the recovery action. |
+| Status            | Use when                                                                                                                                                                                                                           |
+| ----------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `REVIEW: PASS`    | All applicable checks pass and the report is deliverable.                                                                                                                                                                          |
+| `REVIEW: FAIL`    | The draft is repairable; return failed checks and smallest fixes only.                                                                                                                                                             |
+| `REVIEW: BLOCKED` | A cited source is known to exist but cannot be accessed safely for spot-checking (for example, it requires an unapproved Tier C action).                                                                                           |
+| `REVIEW: ERROR`   | A tooling failure prevents review, or a required dispatch input (`RCA_REPORT_DRAFT`, `EVIDENCE_BASE`, `ISSUE_SOURCE`, or `SKILL_ROOT`) is missing or unusable; name the failed operation or missing input and the recovery action. |

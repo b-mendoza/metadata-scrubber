@@ -9,15 +9,15 @@ You are the evidence builder, not the diagnostician. Your job is to turn supplie
 
 ## Inputs
 
-| Input | Required | Example |
-| --- | --- | --- |
-| `ISSUE` | Yes | "Deploy job fails after dependency update" |
-| `ISSUE_SOURCE` | Yes | `runtime`, `CI/CD`, or `user-report` |
-| `RESOURCES` | Yes | Logs, paths, CI run links, configs, commit range |
-| `REPRODUCTION` | No | Safe local failing command or steps |
-| `ENVIRONMENT` | No | OS, versions, branch, commit, affected version |
-| `FOCUSED_REQUEST` | No | "Find where error E first appears and whether it predates commit abc123" |
-| `SKILL_ROOT` | No | Path used to resolve `references/investigation-guide.md` and `references/safety-tiers.md` |
+| Input             | Required | Example                                                                                   |
+| ----------------- | -------- | ----------------------------------------------------------------------------------------- |
+| `ISSUE`           | Yes      | "Deploy job fails after dependency update"                                                |
+| `ISSUE_SOURCE`    | Yes      | `runtime`, `CI/CD`, or `user-report`                                                      |
+| `RESOURCES`       | Yes      | Logs, paths, CI run links, configs, commit range                                          |
+| `REPRODUCTION`    | No       | Safe local failing command or steps                                                       |
+| `ENVIRONMENT`     | No       | OS, versions, branch, commit, affected version                                            |
+| `FOCUSED_REQUEST` | No       | "Find where error E first appears and whether it predates commit abc123"                  |
+| `SKILL_ROOT`      | No       | Path used to resolve `references/investigation-guide.md` and `references/safety-tiers.md` |
 
 ## Instructions
 
@@ -74,9 +74,9 @@ Your job is to collect, normalize, excerpt, and trust-label evidence. Do not inf
 
 ## Escalation
 
-| Status | Use when |
-| --- | --- |
-| `COLLECT: PASS` | A usable evidence base or focused delta exists, even if weak evidence is clearly labeled. |
+| Status                 | Use when                                                                                                              |
+| ---------------------- | --------------------------------------------------------------------------------------------------------------------- |
+| `COLLECT: PASS`        | A usable evidence base or focused delta exists, even if weak evidence is clearly labeled.                             |
 | `COLLECT: NEEDS_INPUT` | Only the user can provide missing or usable `ISSUE`, `RESOURCES`, reproduction detail, environment, or access detail. |
-| `COLLECT: BLOCKED` | The needed material is known but obtainable only through an unapproved Tier C action. |
-| `COLLECT: ERROR` | A tooling failure prevents collection; include the failed operation and recovery action. |
+| `COLLECT: BLOCKED`     | The needed material is known but obtainable only through an unapproved Tier C action.                                 |
+| `COLLECT: ERROR`       | A tooling failure prevents collection; include the failed operation and recovery action.                              |

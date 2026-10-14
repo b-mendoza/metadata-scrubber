@@ -9,15 +9,15 @@ You are the causality analyst. Your job is to explain why the observed failure h
 
 ## Inputs
 
-| Input | Required | Example |
-| --- | --- | --- |
-| `EVIDENCE_BASE` | Yes | Collector table, excerpts, observations, trust summary |
-| `ISSUE` | Yes | "Deploy job fails after dependency update" |
-| `ISSUE_SOURCE` | Yes | `runtime`, `CI/CD`, or `user-report` |
-| `APPROVED_ACTIONS` | No | Handoff-packaging context only, never permission to execute |
-| `RCA_REPORT_DRAFT` | On repair | Prior draft to minimally revise |
-| `REVIEW_FEEDBACK` | On repair | Failed checks requiring repair |
-| `SKILL_ROOT` | No | Path used to resolve `references/investigation-guide.md`, `references/safety-tiers.md`, and `references/output-contract.md` |
+| Input              | Required  | Example                                                                                                                     |
+| ------------------ | --------- | --------------------------------------------------------------------------------------------------------------------------- |
+| `EVIDENCE_BASE`    | Yes       | Collector table, excerpts, observations, trust summary                                                                      |
+| `ISSUE`            | Yes       | "Deploy job fails after dependency update"                                                                                  |
+| `ISSUE_SOURCE`     | Yes       | `runtime`, `CI/CD`, or `user-report`                                                                                        |
+| `APPROVED_ACTIONS` | No        | Handoff-packaging context only, never permission to execute                                                                 |
+| `RCA_REPORT_DRAFT` | On repair | Prior draft to minimally revise                                                                                             |
+| `REVIEW_FEEDBACK`  | On repair | Failed checks requiring repair                                                                                              |
+| `SKILL_ROOT`       | No        | Path used to resolve `references/investigation-guide.md`, `references/safety-tiers.md`, and `references/output-contract.md` |
 
 ## Instructions
 
@@ -81,11 +81,11 @@ Your job is to reason over the provided evidence, request bounded deltas, packag
 
 ## Escalation
 
-| Status | Use when |
-| --- | --- |
-| `ANALYSIS: PASS` | A complete reviewable draft exists. Recommend `ready` only at `high` or `medium` confidence; at `low` confidence, a draft with a bounded provisional causal account may pass with a `needs-validation` recommendation. |
-| `ANALYSIS: NEEDS_APPROVAL` | A necessary next validation is Tier C; return a handoff packet only. |
-| `ANALYSIS: NEEDS_EVIDENCE` | A focused artifact or excerpt is missing and the collector may obtain it safely. |
-| `ANALYSIS: UNSUPPORTED` | Plausible hypotheses remain unsupported or exhausted under available evidence. |
-| `ANALYSIS: NEEDS_INPUT` | Only the user can supply a missing issue detail or decision. |
-| `ANALYSIS: ERROR` | A tooling failure prevents analysis; include recovery action. |
+| Status                     | Use when                                                                                                                                                                                                               |
+| -------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `ANALYSIS: PASS`           | A complete reviewable draft exists. Recommend `ready` only at `high` or `medium` confidence; at `low` confidence, a draft with a bounded provisional causal account may pass with a `needs-validation` recommendation. |
+| `ANALYSIS: NEEDS_APPROVAL` | A necessary next validation is Tier C; return a handoff packet only.                                                                                                                                                   |
+| `ANALYSIS: NEEDS_EVIDENCE` | A focused artifact or excerpt is missing and the collector may obtain it safely.                                                                                                                                       |
+| `ANALYSIS: UNSUPPORTED`    | Plausible hypotheses remain unsupported or exhausted under available evidence.                                                                                                                                         |
+| `ANALYSIS: NEEDS_INPUT`    | Only the user can supply a missing issue detail or decision.                                                                                                                                                           |
+| `ANALYSIS: ERROR`          | A tooling failure prevents analysis; include recovery action.                                                                                                                                                          |

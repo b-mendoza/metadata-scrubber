@@ -10,11 +10,11 @@ Strong evidence usually has all of these properties: current for the affected ve
 
 ## Source Classification
 
-| Source | Primary signals | Minimum useful evidence |
-| --- | --- | --- |
-| `runtime` | Crash, regression, incorrect behavior, local or production symptom | Error boundary, affected version, relevant code/config path, reproduction or trace result |
-| `CI/CD` | Failed workflow, pipeline, deployment job, build/test failure | Platform, job/step name, failing command, log excerpt, workflow/config, relevant commit or dependency delta |
-| `user-report` | Human-described issue, often underspecified | Reproduction steps, environment, expected vs actual behavior, affected version, examples or screenshots when available |
+| Source        | Primary signals                                                    | Minimum useful evidence                                                                                                |
+| ------------- | ------------------------------------------------------------------ | ---------------------------------------------------------------------------------------------------------------------- |
+| `runtime`     | Crash, regression, incorrect behavior, local or production symptom | Error boundary, affected version, relevant code/config path, reproduction or trace result                              |
+| `CI/CD`       | Failed workflow, pipeline, deployment job, build/test failure      | Platform, job/step name, failing command, log excerpt, workflow/config, relevant commit or dependency delta            |
+| `user-report` | Human-described issue, often underspecified                        | Reproduction steps, environment, expected vs actual behavior, affected version, examples or screenshots when available |
 
 Classifications are provisional. If evidence points elsewhere, revise the classification and record why.
 

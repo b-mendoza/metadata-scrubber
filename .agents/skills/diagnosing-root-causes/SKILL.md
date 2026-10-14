@@ -11,45 +11,45 @@ Execution is a finite state machine. Canonical tables: [`state-machine.md`](./st
 
 ## Inputs
 
-| Input | Required | Example |
-| --- | --- | --- |
-| `ISSUE` | Yes | "Deploy job fails after dependency update" |
-| `RESOURCES` | Yes | `logs/build-42.txt`, repo paths, CI URL, commit range |
-| `ISSUE_SOURCE` | No | `runtime`, `CI/CD`, or `user-report` |
-| `REPRODUCTION` | No | `npm test -- auth.spec.ts` fails locally |
-| `ENVIRONMENT` | No | macOS, Node 22, branch, commit, affected version |
-| `APPROVED_ACTIONS` | No | Handoff-packaging context only (default `none`). Never permission to execute Tier C. |
+| Input              | Required | Example                                                                              |
+| ------------------ | -------- | ------------------------------------------------------------------------------------ |
+| `ISSUE`            | Yes      | "Deploy job fails after dependency update"                                           |
+| `RESOURCES`        | Yes      | `logs/build-42.txt`, repo paths, CI URL, commit range                                |
+| `ISSUE_SOURCE`     | No       | `runtime`, `CI/CD`, or `user-report`                                                 |
+| `REPRODUCTION`     | No       | `npm test -- auth.spec.ts` fails locally                                             |
+| `ENVIRONMENT`      | No       | macOS, Node 22, branch, commit, affected version                                     |
+| `APPROVED_ACTIONS` | No       | Handoff-packaging context only (default `none`). Never permission to execute Tier C. |
 
 ## Pipeline Overview
 
-| Phase | Mode | Result |
-| --- | --- | --- |
-| 1. Intake | Inline | Classify source; state safety and trust rules; clarify if required (`Clarify` wait) |
-| 2. Evidence | Dispatch `evidence-collector` | Cited evidence base; then `CoherenceCheck` |
-| 3. Analysis | Dispatch `root-cause-analyst` | Draft RCA, or bounded evidence/input request, or **conditional** `PresentApproval` on `NEEDS_APPROVAL` only |
-| 4. Review | Dispatch `rca-report-reviewer` | Verify grounding, safety, confidence, clarity, and status |
-| 5. Deliver | Inline | One report terminal or one early-stop terminal |
+| Phase       | Mode                           | Result                                                                                                      |
+| ----------- | ------------------------------ | ----------------------------------------------------------------------------------------------------------- |
+| 1. Intake   | Inline                         | Classify source; state safety and trust rules; clarify if required (`Clarify` wait)                         |
+| 2. Evidence | Dispatch `evidence-collector`  | Cited evidence base; then `CoherenceCheck`                                                                  |
+| 3. Analysis | Dispatch `root-cause-analyst`  | Draft RCA, or bounded evidence/input request, or **conditional** `PresentApproval` on `NEEDS_APPROVAL` only |
+| 4. Review   | Dispatch `rca-report-reviewer` | Verify grounding, safety, confidence, clarity, and status                                                   |
+| 5. Deliver  | Inline                         | One report terminal or one early-stop terminal                                                              |
 
 Approval is not an always-entered phase. It is reachable only from `Analyze` via `ANALYSIS: NEEDS_APPROVAL`.
 
 ## Subagent Registry
 
-| Subagent | Path | Purpose |
-| --- | --- | --- |
-| `evidence-collector` | `./subagents/evidence-collector.md` | Builds the auditable evidence base without concluding root cause |
-| `root-cause-analyst` | `./subagents/root-cause-analyst.md` | Turns evidence into supported cause(s), causal chain, and report draft |
+| Subagent              | Path                                 | Purpose                                                                    |
+| --------------------- | ------------------------------------ | -------------------------------------------------------------------------- |
+| `evidence-collector`  | `./subagents/evidence-collector.md`  | Builds the auditable evidence base without concluding root cause           |
+| `root-cause-analyst`  | `./subagents/root-cause-analyst.md`  | Turns evidence into supported cause(s), causal chain, and report draft     |
 | `rca-report-reviewer` | `./subagents/rca-report-reviewer.md` | Independently rejects ungrounded, unsafe, unclear, or mis-statused reports |
 
 ## Progressive Loading Map
 
-| Need | Load |
-| --- | --- |
+| Need                                                             | Load                                  |
+| ---------------------------------------------------------------- | ------------------------------------- |
 | Evidence selection, source classification, intermittent failures | `./references/investigation-guide.md` |
-| Action boundaries and approval-packet rules | `./references/safety-tiers.md` |
-| Terminal statuses, confidence rubric, report template | `./references/output-contract.md` |
-| Review criteria and spot-check rules | `./references/review-checklist.md` |
-| Optional official docs and external-source policy | `./references/external-sources.md` |
-| State-transition table (guards, caps, terminals) | `./state-machine.md` |
+| Action boundaries and approval-packet rules                      | `./references/safety-tiers.md`        |
+| Terminal statuses, confidence rubric, report template            | `./references/output-contract.md`     |
+| Review criteria and spot-check rules                             | `./references/review-checklist.md`    |
+| Optional official docs and external-source policy                | `./references/external-sources.md`    |
+| State-transition table (guards, caps, terminals)                 | `./state-machine.md`                  |
 
 ## How This Skill Works
 

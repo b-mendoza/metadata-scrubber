@@ -47,7 +47,7 @@
       "source": "b-mendoza/agent-skills",
       "sourceType": "github",
       "skillPath": "skills/diagnosing-root-causes/SKILL.md",
-      "computedHash": "9c62253ec7dc3648212bf8551dde73fa5ecd143101b69549ad79fb322930b753"
+      "computedHash": "feb29f6f8596762d3dc25252ceef6c67c3668ebf9f17100becdc84044b26e40c"
     },
     "domain-modeling": {
       "source": "mattpocock/skills",
