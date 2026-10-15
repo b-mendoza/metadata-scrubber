@@ -29,7 +29,7 @@
       "source": "wshobson/agents",
       "sourceType": "github",
       "skillPath": "plugins/developer-essentials/skills/code-review-excellence/SKILL.md",
-      "computedHash": "b0aa0c0b09b2681f4df57325a5c9d7677eaa30f209d58392ead06d0149b18fc6"
+      "computedHash": "35f32edb3935e4fd90c13e75954de46d281fd3b5c1a4733c9abbd9eb94f73206"
     },
     "committing-scoped-changes": {
       "source": "b-mendoza/agent-skills",
