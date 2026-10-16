@@ -40,7 +40,7 @@
     "@uppy/aws-s3": "6.2.2",
     "@uppy/core": "6.2.0",
     "@uppy/dashboard": "6.0.1",
-    "devalue": "6.0.2",
+    "devalue": "6.0.3",
     "ky": "2.2.0",
     "neverthrow": "8.2.0",
     "posthog-js": "1.438.7",
