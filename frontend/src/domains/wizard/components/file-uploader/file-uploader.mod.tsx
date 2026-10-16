@@ -1,6 +1,7 @@
 import AwsS3 from "@uppy/aws-s3";
 import Uppy from "@uppy/core";
 import Dashboard from "@uppy/dashboard";
+import { ResultAsync } from "neverthrow";
 import { useEffect, useEffectEvent, useRef } from "react";
 import * as z from "zod";
 
@@ -44,6 +45,18 @@ const useUppyDashboard = (props: FileUploaderProps) => {
     // Remount to change the captured `createUpload` and `maxFileSizeBytes` values.
     const { createUpload, maxFileSizeBytes } = getInitialProps();
     const instance = new Uppy({
+      // Uppy logs can contain file names, signed URLs, and provider errors.
+      logger: {
+        debug: () => {
+          // Discard private upload data.
+        },
+        warn: () => {
+          // Discard private upload data.
+        },
+        error: () => {
+          // Discard private upload data.
+        },
+      },
       restrictions: {
         allowedFileTypes: [UPLOADABLE_MIME_TYPES.PDF],
         maxFileSize: maxFileSizeBytes,
@@ -65,10 +78,14 @@ const useUppyDashboard = (props: FileUploaderProps) => {
           throw new Error("The upload file size is not available");
         }
 
-        const { storageKey, uploadUrl } = await createUpload({
-          fileName: file.name,
-          fileSizeBytes: file.size,
-        });
+        const grant = await ResultAsync.fromPromise(
+          createUpload({ fileName: file.name, fileSizeBytes: file.size }),
+          () => new Error("Could not create the upload. Try again."),
+        );
+        if (grant.isErr()) {
+          throw grant.error;
+        }
+        const { storageKey, uploadUrl } = grant.value;
 
         instance.setFileMeta(file.id, { storageKey });
 
@@ -110,5 +127,6 @@ const useUppyDashboard = (props: FileUploaderProps) => {
 export const FileUploader = (props: FileUploaderProps) => {
   const containerRef = useUppyDashboard(props);
 
-  return <div ref={containerRef} />;
+  // eslint-disable-next-line better-tailwindcss/no-unknown-classes -- PostHog requires this class to exclude private uploader DOM.
+  return <div className="ph-no-capture" ref={containerRef} />;
 };
