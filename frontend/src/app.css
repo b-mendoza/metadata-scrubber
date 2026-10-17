@@ -1,4 +1,6 @@
 @import "tailwindcss";
+@import "@uppy/core/css/style.css";
+@import "@uppy/dashboard/css/style.css";
 
 @plugin "daisyui" {
   themes: light;

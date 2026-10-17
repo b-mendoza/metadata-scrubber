@@ -1,4 +1,5 @@
 import { act, screen, waitFor } from "@testing-library/react";
+import posthog from "posthog-js";
 import { afterEach, expect, test, vi } from "vitest";
 
 import { FileUploader } from "#/domains/wizard/components/file-uploader/file-uploader.mod";
@@ -34,9 +35,12 @@ test("a grant failure does not send a PUT or advance the wizard", async () => {
   installXMLHttpRequestFake();
   const createUpload = vi
     .fn<CreateUpload>()
-    .mockRejectedValue(new Error("Could not create the upload grant"));
+    .mockRejectedValue(new Error("private-grant-provider-detail"));
+  const consoleError = vi.spyOn(console, "error");
+  const capture = vi.spyOn(posthog, "capture");
+  const captureException = vi.spyOn(posthog, "captureException");
   const onUploadComplete = vi.fn<OnUploadComplete>();
-  const file = new File(["pdf"], "report.pdf", {
+  const file = new File(["pdf"], "private-grant-file.pdf", {
     type: "application/pdf",
   });
   const { user } = renderComponent(
@@ -58,17 +62,28 @@ test("a grant failure does not send a PUT or advance the wizard", async () => {
   ).toBeVisible();
   expect(FakeXMLHttpRequest.requests).toEqual([]);
   expect(onUploadComplete).not.toHaveBeenCalled();
+  // eslint-disable-next-line testing-library/no-node-access -- Capture privacy requires the uploader ancestor class.
+  expect(screen.getByText(file.name).closest(".ph-no-capture")).not.toBeNull();
+  expect(
+    screen.queryByText("private-grant-provider-detail", { exact: false }),
+  ).not.toBeInTheDocument();
+  expect(consoleError).not.toHaveBeenCalled();
+  expect(capture).not.toHaveBeenCalled();
+  expect(captureException).not.toHaveBeenCalled();
 });
 
 test("a final direct PUT failure does not advance the wizard", async () => {
   installXMLHttpRequestFake();
   const response: RouterOutputs["wizard"]["createUpload"] = {
     storageKey: "uploads/00000000-0000-4000-8000-000000000012",
-    uploadUrl: "https://uploads.test/failing-key",
+    uploadUrl: "https://uploads.test/private-put-signature",
   };
   const createUpload = vi.fn<CreateUpload>().mockResolvedValue(response);
+  const consoleError = vi.spyOn(console, "error");
+  const capture = vi.spyOn(posthog, "capture");
+  const captureException = vi.spyOn(posthog, "captureException");
   const onUploadComplete = vi.fn<OnUploadComplete>();
-  const file = new File(["pdf"], "report.pdf", {
+  const file = new File(["pdf"], "private-put-file.pdf", {
     type: "application/pdf",
   });
   const { user } = renderComponent(
@@ -95,13 +110,13 @@ test("a final direct PUT failure does not advance the wizard", async () => {
   vi.useFakeTimers();
   FakeXMLHttpRequest.respondAutomaticallyWith({
     status: 500,
-    statusText: "Internal Server Error",
+    statusText: "private-put-provider-detail",
   });
 
   await act(async () => {
     await firstRequest.respond({
       status: 500,
-      statusText: "Internal Server Error",
+      statusText: "private-put-provider-detail",
     });
     await vi.runAllTimersAsync();
   });
@@ -111,6 +126,14 @@ test("a final direct PUT failure does not advance the wizard", async () => {
     await screen.findByRole("button", { name: RETRY_UPLOAD_BUTTON_NAME }),
   ).toBeVisible();
   expect(onUploadComplete).not.toHaveBeenCalled();
+  // eslint-disable-next-line testing-library/no-node-access -- Capture privacy requires the uploader ancestor class.
+  expect(screen.getByText(file.name).closest(".ph-no-capture")).not.toBeNull();
+  expect(
+    screen.queryByText("private-put-provider-detail", { exact: false }),
+  ).not.toBeInTheDocument();
+  expect(consoleError).not.toHaveBeenCalled();
+  expect(capture).not.toHaveBeenCalled();
+  expect(captureException).not.toHaveBeenCalled();
 });
 
 test("a manual retry gets a fresh grant and gives the wizard only the newest key", async () => {

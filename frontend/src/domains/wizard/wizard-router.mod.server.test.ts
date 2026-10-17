@@ -1,8 +1,11 @@
 import { once } from "node:events";
+// eslint-disable-next-line vitest/no-import-node-test -- Node mocks control native promise timers that Vitest leaves on the real clock.
+import { mock } from "node:test";
+import timers from "node:timers/promises";
 
 import { TRPCError } from "@trpc/server";
 import ky from "ky";
-import { afterEach, expect, test, vi } from "vitest";
+import { afterEach, beforeEach, expect, test, vi } from "vitest";
 
 import { SERVICE_UNAVAILABLE_STATUS_CODE } from "#/shared/constants/http/status-codes/status-codes.mod";
 import { createWorkflowHttpClient } from "#/shared/libs/ky/workflow-http-client.mod.server";
@@ -19,8 +22,10 @@ import { getAppBindings } from "#/shared/middlewares/app-bindings/app-bindings.m
 
 import type { BackendErrorResponse } from "./wizard-contracts.mod.server";
 import {
+  CONFIRM_DELETE_FAILURE_MESSAGE,
   CREATE_UPLOAD_FAILURE_MESSAGE,
   DRY_RUN_FAILURE_MESSAGE,
+  REFRESH_DOWNLOAD_GRANT_FAILURE_MESSAGE,
   SCRUB_FILE_FAILURE_MESSAGE,
   WORKFLOW_CONFIG_FAILURE_MESSAGE,
 } from "./wizard-router.mod.server";
@@ -36,7 +41,9 @@ const CANONICAL_ETAG = "0123456789abcdef0123456789abcdef";
 const DOWNLOAD_URL = "https://downloads.test/sanitized.pdf";
 const MINIMUM_FILE_SIZE_BYTES = 1;
 const SERVER_RETRY_DELAY_MS = 1000;
+const CLIENT_RETRY_DELAY_MS = 150;
 const ONE_MILLISECOND_MS = 1;
+const HALF_JITTER_SAMPLE = 0.5;
 const TWO_FETCH_ATTEMPTS = 2;
 const EXPECTED_DRY_RUN_TIMEOUT_MS = 90_000;
 const EXPECTED_SCRUB_TIMEOUT_MS = 240_000;
@@ -220,8 +227,12 @@ test("confirmDelete sends one typed delete request", async () => {
   expect(backendBody).toEqual(input);
 });
 
+beforeEach(() => {
+  vi.spyOn(performance, "now").mockImplementation(() => Date.now());
+});
+
 afterEach(() => {
-  vi.useRealTimers();
+  mock.timers.reset();
 });
 
 test("an unclassified transport failure maps to BAD_GATEWAY without public details", async () => {
@@ -250,7 +261,8 @@ test("an unclassified transport failure maps to BAD_GATEWAY without public detai
 });
 
 test("dryRun uses its total timeout after a server-directed retry", async () => {
-  vi.useFakeTimers();
+  mock.timers.enable({ apis: ["Date", "setTimeout"] });
+  vi.spyOn(Math, "random").mockReturnValue(HALF_JITTER_SAMPLE);
   const input: RouterInputs["wizard"]["dryRun"] = { storageKey: STORAGE_KEY };
   const response: BackendErrorResponse = {
     error: "processing capacity temporarily unavailable",
@@ -271,18 +283,25 @@ test("dryRun uses its total timeout after a server-directed retry", async () => 
   const settle = vi.fn((outcome: unknown) => outcome);
   void operation.then(settle).catch(settle);
 
-  await vi.advanceTimersByTimeAsync(SERVER_RETRY_DELAY_MS - ONE_MILLISECOND_MS);
+  await timers.setImmediate();
+  mock.timers.tick(CLIENT_RETRY_DELAY_MS);
+  await timers.setImmediate();
+  mock.timers.tick(SERVER_RETRY_DELAY_MS - ONE_MILLISECOND_MS);
+  await timers.setImmediate();
   expect(fetchMock).toHaveBeenCalledOnce();
 
-  await vi.advanceTimersByTimeAsync(ONE_MILLISECOND_MS);
+  mock.timers.tick(ONE_MILLISECOND_MS);
+  await timers.setImmediate();
   expect(fetchMock).toHaveBeenCalledTimes(TWO_FETCH_ATTEMPTS);
 
-  await vi.advanceTimersByTimeAsync(
-    EXPECTED_DRY_RUN_TIMEOUT_MS - SERVER_RETRY_DELAY_MS - ONE_MILLISECOND_MS,
+  mock.timers.tick(
+    EXPECTED_DRY_RUN_TIMEOUT_MS - Date.now() - ONE_MILLISECOND_MS,
   );
+  await timers.setImmediate();
   expect(settle).not.toHaveBeenCalled();
 
-  await vi.advanceTimersByTimeAsync(ONE_MILLISECOND_MS);
+  mock.timers.tick(ONE_MILLISECOND_MS);
+  await timers.setImmediate();
   expect(settle).toHaveBeenCalledOnce();
   const [[error] = []] = settle.mock.calls;
   expect.assert(error instanceof TRPCError);
@@ -292,7 +311,8 @@ test("dryRun uses its total timeout after a server-directed retry", async () => 
 });
 
 test("scrubFile uses its total timeout after a server-directed retry", async () => {
-  vi.useFakeTimers();
+  mock.timers.enable({ apis: ["Date", "setTimeout"] });
+  vi.spyOn(Math, "random").mockReturnValue(HALF_JITTER_SAMPLE);
   const input: RouterInputs["wizard"]["scrubFile"] = {
     etag: CANONICAL_ETAG,
     storageKey: STORAGE_KEY,
@@ -316,18 +336,23 @@ test("scrubFile uses its total timeout after a server-directed retry", async () 
   const settle = vi.fn((outcome: unknown) => outcome);
   void operation.then(settle).catch(settle);
 
-  await vi.advanceTimersByTimeAsync(SERVER_RETRY_DELAY_MS - ONE_MILLISECOND_MS);
+  await timers.setImmediate();
+  mock.timers.tick(CLIENT_RETRY_DELAY_MS);
+  await timers.setImmediate();
+  mock.timers.tick(SERVER_RETRY_DELAY_MS - ONE_MILLISECOND_MS);
+  await timers.setImmediate();
   expect(fetchMock).toHaveBeenCalledOnce();
 
-  await vi.advanceTimersByTimeAsync(ONE_MILLISECOND_MS);
+  mock.timers.tick(ONE_MILLISECOND_MS);
+  await timers.setImmediate();
   expect(fetchMock).toHaveBeenCalledTimes(TWO_FETCH_ATTEMPTS);
 
-  await vi.advanceTimersByTimeAsync(
-    EXPECTED_SCRUB_TIMEOUT_MS - SERVER_RETRY_DELAY_MS - ONE_MILLISECOND_MS,
-  );
+  mock.timers.tick(EXPECTED_SCRUB_TIMEOUT_MS - Date.now() - ONE_MILLISECOND_MS);
+  await timers.setImmediate();
   expect(settle).not.toHaveBeenCalled();
 
-  await vi.advanceTimersByTimeAsync(ONE_MILLISECOND_MS);
+  mock.timers.tick(ONE_MILLISECOND_MS);
+  await timers.setImmediate();
   expect(settle).toHaveBeenCalledOnce();
   const [[error] = []] = settle.mock.calls;
   expect.assert(error instanceof TRPCError);
@@ -337,9 +362,8 @@ test("scrubFile uses its total timeout after a server-directed retry", async () 
 });
 
 test("getWorkflowConfig rejects a backend 503 without a retry", async () => {
-  const response: BackendErrorResponse = {
-    error: "processing capacity temporarily unavailable",
-  };
+  mock.timers.enable({ apis: ["Date", "setTimeout"] });
+  const response: BackendErrorResponse = { error: "processing busy" };
   const fetchMock = vi.fn<typeof fetch>().mockResolvedValue(
     Response.json(response, {
       headers: { "Retry-After": "1" },
@@ -349,16 +373,94 @@ test("getWorkflowConfig rejects a backend 503 without a retry", async () => {
   vi.stubGlobal("fetch", fetchMock);
   const request = new Request(FRONTEND_URL);
 
-  let failure: unknown = null;
-  try {
-    await callerForRequest(request).getWorkflowConfig();
-  } catch (error) {
-    failure = error;
-  }
+  await expect(
+    callerForRequest(request).getWorkflowConfig(),
+  ).rejects.toMatchObject({
+    code: "SERVICE_UNAVAILABLE",
+    message: WORKFLOW_CONFIG_FAILURE_MESSAGE,
+  });
+  mock.timers.runAll();
+  await timers.setImmediate();
+  expect(fetchMock).toHaveBeenCalledOnce();
+});
 
-  expect.assert(failure instanceof TRPCError);
-  expect(failure.code).toBe("SERVICE_UNAVAILABLE");
-  expect(failure.message).toBe(WORKFLOW_CONFIG_FAILURE_MESSAGE);
+test("createUpload rejects a backend 503 without a retry", async () => {
+  mock.timers.enable({ apis: ["Date", "setTimeout"] });
+  const input: RouterInputs["wizard"]["createUpload"] = {
+    fileName: "report.pdf",
+    fileSizeBytes: MINIMUM_FILE_SIZE_BYTES,
+  };
+  const response: BackendErrorResponse = { error: "processing busy" };
+  const fetchMock = vi.fn<typeof fetch>().mockResolvedValue(
+    Response.json(response, {
+      headers: { "Retry-After": "1" },
+      status: SERVICE_UNAVAILABLE_STATUS_CODE,
+    }),
+  );
+  vi.stubGlobal("fetch", fetchMock);
+  const request = new Request(FRONTEND_URL);
+
+  await expect(
+    callerForRequest(request).createUpload(input),
+  ).rejects.toMatchObject({
+    code: "SERVICE_UNAVAILABLE",
+    message: CREATE_UPLOAD_FAILURE_MESSAGE,
+  });
+  mock.timers.runAll();
+  await timers.setImmediate();
+  expect(fetchMock).toHaveBeenCalledOnce();
+});
+
+test("refreshDownloadGrant rejects a backend 503 without a retry", async () => {
+  mock.timers.enable({ apis: ["Date", "setTimeout"] });
+  const input: RouterInputs["wizard"]["refreshDownloadGrant"] = {
+    etag: CANONICAL_ETAG,
+    storageKey: STORAGE_KEY,
+  };
+  const response: BackendErrorResponse = { error: "processing busy" };
+  const fetchMock = vi.fn<typeof fetch>().mockResolvedValue(
+    Response.json(response, {
+      headers: { "Retry-After": "1" },
+      status: SERVICE_UNAVAILABLE_STATUS_CODE,
+    }),
+  );
+  vi.stubGlobal("fetch", fetchMock);
+  const request = new Request(FRONTEND_URL);
+
+  await expect(
+    callerForRequest(request).refreshDownloadGrant(input),
+  ).rejects.toMatchObject({
+    code: "SERVICE_UNAVAILABLE",
+    message: REFRESH_DOWNLOAD_GRANT_FAILURE_MESSAGE,
+  });
+  mock.timers.runAll();
+  await timers.setImmediate();
+  expect(fetchMock).toHaveBeenCalledOnce();
+});
+
+test("confirmDelete rejects a backend 503 without a retry", async () => {
+  mock.timers.enable({ apis: ["Date", "setTimeout"] });
+  const input: RouterInputs["wizard"]["confirmDelete"] = {
+    storageKey: STORAGE_KEY,
+  };
+  const response: BackendErrorResponse = { error: "processing busy" };
+  const fetchMock = vi.fn<typeof fetch>().mockResolvedValue(
+    Response.json(response, {
+      headers: { "Retry-After": "1" },
+      status: SERVICE_UNAVAILABLE_STATUS_CODE,
+    }),
+  );
+  vi.stubGlobal("fetch", fetchMock);
+  const request = new Request(FRONTEND_URL);
+
+  await expect(
+    callerForRequest(request).confirmDelete(input),
+  ).rejects.toMatchObject({
+    code: "SERVICE_UNAVAILABLE",
+    message: CONFIRM_DELETE_FAILURE_MESSAGE,
+  });
+  mock.timers.runAll();
+  await timers.setImmediate();
   expect(fetchMock).toHaveBeenCalledOnce();
 });
 
