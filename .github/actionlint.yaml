@@ -4,3 +4,11 @@ paths:
   .github/workflows/*.{yaml,yml}:
     ignore:
       - '^specifying action "\$/[^"]*" in invalid format because ref is missing\.'
+      # actionlint does not support background steps or wait-all. See https://github.com/rhysd/actionlint/issues/693.
+      # Remove these rules when an actionlint release supports background steps.
+      - '^unexpected key "background" for step to run shell command\. expected one of "continue-on-error", "env", "id", "if", "name", "run", "shell", "timeout-minutes", "working-directory"$'
+      - '^unexpected key "background" for step to execute action\. expected one of "continue-on-error", "env", "id", "if", "name", "timeout-minutes", "uses", "with"$'
+      # actionlint matches messages only.
+      # This rule also hides a step that has neither run nor uses.
+      # GitHub rejects such a step when the workflow runs.
+      - '^step must run script with "run" section or run action with "uses" section$'
