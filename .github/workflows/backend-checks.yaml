@@ -48,9 +48,7 @@ jobs:
 
       - name: Check module files are tidy
         working-directory: ./backend
-        run: |
-          go mod tidy
-          git diff --exit-code -- go.mod go.sum
+        run: go mod tidy -diff
 
   security:
     name: Run backend security scan
