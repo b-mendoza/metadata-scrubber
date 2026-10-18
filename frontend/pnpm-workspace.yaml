@@ -2,4 +2,19 @@ allowBuilds:
   # core-js only prints a funding banner. It has no build step.
   core-js: false
   unrs-resolver: true
+permissions:
+  "@tanstack/devtools-vite":
+    skills: true
+  "@tanstack/react-start":
+    skills: true
+  "@trpc/client":
+    skills: true
+  "@trpc/server":
+    skills: true
+  "@trpc/tanstack-react-query":
+    skills: true
 saveExact: true
+skills:
+  dirs:
+    - ".agents/skills"
+    - ".claude/skills"
