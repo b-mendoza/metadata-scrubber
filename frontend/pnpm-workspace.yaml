@@ -1,6 +1,5 @@
 allowBuilds:
   # core-js only prints a funding banner. It has no build step.
   core-js: false
-  esbuild: true
   unrs-resolver: true
 saveExact: true
