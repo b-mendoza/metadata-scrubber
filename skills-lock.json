@@ -161,7 +161,7 @@
       "source": "b-mendoza/agent-skills",
       "sourceType": "github",
       "skillPath": "skills/review-pull-request/SKILL.md",
-      "computedHash": "866c6025ead53a508c50406e39f59951255b60d94c42a0237118b3090de21779"
+      "computedHash": "34bb48e65e5c2325661db6639cb5d0c634af80890dc48372c3c4067ecf4e9c45"
     },
     "rewriting-code-strictly": {
       "source": "b-mendoza/agent-skills",
