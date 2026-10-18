@@ -35,7 +35,8 @@ jobs:
         uses: $/.github/actions/frontend/setup-env
 
       - name: "Run linting, formatting and type checks"
-        uses: $/.github/actions/frontend/quality-checks
+        working-directory: ./frontend
+        run: pnpm run lint
 
       - name: Run tests
         working-directory: ./frontend
