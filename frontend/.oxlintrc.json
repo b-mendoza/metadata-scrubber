@@ -2363,7 +2363,7 @@
       }
     },
     {
-      "files": ["**/*.{js,mjs,cjs,jsx,mjsx,ts,tsx,mtsx}"],
+      "files": ["**/*.{js,mjs,cjs,jsx,ts,mts,cts,tsx}"],
       "rules": {
         "zod/consistent-import": "error",
         "zod/consistent-schema-var-name": "error",
@@ -2395,7 +2395,6 @@
         "zod/prefer-trim-before-string-length-checks": "error",
         "zod/array-style": "error",
         "zod/consistent-import-source": "error",
-        "zod/consistent-object-schema-type": "error",
         "zod/consistent-schema-output-type-style": "error",
         "zod/prefer-enum-over-literal-union": "error",
         "zod/prefer-loose-object": "error",
