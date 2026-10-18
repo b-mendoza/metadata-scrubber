@@ -34,8 +34,13 @@ jobs:
       - name: "Setup Go and Task"
         uses: $/.github/actions/backend/setup-env
 
-      - name: "Run linting, formatting and tests"
-        uses: $/.github/actions/backend/quality-checks
+      - name: Lint and verify formatting
+        working-directory: ./backend
+        run: task lint
+
+      - name: Test
+        working-directory: ./backend
+        run: task test
 
       - name: Verify modules
         working-directory: ./backend
