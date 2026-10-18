@@ -37,7 +37,11 @@ jobs:
       - name: "Run linting, formatting and type checks"
         working-directory: ./frontend
         run: pnpm run lint
+        background: true
 
       - name: Run tests
         working-directory: ./frontend
         run: pnpm run test
+        background: true
+
+      - wait-all:
