@@ -6,6 +6,7 @@
   "files.watcherExclude": {
     "**/routeTree.gen.ts": true
   },
+  "js/ts.experimental.useTsgo": true,
   "oxc.configPath": "./frontend/.oxlintrc.json",
   "oxc.path.tsgolint": "./frontend/node_modules/.bin/tsgolint",
   "search.exclude": {
