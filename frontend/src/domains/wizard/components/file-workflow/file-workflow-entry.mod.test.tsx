@@ -245,6 +245,7 @@ test("home uploads with runtime size and a direct PUT, then inspects once inside
     await screen.findByRole("status", { name: "Inspecting PDF" }),
   ).toBeVisible();
   expect(destroy).toHaveBeenCalledOnce();
+  expect(screen.getByRole("heading", { name: "Inspect PDF" })).toHaveFocus();
   expect(
     screen.queryByRole("button", { name: BROWSE_FILES_NAME }),
   ).not.toBeInTheDocument();
@@ -267,9 +268,7 @@ test("home uploads with runtime size and a direct PUT, then inspects once inside
   expect(screen.getByRole("main")).toContainElement(
     screen.getByText("private-metadata"),
   );
-  expect(
-    screen.queryByRole("button", { name: "Scrub it" }),
-  ).not.toBeInTheDocument();
+  expect(screen.getByRole("button", { name: "Scrub it" })).toBeEnabled();
 
   vi.useFakeTimers();
   await act(async () => {

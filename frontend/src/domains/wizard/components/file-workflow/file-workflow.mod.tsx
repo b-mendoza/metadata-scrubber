@@ -9,13 +9,19 @@ import type {
 } from "#/shared/libs/trpc/client/client.mod";
 import { trpcContext } from "#/shared/libs/trpc/client/client-runtime.mod";
 
-import { FileWorkflowReview } from "./file-workflow-screens.mod";
+import {
+  FileWorkflowResult,
+  FileWorkflowReview,
+} from "./file-workflow-screens.mod";
 
 type ReviewedPDF = RouterInputs["wizard"]["dryRun"] &
   RouterOutputs["wizard"]["dryRun"];
 type Flow =
-  | { step: "upload" | "inspecting" | "inspection-failed" }
-  | { step: "review"; review: ReviewedPDF };
+  | { step: "upload" }
+  | { step: "inspecting" }
+  | { step: "inspection-failed" }
+  | { step: "review" | "scrubbing" | "scrub-failed"; review: ReviewedPDF }
+  | { step: "done"; review: ReviewedPDF; downloadUrl: string };
 
 const focusWorkflowHeading = (heading: HTMLHeadingElement | null) => {
   heading?.focus();
@@ -38,8 +44,12 @@ export function FileWorkflow() {
   const inspection = useMutation(
     trpc.wizard.dryRun.mutationOptions({ retry: false }),
   );
+  const scrub = useMutation(
+    trpc.wizard.scrubFile.mutationOptions({ retry: false }),
+  );
   const [flow, setFlow] = useState<Flow>({ step: "upload" });
   const uploadClaimedRef = useRef(false);
+  const scrubPendingRef = useRef(false);
 
   const inspectFile = (input: RouterInputs["wizard"]["dryRun"]) => {
     if (uploadClaimedRef.current) {
@@ -55,6 +65,91 @@ export function FileWorkflow() {
       .catch(() => {
         setFlow({ step: "inspection-failed" });
       });
+  };
+
+  const scrubFile = (review: ReviewedPDF) => {
+    if (scrubPendingRef.current) {
+      return;
+    }
+    scrubPendingRef.current = true;
+    setFlow({ step: "scrubbing", review });
+    const input: RouterInputs["wizard"]["scrubFile"] = {
+      storageKey: review.storageKey,
+      etag: review.etag,
+    };
+    void scrub
+      .mutateAsync(input)
+      .then((result) => {
+        scrubPendingRef.current = false;
+        setFlow({
+          step: "done",
+          review,
+          downloadUrl: result.result.downloadUrl,
+        });
+      })
+      .catch(() => {
+        scrubPendingRef.current = false;
+        setFlow({ step: "scrub-failed", review });
+      });
+  };
+
+  const renderStep = (
+    settings: RouterOutputs["wizard"]["getWorkflowConfig"],
+  ) => {
+    if (flow.step === "upload") {
+      return (
+        <>
+          <h2 key={flow.step} ref={focusWorkflowHeading} tabIndex={-1}>
+            Upload PDF
+          </h2>
+          <FileUploader
+            createUpload={upload.mutateAsync}
+            maxFileSizeBytes={settings.maxFileSizeBytes}
+            onUploadComplete={inspectFile}
+          />
+        </>
+      );
+    }
+    if (flow.step === "inspecting") {
+      return (
+        <>
+          <h2 key={flow.step} ref={focusWorkflowHeading} tabIndex={-1}>
+            Inspect PDF
+          </h2>
+          <output aria-label="Inspecting PDF">
+            Inspecting the PDF. Please wait.
+          </output>
+        </>
+      );
+    }
+    if (flow.step === "inspection-failed") {
+      return (
+        <>
+          <h2 key={flow.step} ref={focusWorkflowHeading} tabIndex={-1}>
+            Could not inspect PDF
+          </h2>
+          <p role="alert">Could not inspect the PDF.</p>
+        </>
+      );
+    }
+    if (flow.step === "done") {
+      return (
+        <FileWorkflowResult
+          downloadUrl={flow.downloadUrl}
+          headingRef={focusWorkflowHeading}
+        />
+      );
+    }
+    return (
+      <FileWorkflowReview
+        fields={flow.review.fields}
+        headingRef={focusWorkflowHeading}
+        onScrub={() => {
+          scrubFile(flow.review);
+        }}
+        step={flow.step}
+      />
+    );
   };
 
   return (
@@ -80,42 +175,7 @@ export function FileWorkflow() {
           </button>
         </>
       ) : null}
-      {config.isSuccess && flow.step === "upload" ? (
-        <>
-          <h2 ref={focusWorkflowHeading} tabIndex={-1}>
-            Upload PDF
-          </h2>
-          <FileUploader
-            createUpload={upload.mutateAsync}
-            maxFileSizeBytes={config.data.maxFileSizeBytes}
-            onUploadComplete={inspectFile}
-          />
-        </>
-      ) : null}
-      {flow.step === "inspecting" ? (
-        <>
-          <h2 ref={focusWorkflowHeading} tabIndex={-1}>
-            Inspect PDF
-          </h2>
-          <output aria-label="Inspecting PDF">
-            Inspecting the PDF. Please wait.
-          </output>
-        </>
-      ) : null}
-      {flow.step === "review" ? (
-        <FileWorkflowReview
-          fields={flow.review.fields}
-          headingRef={focusWorkflowHeading}
-        />
-      ) : null}
-      {flow.step === "inspection-failed" ? (
-        <>
-          <h2 ref={focusWorkflowHeading} tabIndex={-1}>
-            Could not inspect PDF
-          </h2>
-          <p role="alert">Could not inspect the PDF.</p>
-        </>
-      ) : null}
+      {config.isSuccess ? renderStep(config.data) : null}
     </main>
   );
 }

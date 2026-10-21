@@ -5,15 +5,21 @@ import type { RouterOutputs } from "#/shared/libs/trpc/client/client.mod";
 interface FileWorkflowReviewProps {
   fields: RouterOutputs["wizard"]["dryRun"]["fields"];
   headingRef: Ref<HTMLHeadingElement>;
+  onScrub: () => void;
+  step: "review" | "scrubbing" | "scrub-failed";
 }
 
 export function FileWorkflowReview({
   fields,
   headingRef,
+  onScrub,
+  step,
 }: Readonly<FileWorkflowReviewProps>) {
+  const scrubAction = step === "scrub-failed" ? "Retry scrub" : "Scrub it";
+
   return (
     <>
-      <h2 ref={headingRef} tabIndex={-1}>
+      <h2 key={step} ref={headingRef} tabIndex={-1}>
         Review metadata
       </h2>
       <p>
@@ -46,10 +52,52 @@ export function FileWorkflowReview({
           </li>
         ))}
       </ul>
+      {step === "scrub-failed" ? (
+        <p role="alert">Could not scrub the PDF. Try again.</p>
+      ) : null}
+      <button
+        className="btn btn-primary"
+        disabled={step === "scrubbing"}
+        onClick={onScrub}
+        type="button"
+      >
+        {scrubAction}
+      </button>
       <p>
         Files expire after one day. Deletion usually follows within 24 hours
         after expiry, but it can take longer.
       </p>
+      {step === "scrubbing" ? (
+        <output aria-label="Scrubbing PDF">
+          Scrubbing the PDF. Please wait.
+        </output>
+      ) : null}
+    </>
+  );
+}
+
+interface FileWorkflowResultProps {
+  downloadUrl: string;
+  headingRef: Ref<HTMLHeadingElement>;
+}
+
+export function FileWorkflowResult({
+  downloadUrl,
+  headingRef,
+}: Readonly<FileWorkflowResultProps>) {
+  return (
+    <>
+      <h2 ref={headingRef} tabIndex={-1}>
+        PDF ready
+      </h2>
+      <a
+        className="btn btn-primary"
+        href={downloadUrl}
+        referrerPolicy="no-referrer"
+      >
+        Download PDF
+      </a>
+      <p>The download link lasts about 15 minutes.</p>
     </>
   );
 }
