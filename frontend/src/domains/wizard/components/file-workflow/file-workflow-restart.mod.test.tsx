@@ -128,6 +128,8 @@ test("keyboard restart clears a completed result and its reviewed data without a
   ).toHaveAttribute("href", result.result.downloadUrl);
   await user.tab();
   await user.tab();
+  expect(screen.getByRole("button", { name: "Delete files" })).toHaveFocus();
+  await user.tab();
   expect(screen.getByRole("button", { name: "Start again" })).toHaveFocus();
   await user.keyboard("{Enter}");
 

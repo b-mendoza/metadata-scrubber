@@ -5,6 +5,10 @@ import type {
   RouterOutputs,
 } from "#/shared/libs/trpc/client/client.mod";
 
+import {
+  FileWorkflowDeletion,
+  useConfirmedDeletion,
+} from "./file-workflow-deletion.mod";
 import { useDownloadGrant } from "./file-workflow-download.mod";
 
 interface FileWorkflowReviewProps {
@@ -86,17 +90,13 @@ interface FileWorkflowResultProps {
   headingRef: Ref<HTMLHeadingElement>;
 }
 
-export function FileWorkflowResult({
+function FileWorkflowDownload({
   review,
-  headingRef,
-}: Readonly<FileWorkflowResultProps>) {
+}: Readonly<Pick<FileWorkflowResultProps, "review">>) {
   const { state, refresh, onDownload } = useDownloadGrant(review);
   const canRefresh = ["expired", "failed", "missing"].includes(state.status);
   return (
     <>
-      <h2 ref={headingRef} tabIndex={-1}>
-        PDF ready
-      </h2>
       {state.status === "ready" ? (
         <a
           className="btn btn-primary"
@@ -135,6 +135,43 @@ export function FileWorkflowResult({
         </button>
       ) : null}
       <p>Download link expiry and file deletion are separate.</p>
+    </>
+  );
+}
+
+export function FileWorkflowResult({
+  review,
+  headingRef,
+}: Readonly<FileWorkflowResultProps>) {
+  const deletion = useConfirmedDeletion(review.storageKey);
+  if (deletion.phase === "deleted") {
+    return (
+      <>
+        <h2 key="deleted" ref={headingRef} tabIndex={-1}>
+          Deletion confirmed
+        </h2>
+        <output aria-label="Deletion confirmed">
+          No stored files remained when the backend checked.
+        </output>
+        <button className="btn btn-primary" disabled type="button">
+          Download PDF
+        </button>
+      </>
+    );
+  }
+  return (
+    <>
+      <h2 ref={headingRef} tabIndex={-1}>
+        PDF ready
+      </h2>
+      {deletion.phase === "deleting" ? (
+        <button className="btn btn-primary" disabled type="button">
+          Download PDF
+        </button>
+      ) : (
+        <FileWorkflowDownload review={review} />
+      )}
+      <FileWorkflowDeletion deletion={deletion} />
     </>
   );
 }
