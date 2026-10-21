@@ -116,7 +116,15 @@ test.each(["inspection", "scrub"] as const)(
     };
     const newReview: RouterOutputs["wizard"]["dryRun"] = {
       etag: "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
-      fields: [],
+      fields: [
+        {
+          name: "info.author",
+          label: "Author",
+          preview: "Test author",
+          originalByteSize: 11,
+          action: "remove",
+        },
+      ],
     };
     const result: RouterOutputs["wizard"]["scrubFile"] = {
       status: "done",

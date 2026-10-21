@@ -388,7 +388,15 @@ test("restart while expiry is unknown rejects a late verified grant", async () =
   };
   const review: RouterOutputs["wizard"]["dryRun"] = {
     etag: "ffffffffffffffffffffffffffffffff",
-    fields: [],
+    fields: [
+      {
+        name: "info.author",
+        label: "Author",
+        preview: "Test author",
+        originalByteSize: 11,
+        action: "remove",
+      },
+    ],
   };
   const result: RouterOutputs["wizard"]["scrubFile"] = {
     status: "done",

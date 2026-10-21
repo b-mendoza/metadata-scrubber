@@ -24,8 +24,11 @@ type Flow =
   | { step: "inspection-failed" }
   | { step: "signed" }
   | { step: "conflict" }
+  | { step: "clean" }
   | { step: "review" | "scrubbing" | "scrub-failed"; review: ReviewedPDF }
   | { step: "done"; review: ReviewedPDF };
+
+const NO_METADATA_FIELDS = 0;
 
 const focusWorkflowHeading = (heading: HTMLHeadingElement | null) => {
   heading?.focus();
@@ -75,6 +78,10 @@ export function FileWorkflow() {
       .mutateAsync(input)
       .then((result) => {
         if (currentGenerationRef.current !== generation) {
+          return;
+        }
+        if (result.fields.length === NO_METADATA_FIELDS) {
+          setFlow({ step: "clean" });
           return;
         }
         setFlow({ step: "review", review: { ...input, ...result } });
@@ -158,14 +165,15 @@ export function FileWorkflow() {
 
   const renderStep = (
     settings: RouterOutputs["wizard"]["getWorkflowConfig"],
+    activeFlow: Exclude<Flow, { step: "clean" }>,
   ) => {
-    if (flow.step === "upload") {
+    if (activeFlow.step === "upload") {
       return (
         <>
-          <h2 key={flow.step} ref={focusWorkflowHeading} tabIndex={-1}>
+          <h2 key={activeFlow.step} ref={focusWorkflowHeading} tabIndex={-1}>
             Upload PDF
           </h2>
-          {flow.isSourceMissing ? (
+          {activeFlow.isSourceMissing ? (
             <output aria-label="PDF no longer available">
               The PDF is no longer available. Upload the PDF again.
             </output>
@@ -178,10 +186,10 @@ export function FileWorkflow() {
         </>
       );
     }
-    if (flow.step === "inspecting") {
+    if (activeFlow.step === "inspecting") {
       return (
         <>
-          <h2 key={flow.step} ref={focusWorkflowHeading} tabIndex={-1}>
+          <h2 key={activeFlow.step} ref={focusWorkflowHeading} tabIndex={-1}>
             Inspect PDF
           </h2>
           <output aria-label="Inspecting PDF">
@@ -190,10 +198,10 @@ export function FileWorkflow() {
         </>
       );
     }
-    if (flow.step === "signed") {
+    if (activeFlow.step === "signed") {
       return (
         <>
-          <h2 key={flow.step} ref={focusWorkflowHeading} tabIndex={-1}>
+          <h2 key={activeFlow.step} ref={focusWorkflowHeading} tabIndex={-1}>
             Signed PDF not supported
           </h2>
           <p>
@@ -207,10 +215,10 @@ export function FileWorkflow() {
         </>
       );
     }
-    if (flow.step === "conflict") {
+    if (activeFlow.step === "conflict") {
       return (
         <>
-          <h2 key={flow.step} ref={focusWorkflowHeading} tabIndex={-1}>
+          <h2 key={activeFlow.step} ref={focusWorkflowHeading} tabIndex={-1}>
             PDF changed
           </h2>
           <p role="alert">
@@ -220,32 +228,32 @@ export function FileWorkflow() {
         </>
       );
     }
-    if (flow.step === "inspection-failed") {
+    if (activeFlow.step === "inspection-failed") {
       return (
         <>
-          <h2 key={flow.step} ref={focusWorkflowHeading} tabIndex={-1}>
+          <h2 key={activeFlow.step} ref={focusWorkflowHeading} tabIndex={-1}>
             Could not inspect PDF
           </h2>
           <p role="alert">Could not inspect the PDF.</p>
         </>
       );
     }
-    if (flow.step === "done") {
+    if (activeFlow.step === "done") {
       return (
         <FileWorkflowResult
           headingRef={focusWorkflowHeading}
-          review={flow.review}
+          review={activeFlow.review}
         />
       );
     }
     return (
       <FileWorkflowReview
-        fields={flow.review.fields}
+        fields={activeFlow.review.fields}
         headingRef={focusWorkflowHeading}
         onScrub={() => {
-          scrubFile(flow.review);
+          scrubFile(activeFlow.review);
         }}
-        step={flow.step}
+        step={activeFlow.step}
       />
     );
   };
@@ -273,7 +281,21 @@ export function FileWorkflow() {
           </button>
         </>
       ) : null}
-      {config.isSuccess ? renderStep(config.data) : null}
+      {config.isSuccess && flow.step === "clean" ? (
+        <>
+          <h2 key={flow.step} ref={focusWorkflowHeading} tabIndex={-1}>
+            Already clean
+          </h2>
+          <p>No supported identifying metadata needs removal.</p>
+          <p>
+            Files expire after one day. Deletion usually follows within 24 hours
+            after expiry, but it can take longer.
+          </p>
+        </>
+      ) : null}
+      {config.isSuccess && flow.step !== "clean"
+        ? renderStep(config.data, flow)
+        : null}
       {flow.step === "upload" ? null : (
         <button
           className="btn"

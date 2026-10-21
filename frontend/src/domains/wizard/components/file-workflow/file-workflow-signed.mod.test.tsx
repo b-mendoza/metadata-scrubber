@@ -163,7 +163,15 @@ test.each(["inspection", "scrub"] as const)(
     };
     const newReview: RouterOutputs["wizard"]["dryRun"] = {
       etag: "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
-      fields: [],
+      fields: [
+        {
+          name: "info.author",
+          label: "Author",
+          preview: "Test author",
+          originalByteSize: 11,
+          action: "remove",
+        },
+      ],
     };
     backend.mockResolvedValueOnce(Response.json(newReview));
     act(() => {
@@ -199,7 +207,15 @@ test.each(["inspection", "scrub"] as const)(
     };
     const review: RouterOutputs["wizard"]["dryRun"] = {
       etag: "cccccccccccccccccccccccccccccccc",
-      fields: [],
+      fields: [
+        {
+          name: "info.author",
+          label: "Author",
+          preview: "Test author",
+          originalByteSize: 11,
+          action: "remove",
+        },
+      ],
     };
     backend.mockResolvedValueOnce(Response.json(config));
     if (step === "scrub") {

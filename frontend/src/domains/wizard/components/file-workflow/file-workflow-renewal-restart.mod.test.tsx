@@ -97,7 +97,15 @@ test("restart before renewal cancels the old result schedule", async () => {
   };
   const review: RouterOutputs["wizard"]["dryRun"] = {
     etag: "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
-    fields: [],
+    fields: [
+      {
+        name: "info.author",
+        label: "Author",
+        preview: "Test author",
+        originalByteSize: 11,
+        action: "remove",
+      },
+    ],
   };
   const result: RouterOutputs["wizard"]["scrubFile"] = {
     status: "done",
@@ -168,11 +176,27 @@ test.each(["old renewal first", "new grant first"] as const)(
     };
     const oldReview: RouterOutputs["wizard"]["dryRun"] = {
       etag: "cccccccccccccccccccccccccccccccc",
-      fields: [],
+      fields: [
+        {
+          name: "info.author",
+          label: "Author",
+          preview: "Test author",
+          originalByteSize: 11,
+          action: "remove",
+        },
+      ],
     };
     const newReview: RouterOutputs["wizard"]["dryRun"] = {
       etag: "dddddddddddddddddddddddddddddddd",
-      fields: [],
+      fields: [
+        {
+          name: "info.author",
+          label: "Author",
+          preview: "Test author",
+          originalByteSize: 11,
+          action: "remove",
+        },
+      ],
     };
     const oldResult: RouterOutputs["wizard"]["scrubFile"] = {
       status: "done",
