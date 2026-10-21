@@ -37,7 +37,9 @@ const BROWSE_FILES_NAME = /browse files/iv;
 const UPLOAD_FILE_NAME = /upload 1 file/iv;
 const EXPECTED_SINGLE_REQUEST_COUNT = 1;
 const EXPECTED_TWO_REQUEST_COUNT = 2;
+const EXPECTED_THREE_REQUEST_COUNT = 3;
 const GRANT_REQUEST_INDEX = 1;
+const INSPECTION_REQUEST_INDEX = 2;
 const AUTOMATIC_REQUEST_WINDOW_MS = 60_000;
 
 afterEach(() => {
@@ -160,7 +162,7 @@ test("home settings failure waits for keyboard retry without grants or automatic
   queryClient.clear();
 });
 
-test("home injects runtime size, uploads by direct PUT inside capture exclusion, and cleans up without products calls", async () => {
+test("home uploads with runtime size and a direct PUT, then inspects once inside capture exclusion", async () => {
   installXMLHttpRequestFake();
   expect(Route.options.loader).toBeUndefined();
   const { backend, frontend, queryClient, view } = setupHome();
@@ -175,9 +177,23 @@ test("home injects runtime size, uploads by direct PUT inside capture exclusion,
     storageKey: "uploads/00000000-0000-4000-8000-000000000091",
     uploadUrl: "https://uploads.test/private-upload-signature",
   };
+  const inspection: RouterOutputs["wizard"]["dryRun"] = {
+    etag: "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+    fields: [
+      {
+        action: "remove",
+        label: "Backend author",
+        name: "custom.author",
+        originalByteSize: 16,
+        preview: "private-metadata",
+      },
+    ],
+  };
+  const inspectionResponse = Promise.withResolvers<Response>();
   backend
     .mockResolvedValueOnce(Response.json(config))
-    .mockResolvedValueOnce(Response.json(grant));
+    .mockResolvedValueOnce(Response.json(grant))
+    .mockReturnValueOnce(inspectionResponse.promise);
   const { user, unmount } = renderComponent(view);
   await screen.findByRole("button", { name: BROWSE_FILES_NAME });
   const fileInput = await getFileInput(user);
@@ -214,12 +230,46 @@ test("home injects runtime size, uploads by direct PUT inside capture exclusion,
   expect.assert(grantRequest != null);
   expect(grantRequest.method).toBe("POST");
   expect(await grantRequest.json()).toEqual(input);
+  const destroy = vi.spyOn(Uppy.prototype, "destroy");
+  expect(
+    screen.queryByRole("status", { name: "Inspecting PDF" }),
+  ).not.toBeInTheDocument();
   await act(async () => {
     await request.respond({
       status: 200,
       headers: { ETag: '"bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"' },
     });
   });
+
+  expect(
+    await screen.findByRole("status", { name: "Inspecting PDF" }),
+  ).toBeVisible();
+  expect(destroy).toHaveBeenCalledOnce();
+  expect(
+    screen.queryByRole("button", { name: BROWSE_FILES_NAME }),
+  ).not.toBeInTheDocument();
+  expect(
+    screen.queryByRole("heading", { name: "Review metadata" }),
+  ).not.toBeInTheDocument();
+  const [inspectionRequest] =
+    backend.mock.calls[INSPECTION_REQUEST_INDEX] ?? [];
+  expect.assert(inspectionRequest != null);
+  const inspectionInput: RouterInputs["wizard"]["dryRun"] = {
+    storageKey: grant.storageKey,
+  };
+  expect(await inspectionRequest.json()).toEqual(inspectionInput);
+  act(() => {
+    inspectionResponse.resolve(Response.json(inspection));
+  });
+  expect(
+    await screen.findByRole("heading", { name: "Review metadata" }),
+  ).toHaveFocus();
+  expect(screen.getByRole("main")).toContainElement(
+    screen.getByText("private-metadata"),
+  );
+  expect(
+    screen.queryByRole("button", { name: "Scrub it" }),
+  ).not.toBeInTheDocument();
 
   vi.useFakeTimers();
   await act(async () => {
@@ -229,7 +279,7 @@ test("home injects runtime size, uploads by direct PUT inside capture exclusion,
     onlineManager.setOnline(true);
     await vi.advanceTimersByTimeAsync(AUTOMATIC_REQUEST_WINDOW_MS);
   });
-  expect(backend).toHaveBeenCalledTimes(EXPECTED_TWO_REQUEST_COUNT);
+  expect(backend).toHaveBeenCalledTimes(EXPECTED_THREE_REQUEST_COUNT);
   expect(
     frontend.mock.calls.map(
       ([url]) => new URL(url instanceof Request ? url.url : url).pathname,
@@ -237,9 +287,9 @@ test("home injects runtime size, uploads by direct PUT inside capture exclusion,
   ).toEqual([
     "/api/trpc/wizard.getWorkflowConfig",
     "/api/trpc/wizard.createUpload",
+    "/api/trpc/wizard.dryRun",
   ]);
   vi.useRealTimers();
-  const destroy = vi.spyOn(Uppy.prototype, "destroy");
   unmount();
   expect(destroy).toHaveBeenCalledOnce();
   expect(screen.queryByRole("main")).not.toBeInTheDocument();
@@ -247,7 +297,7 @@ test("home injects runtime size, uploads by direct PUT inside capture exclusion,
   const { unmount: unmountCached } = renderComponent(view);
   expect(screen.getByRole("button", { name: BROWSE_FILES_NAME })).toBeVisible();
   expect(screen.queryByText(input.fileName)).not.toBeInTheDocument();
-  expect(backend).toHaveBeenCalledTimes(EXPECTED_TWO_REQUEST_COUNT);
+  expect(backend).toHaveBeenCalledTimes(EXPECTED_THREE_REQUEST_COUNT);
   unmountCached();
   queryClient.clear();
 });
