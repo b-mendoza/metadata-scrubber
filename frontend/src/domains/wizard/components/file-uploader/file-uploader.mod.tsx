@@ -50,6 +50,18 @@ const useUppyDashboard = (props: FileUploaderProps) => {
     // Remount to change the captured `createUpload` and `maxFileSizeBytes` values.
     const { createUpload, maxFileSizeBytes } = getInitialProps();
     const instance = new Uppy({
+      // Uppy logs can contain file names, signed URLs, and provider errors.
+      logger: {
+        debug: () => {
+          // Discard private upload data.
+        },
+        warn: () => {
+          // Discard private upload data.
+        },
+        error: () => {
+          // Discard private upload data.
+        },
+      },
       restrictions: {
         allowedFileTypes: [UPLOADABLE_MIME_TYPES.PDF],
         maxFileSize: maxFileSizeBytes,

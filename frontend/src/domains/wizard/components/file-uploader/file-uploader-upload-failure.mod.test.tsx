@@ -39,6 +39,9 @@ test("a grant failure stays safe until a deliberate retry succeeds", async () =>
   const alert = vi.fn<typeof globalThis.alert>();
   vi.stubGlobal("alert", alert);
   const useSpy = vi.spyOn(Uppy.prototype, "use");
+  const consoleDebug = vi.spyOn(console, "debug");
+  const consoleWarn = vi.spyOn(console, "warn");
+  const consoleError = vi.spyOn(console, "error");
   const response: RouterOutputs["wizard"]["createUpload"] = {
     storageKey: "uploads/00000000-0000-4000-8000-000000000015",
     uploadUrl: "https://uploads.test/retry-grant",
@@ -100,6 +103,13 @@ test("a grant failure stays safe until a deliberate retry succeeds", async () =>
   expect(uppy.getState().error).toMatch(SAFE_UPLOAD_ERROR);
   const [failedFile] = uppy.getFiles();
   expect(failedFile?.error).toMatch(SAFE_UPLOAD_ERROR);
+  const privateLog = `private-log-detail ${file.name}`;
+  uppy.log(privateLog);
+  uppy.log(privateLog, "warning");
+  uppy.log(privateLog, "error");
+  expect(consoleDebug).not.toHaveBeenCalled();
+  expect(consoleWarn).not.toHaveBeenCalled();
+  expect(consoleError).not.toHaveBeenCalled();
 
   await user.click(
     screen.getByRole("button", { name: RETRY_UPLOAD_BUTTON_NAME }),
@@ -126,6 +136,9 @@ test("a final direct PUT failure stays safe and does not advance the wizard", as
   const alert = vi.fn<typeof globalThis.alert>();
   vi.stubGlobal("alert", alert);
   const useSpy = vi.spyOn(Uppy.prototype, "use");
+  const consoleDebug = vi.spyOn(console, "debug");
+  const consoleWarn = vi.spyOn(console, "warn");
+  const consoleError = vi.spyOn(console, "error");
   const response: RouterOutputs["wizard"]["createUpload"] = {
     storageKey: "uploads/00000000-0000-4000-8000-000000000012",
     uploadUrl: "https://uploads.test/private-put-signature",
@@ -206,6 +219,13 @@ test("a final direct PUT failure stays safe and does not advance the wizard", as
   expect(uppy.getState().error).toMatch(SAFE_UPLOAD_ERROR);
   const [failedFile] = uppy.getFiles();
   expect(failedFile?.error).toMatch(SAFE_UPLOAD_ERROR);
+  const privateLog = `private-log-detail ${file.name}`;
+  uppy.log(privateLog);
+  uppy.log(privateLog, "warning");
+  uppy.log(privateLog, "error");
+  expect(consoleDebug).not.toHaveBeenCalled();
+  expect(consoleWarn).not.toHaveBeenCalled();
+  expect(consoleError).not.toHaveBeenCalled();
   expect(alert).not.toHaveBeenCalledWith(
     expect.stringContaining(response.storageKey),
   );
