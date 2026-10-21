@@ -79,7 +79,9 @@ Developers build the frontend with [TanStack Start](https://tanstack.com/start) 
 - `dryRun` uses a 90-second attempt timeout and a 90-second total timeout.
 - `scrubFile` uses a 240-second attempt timeout and a 240-second total timeout.
 - Dry-run and scrub permit at most two retries. They retry only `POST` responses with status `503` and a positive whole-second `Retry-After` header.
-- The workflow client uses the server's `Retry-After` value. It applies no client delay or client jitter. It caps `Retry-After` at 4000 ms. It does not retry timeouts, network failures, other status codes, or invalid header values.
+- Before each eligible retry, the workflow client adds exponential full jitter. It selects a random whole-millisecond delay from 0 to 299 ms for the first retry and from 0 to 599 ms for the second retry.
+- Ky then applies the server's `Retry-After` delay, capped at 4000 ms. This cap applies only to the server delay, not the combined wait. Both delays count against the total timeout.
+- The workflow client does not retry timeouts, network failures, other status codes, or invalid header values.
 - Backend status `400`, `404`, `408`, `409`, `413`, `415`, `422`, and `503` map to the matching safe tRPC error code.
 - A Ky timeout maps to `TIMEOUT`. Invalid backend success JSON and invalid backend error JSON map to `BAD_GATEWAY`. Other upstream failures also map to `BAD_GATEWAY`.
 - Public tRPC errors do not include backend error text, provider details, credentials, object keys, request IDs, or presigned URL details.
@@ -130,6 +132,6 @@ The root [architecture reference](../../docs/architecture.md) describes service 
 - Router tests cover backend status `413` as the safe tRPC `PAYLOAD_TOO_LARGE` error.
 - Uploader tests cover runtime size restrictions, the PDF-only and one-file restrictions, non-multipart PUT signing, direct browser PUT requests, successful metadata handoff, grant failures, PUT failures, and manual retries.
 - Uploader tests use the real `@uppy/aws-s3` plugin and a test-local `XMLHttpRequest` fake. They do not call R2.
-- Workflow client tests cover the 4000 ms retry cap, the configured retry limit, and rejected retry conditions.
-- Router transport tests check the dry-run and scrub total timeouts after a server-directed retry. They also cover config requests without retries, safe transport errors, and caller cancellation.
+- Workflow client tests cover exponential full jitter, the 4000 ms server-delay cap, the two-retry limit, and rejected retry conditions. They also cover cancellation and total-timeout expiry during both delays.
+- Router transport tests check the dry-run and scrub total timeouts after a server-directed retry. They also cover all four one-shot operations after a `503`, safe transport errors, and caller cancellation.
 - Health transport tests check the 3000 ms attempt timeout, no retry after that timeout, and the one-retry limit for status `502`. They do not test the 5000 ms total timeout or either 250 ms cap.
