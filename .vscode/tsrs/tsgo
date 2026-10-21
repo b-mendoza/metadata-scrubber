@@ -1,1 +1,2 @@
-../../frontend/node_modules/tsrs/bin/tsrs
+#!/bin/sh
+exec "$(dirname "$0")/../../frontend/node_modules/tsrs/bin/tsrs" "$@"
