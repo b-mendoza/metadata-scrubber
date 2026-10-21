@@ -2,6 +2,7 @@ package storage
 
 import (
 	"context"
+	"mime"
 	"net/http"
 	"net/url"
 	"strconv"
@@ -49,6 +50,7 @@ func TestR2PresignsOperationSpecificExactKeysAndExpiry(t *testing.T) {
 	uploadURL, err := url.Parse(upload.URL)
 	require.NoError(t, err)
 	require.Equal(t, "/"+testBucket+"/source/file-1", uploadURL.Path)
+	require.False(t, uploadURL.Query().Has("response-content-disposition"))
 	require.Equal(t, strconv.FormatInt(int64(uploadExpiry/time.Second), 10), uploadURL.Query().Get("X-Amz-Expires"))
 	require.Equal(t, testAccessKey, strings.Split(uploadURL.Query().Get("X-Amz-Credential"), "/")[0])
 	require.Equal(t, PDFContentType, upload.RequiredHeaders.Get("Content-Type"))
@@ -72,6 +74,10 @@ func TestR2PresignsOperationSpecificExactKeysAndExpiry(t *testing.T) {
 	downloadURL, err := url.Parse(download.URL)
 	require.NoError(t, err)
 	require.Equal(t, "/"+testBucket+"/"+revisionKey, downloadURL.Path)
+	disposition, parameters, err := mime.ParseMediaType(downloadURL.Query().Get("response-content-disposition"))
+	require.NoError(t, err)
+	require.Equal(t, "attachment", disposition)
+	require.Equal(t, "sanitized.pdf", parameters["filename"])
 	require.Equal(t, strconv.FormatInt(int64(downloadExpiry/time.Second), 10), downloadURL.Query().Get("X-Amz-Expires"))
 	require.Equal(t, testAccessKey, strings.Split(downloadURL.Query().Get("X-Amz-Credential"), "/")[0])
 	require.Empty(t, download.RequiredHeaders)

@@ -68,8 +68,9 @@ func (r2 *R2) PresignSanitizedDownload(
 	}
 
 	presigned, err := r2.presigner.PresignGetObject(ctx, &s3.GetObjectInput{
-		Bucket: aws.String(r2.bucket),
-		Key:    aws.String(objectKey),
+		Bucket:                     aws.String(r2.bucket),
+		Key:                        aws.String(objectKey),
+		ResponseContentDisposition: aws.String(`attachment; filename="sanitized.pdf"`),
 	}, s3.WithPresignExpires(expiry))
 	if err != nil {
 		return PresignedRequest{}, r2OperationError(ctx, operationPresignSanitizedDownload)
