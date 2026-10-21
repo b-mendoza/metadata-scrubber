@@ -36,7 +36,7 @@ Developers build the frontend with [TanStack Start](https://tanstack.com/start) 
 
 ## Server boundaries
 
-- The frontend server proxies the small-JSON workflow to the Go backend through tRPC procedures.
+- Browser tRPC calls end at the frontend adapter. The frontend procedures call the Go backend with Ky over HTTP/JSON.
 - The `.server` module suffix marks server-only code. Other source modules can enter the client bundle, even when they contain a server callback.
 - The root tRPC router registers the `products` and `wizard` routers.
 - The wizard router provides these procedures:
