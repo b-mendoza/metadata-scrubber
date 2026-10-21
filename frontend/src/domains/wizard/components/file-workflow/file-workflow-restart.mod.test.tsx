@@ -7,6 +7,10 @@ import { expect, test, vi } from "vitest";
 
 import { FileUploader } from "#/domains/wizard/components/file-uploader/file-uploader.mod";
 import type { BackendErrorResponse } from "#/domains/wizard/wizard-contracts.mod.server";
+import {
+  CONFLICT_STATUS_CODE,
+  INTERNAL_SERVER_ERROR_STATUS_CODE,
+} from "#/shared/constants/http/status-codes/status-codes.mod";
 import type {
   RouterInputs,
   RouterOutputs,
@@ -254,7 +258,7 @@ test.each(["success", "failure"] as const)(
   },
 );
 
-test.each(["success", "failure"] as const)(
+test.each(["success", "failure", "conflict"] as const)(
   "late scrub %s cannot replace a new pending scrub or its result",
   async (completion) => {
     const { backend, queryClient, uploader, view } = setupWorkflow();
@@ -335,11 +339,15 @@ test.each(["success", "failure"] as const)(
     await waitFor(() => {
       expect(queryClient.isMutating()).toBe(TWO_PENDING_MUTATIONS);
     });
+    const errorStatus =
+      completion === "conflict"
+        ? CONFLICT_STATUS_CODE
+        : INTERNAL_SERVER_ERROR_STATUS_CODE;
     act(() => {
       oldResponse.resolve(
         completion === "success"
           ? Response.json(oldResult)
-          : Response.json(error, { status: 500 }),
+          : Response.json(error, { status: errorStatus }),
       );
     });
     await waitFor(() => {

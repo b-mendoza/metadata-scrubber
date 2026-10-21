@@ -23,6 +23,7 @@ type Flow =
   | { step: "inspecting" }
   | { step: "inspection-failed" }
   | { step: "signed" }
+  | { step: "conflict" }
   | { step: "review" | "scrubbing" | "scrub-failed"; review: ReviewedPDF }
   | { step: "done"; review: ReviewedPDF };
 
@@ -130,6 +131,10 @@ export function FileWorkflow() {
           return;
         }
         scrubPendingRef.current = false;
+        if (code === "CONFLICT") {
+          setFlow({ step: "conflict" });
+          return;
+        }
         setFlow(
           code === "UNPROCESSABLE_CONTENT"
             ? { step: "signed" }
@@ -198,6 +203,19 @@ export function FileWorkflow() {
           <p>
             Files expire after one day. Deletion usually follows within 24 hours
             after expiry, but it can take longer.
+          </p>
+        </>
+      );
+    }
+    if (flow.step === "conflict") {
+      return (
+        <>
+          <h2 key={flow.step} ref={focusWorkflowHeading} tabIndex={-1}>
+            PDF changed
+          </h2>
+          <p role="alert">
+            The PDF changed since review. Start again to upload and review the
+            current PDF.
           </p>
         </>
       );
