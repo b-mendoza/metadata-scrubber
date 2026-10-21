@@ -1,4 +1,5 @@
 import { fetchRequestHandler } from "@trpc/server/adapters/fetch";
+import type { KyInstance } from "ky";
 import ky from "ky";
 import posthog from "posthog-js";
 import { afterEach, expect, test, vi } from "vitest";
@@ -18,16 +19,11 @@ afterEach(() => {
   posthog.__loaded = false;
 });
 
-function setupClient() {
-  const healthResponse: RouterOutputs["products"]["getMessage"] = {
-    status: "reachable",
-  };
+function setupClient(workflowHttpClient: KyInstance) {
   vi.mocked(getAppBindings).mockReturnValue({
-    httpClient: ky.create({
-      hooks: { beforeRequest: [() => Response.json(healthResponse)] },
-    }),
+    httpClient: ky.create(),
     posthogProjectToken: "phc_test_public_token",
-    workflowHttpClient: ky.create(),
+    workflowHttpClient,
   });
   const fetchMock = vi
     .fn<typeof fetch>()
@@ -55,10 +51,18 @@ test("browser tRPC calls send the current PostHog IDs on every request", async (
   vi.spyOn(posthog, "get_session_id")
     .mockReturnValueOnce("session-a")
     .mockReturnValue("session-b");
-  const { client, fetchMock } = setupClient();
+  const response: RouterOutputs["wizard"]["getWorkflowConfig"] = {
+    maxFileSizeBytes: 7_340_032,
+  };
+  const { client, fetchMock } = setupClient(
+    ky.create({
+      baseUrl: "https://backend.test/",
+      hooks: { beforeRequest: [() => Response.json(response)] },
+    }),
+  );
 
-  await client.products.getMessage.query();
-  await client.products.getMessage.query();
+  await client.wizard.getWorkflowConfig.query();
+  await client.wizard.getWorkflowConfig.query();
 
   const [[, firstOptions] = [], [, secondOptions] = []] = fetchMock.mock.calls;
   const firstHeaders = new Headers(firstOptions?.headers);
@@ -71,11 +75,22 @@ test("browser tRPC calls send the current PostHog IDs on every request", async (
 
 test("tRPC sends no PostHog IDs for an uninitialized browser", async () => {
   posthog.__loaded = false;
-  const { client, fetchMock } = setupClient();
+  const response: RouterOutputs["wizard"]["getWorkflowConfig"] = {
+    maxFileSizeBytes: 7_340_032,
+  };
+  const { client, fetchMock } = setupClient(
+    ky.create({
+      baseUrl: "https://backend.test/",
+      hooks: { beforeRequest: [() => Response.json(response)] },
+    }),
+  );
 
-  await client.products.getMessage.query();
+  await client.wizard.getWorkflowConfig.query();
 
+  expect(fetchMock).toHaveBeenCalledOnce();
   const [[, options] = []] = fetchMock.mock.calls;
+  expect(options?.method).toBe("GET");
+  expect(options?.body).toBeUndefined();
   const headers = new Headers(options?.headers);
   expect(headers.has("X-POSTHOG-DISTINCT-ID")).toBe(false);
   expect(headers.has("X-POSTHOG-SESSION-ID")).toBe(false);
