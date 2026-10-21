@@ -140,7 +140,7 @@ test("result entry waits for one verified POST grant before enabling Download", 
   queryClient.clear();
 });
 
-test("expiry disables the link without scheduled renewal and return refreshes it once", async () => {
+test("hidden expiry disables the link without scheduled renewal and return refreshes it once", async () => {
   const input: RouterInputs["wizard"]["refreshDownloadGrant"] = {
     storageKey: "uploads/00000000-0000-4000-8000-000000000302",
     etag: "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
@@ -155,6 +155,7 @@ test("expiry disables the link without scheduled renewal and return refreshes it
   };
   const { backend, queryClient, view } = setupResult(input);
   const response = Promise.withResolvers<Response>();
+  const visibility = vi.spyOn(document, "visibilityState", "get");
   backend
     .mockResolvedValueOnce(Response.json(grant))
     .mockReturnValueOnce(response.promise);
@@ -166,6 +167,10 @@ test("expiry disables the link without scheduled renewal and return refreshes it
     "href",
     grant.downloadUrl,
   );
+  visibility.mockReturnValue("hidden");
+  act(() => {
+    document.dispatchEvent(new Event("visibilitychange"));
+  });
   await act(async () => {
     await vi.advanceTimersByTimeAsync(GRANT_LIFETIME_MS);
   });
@@ -174,6 +179,7 @@ test("expiry disables the link without scheduled renewal and return refreshes it
   ).not.toBeInTheDocument();
   expect(screen.getByRole("button", { name: "Download PDF" })).toBeDisabled();
   expect(backend).toHaveBeenCalledOnce();
+  visibility.mockReturnValue("visible");
   act(() => {
     dispatchEvent(new Event("focus"));
     dispatchEvent(new Event("pageshow"));

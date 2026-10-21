@@ -1,13 +1,7 @@
 import { useMutation } from "@tanstack/react-query";
 import { isTRPCClientError } from "@trpc/client";
 import type { MouseEvent } from "react";
-import {
-  useCallback,
-  useEffect,
-  useEffectEvent,
-  useRef,
-  useState,
-} from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 
 import type {
   RouterInputs,
@@ -22,6 +16,7 @@ type GrantState =
 
 const MAX_TIMER_DELAY_MS = 2_147_483_647;
 const NO_DELAY_MS = 0;
+const RENEWAL_LEAD_MS = 120_000;
 
 export function useDownloadGrant({
   storageKey,
@@ -34,6 +29,7 @@ export function useDownloadGrant({
   const [state, setState] = useState<GrantState>({ status: "checking" });
   const activeRef = useRef(false);
   const pendingRef = useRef(false);
+  const renewedExpiryRef = useRef<number | null>(null);
   const refresh = useCallback(() => {
     if (!activeRef.current || pendingRef.current) {
       return;
@@ -76,53 +72,56 @@ export function useDownloadGrant({
     };
   }, [refresh]);
 
-  const checkOnReturn = useEffectEvent(() => {
-    if (document.visibilityState === "hidden" || state.status === "missing") {
-      return;
-    }
-    if (
-      state.status !== "ready" ||
-      Date.parse(state.grant.expiresAt) <= Date.now()
-    ) {
-      refresh();
-    }
-  });
   useEffect(() => {
-    const check = () => {
-      checkOnReturn();
-    };
-    addEventListener("focus", check);
-    addEventListener("pageshow", check);
-    document.addEventListener("visibilitychange", check);
-    return () => {
-      removeEventListener("focus", check);
-      removeEventListener("pageshow", check);
-      document.removeEventListener("visibilitychange", check);
-    };
-  }, []);
-
-  useEffect(() => {
-    if (state.status !== "ready") {
-      return;
-    }
-    const expiresAt = Date.parse(state.grant.expiresAt);
-    const expire = () => {
-      const remaining = expiresAt - Date.now();
-      if (remaining > NO_DELAY_MS) {
-        timer = setTimeout(expire, Math.min(remaining, MAX_TIMER_DELAY_MS));
-      } else {
-        setState({ status: "expired" });
+    const schedule = () => {
+      clearTimeout(timer);
+      if (state.status !== "ready") {
+        return;
       }
+      const expiresAt = Date.parse(state.grant.expiresAt);
+      const remaining = expiresAt - Date.now();
+      if (remaining <= NO_DELAY_MS) {
+        setState({ status: "expired" });
+        return;
+      }
+      let delay = remaining;
+      if (
+        document.visibilityState === "visible" &&
+        renewedExpiryRef.current !== expiresAt
+      ) {
+        delay -= RENEWAL_LEAD_MS;
+        if (delay <= NO_DELAY_MS) {
+          // A repeated expiry must not trigger an automatic renewal loop.
+          renewedExpiryRef.current = expiresAt;
+          refresh();
+          return;
+        }
+      }
+      timer = setTimeout(schedule, Math.min(delay, MAX_TIMER_DELAY_MS));
     };
-    const delay = Math.max(
-      NO_DELAY_MS,
-      Math.min(expiresAt - Date.now(), MAX_TIMER_DELAY_MS),
-    );
-    let timer = setTimeout(expire, delay);
+    const checkOnReturn = () => {
+      if (
+        document.visibilityState === "visible" &&
+        state.status !== "missing" &&
+        (state.status !== "ready" ||
+          Date.parse(state.grant.expiresAt) <= Date.now())
+      ) {
+        refresh();
+        return;
+      }
+      schedule();
+    };
+    let timer = setTimeout(schedule, NO_DELAY_MS);
+    addEventListener("focus", checkOnReturn);
+    addEventListener("pageshow", checkOnReturn);
+    document.addEventListener("visibilitychange", checkOnReturn);
     return () => {
       clearTimeout(timer);
+      removeEventListener("focus", checkOnReturn);
+      removeEventListener("pageshow", checkOnReturn);
+      document.removeEventListener("visibilitychange", checkOnReturn);
     };
-  }, [state]);
+  }, [refresh, state]);
 
   const onDownload = (event: MouseEvent<HTMLAnchorElement>) => {
     if (

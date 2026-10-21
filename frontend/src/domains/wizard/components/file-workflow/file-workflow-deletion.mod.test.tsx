@@ -3,7 +3,7 @@ import { act, screen, waitFor } from "@testing-library/react";
 import { fetchRequestHandler } from "@trpc/server/adapters/fetch";
 import ky from "ky";
 import { StrictMode } from "react";
-import { expect, test, vi } from "vitest";
+import { afterEach, expect, test, vi } from "vitest";
 
 import type { BackendErrorResponse } from "#/domains/wizard/wizard-contracts.mod.server";
 import {
@@ -29,10 +29,17 @@ vi.mock(import("#/shared/middlewares/app-bindings/app-bindings.mod"), () => ({
 }));
 
 const TWO_REQUESTS = 2;
+const THREE_REQUESTS = 3;
 const FOUR_REQUESTS = 4;
 const ONE_PENDING = 1;
 const NONE_PENDING = 0;
 const DELETE_REQUEST_INDEX = 1;
+const FLUSH_MS = 1;
+const GRANT_LIFETIME_MS = 900_000;
+
+afterEach(() => {
+  vi.useRealTimers();
+});
 
 function setupResult(review: RouterInputs["wizard"]["refreshDownloadGrant"]) {
   const backend = vi.fn<(request: Request) => Promise<Response>>();
@@ -296,6 +303,150 @@ test.each(["grant first", "deletion first"] as const)(
       screen.queryByRole("button", { name: "Refresh download link" }),
     ).not.toBeInTheDocument();
     expect(backend).toHaveBeenCalledTimes(TWO_REQUESTS);
+    unmount();
+    queryClient.clear();
+  },
+);
+
+test("confirmed deletion stops scheduled renewal while pending and after success", async () => {
+  vi.useFakeTimers();
+  vi.setSystemTime(new Date("2026-10-21T12:00:00Z"));
+  const review: RouterInputs["wizard"]["refreshDownloadGrant"] = {
+    storageKey: "uploads/00000000-0000-4000-8000-000000000506",
+    etag: "ffffffffffffffffffffffffffffffff",
+  };
+  const grant: RouterOutputs["wizard"]["refreshDownloadGrant"] = {
+    downloadUrl: "https://downloads.test/before-delete",
+    expiresAt: "2026-10-21T12:15:00Z",
+  };
+  const deleted: RouterOutputs["wizard"]["confirmDelete"] = {
+    status: "deleted",
+  };
+  const response = Promise.withResolvers<Response>();
+  const { backend, queryClient, view } = setupResult(review);
+  backend
+    .mockResolvedValueOnce(Response.json(grant))
+    .mockReturnValueOnce(response.promise);
+  const { unmount } = renderComponent(view);
+  await act(async () => {
+    await vi.advanceTimersByTimeAsync(FLUSH_MS);
+  });
+  const deletionButton = screen.getByRole("button", { name: "Delete files" });
+  act(() => {
+    deletionButton.click();
+  });
+  const confirmButton = screen.getByRole("button", {
+    name: "Confirm deletion",
+  });
+  act(() => {
+    confirmButton.click();
+  });
+  await act(async () => {
+    await vi.advanceTimersByTimeAsync(GRANT_LIFETIME_MS);
+  });
+  expect(screen.getByRole("status", { name: "Deleting files" })).toBeVisible();
+  expect(backend).toHaveBeenCalledTimes(TWO_REQUESTS);
+  act(() => {
+    response.resolve(Response.json(deleted));
+  });
+  await act(async () => {
+    await vi.advanceTimersByTimeAsync(FLUSH_MS);
+  });
+  act(() => {
+    dispatchEvent(new Event("focus"));
+    dispatchEvent(new Event("pageshow"));
+    document.dispatchEvent(new Event("visibilitychange"));
+  });
+  await act(async () => {
+    await vi.advanceTimersByTimeAsync(GRANT_LIFETIME_MS);
+  });
+  expect(
+    screen.getByRole("heading", { name: "Deletion confirmed" }),
+  ).toHaveFocus();
+  expect(screen.queryByRole("link")).not.toBeInTheDocument();
+  expect(backend).toHaveBeenCalledTimes(TWO_REQUESTS);
+  unmount();
+  queryClient.clear();
+});
+
+test.each(["renewal first", "deletion first"] as const)(
+  "%s completion rejects a late scheduled grant",
+  async (order) => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date("2026-10-21T12:00:00Z"));
+    const review: RouterInputs["wizard"]["refreshDownloadGrant"] = {
+      storageKey: "uploads/00000000-0000-4000-8000-000000000507",
+      etag: "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+    };
+    const grant: RouterOutputs["wizard"]["refreshDownloadGrant"] = {
+      downloadUrl: "https://downloads.test/scheduled-before-delete",
+      expiresAt: "2026-10-21T12:15:00Z",
+    };
+    const renewed: RouterOutputs["wizard"]["refreshDownloadGrant"] = {
+      downloadUrl: "https://downloads.test/late-scheduled-deleted",
+      expiresAt: "2026-10-21T12:28:00Z",
+    };
+    const deleted: RouterOutputs["wizard"]["confirmDelete"] = {
+      status: "deleted",
+    };
+    const renewalResponse = Promise.withResolvers<Response>();
+    const deletionResponse = Promise.withResolvers<Response>();
+    const { backend, queryClient, view } = setupResult(review);
+    backend
+      .mockResolvedValueOnce(Response.json(grant))
+      .mockReturnValueOnce(renewalResponse.promise)
+      .mockReturnValueOnce(deletionResponse.promise);
+    const { unmount } = renderComponent(view);
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(FLUSH_MS);
+      await vi.advanceTimersByTimeAsync(
+        Date.parse("2026-10-21T12:13:00Z") - Date.now(),
+      );
+      await vi.advanceTimersByTimeAsync(FLUSH_MS);
+    });
+    expect(backend).toHaveBeenCalledTimes(TWO_REQUESTS);
+    const deletionButton = screen.getByRole("button", { name: "Delete files" });
+    act(() => {
+      deletionButton.click();
+    });
+    const confirmButton = screen.getByRole("button", {
+      name: "Confirm deletion",
+    });
+    act(() => {
+      confirmButton.click();
+    });
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(FLUSH_MS);
+    });
+    act(() => {
+      if (order === "renewal first") {
+        renewalResponse.resolve(Response.json(renewed));
+      } else {
+        deletionResponse.resolve(Response.json(deleted));
+      }
+    });
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(FLUSH_MS);
+    });
+    expect(screen.queryByRole("link")).not.toBeInTheDocument();
+    expect(queryClient.isMutating()).toBe(ONE_PENDING);
+    act(() => {
+      if (order === "renewal first") {
+        deletionResponse.resolve(Response.json(deleted));
+      } else {
+        renewalResponse.resolve(Response.json(renewed));
+      }
+    });
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(FLUSH_MS);
+      await vi.advanceTimersByTimeAsync(GRANT_LIFETIME_MS);
+    });
+    expect(queryClient.isMutating()).toBe(NONE_PENDING);
+    expect(
+      screen.getByRole("heading", { name: "Deletion confirmed" }),
+    ).toHaveFocus();
+    expect(screen.queryByRole("link")).not.toBeInTheDocument();
+    expect(backend).toHaveBeenCalledTimes(THREE_REQUESTS);
     unmount();
     queryClient.clear();
   },
