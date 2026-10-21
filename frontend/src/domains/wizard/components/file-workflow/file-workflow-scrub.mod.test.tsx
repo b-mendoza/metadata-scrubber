@@ -180,6 +180,11 @@ test("same-turn consent scrubs the stored reviewed pair once and shows the direc
 
   const download = await screen.findByRole("link", { name: "Download PDF" });
   expect(screen.getByRole("heading", { name: "PDF ready" })).toHaveFocus();
+  expect(
+    screen.getByText(
+      "Producer, CreationDate, and ModDate can have neutral replacements. A neutral replacement does not remove the field.",
+    ),
+  ).toBeVisible();
   expect(download).toHaveAttribute("href", grant.downloadUrl);
   const [grantRequest] = backend.mock.calls.at(LAST_REQUEST_INDEX) ?? [];
   expect.assert(grantRequest != null);

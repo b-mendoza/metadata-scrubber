@@ -175,7 +175,14 @@ test("duplicate upload callbacks inspect once and show the backend inventory as 
   expect(screen.getByText("Replace with a neutral value")).toBeVisible();
   expect(screen.getByText(PREVIEW_EXPLANATION)).toBeVisible();
   expect(screen.getByText(REPLACEMENT_EXPLANATION)).toBeVisible();
-  expect(screen.getByText(SCOPE_EXPLANATION)).toBeVisible();
+  const scope = screen.getByText(SCOPE_EXPLANATION);
+  expect(scope).toBeVisible();
+  expect(scope).toHaveTextContent(
+    "Metadata removal is limited to Info, XMP, and custom metadata.",
+  );
+  expect(scope).toHaveTextContent(
+    "This does not cover all hidden PDF content or make the PDF safe to share.",
+  );
   expect(screen.getByText(RETENTION_TEXT)).toHaveTextContent(
     "Files expire after one day. Deletion usually follows within 24 hours after expiry, but it can take longer.",
   );
@@ -183,6 +190,9 @@ test("duplicate upload callbacks inspect once and show the backend inventory as 
   expect(screen.queryByText(input.storageKey)).not.toBeInTheDocument();
   const confirm = screen.getByRole("button", { name: "Scrub it" });
   expect(confirm).toBeEnabled();
+  expect(scope.compareDocumentPosition(confirm)).toBe(
+    Node.DOCUMENT_POSITION_FOLLOWING,
+  );
   expect(screen.getByRole("main")).toContainElement(confirm);
   expect(consoleError).not.toHaveBeenCalled();
   expect(capture).not.toHaveBeenCalled();

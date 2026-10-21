@@ -32,8 +32,9 @@ export function FileWorkflowReview({
         Review metadata
       </h2>
       <p>
-        Review the supported identifying metadata below. This does not cover all
-        hidden PDF content.
+        Review the supported identifying metadata below. Metadata removal is
+        limited to Info, XMP, and custom metadata. This does not cover all
+        hidden PDF content or make the PDF safe to share.
       </p>
       <p>
         Previews can be shortened. The byte count describes the original value.
@@ -164,6 +165,10 @@ export function FileWorkflowResult({
       <h2 ref={headingRef} tabIndex={-1}>
         PDF ready
       </h2>
+      <p>
+        Producer, CreationDate, and ModDate can have neutral replacements. A
+        neutral replacement does not remove the field.
+      </p>
       {deletion.phase === "deleting" ? (
         <button className="btn btn-primary" disabled type="button">
           Download PDF
