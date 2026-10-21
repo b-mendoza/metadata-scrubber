@@ -24,7 +24,7 @@ Developers build the frontend with [TanStack Start](https://tanstack.com/start) 
 
 ## Source layout
 
-- Developers group feature code by domain under `src/domains/<domain>/`. The current domains include `wizard` and `products`.
+- Developers group feature code by domain under `src/domains/<domain>/`. The current domain is `wizard`.
 - The wizard domain contains the typed file-workflow tRPC router, its wire contracts, and its tests.
 - Developers keep cross-domain code under `src/shared/`. It contains `config`, `constants`, `libs` for tRPC and Ky, `middlewares`, and `utils`.
 - TanStack Router reads file-based routes from `src/routes/`. Developers keep API routes under `src/routes/api/`.
@@ -38,7 +38,7 @@ Developers build the frontend with [TanStack Start](https://tanstack.com/start) 
 
 - Browser tRPC calls end at the frontend adapter. The frontend procedures call the Go backend with Ky over HTTP/JSON.
 - The `.server` module suffix marks server-only code. Other source modules can enter the client bundle, even when they contain a server callback.
-- The root tRPC router registers the `products` and `wizard` routers.
+- The root tRPC router registers only `wizard` ([`routers.mod.server.ts`](../src/shared/libs/trpc/routers/routers.mod.server.ts)).
 - The wizard router provides these procedures:
   - `getWorkflowConfig`
   - `createUpload`
@@ -63,10 +63,8 @@ Developers build the frontend with [TanStack Start](https://tanstack.com/start) 
 
 ### Health transport
 
-- The `getMessage` procedure reads `httpClient` from the request-scoped bindings.
-- It requests relative `/api/health` and passes the tRPC request signal.
-- It validates the success body with Zod.
-- It maps every outbound failure to one safe `BAD_GATEWAY` tRPC error.
+- The backend provides `GET /api/health` ([`backend/main.go`](../../backend/main.go)).
+- The shared health-check Ky client remains in [`http-client.mod.server.ts`](../src/shared/libs/ky/http-client.mod.server.ts). No frontend tRPC procedure calls backend health.
 - Each attempt has a 3000 ms timeout. The total timeout is 5000 ms.
 - The client permits one retry. It caps retry delay and `Retry-After` at 250 ms. It does not retry a timeout.
 
