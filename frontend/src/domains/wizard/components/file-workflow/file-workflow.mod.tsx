@@ -22,6 +22,7 @@ type Flow =
   | { step: "upload"; isSourceMissing: boolean }
   | { step: "inspecting" }
   | { step: "inspection-failed" }
+  | { step: "signed" }
   | { step: "review" | "scrubbing" | "scrub-failed"; review: ReviewedPDF }
   | { step: "done"; review: ReviewedPDF };
 
@@ -81,14 +82,17 @@ export function FileWorkflow() {
         if (currentGenerationRef.current !== generation) {
           return;
         }
-        if (
-          isTRPCClientError<AppRouter>(error) &&
-          error.data?.code === "NOT_FOUND"
-        ) {
+        const code = isTRPCClientError<AppRouter>(error)
+          ? error.data?.code
+          : null;
+        if (code === "NOT_FOUND") {
           restart(true);
           return;
         }
-        setFlow({ step: "inspection-failed" });
+        setFlow({
+          step:
+            code === "UNPROCESSABLE_CONTENT" ? "signed" : "inspection-failed",
+        });
       });
   };
 
@@ -118,15 +122,19 @@ export function FileWorkflow() {
         if (currentGenerationRef.current !== generation) {
           return;
         }
-        if (
-          isTRPCClientError<AppRouter>(error) &&
-          error.data?.code === "NOT_FOUND"
-        ) {
+        const code = isTRPCClientError<AppRouter>(error)
+          ? error.data?.code
+          : null;
+        if (code === "NOT_FOUND") {
           restart(true);
           return;
         }
         scrubPendingRef.current = false;
-        setFlow({ step: "scrub-failed", review });
+        setFlow(
+          code === "UNPROCESSABLE_CONTENT"
+            ? { step: "signed" }
+            : { step: "scrub-failed", review },
+        );
       });
   };
 
@@ -174,6 +182,23 @@ export function FileWorkflow() {
           <output aria-label="Inspecting PDF">
             Inspecting the PDF. Please wait.
           </output>
+        </>
+      );
+    }
+    if (flow.step === "signed") {
+      return (
+        <>
+          <h2 key={flow.step} ref={focusWorkflowHeading} tabIndex={-1}>
+            Signed PDF not supported
+          </h2>
+          <p>
+            This version does not support signed PDFs. Removing metadata can
+            invalidate a digital signature.
+          </p>
+          <p>
+            Files expire after one day. Deletion usually follows within 24 hours
+            after expiry, but it can take longer.
+          </p>
         </>
       );
     }
