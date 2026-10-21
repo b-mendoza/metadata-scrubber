@@ -176,6 +176,10 @@ export function FileWorkflowResult({
       ) : (
         <FileWorkflowDownload review={review} />
       )}
+      <p>
+        Files expire after one day. Deletion usually follows within 24 hours
+        after expiry, but it can take longer.
+      </p>
       <FileWorkflowDeletion deletion={deletion} />
     </>
   );
