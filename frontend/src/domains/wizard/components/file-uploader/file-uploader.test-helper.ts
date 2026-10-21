@@ -151,6 +151,12 @@ export const getFileInput = async (
 };
 
 export const installXMLHttpRequestFake = () => {
+  // The S3 plugin only reads provider errors from XMLHttpRequest instances.
+  Object.defineProperty(FakeXMLHttpRequest, Symbol.hasInstance, {
+    configurable: true,
+    value: (candidate: unknown) =>
+      requests.some((request) => request === candidate),
+  });
   FakeXMLHttpRequest.reset();
   vi.stubGlobal("XMLHttpRequest", FakeXMLHttpRequest);
 };

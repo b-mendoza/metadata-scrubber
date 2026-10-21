@@ -1,4 +1,5 @@
 import AwsS3 from "@uppy/aws-s3";
+import type { Meta, UppyEventMap } from "@uppy/core";
 import Uppy from "@uppy/core";
 import Dashboard from "@uppy/dashboard";
 import { useEffect, useEffectEvent, useRef } from "react";
@@ -12,6 +13,11 @@ import type {
   RouterInputs,
   RouterOutputs,
 } from "#/shared/libs/trpc/client/client.mod";
+
+type UploadEvents = UppyEventMap<Meta, Record<string, never>>;
+type UploadEventArguments = {
+  [Event in keyof UploadEvents]: [Event, ...Parameters<UploadEvents[Event]>];
+}[keyof UploadEvents];
 
 const BYTES_PER_MEBIBYTE = 1_048_576;
 const fileSizeFormatter = new Intl.NumberFormat("en-US", {
@@ -49,6 +55,30 @@ const useUppyDashboard = (props: FileUploaderProps) => {
         maxFileSize: maxFileSizeBytes,
         maxNumberOfFiles: WIZARD_UPLOAD_FILE_COUNT,
         minNumberOfFiles: WIZARD_UPLOAD_FILE_COUNT,
+      },
+    });
+
+    instance.emit = new Proxy(instance.emit.bind(instance), {
+      apply: (emit, _target, eventArguments: UploadEventArguments) => {
+        const [event] = eventArguments;
+        if (event === "upload-error") {
+          const [, file] = eventArguments;
+          // Replace provider errors before Uppy stores or displays them.
+          Reflect.apply(emit, instance, [
+            event,
+            file,
+            new Error("Could not upload the file. Try again."),
+          ]);
+          return;
+        }
+        Reflect.apply(emit, instance, eventArguments);
+      },
+    });
+
+    instance.setOptions({
+      locale: {
+        ...instance.locale,
+        strings: { failedToUpload: "Could not upload the file." },
       },
     });
 
