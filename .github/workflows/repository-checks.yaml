@@ -42,8 +42,23 @@ jobs:
           args: --offline --persona=auditor .github/
         background: true
 
+      - name: Setup Go
+        uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
+        with:
+          # Install actionlint from a module path. Do not cache this repo's go.sum.
+          go-version-file: ./backend/go.mod
+          cache: false
+
+      - name: Install actionlint
+        # Astral publishes no fork release or image yet. Pin a reviewed commit.
+        # The fork accepts $/ refs and background/wait-all steps.
+        # Upstream still rejects those forms. See rhysd/actionlint#711 and #693.
+        # https://github.com/astral-sh/actionlint/commit/07fc2e389a52682854f5aaf4b862a9b86e01d0a2
+        run: go install github.com/astral-sh/actionlint/cmd/actionlint@07fc2e389a52682854f5aaf4b862a9b86e01d0a2
+
       - name: Check workflows with actionlint
-        uses: docker://rhysd/actionlint:1.7.12@sha256:b1934ee5f1c509618f2508e6eb47ee0d3520686341fec936f3b79331f9315667
+        # ubuntu-latest includes shellcheck. actionlint uses it when it is on PATH.
+        run: actionlint
         background: true
 
       - wait-all:
