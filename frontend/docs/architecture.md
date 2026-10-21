@@ -92,7 +92,7 @@ The workflow schemas enforce these contracts:
 
 - The Go backend owns the maximum source size.
 - `getWorkflowConfig` supplies the frontend with a positive runtime `maxFileSizeBytes` value.
-- The uploader uses this runtime value for its file-size restriction. The frontend does not own a copy of the limit.
+- The uploader uses its `maxFileSizeBytes` prop for its file-size restriction. The frontend does not own a copy of the limit.
 - A storage key contains an `uploads/` prefix and one lower-case UUIDv4 value.
 - A canonical ETag contains exactly 32 lower-case hexadecimal characters. It has no quotes or whitespace.
 - A file name cannot start or end with whitespace. The schema rejects whitespace instead of changing the file name.
@@ -100,11 +100,11 @@ The workflow schemas enforce these contracts:
 
 ## File uploads
 
-- The Uppy uploader accepts exactly one PDF file. It uses the runtime size limit from `getWorkflowConfig`.
+- The Uppy uploader accepts exactly one PDF file. No route mounts it or calls `getWorkflowConfig`.
 - The uploader calls `createUpload` with the file name and file size. It does not send file bytes in the tRPC call.
 - `createUpload` returns a private R2 `storageKey` and a presigned PUT URL.
 - The browser sends the PDF bytes directly to private R2 with the presigned URL.
-- Uppy stores the backend-generated `storageKey` in file metadata. Only `{ storageKey }` enters the wizard state after a successful upload.
+- Uppy stores the backend-generated `storageKey` in file metadata. The uploader calls `onUploadComplete` with only `{ storageKey }` after a successful upload.
 - No frontend route parses or proxies file bytes.
 - The Go backend owns R2 credentials and the file-size limit. The browser does not receive R2 credentials.
 - The Go backend also owns PDF inspection, metadata removal, sanitized revisions, download grants, and confirmed deletion.
