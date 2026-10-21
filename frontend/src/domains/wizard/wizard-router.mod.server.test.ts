@@ -22,8 +22,10 @@ import { getAppBindings } from "#/shared/middlewares/app-bindings/app-bindings.m
 
 import type { BackendErrorResponse } from "./wizard-contracts.mod.server";
 import {
+  CONFIRM_DELETE_FAILURE_MESSAGE,
   CREATE_UPLOAD_FAILURE_MESSAGE,
   DRY_RUN_FAILURE_MESSAGE,
+  REFRESH_DOWNLOAD_GRANT_FAILURE_MESSAGE,
   SCRUB_FILE_FAILURE_MESSAGE,
   WORKFLOW_CONFIG_FAILURE_MESSAGE,
 } from "./wizard-router.mod.server";
@@ -360,6 +362,7 @@ test("scrubFile uses its total timeout after a server-directed retry", async () 
 });
 
 test("getWorkflowConfig rejects a backend 503 without a retry", async () => {
+  mock.timers.enable({ apis: ["Date", "setTimeout"] });
   const response: BackendErrorResponse = {
     error: "processing capacity temporarily unavailable",
   };
@@ -372,16 +375,98 @@ test("getWorkflowConfig rejects a backend 503 without a retry", async () => {
   vi.stubGlobal("fetch", fetchMock);
   const request = new Request(FRONTEND_URL);
 
-  let failure: unknown = null;
-  try {
-    await callerForRequest(request).getWorkflowConfig();
-  } catch (error) {
-    failure = error;
-  }
+  const operation = callerForRequest(request).getWorkflowConfig();
+  void operation.catch(() => null);
+  await timers.setImmediate();
+  mock.timers.runAll();
 
-  expect.assert(failure instanceof TRPCError);
-  expect(failure.code).toBe("SERVICE_UNAVAILABLE");
-  expect(failure.message).toBe(WORKFLOW_CONFIG_FAILURE_MESSAGE);
+  await expect(operation).rejects.toMatchObject({
+    code: "SERVICE_UNAVAILABLE",
+    message: WORKFLOW_CONFIG_FAILURE_MESSAGE,
+  });
+  expect(fetchMock).toHaveBeenCalledOnce();
+});
+
+test("createUpload rejects a backend 503 without a retry", async () => {
+  mock.timers.enable({ apis: ["Date", "setTimeout"] });
+  const input: RouterInputs["wizard"]["createUpload"] = {
+    fileName: "report.pdf",
+    fileSizeBytes: MINIMUM_FILE_SIZE_BYTES,
+  };
+  const response: BackendErrorResponse = { error: "processing busy" };
+  const fetchMock = vi.fn<typeof fetch>().mockResolvedValue(
+    Response.json(response, {
+      headers: { "Retry-After": "1" },
+      status: SERVICE_UNAVAILABLE_STATUS_CODE,
+    }),
+  );
+  vi.stubGlobal("fetch", fetchMock);
+  const request = new Request(FRONTEND_URL);
+
+  const operation = callerForRequest(request).createUpload(input);
+  void operation.catch(() => null);
+  await timers.setImmediate();
+  mock.timers.runAll();
+
+  await expect(operation).rejects.toMatchObject({
+    code: "SERVICE_UNAVAILABLE",
+    message: CREATE_UPLOAD_FAILURE_MESSAGE,
+  });
+  expect(fetchMock).toHaveBeenCalledOnce();
+});
+
+test("refreshDownloadGrant rejects a backend 503 without a retry", async () => {
+  mock.timers.enable({ apis: ["Date", "setTimeout"] });
+  const input: RouterInputs["wizard"]["refreshDownloadGrant"] = {
+    etag: CANONICAL_ETAG,
+    storageKey: STORAGE_KEY,
+  };
+  const response: BackendErrorResponse = { error: "processing busy" };
+  const fetchMock = vi.fn<typeof fetch>().mockResolvedValue(
+    Response.json(response, {
+      headers: { "Retry-After": "1" },
+      status: SERVICE_UNAVAILABLE_STATUS_CODE,
+    }),
+  );
+  vi.stubGlobal("fetch", fetchMock);
+  const request = new Request(FRONTEND_URL);
+
+  const operation = callerForRequest(request).refreshDownloadGrant(input);
+  void operation.catch(() => null);
+  await timers.setImmediate();
+  mock.timers.runAll();
+
+  await expect(operation).rejects.toMatchObject({
+    code: "SERVICE_UNAVAILABLE",
+    message: REFRESH_DOWNLOAD_GRANT_FAILURE_MESSAGE,
+  });
+  expect(fetchMock).toHaveBeenCalledOnce();
+});
+
+test("confirmDelete rejects a backend 503 without a retry", async () => {
+  mock.timers.enable({ apis: ["Date", "setTimeout"] });
+  const input: RouterInputs["wizard"]["confirmDelete"] = {
+    storageKey: STORAGE_KEY,
+  };
+  const response: BackendErrorResponse = { error: "processing busy" };
+  const fetchMock = vi.fn<typeof fetch>().mockResolvedValue(
+    Response.json(response, {
+      headers: { "Retry-After": "1" },
+      status: SERVICE_UNAVAILABLE_STATUS_CODE,
+    }),
+  );
+  vi.stubGlobal("fetch", fetchMock);
+  const request = new Request(FRONTEND_URL);
+
+  const operation = callerForRequest(request).confirmDelete(input);
+  void operation.catch(() => null);
+  await timers.setImmediate();
+  mock.timers.runAll();
+
+  await expect(operation).rejects.toMatchObject({
+    code: "SERVICE_UNAVAILABLE",
+    message: CONFIRM_DELETE_FAILURE_MESSAGE,
+  });
   expect(fetchMock).toHaveBeenCalledOnce();
 });
 
