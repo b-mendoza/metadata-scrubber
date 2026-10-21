@@ -1,5 +1,6 @@
 // eslint-disable-next-line no-restricted-imports -- Local settings recovery keeps the uploader unmounted until the user retries.
 import { useMutation, useQuery } from "@tanstack/react-query";
+import { isTRPCClientError } from "@trpc/client";
 import { useRef, useState } from "react";
 
 import { FileUploader } from "#/domains/wizard/components/file-uploader/file-uploader.mod";
@@ -8,6 +9,7 @@ import type {
   RouterOutputs,
 } from "#/shared/libs/trpc/client/client.mod";
 import { trpcContext } from "#/shared/libs/trpc/client/client-runtime.mod";
+import type { AppRouter } from "#/shared/libs/trpc/routers/routers.mod.server";
 
 import {
   FileWorkflowResult,
@@ -17,7 +19,7 @@ import {
 type ReviewedPDF = RouterInputs["wizard"]["dryRun"] &
   RouterOutputs["wizard"]["dryRun"];
 type Flow =
-  | { step: "upload" }
+  | { step: "upload"; isSourceMissing: boolean }
   | { step: "inspecting" }
   | { step: "inspection-failed" }
   | { step: "review" | "scrubbing" | "scrub-failed"; review: ReviewedPDF }
@@ -47,7 +49,10 @@ export function FileWorkflow() {
   const scrub = useMutation(
     trpc.wizard.scrubFile.mutationOptions({ retry: false }),
   );
-  const [flow, setFlow] = useState<Flow>({ step: "upload" });
+  const [flow, setFlow] = useState<Flow>({
+    step: "upload",
+    isSourceMissing: false,
+  });
   const [generation, setGeneration] = useState(() =>
     Symbol("workflow generation"),
   );
@@ -72,8 +77,15 @@ export function FileWorkflow() {
         }
         setFlow({ step: "review", review: { ...input, ...result } });
       })
-      .catch(() => {
+      .catch((error: unknown) => {
         if (currentGenerationRef.current !== generation) {
+          return;
+        }
+        if (
+          isTRPCClientError<AppRouter>(error) &&
+          error.data?.code === "NOT_FOUND"
+        ) {
+          restart(true);
           return;
         }
         setFlow({ step: "inspection-failed" });
@@ -102,8 +114,15 @@ export function FileWorkflow() {
         scrubPendingRef.current = false;
         setFlow({ step: "done", review });
       })
-      .catch(() => {
+      .catch((error: unknown) => {
         if (currentGenerationRef.current !== generation) {
+          return;
+        }
+        if (
+          isTRPCClientError<AppRouter>(error) &&
+          error.data?.code === "NOT_FOUND"
+        ) {
+          restart(true);
           return;
         }
         scrubPendingRef.current = false;
@@ -111,7 +130,7 @@ export function FileWorkflow() {
       });
   };
 
-  const restart = () => {
+  const restart = (isSourceMissing: boolean) => {
     // Old callbacks can run before React renders the reset.
     const nextGeneration = Symbol("workflow generation");
     currentGenerationRef.current = nextGeneration;
@@ -121,7 +140,7 @@ export function FileWorkflow() {
     upload.reset();
     inspection.reset();
     scrub.reset();
-    setFlow({ step: "upload" });
+    setFlow({ step: "upload", isSourceMissing });
   };
 
   const renderStep = (
@@ -133,6 +152,11 @@ export function FileWorkflow() {
           <h2 key={flow.step} ref={focusWorkflowHeading} tabIndex={-1}>
             Upload PDF
           </h2>
+          {flow.isSourceMissing ? (
+            <output aria-label="PDF no longer available">
+              The PDF is no longer available. Upload the PDF again.
+            </output>
+          ) : null}
           <FileUploader
             createUpload={upload.mutateAsync}
             maxFileSizeBytes={settings.maxFileSizeBytes}
@@ -208,7 +232,13 @@ export function FileWorkflow() {
       ) : null}
       {config.isSuccess ? renderStep(config.data) : null}
       {flow.step === "upload" ? null : (
-        <button className="btn" onClick={restart} type="button">
+        <button
+          className="btn"
+          onClick={() => {
+            restart(false);
+          }}
+          type="button"
+        >
           Start again
         </button>
       )}
