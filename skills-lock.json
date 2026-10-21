@@ -115,12 +115,6 @@
       "skillPath": "skills/planning-work-item-tasks/SKILL.md",
       "computedHash": "341197082b4bb07cd97887b895546dfcb6799617cbc2b9830f276a2aae87effc"
     },
-    "ponytail": {
-      "source": "DietrichGebert/ponytail",
-      "sourceType": "github",
-      "skillPath": "skills/ponytail/SKILL.md",
-      "computedHash": "061f887d9e3e735f85db3be3655a8936a00f24d5fb65ac4ab74a968a770fe342"
-    },
     "pr-creator": {
       "source": "b-mendoza/agent-skills",
       "sourceType": "github",
