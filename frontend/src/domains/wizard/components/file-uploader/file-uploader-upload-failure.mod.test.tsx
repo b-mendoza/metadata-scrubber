@@ -63,6 +63,8 @@ test("a grant failure stays safe until a deliberate retry succeeds", async () =>
     />,
   );
   const fileInput = await getFileInput(user);
+  // eslint-disable-next-line testing-library/no-node-access -- Verify capture exclusion while the file input is still mounted.
+  expect(fileInput.closest(".ph-no-capture")).not.toBeNull();
 
   await user.upload(fileInput, file);
   await user.click(
@@ -74,7 +76,12 @@ test("a grant failure stays safe until a deliberate retry succeeds", async () =>
   ).toBeVisible();
   expect(FakeXMLHttpRequest.requests).toEqual([]);
   expect(onUploadComplete).not.toHaveBeenCalled();
+  const filename = screen.getByText(file.name);
+  // eslint-disable-next-line testing-library/no-node-access -- Check that private uploader descendants stay within the capture exclusion.
+  const excludedUploader = filename.closest(".ph-no-capture");
+  expect(excludedUploader).not.toBeNull();
   for (const notice of screen.getAllByRole("alert")) {
+    expect(excludedUploader).toContainElement(notice);
     expect(notice).toHaveTextContent("Could not upload");
     expect(notice).not.toHaveTextContent(file.name);
   }
@@ -136,6 +143,8 @@ test("a final direct PUT failure stays safe and does not advance the wizard", as
     />,
   );
   const fileInput = await getFileInput(user);
+  // eslint-disable-next-line testing-library/no-node-access -- Verify capture exclusion while the file input is still mounted.
+  expect(fileInput.closest(".ph-no-capture")).not.toBeNull();
 
   await user.upload(fileInput, file);
   await user.click(
@@ -173,7 +182,12 @@ test("a final direct PUT failure stays safe and does not advance the wizard", as
     await screen.findByRole("button", { name: RETRY_UPLOAD_BUTTON_NAME }),
   ).toBeVisible();
   expect(onUploadComplete).not.toHaveBeenCalled();
+  const filename = screen.getByText(file.name);
+  // eslint-disable-next-line testing-library/no-node-access -- Check that private uploader descendants stay within the capture exclusion.
+  const excludedUploader = filename.closest(".ph-no-capture");
+  expect(excludedUploader).not.toBeNull();
   for (const notice of screen.getAllByRole("alert")) {
+    expect(excludedUploader).toContainElement(notice);
     expect(notice).toHaveTextContent("Could not upload");
     expect(notice).not.toHaveTextContent(file.name);
   }

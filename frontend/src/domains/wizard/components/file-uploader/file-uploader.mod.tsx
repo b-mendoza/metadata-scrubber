@@ -140,5 +140,6 @@ const useUppyDashboard = (props: FileUploaderProps) => {
 export const FileUploader = (props: FileUploaderProps) => {
   const containerRef = useUppyDashboard(props);
 
-  return <div ref={containerRef} />;
+  // eslint-disable-next-line better-tailwindcss/no-unknown-classes -- PostHog requires this class to exclude private uploader DOM.
+  return <div className="ph-no-capture" ref={containerRef} />;
 };
