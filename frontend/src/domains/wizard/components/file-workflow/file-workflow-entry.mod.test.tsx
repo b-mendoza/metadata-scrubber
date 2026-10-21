@@ -289,6 +289,16 @@ test("home uploads with runtime size and a direct PUT, then inspects once inside
     "/api/trpc/wizard.dryRun",
   ]);
   vi.useRealTimers();
+  await user.tab();
+  await user.tab();
+  expect(screen.getByRole("button", { name: "Start again" })).toHaveFocus();
+  await user.keyboard("{Enter}");
+  expect(screen.getByRole("heading", { name: "Upload PDF" })).toHaveFocus();
+  expect(screen.getByRole("button", { name: BROWSE_FILES_NAME })).toBeVisible();
+  expect(screen.queryByText(input.fileName)).not.toBeInTheDocument();
+  expect(screen.queryByText("private-metadata")).not.toBeInTheDocument();
+  expect(backend).toHaveBeenCalledTimes(EXPECTED_THREE_REQUEST_COUNT);
+  destroy.mockClear();
   unmount();
   expect(destroy).toHaveBeenCalledOnce();
   expect(screen.queryByRole("main")).not.toBeInTheDocument();

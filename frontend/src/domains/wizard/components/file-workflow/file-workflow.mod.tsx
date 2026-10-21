@@ -48,11 +48,18 @@ export function FileWorkflow() {
     trpc.wizard.scrubFile.mutationOptions({ retry: false }),
   );
   const [flow, setFlow] = useState<Flow>({ step: "upload" });
+  const [generation, setGeneration] = useState(() =>
+    Symbol("workflow generation"),
+  );
+  const currentGenerationRef = useRef(generation);
   const uploadClaimedRef = useRef(false);
   const scrubPendingRef = useRef(false);
 
   const inspectFile = (input: RouterInputs["wizard"]["dryRun"]) => {
-    if (uploadClaimedRef.current) {
+    if (
+      currentGenerationRef.current !== generation ||
+      uploadClaimedRef.current
+    ) {
       return;
     }
     uploadClaimedRef.current = true;
@@ -60,15 +67,24 @@ export function FileWorkflow() {
     void inspection
       .mutateAsync(input)
       .then((result) => {
+        if (currentGenerationRef.current !== generation) {
+          return;
+        }
         setFlow({ step: "review", review: { ...input, ...result } });
       })
       .catch(() => {
+        if (currentGenerationRef.current !== generation) {
+          return;
+        }
         setFlow({ step: "inspection-failed" });
       });
   };
 
   const scrubFile = (review: ReviewedPDF) => {
-    if (scrubPendingRef.current) {
+    if (
+      currentGenerationRef.current !== generation ||
+      scrubPendingRef.current
+    ) {
       return;
     }
     scrubPendingRef.current = true;
@@ -80,6 +96,9 @@ export function FileWorkflow() {
     void scrub
       .mutateAsync(input)
       .then((result) => {
+        if (currentGenerationRef.current !== generation) {
+          return;
+        }
         scrubPendingRef.current = false;
         setFlow({
           step: "done",
@@ -88,9 +107,25 @@ export function FileWorkflow() {
         });
       })
       .catch(() => {
+        if (currentGenerationRef.current !== generation) {
+          return;
+        }
         scrubPendingRef.current = false;
         setFlow({ step: "scrub-failed", review });
       });
+  };
+
+  const restart = () => {
+    // Old callbacks can run before React renders the reset.
+    const nextGeneration = Symbol("workflow generation");
+    currentGenerationRef.current = nextGeneration;
+    setGeneration(nextGeneration);
+    uploadClaimedRef.current = false;
+    scrubPendingRef.current = false;
+    upload.reset();
+    inspection.reset();
+    scrub.reset();
+    setFlow({ step: "upload" });
   };
 
   const renderStep = (
@@ -176,6 +211,11 @@ export function FileWorkflow() {
         </>
       ) : null}
       {config.isSuccess ? renderStep(config.data) : null}
+      {flow.step === "upload" ? null : (
+        <button className="btn" onClick={restart} type="button">
+          Start again
+        </button>
+      )}
     </main>
   );
 }

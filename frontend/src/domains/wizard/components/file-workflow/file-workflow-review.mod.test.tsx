@@ -240,7 +240,7 @@ test.each(["typed", "unknown"] as const)(
     expect(
       screen.queryByRole("heading", { name: "Review metadata" }),
     ).not.toBeInTheDocument();
-    expect(screen.queryByRole("button")).not.toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Start again" })).toBeEnabled();
     expect(screen.queryByRole("link")).not.toBeInTheDocument();
     vi.useFakeTimers();
     await act(async () => {
@@ -345,7 +345,7 @@ test("same-turn consent scrubs the stored reviewed pair once and shows the direc
   expect(download).not.toHaveAttribute("download");
   expect(screen.getByRole("main")).toContainElement(download);
   expect(screen.getByText(DOWNLOAD_LIFETIME)).toBeVisible();
-  expect(screen.queryByRole("button")).not.toBeInTheDocument();
+  expect(screen.getByRole("button", { name: "Start again" })).toBeEnabled();
   expect(screen.queryByText(input.storageKey)).not.toBeInTheDocument();
   expect(screen.queryByText(input.etag)).not.toBeInTheDocument();
   expect(backend).toHaveBeenCalledTimes(EXPECTED_SCRUB_REQUEST_COUNT);
