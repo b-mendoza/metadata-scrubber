@@ -102,11 +102,15 @@ The workflow schemas enforce these contracts:
 
 ## File uploads
 
-- The Uppy uploader accepts exactly one PDF file. No route mounts it or calls `getWorkflowConfig`.
+- The home route renders `FileWorkflow` ([`src/routes/index.tsx`](../src/routes/index.tsx)). It loads `wizard.getWorkflowConfig` once. The settings query disables automatic retries and refetches ([`file-workflow.mod.tsx`](../src/domains/wizard/components/file-workflow/file-workflow.mod.tsx)).
+- `FileWorkflow` keeps the uploader unmounted while settings load or fail. After success, it passes the validated `maxFileSizeBytes` to `FileUploader` ([`file-workflow.mod.tsx`](../src/domains/wizard/components/file-workflow/file-workflow.mod.tsx), [`wizard-contracts.mod.server.ts`](../src/domains/wizard/wizard-contracts.mod.server.ts)).
+- If settings fail, `FileWorkflow` shows `Could not load upload settings. Try again.` The `Retry settings` button calls `config.refetch()` ([`file-workflow.mod.tsx`](../src/domains/wizard/components/file-workflow/file-workflow.mod.tsx)).
+- The Uppy uploader accepts exactly one PDF file ([`file-uploader.mod.tsx`](../src/domains/wizard/components/file-uploader/file-uploader.mod.tsx), [`wizard.mod.ts`](../src/domains/wizard/constants/wizard.mod.ts)).
 - The uploader calls `createUpload` with the file name and file size. It does not send file bytes in the tRPC call.
 - `createUpload` returns a private R2 `storageKey` and a presigned PUT URL.
-- The browser sends the PDF bytes directly to private R2 with the presigned URL.
+- The browser sends the PDF bytes directly to private R2 with the presigned PUT URL ([`file-uploader.mod.tsx`](../src/domains/wizard/components/file-uploader/file-uploader.mod.tsx)). The home-route test checks the PUT method, URL, and file body ([`file-workflow-entry.mod.test.tsx`](../src/domains/wizard/components/file-workflow/file-workflow-entry.mod.test.tsx)).
 - Uppy stores the backend-generated `storageKey` in file metadata. The uploader calls `onUploadComplete` with only `{ storageKey }` after a successful upload.
+- `FileWorkflow` leaves upload completion in the Dashboard. It does not start inspection or later workflow steps ([`file-workflow.mod.tsx`](../src/domains/wizard/components/file-workflow/file-workflow.mod.tsx)).
 - No frontend route parses or proxies file bytes.
 - The Go backend owns R2 credentials and the file-size limit. The browser does not receive R2 credentials.
 - The Go backend also owns PDF inspection, metadata removal, sanitized revisions, download grants, and confirmed deletion.
