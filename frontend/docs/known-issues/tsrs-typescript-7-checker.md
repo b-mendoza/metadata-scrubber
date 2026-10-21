@@ -41,7 +41,7 @@ The two checker versions can report different results for the same code. No such
 
 The workspace sets `"js/ts.experimental.useTsgo": true` and `"js/ts.tsdk.path": "./.vscode/tsrs"` in `.vscode/settings.json`. Each developer installs `TypeScriptTeam.native-preview` manually. The workspace does not recommend the extension.
 
-The symlink `.vscode/tsrs/tsgo` points to `../../frontend/node_modules/tsrs/bin/tsrs`. The recorded extension source check found that version `1.0.1` searches for `tsc` or `tsgo` in that directory. It starts the executable with `--lsp --stdio`. The symlink supplies the expected executable name. The evaluation did not check the resolver in version `0.20261020.1`.
+The shell script `.vscode/tsrs/tsgo` runs `../../frontend/node_modules/tsrs/bin/tsrs` with its arguments. It is a script and not a symlink because GitHub Actions downloads the repository archive to run the local `setup-env` action. The archive does not contain `node_modules`, and the runner fails on a symlink whose target is missing. The recorded extension source check found that version `1.0.1` searches for `tsc` or `tsgo` in that directory. It starts the executable with `--lsp --stdio`. The script supplies the expected executable name. The evaluation did not check the resolver in version `0.20261020.1`.
 
 Cursor's built-in `typescript-language-features` extension starts tsserver unless both conditions hold:
 
