@@ -1,6 +1,11 @@
 import type { Ref } from "react";
 
-import type { RouterOutputs } from "#/shared/libs/trpc/client/client.mod";
+import type {
+  RouterInputs,
+  RouterOutputs,
+} from "#/shared/libs/trpc/client/client.mod";
+
+import { useDownloadGrant } from "./file-workflow-download.mod";
 
 interface FileWorkflowReviewProps {
   fields: RouterOutputs["wizard"]["dryRun"]["fields"];
@@ -77,27 +82,59 @@ export function FileWorkflowReview({
 }
 
 interface FileWorkflowResultProps {
-  downloadUrl: string;
+  review: RouterInputs["wizard"]["refreshDownloadGrant"];
   headingRef: Ref<HTMLHeadingElement>;
 }
 
 export function FileWorkflowResult({
-  downloadUrl,
+  review,
   headingRef,
 }: Readonly<FileWorkflowResultProps>) {
+  const { state, refresh, onDownload } = useDownloadGrant(review);
+  const canRefresh = ["expired", "failed", "missing"].includes(state.status);
   return (
     <>
       <h2 ref={headingRef} tabIndex={-1}>
         PDF ready
       </h2>
-      <a
-        className="btn btn-primary"
-        href={downloadUrl}
-        referrerPolicy="no-referrer"
-      >
-        Download PDF
-      </a>
-      <p>The download link lasts about 15 minutes.</p>
+      {state.status === "ready" ? (
+        <a
+          className="btn btn-primary"
+          href={state.grant.downloadUrl}
+          onClick={onDownload}
+          referrerPolicy="no-referrer"
+        >
+          Download PDF
+        </a>
+      ) : (
+        <button className="btn btn-primary" disabled type="button">
+          Download PDF
+        </button>
+      )}
+      {state.status === "checking" ? (
+        <output aria-label="Checking download link">
+          Checking the download link. Please wait.
+        </output>
+      ) : null}
+      {state.status === "expired" ? (
+        <output aria-label="Download link expired">
+          The download link has expired. Refresh it to download the PDF.
+        </output>
+      ) : null}
+      {state.status === "failed" ? (
+        <p role="alert">Could not refresh the download link. Try again.</p>
+      ) : null}
+      {state.status === "missing" ? (
+        <p role="alert">
+          The result is no longer available. Refresh the link or start again.
+        </p>
+      ) : null}
+      {canRefresh ? (
+        <button className="btn" onClick={refresh} type="button">
+          Refresh download link
+        </button>
+      ) : null}
+      <p>Download link expiry and file deletion are separate.</p>
     </>
   );
 }

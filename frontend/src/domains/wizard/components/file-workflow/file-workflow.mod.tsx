@@ -21,7 +21,7 @@ type Flow =
   | { step: "inspecting" }
   | { step: "inspection-failed" }
   | { step: "review" | "scrubbing" | "scrub-failed"; review: ReviewedPDF }
-  | { step: "done"; review: ReviewedPDF; downloadUrl: string };
+  | { step: "done"; review: ReviewedPDF };
 
 const focusWorkflowHeading = (heading: HTMLHeadingElement | null) => {
   heading?.focus();
@@ -95,16 +95,12 @@ export function FileWorkflow() {
     };
     void scrub
       .mutateAsync(input)
-      .then((result) => {
+      .then(() => {
         if (currentGenerationRef.current !== generation) {
           return;
         }
         scrubPendingRef.current = false;
-        setFlow({
-          step: "done",
-          review,
-          downloadUrl: result.result.downloadUrl,
-        });
+        setFlow({ step: "done", review });
       })
       .catch(() => {
         if (currentGenerationRef.current !== generation) {
@@ -170,8 +166,8 @@ export function FileWorkflow() {
     if (flow.step === "done") {
       return (
         <FileWorkflowResult
-          downloadUrl={flow.downloadUrl}
           headingRef={focusWorkflowHeading}
+          review={flow.review}
         />
       );
     }

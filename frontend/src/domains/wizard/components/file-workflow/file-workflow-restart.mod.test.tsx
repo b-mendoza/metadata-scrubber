@@ -28,10 +28,12 @@ vi.mock(import("#/shared/middlewares/app-bindings/app-bindings.mod"), () => ({
   getAppBindings: vi.fn(),
 }));
 
+const NO_PENDING_MUTATIONS = 0;
 const ONE_PENDING_MUTATION = 1;
 const TWO_PENDING_MUTATIONS = 2;
 const THREE_REQUESTS = 3;
-const FIVE_REQUESTS = 5;
+const FOUR_REQUESTS = 4;
+const SIX_REQUESTS = 6;
 const LAST_REQUEST_INDEX = -1;
 
 function setupWorkflow() {
@@ -104,10 +106,15 @@ test("keyboard restart clears a completed result and its reviewed data without a
     status: "done",
     result: { downloadUrl: "https://downloads.test/old-private-grant" },
   };
+  const grant: RouterOutputs["wizard"]["refreshDownloadGrant"] = {
+    downloadUrl: result.result.downloadUrl,
+    expiresAt: "2099-01-01T00:00:00Z",
+  };
   backend
     .mockResolvedValueOnce(Response.json(config))
     .mockResolvedValueOnce(Response.json(review))
-    .mockResolvedValueOnce(Response.json(result));
+    .mockResolvedValueOnce(Response.json(result))
+    .mockResolvedValueOnce(Response.json(grant));
   const { user, unmount } = renderComponent(view);
   await screen.findByRole("heading", { name: "Upload PDF" });
   const oldUploader = uploader.current;
@@ -136,8 +143,8 @@ test("keyboard restart clears a completed result and its reviewed data without a
   expect(screen.queryByText(input.storageKey)).not.toBeInTheDocument();
   expect(screen.queryByText(review.etag)).not.toBeInTheDocument();
   expect(screen.queryByRole("status")).not.toBeInTheDocument();
-  expect(backend).toHaveBeenCalledTimes(THREE_REQUESTS);
-  expect(fetch).toHaveBeenCalledTimes(THREE_REQUESTS);
+  expect(backend).toHaveBeenCalledTimes(FOUR_REQUESTS);
+  expect(fetch).toHaveBeenCalledTimes(FOUR_REQUESTS);
   unmount();
   queryClient.clear();
 });
@@ -291,6 +298,10 @@ test.each(["success", "failure"] as const)(
       status: "done",
       result: { downloadUrl: "https://downloads.test/new-result-grant" },
     };
+    const grant: RouterOutputs["wizard"]["refreshDownloadGrant"] = {
+      downloadUrl: newResult.result.downloadUrl,
+      expiresAt: "2099-01-01T00:00:00Z",
+    };
     const error: BackendErrorResponse = { error: "old-private-scrub-error" };
     const oldResponse = Promise.withResolvers<Response>();
     const newResponse = Promise.withResolvers<Response>();
@@ -299,7 +310,8 @@ test.each(["success", "failure"] as const)(
       .mockResolvedValueOnce(Response.json(oldReview))
       .mockReturnValueOnce(oldResponse.promise)
       .mockResolvedValueOnce(Response.json(newReview))
-      .mockReturnValueOnce(newResponse.promise);
+      .mockReturnValueOnce(newResponse.promise)
+      .mockResolvedValueOnce(Response.json(grant));
     const { user, unmount } = renderComponent(view);
     await screen.findByRole("heading", { name: "Upload PDF" });
     const oldUploader = uploader.current;
@@ -346,7 +358,7 @@ test.each(["success", "failure"] as const)(
     expect(
       await screen.findByRole("link", { name: "Download PDF" }),
     ).toHaveAttribute("href", newResult.result.downloadUrl);
-    expect(backend).toHaveBeenCalledTimes(FIVE_REQUESTS);
+    expect(backend).toHaveBeenCalledTimes(SIX_REQUESTS);
     const [request] = backend.mock.calls.at(LAST_REQUEST_INDEX) ?? [];
     expect.assert(request != null);
     expect(await request.json()).toEqual(newInput);
@@ -355,3 +367,59 @@ test.each(["success", "failure"] as const)(
     queryClient.clear();
   },
 );
+
+test("restart while expiry is unknown rejects a late verified grant", async () => {
+  const { backend, queryClient, uploader, view } = setupWorkflow();
+  const config: RouterOutputs["wizard"]["getWorkflowConfig"] = {
+    maxFileSizeBytes: 4,
+  };
+  const input: RouterInputs["wizard"]["dryRun"] = {
+    storageKey: "uploads/00000000-0000-4000-8000-000000000306",
+  };
+  const review: RouterOutputs["wizard"]["dryRun"] = {
+    etag: "ffffffffffffffffffffffffffffffff",
+    fields: [],
+  };
+  const result: RouterOutputs["wizard"]["scrubFile"] = {
+    status: "done",
+    result: { downloadUrl: "https://downloads.test/unverified-old-grant" },
+  };
+  const grant: RouterOutputs["wizard"]["refreshDownloadGrant"] = {
+    downloadUrl: "https://downloads.test/late-old-grant",
+    expiresAt: "2099-01-01T00:00:00Z",
+  };
+  const response = Promise.withResolvers<Response>();
+  backend
+    .mockResolvedValueOnce(Response.json(config))
+    .mockResolvedValueOnce(Response.json(review))
+    .mockResolvedValueOnce(Response.json(result))
+    .mockReturnValueOnce(response.promise);
+  const { user, unmount } = renderComponent(view);
+  await screen.findByRole("heading", { name: "Upload PDF" });
+  const oldUploader = uploader.current;
+  expect.assert(oldUploader != null);
+  act(() => {
+    oldUploader.onUploadComplete(input);
+  });
+  await user.click(await screen.findByRole("button", { name: "Scrub it" }));
+  await screen.findByRole("status", { name: "Checking download link" });
+  expect(screen.getByRole("button", { name: "Download PDF" })).toBeDisabled();
+  await user.click(screen.getByRole("button", { name: "Start again" }));
+  expect(screen.getByRole("heading", { name: "Upload PDF" })).toHaveFocus();
+  act(() => {
+    response.resolve(Response.json(grant));
+  });
+  await waitFor(() => {
+    expect(queryClient.isMutating()).toBe(NO_PENDING_MUTATIONS);
+  });
+  expect(screen.getByRole("heading", { name: "Upload PDF" })).toBeVisible();
+  expect(
+    screen.queryByRole("link", { name: "Download PDF" }),
+  ).not.toBeInTheDocument();
+  expect(
+    screen.queryByRole("heading", { name: "PDF ready" }),
+  ).not.toBeInTheDocument();
+  expect(backend).toHaveBeenCalledTimes(FOUR_REQUESTS);
+  unmount();
+  queryClient.clear();
+});
