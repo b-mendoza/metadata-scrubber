@@ -1,10 +1,14 @@
 import { fetchRequestHandler } from "@trpc/server/adapters/fetch";
+import { stringify } from "devalue";
 import type { KyInstance } from "ky";
 import ky from "ky";
 import posthog from "posthog-js";
 import { afterEach, expect, test, vi } from "vitest";
 
-import type { RouterOutputs } from "#/shared/libs/trpc/client/client.mod";
+import type {
+  RouterInputs,
+  RouterOutputs,
+} from "#/shared/libs/trpc/client/client.mod";
 import { appRouter } from "#/shared/libs/trpc/routers/routers.mod.server";
 import { createTRPCRequestContext } from "#/shared/libs/trpc/utils/initializer/initializer.mod.server";
 import { getAppBindings } from "#/shared/middlewares/app-bindings/app-bindings.mod";
@@ -94,4 +98,155 @@ test("tRPC sends no PostHog IDs for an uninitialized browser", async () => {
   const headers = new Headers(options?.headers);
   expect(headers.has("X-POSTHOG-DISTINCT-ID")).toBe(false);
   expect(headers.has("X-POSTHOG-SESSION-ID")).toBe(false);
+});
+
+test("browser dryRun sends only its typed JSON input by POST without private URL input", async () => {
+  const input: RouterInputs["wizard"]["dryRun"] = {
+    storageKey: "uploads/00000000-0000-4000-8000-000000000001",
+  };
+  const response: RouterOutputs["wizard"]["dryRun"] = {
+    etag: "0123456789abcdef0123456789abcdef",
+    fields: [],
+  };
+  const backendUrls: string[] = [];
+  const { client, fetchMock } = setupClient(
+    ky.create({
+      baseUrl: "https://backend.test/",
+      hooks: {
+        beforeRequest: [
+          ({ request }) => {
+            backendUrls.push(request.url);
+            return Response.json(response);
+          },
+        ],
+      },
+    }),
+  );
+
+  await client.wizard.dryRun.mutate(input);
+
+  expect(fetchMock).toHaveBeenCalledOnce();
+  const [[url, options] = []] = fetchMock.mock.calls;
+  expect(url).toBe("https://frontend.test/api/trpc/wizard.dryRun?batch=1");
+  expect(options?.method).toBe("POST");
+  expect(new Headers(options?.headers).get("Content-Type")).toBe(
+    "application/json",
+  );
+  expect(options?.body).toBe(JSON.stringify({ 0: stringify(input) }));
+  expect(backendUrls).toEqual(["https://backend.test/api/files/dry-run"]);
+});
+
+test("browser scrubFile sends only its typed JSON input by POST without private URL input", async () => {
+  const input: RouterInputs["wizard"]["scrubFile"] = {
+    etag: "0123456789abcdef0123456789abcdef",
+    storageKey: "uploads/00000000-0000-4000-8000-000000000001",
+  };
+  const response: RouterOutputs["wizard"]["scrubFile"] = {
+    result: { downloadUrl: "https://downloads.test/sanitized.pdf" },
+    status: "done",
+  };
+  const backendUrls: string[] = [];
+  const { client, fetchMock } = setupClient(
+    ky.create({
+      baseUrl: "https://backend.test/",
+      hooks: {
+        beforeRequest: [
+          ({ request }) => {
+            backendUrls.push(request.url);
+            return Response.json(response);
+          },
+        ],
+      },
+    }),
+  );
+
+  await client.wizard.scrubFile.mutate(input);
+
+  expect(fetchMock).toHaveBeenCalledOnce();
+  const [[url, options] = []] = fetchMock.mock.calls;
+  expect(url).toBe("https://frontend.test/api/trpc/wizard.scrubFile?batch=1");
+  expect(options?.method).toBe("POST");
+  expect(new Headers(options?.headers).get("Content-Type")).toBe(
+    "application/json",
+  );
+  expect(options?.body).toBe(JSON.stringify({ 0: stringify(input) }));
+  expect(backendUrls).toEqual(["https://backend.test/api/files/scrub"]);
+});
+
+test("browser refreshDownloadGrant sends only its typed JSON input by POST without private URL input", async () => {
+  const input: RouterInputs["wizard"]["refreshDownloadGrant"] = {
+    etag: "0123456789abcdef0123456789abcdef",
+    storageKey: "uploads/00000000-0000-4000-8000-000000000001",
+  };
+  const response: RouterOutputs["wizard"]["refreshDownloadGrant"] = {
+    downloadUrl: "https://downloads.test/sanitized.pdf",
+    expiresAt: "2026-09-01T12:15:00Z",
+  };
+  const backendUrls: string[] = [];
+  const { client, fetchMock } = setupClient(
+    ky.create({
+      baseUrl: "https://backend.test/",
+      hooks: {
+        beforeRequest: [
+          ({ request }) => {
+            backendUrls.push(request.url);
+            return Response.json(response);
+          },
+        ],
+      },
+    }),
+  );
+
+  await client.wizard.refreshDownloadGrant.mutate(input);
+
+  expect(fetchMock).toHaveBeenCalledOnce();
+  const [[url, options] = []] = fetchMock.mock.calls;
+  expect(url).toBe(
+    "https://frontend.test/api/trpc/wizard.refreshDownloadGrant?batch=1",
+  );
+  expect(options?.method).toBe("POST");
+  expect(new Headers(options?.headers).get("Content-Type")).toBe(
+    "application/json",
+  );
+  expect(options?.body).toBe(JSON.stringify({ 0: stringify(input) }));
+  expect(backendUrls).toEqual([
+    "https://backend.test/api/files/download-grant",
+  ]);
+});
+
+test("browser confirmDelete sends only its typed JSON input by POST without private URL input", async () => {
+  const input: RouterInputs["wizard"]["confirmDelete"] = {
+    storageKey: "uploads/00000000-0000-4000-8000-000000000001",
+  };
+  const response: RouterOutputs["wizard"]["confirmDelete"] = {
+    status: "deleted",
+  };
+  const backendUrls: string[] = [];
+  const { client, fetchMock } = setupClient(
+    ky.create({
+      baseUrl: "https://backend.test/",
+      hooks: {
+        beforeRequest: [
+          ({ request }) => {
+            backendUrls.push(request.url);
+            return Response.json(response);
+          },
+        ],
+      },
+    }),
+  );
+
+  await client.wizard.confirmDelete.mutate(input);
+
+  expect(fetchMock).toHaveBeenCalledOnce();
+  const [[url, options] = []] = fetchMock.mock.calls;
+  expect(url).toBe(
+    "https://frontend.test/api/trpc/wizard.confirmDelete?batch=1",
+  );
+  expect(options?.method).toBe("POST");
+  expect(new Headers(options?.headers).get("Content-Type")).toBe(
+    "application/json",
+  );
+  expect(options?.body).toBe(JSON.stringify({ 0: stringify(input) }));
+  expect(backendUrls).toEqual(["https://backend.test/api/files/delete"]);
 });
