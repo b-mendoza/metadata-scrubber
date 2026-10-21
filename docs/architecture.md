@@ -19,7 +19,8 @@
 - The first three `vercel.json` rewrites proxy `/relay/static/*` and `/relay/array/*` to US Cloud PostHog assets. They proxy other `/relay/*` requests to US Cloud PostHog ingestion. These rewrites run before the frontend catch-all.
 - The browser tRPC client reads the current PostHog IDs for each request after the SDK initializes. It sends `X-POSTHOG-DISTINCT-ID` and `X-POSTHOG-SESSION-ID`. An uninitialized SDK sends neither header. The frontend server forwards these incoming headers unchanged on workflow calls only. The backend validates them and uses them for server events. Health calls do not forward them.
 - See [backend telemetry](../backend/docs/architecture.md#posthog-telemetry) and [browser analytics](../frontend/docs/architecture.md#browser-analytics) for service details.
-- The products tRPC router calls backend health.
+- The root tRPC router registers only `wizard` ([`routers.mod.server.ts`](../frontend/src/shared/libs/trpc/routers/routers.mod.server.ts)).
+- The backend provides `GET /api/health` ([`backend/main.go`](../backend/main.go)). The shared frontend health-check Ky client remains, but no frontend tRPC procedure calls backend health ([`http-client.mod.server.ts`](../frontend/src/shared/libs/ky/http-client.mod.server.ts)).
 - The wizard tRPC router provides typed proxies for workflow configuration, upload grants, dry-run inspection, revision-bound scrubbing, download-grant refresh, and confirmed deletion.
 - The tRPC workflow sends only small JSON values. It does not send file bytes.
 - The Go backend owns the maximum source size. The frontend reads it at runtime through `getWorkflowConfig`.
