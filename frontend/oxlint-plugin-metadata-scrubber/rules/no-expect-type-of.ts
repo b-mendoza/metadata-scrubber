@@ -57,8 +57,10 @@ export default defineRule({
 
     return {
       CallExpression(node) {
-        if (node.callee.type !== "Identifier") return;
-        if (!isVitestExpectTypeOfReference(node.callee, context.sourceCode)) {
+        if (
+          node.callee.type !== "Identifier" ||
+          !isVitestExpectTypeOfReference(node.callee, context.sourceCode)
+        ) {
           return;
         }
         context.report({

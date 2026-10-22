@@ -4,12 +4,12 @@ import { PLUGIN_NAMES, SEVERITY_LEVELS } from "./constants.ts";
 
 export const duplicateAndConflictRules = {
   /**
-   * These rules duplicate enabled core, unicorn, or typescript-eslint rules.
-   * Core `prefer-object-has-own` covers `e18e/prefer-object-has-own`.
-   * `@typescript-eslint/prefer-regexp-exec` covers `sonarjs/prefer-regexp-exec`.
-   * `e18e/prefer-string-fromcharcode` and `e18e/prefer-array-fill` instead
-   * conflict with `unicorn/prefer-code-point` and `unicorn/no-array-from-fill`.
-   */
+  These rules duplicate enabled core, unicorn, or typescript-eslint rules.
+  Core `prefer-object-has-own` covers `e18e/prefer-object-has-own`.
+  `@typescript-eslint/prefer-regexp-exec` covers `sonarjs/prefer-regexp-exec`.
+  `e18e/prefer-string-fromcharcode` and `e18e/prefer-array-fill` instead
+  conflict with `unicorn/prefer-code-point` and `unicorn/no-array-from-fill`.
+  */
   [`${PLUGIN_NAMES.E18e}/prefer-array-at`]: SEVERITY_LEVELS.Off,
   [`${PLUGIN_NAMES.E18e}/prefer-array-fill`]: SEVERITY_LEVELS.Off,
   [`${PLUGIN_NAMES.E18e}/prefer-array-some`]: SEVERITY_LEVELS.Off,

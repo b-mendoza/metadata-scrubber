@@ -16,10 +16,10 @@ const retryAfterSecondsSchema = z
 const shouldRetryServerDirectedWorkflowRequest = ({
   error,
 }: ShouldRetryState): false | undefined => {
-  if (!(error instanceof HTTPError)) {
-    return false;
-  }
-  if (error.response.status !== SERVICE_UNAVAILABLE_STATUS_CODE) {
+  if (
+    !(error instanceof HTTPError) ||
+    error.response.status !== SERVICE_UNAVAILABLE_STATUS_CODE
+  ) {
     return false;
   }
 

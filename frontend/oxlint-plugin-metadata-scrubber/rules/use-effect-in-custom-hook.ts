@@ -143,8 +143,7 @@ const hasHookOwner = (node: ESTree.Node): boolean => {
   let ancestor: ESTree.Node | null = node.parent;
   while (ancestor != null) {
     if (isFunction(ancestor)) {
-      const expression = getOutermostExpression(ancestor);
-      const { parent } = expression;
+      const { parent } = getOutermostExpression(ancestor);
       if (
         parent?.type === "VariableDeclarator" &&
         parent.id.type === "Identifier"
@@ -227,13 +226,11 @@ export default defineRule({
     return {
       Identifier(node) {
         const binding = getReferencedVariable(node, sourceCode);
-        if (binding == null) return;
         if (
-          binding.defs.every((definition) => !isReactEffectImport(definition))
-        ) {
-          return;
-        }
-        if (
+          binding == null ||
+          binding.defs.every(
+            (definition) => !isReactEffectImport(definition),
+          ) ||
           binding.references.every(
             (reference) => reference.identifier !== node || !reference.isRead(),
           )
