@@ -39,16 +39,7 @@ export const toolingRules = defineConfig(
     },
   },
   {
-    files: [
-      "oxlint-plugin-metadata-scrubber/rules/no-classes.ts",
-      "oxlint-plugin-metadata-scrubber/rules/no-expect-type-of.ts",
-      "oxlint-plugin-metadata-scrubber/rules/no-hardcoded-backend-host.ts",
-      "oxlint-plugin-metadata-scrubber/rules/no-mutable-module-state-in-server-code.ts",
-      "oxlint-plugin-metadata-scrubber/rules/no-silent-test-prerequisite.ts",
-      "oxlint-plugin-metadata-scrubber/rules/separate-type-imports.ts",
-      "oxlint-plugin-metadata-scrubber/rules/use-effect-in-custom-hook.ts",
-      "oxlint-plugin-metadata-scrubber/rules/use-shared-render-helper.ts",
-    ],
+    files: ["oxlint-plugin-metadata-scrubber/rules/*.ts"],
     rules: {
       // defineRule returns each rule unchanged and types its visitor callbacks.
       [`${PLUGIN_NAMES.Unicorn}/no-top-level-side-effects`]: [
