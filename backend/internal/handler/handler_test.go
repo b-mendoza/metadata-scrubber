@@ -2,6 +2,7 @@ package handler
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"log/slog"
 	"net/http/httptest"
@@ -28,8 +29,8 @@ const (
 func newTestHandler(t *testing.T) *Handler {
 	t.Helper()
 	handler := New(slog.New(slog.DiscardHandler))
-	handler.inspect = func([]byte) ([]scrub.Field, error) { return nil, nil }
-	handler.clean = func(input []byte) ([]byte, error) { return bytes.Clone(input), nil }
+	handler.inspect = func(context.Context, []byte) ([]scrub.Field, error) { return nil, nil }
+	handler.clean = func(_ context.Context, input []byte) ([]byte, error) { return bytes.Clone(input), nil }
 	handler.admissionJitter = func() int { return 0 }
 	return handler
 }

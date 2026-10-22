@@ -2,6 +2,7 @@ package scrub
 
 import (
 	"bytes"
+	"context"
 	"fmt"
 
 	"github.com/pdfcpu/pdfcpu/pkg/api"
@@ -23,48 +24,45 @@ const (
 	maxPDFRecursionDepth          = 64
 )
 
-type validatePDFContextOperation func(*model.Context) error
+type validatePDFContextOperation func(context.Context, *model.Context) error
 
-func readPDFWithValidator(inputBytes []byte, validate validatePDFContextOperation) (*model.Context, error) {
+func readPDFWithValidator(ctx context.Context, inputBytes []byte, validate validatePDFContextOperation) (*model.Context, error) {
 	if len(inputBytes) > MaxInputBytes {
 		return nil, ErrInputTooLarge
 	}
 
-	context, err := api.ReadContext(bytes.NewReader(inputBytes), boundedPDFConfiguration())
+	pdfContext, err := api.ReadContext(ctx, bytes.NewReader(inputBytes), boundedPDFConfiguration())
 	if err != nil {
 		return nil, err
 	}
-	if err := validateAndOptimizePDFContext(context, validate); err != nil {
+	if err := validateAndOptimizePDFContext(ctx, pdfContext, validate); err != nil {
 		return nil, err
 	}
-	return context, nil
+	return pdfContext, nil
 }
 
-func validateAndOptimizePDFContext(context *model.Context, validate validatePDFContextOperation) error {
-	// pdfcpu v0.15.0 validation drops later parent links to an already-validated
-	// metadata stream. Preserve those links so inspection and removal stay symmetric.
-	metadataEntries, err := snapshotMetadataEntries(context)
+func validateAndOptimizePDFContext(ctx context.Context, pdfContext *model.Context, validate validatePDFContextOperation) error {
+	// Preserve shared metadata links across validation so inspection and removal stay symmetric.
+	metadataEntries, err := snapshotMetadataEntries(pdfContext)
 	if err != nil {
 		return err
 	}
-	// pdfcpu v0.15.0 catalog validation calls StreamDict.Decode with its 512 MiB
-	// default. Decode every discovered metadata stream under our aggregate ceiling
-	// and keep the bounded content cached through validation.
-	if err := preflightMetadataEntries(context, metadataEntries); err != nil {
+	// Preflight the aggregate metadata budget; pdfcpu limits each stream separately.
+	if err := preflightMetadataEntries(pdfContext, metadataEntries); err != nil {
 		return err
 	}
-	if err := validate(context); err != nil {
+	if err := validate(ctx, pdfContext); err != nil {
 		return err
 	}
 	restoreMetadataEntries(metadataEntries)
-	if err := api.OptimizeContext(context); err != nil {
+	if err := api.OptimizeContext(ctx, pdfContext); err != nil {
 		return err
 	}
-	return pdfcpu.CacheFormFonts(context)
+	return pdfcpu.CacheFormFonts(pdfContext)
 }
 
 func boundedPDFConfiguration() *model.Configuration {
-	configuration := model.NewDefaultConfiguration()
+	configuration := model.NewStatelessConfiguration()
 	configuration.Cmd = model.REMOVEPROPERTIES
 	configuration.PostProcessValidate = true
 	configuration.Limits = model.ResourceLimits{
@@ -88,12 +86,12 @@ type metadataEntrySnapshot struct {
 	value      types.Object
 }
 
-func preflightMetadataEntries(context *model.Context, snapshots []metadataEntrySnapshot) error {
+func preflightMetadataEntries(pdfContext *model.Context, snapshots []metadataEntrySnapshot) error {
 	remainingDecodeBytes := int64(maxDecodedMetadataBytes)
 	decodedIndirectObjects := make(map[types.IndirectRef]struct{})
 
 	for _, snapshot := range snapshots {
-		decodedBytes, err := preflightMetadataEntry(context, snapshot, remainingDecodeBytes, decodedIndirectObjects)
+		decodedBytes, err := preflightMetadataEntry(pdfContext, snapshot, remainingDecodeBytes, decodedIndirectObjects)
 		if err != nil {
 			return err
 		}
@@ -103,14 +101,14 @@ func preflightMetadataEntries(context *model.Context, snapshots []metadataEntryS
 }
 
 func preflightMetadataEntry(
-	context *model.Context,
+	pdfContext *model.Context,
 	snapshot metadataEntrySnapshot,
 	remainingDecodeBytes int64,
 	decodedIndirectObjects map[types.IndirectRef]struct{},
 ) (int64, error) {
 	switch stream := snapshot.value.(type) {
 	case types.IndirectRef:
-		return preflightIndirectMetadataStream(context, stream, remainingDecodeBytes, decodedIndirectObjects)
+		return preflightIndirectMetadataStream(pdfContext, stream, remainingDecodeBytes, decodedIndirectObjects)
 	case types.StreamDict:
 		content, err := decodeMetadataStreamWithinBudget(&stream, remainingDecodeBytes, "preflight PDF metadata stream")
 		if err != nil {
@@ -128,7 +126,7 @@ func preflightMetadataEntry(
 }
 
 func preflightIndirectMetadataStream(
-	context *model.Context,
+	pdfContext *model.Context,
 	reference types.IndirectRef,
 	remainingDecodeBytes int64,
 	decodedIndirectObjects map[types.IndirectRef]struct{},
@@ -136,7 +134,7 @@ func preflightIndirectMetadataStream(
 	if _, decoded := decodedIndirectObjects[reference]; decoded {
 		return 0, nil
 	}
-	entry, found := context.FindTableEntry(reference.ObjectNumber.Value(), reference.GenerationNumber.Value())
+	entry, found := pdfContext.FindTableEntry(reference.ObjectNumber.Value(), reference.GenerationNumber.Value())
 	if !found || entry.Free || entry.Object == nil {
 		return 0, nil
 	}
@@ -157,10 +155,10 @@ func preflightIndirectMetadataStream(
 	return int64(len(content)), nil
 }
 
-func releaseMetadataStreamCache(context *model.Context, snapshot metadataEntrySnapshot) error {
+func releaseMetadataStreamCache(pdfContext *model.Context, snapshot metadataEntrySnapshot) error {
 	switch stream := snapshot.value.(type) {
 	case types.IndirectRef:
-		entry, found := context.FindTableEntry(stream.ObjectNumber.Value(), stream.GenerationNumber.Value())
+		entry, found := pdfContext.FindTableEntry(stream.ObjectNumber.Value(), stream.GenerationNumber.Value())
 		if !found || entry.Object == nil {
 			return nil
 		}
@@ -180,18 +178,18 @@ func releaseMetadataStreamCache(context *model.Context, snapshot metadataEntrySn
 	}
 }
 
-func snapshotMetadataEntries(context *model.Context) ([]metadataEntrySnapshot, error) {
+func snapshotMetadataEntries(pdfContext *model.Context) ([]metadataEntrySnapshot, error) {
 	snapshots := make([]metadataEntrySnapshot, 0)
 	walker := structuralWalker{
-		context: context,
+		context: pdfContext,
 		inspectMetadata: func(dictionary types.Dict, key string, _ bool) error {
 			snapshots = append(snapshots, metadataEntrySnapshot{dictionary: dictionary, key: key, value: dictionary[key]})
 			return nil
 		},
 	}
 
-	for _, objectNumber := range sortedLiveObjectNumbers(context) {
-		entry := context.Table[objectNumber]
+	for _, objectNumber := range sortedLiveObjectNumbers(pdfContext) {
+		entry := pdfContext.Table[objectNumber]
 		if err := walker.walkObject(entry.Object, false); err != nil {
 			return nil, err
 		}

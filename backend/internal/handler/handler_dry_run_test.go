@@ -28,8 +28,9 @@ func TestDryRunReturnsReviewedRevisionAndBackendOwnedFields(t *testing.T) {
 	require.NoError(t, fake.SetSource(fileIDOne, storage.SourceObject{PDFBytes: []byte("%PDF-synthetic"), ETag: canonicalETagOne}))
 	inspectCalls := 0
 	handler := newTestHandler(t)
-	handler.inspect = func(input []byte) ([]scrub.Field, error) {
+	handler.inspect = func(ctx context.Context, input []byte) ([]scrub.Field, error) {
 		inspectCalls++
+		require.Equal(t, t.Context().Done(), ctx.Done())
 		require.Equal(t, []byte("%PDF-synthetic"), input)
 		return []scrub.Field{
 			{Name: "title", Label: "Title", Preview: "private", OriginalByteSize: 7, Action: scrub.ActionRemove},
@@ -38,7 +39,7 @@ func TestDryRunReturnsReviewedRevisionAndBackendOwnedFields(t *testing.T) {
 	}
 	body, err := json.Marshal(dryRunRequest{StorageKey: storageKeyPrefix + fileIDOne})
 	require.NoError(t, err)
-	request := httptest.NewRequest(http.MethodPost, "/api/files/dry-run", bytes.NewReader(body))
+	request := httptest.NewRequestWithContext(t.Context(), http.MethodPost, "/api/files/dry-run", bytes.NewReader(body))
 	request.Header.Set(header.ContentType, mediatype.JSON)
 	recorder := httptest.NewRecorder()
 	bindings.Inject(bindings.Bindings{Storage: fake})(http.HandlerFunc(handler.DryRun)).ServeHTTP(recorder, request)
@@ -68,7 +69,7 @@ func TestDryRunReportsServerFailureForUnknownInspectedFieldAction(t *testing.T) 
 	fake := storage.NewFake()
 	require.NoError(t, fake.SetSource(fileIDOne, storage.SourceObject{PDFBytes: []byte("%PDF-synthetic"), ETag: canonicalETagOne}))
 	handler := newTestHandler(t)
-	handler.inspect = func([]byte) ([]scrub.Field, error) {
+	handler.inspect = func(context.Context, []byte) ([]scrub.Field, error) {
 		return []scrub.Field{{Name: "field", Label: "Field", Action: scrub.FieldAction("unknown")}}, nil
 	}
 	body, err := json.Marshal(dryRunRequest{StorageKey: storageKeyPrefix + fileIDOne})
@@ -152,7 +153,7 @@ func TestDryRunClassifiesContentAndDependencyFailuresWithoutLeakingDetails(t *te
 			require.NoError(t, fake.SetSource(fileIDOne, storage.SourceObject{PDFBytes: testCase.pdfBytes, ETag: "dddddddddddddddddddddddddddddddd"}))
 			inspectCalls := 0
 			handler := newTestHandler(t)
-			handler.inspect = func([]byte) ([]scrub.Field, error) {
+			handler.inspect = func(context.Context, []byte) ([]scrub.Field, error) {
 				inspectCalls++
 				return nil, testCase.inspectErr
 			}

@@ -3,6 +3,7 @@ package scrub
 
 import (
 	"bytes"
+	"context"
 	"errors"
 	"fmt"
 	"io"
@@ -53,15 +54,9 @@ var (
 	ErrMalformedPDF = errors.New("malformed PDF")
 )
 
-// DisableConfigDir prevents pdfcpu from creating or reading a per-user config
-// directory. Call once at startup before any PDF inspection or scrub.
-func DisableConfigDir() {
-	api.DisableConfigDir()
-}
-
 // InspectPDF returns bounded descriptions of all supported PDF metadata fields.
-func InspectPDF(inputBytes []byte) ([]Field, error) {
-	_, analysis, err := readAndAnalyzePDF(inputBytes)
+func InspectPDF(ctx context.Context, inputBytes []byte) ([]Field, error) {
+	_, analysis, err := readAndAnalyzePDF(ctx, inputBytes)
 	if err != nil {
 		return nil, classifyPublicPDFError(err)
 	}
@@ -69,12 +64,12 @@ func InspectPDF(inputBytes []byte) ([]Field, error) {
 }
 
 // CleanPDF removes supported metadata from PDF bytes.
-func CleanPDF(inputBytes []byte) ([]byte, error) {
-	return cleanPDF(inputBytes, api.WriteContext)
+func CleanPDF(ctx context.Context, inputBytes []byte) ([]byte, error) {
+	return cleanPDF(ctx, inputBytes, api.WriteContext)
 }
 
-func cleanPDF(inputBytes []byte, write func(*model.Context, io.Writer) error) ([]byte, error) {
-	context, analysis, err := readAndAnalyzePDF(inputBytes)
+func cleanPDF(ctx context.Context, inputBytes []byte, write func(context.Context, *model.Context, io.Writer) error) ([]byte, error) {
+	pdfContext, analysis, err := readAndAnalyzePDF(ctx, inputBytes)
 	if err != nil {
 		return nil, classifyPublicPDFError(err)
 	}
@@ -82,14 +77,14 @@ func cleanPDF(inputBytes []byte, write func(*model.Context, io.Writer) error) ([
 		return inputBytes, nil
 	}
 
-	removeAnalyzedMetadata(context, analysis)
+	removeAnalyzedMetadata(pdfContext, analysis)
 	var output bytes.Buffer
-	if err := write(context, &output); err != nil {
+	if err := write(ctx, pdfContext, &output); err != nil {
 		return nil, err
 	}
 
 	outputBytes := output.Bytes()
-	if err := verifyScrubbedPDF(outputBytes); err != nil {
+	if err := verifyScrubbedPDF(ctx, outputBytes); err != nil {
 		return nil, err
 	}
 
@@ -106,20 +101,20 @@ func classifyPublicPDFError(err error) error {
 	return fmt.Errorf("%w: %w", ErrMalformedPDF, err)
 }
 
-func readAndAnalyzePDF(inputBytes []byte) (*model.Context, *pdfAnalysis, error) {
-	context, err := readPDFWithValidator(inputBytes, api.ValidateContext)
+func readAndAnalyzePDF(ctx context.Context, inputBytes []byte) (*model.Context, *pdfAnalysis, error) {
+	pdfContext, err := readPDFWithValidator(ctx, inputBytes, api.ValidateContext)
 	if err != nil {
 		return nil, nil, err
 	}
-	analysis, err := analyzePDF(context)
+	analysis, err := analyzePDF(ctx, pdfContext)
 	if err != nil {
 		return nil, nil, err
 	}
-	return context, analysis, nil
+	return pdfContext, analysis, nil
 }
 
-func infoObjectValue(context *model.Context, object types.Object) (string, error) {
-	dereferencedObject, err := context.Dereference(object)
+func infoObjectValue(pdfContext *model.Context, object types.Object) (string, error) {
+	dereferencedObject, err := pdfContext.Dereference(object)
 	if err != nil {
 		return "", err
 	}

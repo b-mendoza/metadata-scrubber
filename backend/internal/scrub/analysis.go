@@ -2,6 +2,7 @@ package scrub
 
 import (
 	"cmp"
+	"context"
 	"errors"
 	"fmt"
 	"slices"
@@ -43,17 +44,17 @@ var standardInfoFields = map[string]standardInfoFieldDescriptor{
 	"Trapped":      {name: "info.trapped", label: "Trapped", action: ActionRemove},
 }
 
-func analyzePDF(context *model.Context) (*pdfAnalysis, error) {
-	if pdfHasCachedSignature(context) {
+func analyzePDF(ctx context.Context, pdfContext *model.Context) (*pdfAnalysis, error) {
+	if pdfHasCachedSignature(pdfContext) {
 		return nil, ErrSignedPDF
 	}
 
 	analysis := &pdfAnalysis{fields: make([]Field, 0)}
 
-	if err := analyzeInfoDictionary(context, analysis); err != nil {
+	if err := analyzeInfoDictionary(pdfContext, analysis); err != nil {
 		return nil, err
 	}
-	if err := analyzeObjectMetadata(context, analysis); err != nil {
+	if err := analyzeObjectMetadata(ctx, pdfContext, analysis); err != nil {
 		return nil, err
 	}
 
@@ -67,11 +68,11 @@ func analyzePDF(context *model.Context) (*pdfAnalysis, error) {
 	return analysis, nil
 }
 
-func analyzeInfoDictionary(context *model.Context, analysis *pdfAnalysis) error {
-	if context.Info == nil {
+func analyzeInfoDictionary(pdfContext *model.Context, analysis *pdfAnalysis) error {
+	if pdfContext.Info == nil {
 		return nil
 	}
-	infoDictionary, err := context.DereferenceDict(*context.Info)
+	infoDictionary, err := pdfContext.DereferenceDict(*pdfContext.Info)
 	if err != nil {
 		return fmt.Errorf("dereference PDF Info dictionary: %w", err)
 	}
@@ -80,13 +81,13 @@ func analyzeInfoDictionary(context *model.Context, analysis *pdfAnalysis) error 
 	if err != nil {
 		return err
 	}
-	return analyzeInfoFields(context, analysis, keys)
+	return analyzeInfoFields(pdfContext, analysis, keys)
 }
 
-func analyzeInfoFields(context *model.Context, analysis *pdfAnalysis, keys []dictionaryKey) error {
+func analyzeInfoFields(pdfContext *model.Context, analysis *pdfAnalysis, keys []dictionaryKey) error {
 	customFieldNumber := 0
 	for _, key := range keys {
-		logicalValue, err := infoObjectValue(context, analysis.infoDictionary[key.encoded])
+		logicalValue, err := infoObjectValue(pdfContext, analysis.infoDictionary[key.encoded])
 		if err != nil {
 			return fmt.Errorf("decode PDF Info field %q: %w", key.logical, err)
 		}
@@ -106,21 +107,21 @@ func analyzeInfoFields(context *model.Context, analysis *pdfAnalysis, keys []dic
 	return nil
 }
 
-func analyzeObjectMetadata(context *model.Context, analysis *pdfAnalysis) error {
-	roles, err := pdfObjectRoles(context)
+func analyzeObjectMetadata(ctx context.Context, pdfContext *model.Context, analysis *pdfAnalysis) error {
+	roles, err := pdfObjectRoles(ctx, pdfContext)
 	if err != nil {
 		return err
 	}
 
-	for _, objectNumber := range sortedLiveObjectNumbers(context) {
-		entry := context.Table[objectNumber]
+	for _, objectNumber := range sortedLiveObjectNumbers(pdfContext) {
+		entry := pdfContext.Table[objectNumber]
 		state := traversalState{
 			analysis:     analysis,
-			context:      context,
+			context:      pdfContext,
 			roles:        roles,
 			objectNumber: objectNumber,
 		}
-		walker := structuralWalker{context: context, inspectMetadata: state.inspectMetadataEntry}
+		walker := structuralWalker{context: pdfContext, inspectMetadata: state.inspectMetadataEntry}
 		if err := walker.walkObject(entry.Object, false); err != nil {
 			return err
 		}

@@ -2,6 +2,7 @@ package handler
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"errors"
 	"net/http"
@@ -97,7 +98,7 @@ func (testCase scrubFailureTestCase) testFailureStopsAtFailedStage(t *testing.T)
 	}
 	cleanCalls := 0
 	handler := newTestHandler(t)
-	handler.clean = func(input []byte) ([]byte, error) {
+	handler.clean = func(_ context.Context, input []byte) ([]byte, error) {
 		cleanCalls++
 		if testCase.cleanErr != nil {
 			return nil, testCase.cleanErr

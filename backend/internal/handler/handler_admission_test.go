@@ -109,7 +109,7 @@ func (scenario saturatedAdmissionTest) testCanceledWait(t *testing.T) {
 func (scenario saturatedAdmissionTest) testExactCacheHit(t *testing.T) {
 	require.NoError(t, scenario.fake.SetSanitized(fileIDThree, canonicalETagThree, []byte("clean")))
 	var cleanCalls atomic.Int64
-	scenario.handler.clean = func([]byte) ([]byte, error) {
+	scenario.handler.clean = func(context.Context, []byte) ([]byte, error) {
 		cleanCalls.Add(1)
 		return nil, nil
 	}
@@ -139,7 +139,7 @@ func TestDryRunAndScrubReleasePermitsAfterPanic(t *testing.T) {
 	require.NoError(t, fake.SetSource(fileIDThree, storage.SourceObject{PDFBytes: []byte("%PDF-three"), ETag: canonicalETagThree}))
 	observer := newBlockingStorage(fake, fileIDTwo, fileIDThree)
 	handler := newTestHandler(t)
-	handler.inspect = func([]byte) ([]scrub.Field, error) { panic("inspect panic") }
+	handler.inspect = func(context.Context, []byte) ([]scrub.Field, error) { panic("inspect panic") }
 	dryRunBody, err := json.Marshal(dryRunRequest{StorageKey: storageKeyPrefix + fileIDOne})
 	require.NoError(t, err)
 	dryRunHTTPRequest := httptest.NewRequest(http.MethodPost, "/api/files/dry-run", bytes.NewReader(dryRunBody))
@@ -149,7 +149,7 @@ func TestDryRunAndScrubReleasePermitsAfterPanic(t *testing.T) {
 		bindings.Inject(bindings.Bindings{Storage: fake})(http.HandlerFunc(handler.DryRun)).ServeHTTP(dryRunRecorder, dryRunHTTPRequest)
 	})
 
-	handler.clean = func([]byte) ([]byte, error) { panic("clean panic") }
+	handler.clean = func(context.Context, []byte) ([]byte, error) { panic("clean panic") }
 	scrubBody, err := json.Marshal(scrubRequest{StorageKey: storageKeyPrefix + fileIDOne, ETag: canonicalETagOne})
 	require.NoError(t, err)
 	scrubHTTPRequest := httptest.NewRequest(http.MethodPost, "/api/files/scrub", bytes.NewReader(scrubBody))
@@ -159,8 +159,8 @@ func TestDryRunAndScrubReleasePermitsAfterPanic(t *testing.T) {
 		bindings.Inject(bindings.Bindings{Storage: fake})(http.HandlerFunc(handler.Scrub)).ServeHTTP(scrubRecorder, scrubHTTPRequest)
 	})
 
-	handler.inspect = func([]byte) ([]scrub.Field, error) { return nil, nil }
-	handler.clean = func(input []byte) ([]byte, error) { return bytes.Clone(input), nil }
+	handler.inspect = func(context.Context, []byte) ([]scrub.Field, error) { return nil, nil }
+	handler.clean = func(_ context.Context, input []byte) ([]byte, error) { return bytes.Clone(input), nil }
 	followUpResponses := make(chan *httptest.ResponseRecorder, 2)
 	followUpDryRunBody, err := json.Marshal(dryRunRequest{StorageKey: storageKeyPrefix + fileIDTwo})
 	require.NoError(t, err)
@@ -181,7 +181,7 @@ func TestScrubReleasesPermitBeforeUploadingSanitizedBytes(t *testing.T) {
 	observer := newBlockingStorage(fake, fileIDTwo, fileIDThree)
 	observer.blockedUploadFileID = fileIDOne
 	handler := newTestHandler(t)
-	handler.clean = func(input []byte) ([]byte, error) { return input, nil }
+	handler.clean = func(_ context.Context, input []byte) ([]byte, error) { return input, nil }
 
 	firstResponse := make(chan *httptest.ResponseRecorder, 1)
 	body, err := json.Marshal(scrubRequest{StorageKey: storageKeyPrefix + fileIDOne, ETag: canonicalETagOne})

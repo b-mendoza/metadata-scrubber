@@ -2,6 +2,7 @@ package handler
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"errors"
 	"log/slog"
@@ -24,11 +25,11 @@ func TestScrubMissingSourceStopsBeforeCacheAdmissionAndPDFWork(t *testing.T) {
 	require.NoError(t, fake.SetSanitized(fileIDOne, canonicalETagOne, []byte("orphaned-clean")))
 	inspectCalls, cleanCalls := 0, 0
 	handler := newTestHandler(t)
-	handler.inspect = func([]byte) ([]scrub.Field, error) {
+	handler.inspect = func(context.Context, []byte) ([]scrub.Field, error) {
 		inspectCalls++
 		return nil, nil
 	}
-	handler.clean = func([]byte) ([]byte, error) {
+	handler.clean = func(context.Context, []byte) ([]byte, error) {
 		cleanCalls++
 		return nil, nil
 	}
@@ -71,15 +72,16 @@ func TestScrubCacheMissBindsEveryOperationToReviewedRevision(t *testing.T) {
 	cleaned := []byte("%PDF-cleaned")
 	cleanCalls := 0
 	handler := newTestHandler(t)
-	handler.clean = func(input []byte) ([]byte, error) {
+	handler.clean = func(ctx context.Context, input []byte) ([]byte, error) {
 		cleanCalls++
+		require.Equal(t, t.Context().Done(), ctx.Done())
 		require.Len(t, handler.permits, 1, "clean must run while admitted")
 		require.Equal(t, []byte("%PDF-source"), input)
 		return cleaned, nil
 	}
 	body, err := json.Marshal(scrubRequest{StorageKey: storageKeyPrefix + fileIDOne, ETag: canonicalETagOne})
 	require.NoError(t, err)
-	request := httptest.NewRequest(http.MethodPost, "/api/files/scrub", bytes.NewReader(body))
+	request := httptest.NewRequestWithContext(t.Context(), http.MethodPost, "/api/files/scrub", bytes.NewReader(body))
 	request.Header.Set(header.ContentType, mediatype.JSON)
 	recorder := httptest.NewRecorder()
 	bindings.Inject(bindings.Bindings{Storage: fake})(http.HandlerFunc(handler.Scrub)).ServeHTTP(recorder, request)
@@ -118,7 +120,7 @@ func TestConstructedScrubStoresPDFWithoutMetadata(t *testing.T) {
 	require.NoError(t, err)
 	require.True(t, exists)
 	require.NotEqual(t, pdfBytes, stored)
-	fields, err := scrub.InspectPDF(stored)
+	fields, err := scrub.InspectPDF(t.Context(), stored)
 	require.NoError(t, err)
 	for _, field := range fields {
 		require.Equal(t, scrub.ActionReplace, field.Action, field.Name)
@@ -130,7 +132,7 @@ func TestScrubReturnsConflictBeforePDFOrWriteWork(t *testing.T) {
 	require.NoError(t, fake.SetSource(fileIDOne, storage.SourceObject{PDFBytes: []byte("%PDF-current"), ETag: "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"}))
 	cleanCalls := 0
 	handler := newTestHandler(t)
-	handler.clean = func([]byte) ([]byte, error) {
+	handler.clean = func(context.Context, []byte) ([]byte, error) {
 		cleanCalls++
 		return nil, nil
 	}

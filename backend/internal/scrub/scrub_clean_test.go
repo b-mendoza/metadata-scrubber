@@ -15,19 +15,51 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+func TestPDFByteAPIsRejectCanceledContext(t *testing.T) {
+	inputBytes := buildDeepMetadataPDFFixture(t)
+	ctx, cancel := context.WithCancel(t.Context())
+	cancel()
+
+	fields, inspectErr := InspectPDF(ctx, inputBytes)
+	outputBytes, cleanErr := CleanPDF(ctx, inputBytes)
+
+	require.ErrorIs(t, inspectErr, context.Canceled)
+	require.Nil(t, fields)
+	require.ErrorIs(t, cleanErr, context.Canceled)
+	require.Nil(t, outputBytes)
+}
+
+func TestCleanPDFRejectsCancellationAfterWriting(t *testing.T) {
+	inputBytes := buildDeepMetadataPDFFixture(t)
+	ctx, cancel := context.WithCancel(t.Context())
+	defer cancel()
+
+	outputBytes, err := cleanPDF(ctx, inputBytes, func(writeCtx context.Context, pdfContext *model.Context, writer io.Writer) error {
+		require.Same(t, ctx, writeCtx)
+		if err := api.WriteContext(writeCtx, pdfContext, writer); err != nil {
+			return err
+		}
+		cancel()
+		return nil
+	})
+
+	require.ErrorIs(t, err, context.Canceled)
+	require.Nil(t, outputBytes)
+}
+
 func TestCleanPDFRemovesEveryInspectedTargetAndVerifiesOutput(t *testing.T) {
 	inputBytes := buildDeepMetadataPDFFixture(t)
 
-	outputBytes, err := CleanPDF(inputBytes)
+	outputBytes, err := CleanPDF(t.Context(), inputBytes)
 	require.NoError(t, err)
 	require.NotEqual(t, inputBytes, outputBytes)
 
-	outputContext, err := api.ReadValidateAndOptimize(bytes.NewReader(outputBytes), boundedPDFConfiguration())
+	outputContext, err := api.ReadValidateAndOptimize(t.Context(), bytes.NewReader(outputBytes), boundedPDFConfiguration(), nil)
 	require.NoError(t, err)
 	require.Equal(t, 2, outputContext.PageCount)
-	require.NoError(t, verifyScrubbedPDF(outputBytes))
+	require.NoError(t, verifyScrubbedPDF(t.Context(), outputBytes))
 
-	publicOutputFields, err := InspectPDF(outputBytes)
+	publicOutputFields, err := InspectPDF(t.Context(), outputBytes)
 	require.NoError(t, err)
 	require.Equal(t, []string{"info.creation_date", "info.mod_date", "info.producer"}, fieldNames(publicOutputFields))
 	require.Equal(t, ActionReplace, publicOutputFields[0].Action)
@@ -46,7 +78,7 @@ func TestCleanPDFRemovesEveryInspectedTargetAndVerifiesOutput(t *testing.T) {
 	}
 	contentByPage := make(map[int]string, outputContext.PageCount)
 	for pageNumber := 1; pageNumber <= outputContext.PageCount; pageNumber++ {
-		contentReader, err := pdfcpu.ExtractPageContent(outputContext, pageNumber)
+		contentReader, err := pdfcpu.ExtractPageContent(t.Context(), outputContext, pageNumber)
 		require.NoError(t, err)
 		contentBytes, err := io.ReadAll(contentReader)
 		require.NoError(t, err)
@@ -68,19 +100,19 @@ func TestCleanPDFRewritesPublicNeutralLookingTrio(t *testing.T) {
 	pdfContext.Info = infoReference
 	inputBytes := writeTypedPDFFixture(t, pdfContext)
 
-	publicFields, err := InspectPDF(inputBytes)
+	publicFields, err := InspectPDF(t.Context(), inputBytes)
 	require.NoError(t, err)
 	require.Equal(t, []string{"info.creation_date", "info.mod_date", "info.producer"}, fieldNames(publicFields))
 	require.Equal(t, ActionReplace, publicFields[0].Action)
 	require.Equal(t, ActionReplace, publicFields[1].Action)
 	require.Equal(t, ActionReplace, publicFields[2].Action)
 
-	require.NoError(t, verifyScrubbedPDF(inputBytes))
+	require.NoError(t, verifyScrubbedPDF(t.Context(), inputBytes))
 
-	outputBytes, err := CleanPDF(inputBytes)
+	outputBytes, err := CleanPDF(t.Context(), inputBytes)
 	require.NoError(t, err)
 	require.NotEqual(t, inputBytes, outputBytes)
-	require.NoError(t, verifyScrubbedPDF(outputBytes))
+	require.NoError(t, verifyScrubbedPDF(t.Context(), outputBytes))
 }
 
 func TestCleanPDFReturnsNilOutputWhenWriteFails(t *testing.T) {
@@ -92,7 +124,7 @@ func TestCleanPDFReturnsNilOutputWhenWriteFails(t *testing.T) {
 	pdfContext.Info = infoReference
 	inputBytes := writeTypedPDFFixture(t, pdfContext)
 
-	outputBytes, err := cleanPDF(inputBytes, func(_ *model.Context, writer io.Writer) error {
+	outputBytes, err := cleanPDF(t.Context(), inputBytes, func(_ context.Context, _ *model.Context, writer io.Writer) error {
 		_, writeErr := writer.Write(inputBytes[:len(inputBytes)/2])
 		if writeErr != nil {
 			return writeErr
@@ -117,11 +149,11 @@ func TestCleanPDFReturnsNilOutputWhenPostWriteVerificationFails(t *testing.T) {
 		written []byte
 	}{
 		{name: "remaining metadata", written: inputBytes},
-		{name: "malformed output", written: inputBytes[:len(inputBytes)/2]},
+		{name: "malformed output", written: inputBytes[:bytes.IndexByte(inputBytes, '\n')+1]},
 	}
 	for _, testCase := range testCases {
 		t.Run(testCase.name, func(t *testing.T) {
-			outputBytes, err := cleanPDF(inputBytes, func(_ *model.Context, writer io.Writer) error {
+			outputBytes, err := cleanPDF(t.Context(), inputBytes, func(_ context.Context, _ *model.Context, writer io.Writer) error {
 				_, writeErr := writer.Write(testCase.written)
 				return writeErr
 			})
@@ -197,7 +229,13 @@ func TestPDFByteAPIsKeepConcurrentRequestsIsolated(t *testing.T) {
 	var waitGroup sync.WaitGroup
 	waitGroup.Add(len(inputs))
 	for index, input := range inputs {
-		go runConcurrentPDFByteAPIs(input, &results[index], start, &waitGroup)
+		go func() {
+			defer waitGroup.Done()
+			<-start
+			fields, inspectErr := InspectPDF(t.Context(), input)
+			output, cleanErr := CleanPDF(t.Context(), input)
+			results[index] = concurrentPDFResult{fields: fields, inspectErr: inspectErr, output: output, cleanErr: cleanErr}
+		}()
 	}
 	close(start)
 	waitGroup.Wait()
@@ -207,7 +245,7 @@ func TestPDFByteAPIsKeepConcurrentRequestsIsolated(t *testing.T) {
 	require.Empty(t, results[0].fields)
 	require.NoError(t, results[0].cleanErr)
 	require.Equal(t, cleanInput, results[0].output)
-	require.NoError(t, verifyScrubbedPDF(results[0].output))
+	require.NoError(t, verifyScrubbedPDF(t.Context(), results[0].output))
 
 	require.NoError(t, results[1].inspectErr)
 	require.Len(t, results[1].fields, 13)
@@ -217,18 +255,10 @@ func TestPDFByteAPIsKeepConcurrentRequestsIsolated(t *testing.T) {
 	})
 	require.NoError(t, results[1].cleanErr)
 	require.NotEqual(t, metadataInput, results[1].output)
-	require.NoError(t, verifyScrubbedPDF(results[1].output))
+	require.NoError(t, verifyScrubbedPDF(t.Context(), results[1].output))
 
 	require.ErrorIs(t, results[2].inspectErr, ErrSignedPDF)
 	require.Nil(t, results[2].fields)
 	require.ErrorIs(t, results[2].cleanErr, ErrSignedPDF)
 	require.Nil(t, results[2].output)
-}
-
-func runConcurrentPDFByteAPIs(input []byte, result *concurrentPDFResult, start <-chan struct{}, waitGroup *sync.WaitGroup) {
-	defer waitGroup.Done()
-	<-start
-	fields, inspectErr := InspectPDF(input)
-	output, cleanErr := CleanPDF(input)
-	*result = concurrentPDFResult{fields: fields, inspectErr: inspectErr, output: output, cleanErr: cleanErr}
 }
