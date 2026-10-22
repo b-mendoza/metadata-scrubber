@@ -1,6 +1,6 @@
-import assert from "node:assert/strict";
 import { spawnSync } from "node:child_process";
 import path from "node:path";
+import type { TestContext } from "node:test";
 import { test } from "node:test";
 
 import * as z from "zod";
@@ -203,7 +203,7 @@ const getDiagnosticMessages = (
 };
 
 for (const [ruleId, fixtureFile, expectedNegativeMessages] of fixtureCases) {
-  void test(`${ruleId} ${fixtureFile}`, () => {
+  void test(`${ruleId} ${fixtureFile}`, (context: TestContext) => {
     const positivePath = path.join(
       "oxlint-plugin-metadata-scrubber",
       "fixtures",
@@ -218,7 +218,7 @@ for (const [ruleId, fixtureFile, expectedNegativeMessages] of fixtureCases) {
     );
     const positiveMessages = getDiagnosticMessages(positivePath, ruleId);
     const negativeMessages = getDiagnosticMessages(negativePath, ruleId);
-    assert.deepStrictEqual(positiveMessages, []);
-    assert.deepStrictEqual(negativeMessages, expectedNegativeMessages);
+    context.assert.deepStrictEqual(positiveMessages, []);
+    context.assert.deepStrictEqual(negativeMessages, expectedNegativeMessages);
   });
 }
