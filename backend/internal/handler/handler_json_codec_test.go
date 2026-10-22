@@ -2,6 +2,7 @@ package handler
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"net/http"
 	"net/http/httptest"
@@ -153,7 +154,7 @@ func TestDryRunValidatesRequiredFieldsBeforeWork(t *testing.T) {
 	fake := storage.NewFake()
 	inspectCalls := 0
 	handler := newTestHandler(t)
-	handler.inspect = func([]byte) ([]scrub.Field, error) {
+	handler.inspect = func(context.Context, []byte) ([]scrub.Field, error) {
 		inspectCalls++
 		return nil, nil
 	}
@@ -174,7 +175,7 @@ func TestScrubValidatesRequiredFieldsBeforeWork(t *testing.T) {
 	fake := storage.NewFake()
 	cleanCalls := 0
 	handler := newTestHandler(t)
-	handler.clean = func([]byte) ([]byte, error) {
+	handler.clean = func(context.Context, []byte) ([]byte, error) {
 		cleanCalls++
 		return nil, nil
 	}

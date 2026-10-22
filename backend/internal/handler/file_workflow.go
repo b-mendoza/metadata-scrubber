@@ -131,7 +131,7 @@ func (handler *Handler) cleanSource(scrubWorkflow scrubWorkflowRequest) ([]byte,
 	}
 	handler.logStage(pipelineLogEvent{ctx: scrubWorkflow.request.Context(), stage: pipelineStageSniffed, storageKey: scrubWorkflow.input.StorageKey, outcome: pipelineOutcomeAccepted, startedAt: scrubWorkflow.startedAt})
 
-	return handler.clean(source.PDFBytes)
+	return handler.clean(scrubWorkflow.request.Context(), source.PDFBytes)
 }
 
 func (handler *Handler) presignScrubbed(w http.ResponseWriter, scrubWorkflow scrubWorkflowRequest, outcome pipelineOutcome) {

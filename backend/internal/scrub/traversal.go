@@ -2,6 +2,7 @@ package scrub
 
 import (
 	"cmp"
+	"context"
 	"fmt"
 	"slices"
 
@@ -34,9 +35,9 @@ type structuralWalker struct {
 	inspectMetadata metadataEntryInspector
 }
 
-func sortedLiveObjectNumbers(context *model.Context) []int {
-	objectNumbers := make([]int, 0, len(context.Table))
-	for objectNumber, entry := range context.Table {
+func sortedLiveObjectNumbers(pdfContext *model.Context) []int {
+	objectNumbers := make([]int, 0, len(pdfContext.Table))
+	for objectNumber, entry := range pdfContext.Table {
 		if objectNumber == 0 || entry == nil || entry.Free || entry.Object == nil {
 			continue
 		}
@@ -111,13 +112,13 @@ func (walker structuralWalker) walkArray(array types.Array) error {
 	return nil
 }
 
-func pdfObjectRoles(context *model.Context) (map[int]objectRole, error) {
-	roles := make(map[int]objectRole, context.PageCount+1)
-	if context.Root != nil {
-		roles[context.Root.ObjectNumber.Value()] = objectRole{catalog: true}
+func pdfObjectRoles(ctx context.Context, pdfContext *model.Context) (map[int]objectRole, error) {
+	roles := make(map[int]objectRole, pdfContext.PageCount+1)
+	if pdfContext.Root != nil {
+		roles[pdfContext.Root.ObjectNumber.Value()] = objectRole{catalog: true}
 	}
-	for pageNumber := 1; pageNumber <= context.PageCount; pageNumber++ {
-		pageReference, err := context.PageDictIndRef(pageNumber)
+	for pageNumber := 1; pageNumber <= pdfContext.PageCount; pageNumber++ {
+		pageReference, err := pdfContext.PageDictIndRef(ctx, pageNumber)
 		if err != nil {
 			return nil, fmt.Errorf("resolve PDF page %d: %w", pageNumber, err)
 		}
@@ -128,12 +129,12 @@ func pdfObjectRoles(context *model.Context) (map[int]objectRole, error) {
 	return roles, nil
 }
 
-func dictionaryHasSignatureType(context *model.Context, dictionary types.Dict) (bool, error) {
+func dictionaryHasSignatureType(pdfContext *model.Context, dictionary types.Dict) (bool, error) {
 	typeObject, exists := dictionary.Find("Type")
 	if !exists {
 		return false, nil
 	}
-	dereferencedType, err := context.Dereference(typeObject)
+	dereferencedType, err := pdfContext.Dereference(typeObject)
 	if err != nil {
 		return false, fmt.Errorf("dereference PDF dictionary Type: %w", err)
 	}
@@ -148,20 +149,20 @@ func dictionaryHasSignatureType(context *model.Context, dictionary types.Dict) (
 	return decodedName == "Sig" || decodedName == "DocTimeStamp", nil
 }
 
-func pdfHasCachedSignature(context *model.Context) bool {
-	return pdfHasCachedSignatureState(context) || pdfHasSignedIncrement(context)
+func pdfHasCachedSignature(pdfContext *model.Context) bool {
+	return pdfHasCachedSignatureState(pdfContext) || pdfHasSignedIncrement(pdfContext)
 }
 
-func pdfHasCachedSignatureState(context *model.Context) bool {
-	return context.SignatureExist ||
-		context.AppendOnly ||
-		len(context.URSignature) > 0 ||
-		context.CertifiedSigObjNr > 0 ||
-		!context.DTS.IsZero()
+func pdfHasCachedSignatureState(pdfContext *model.Context) bool {
+	return pdfContext.SignatureExist ||
+		pdfContext.AppendOnly ||
+		len(pdfContext.URSignature) > 0 ||
+		pdfContext.CertifiedSigObjNr > 0 ||
+		!pdfContext.DTS.IsZero()
 }
 
-func pdfHasSignedIncrement(context *model.Context) bool {
-	for _, incrementSignatures := range context.Signatures {
+func pdfHasSignedIncrement(pdfContext *model.Context) bool {
+	for _, incrementSignatures := range pdfContext.Signatures {
 		for _, signature := range incrementSignatures {
 			if signature.Signed {
 				return true

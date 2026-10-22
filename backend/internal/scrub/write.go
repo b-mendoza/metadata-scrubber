@@ -1,24 +1,25 @@
 package scrub
 
 import (
+	"context"
 	"errors"
 
 	"github.com/pdfcpu/pdfcpu/pkg/pdfcpu/model"
 	"github.com/pdfcpu/pdfcpu/pkg/pdfcpu/types"
 )
 
-func verifyScrubbedPDF(outputBytes []byte) error {
-	context, analysis, err := readAndAnalyzePDF(outputBytes)
+func verifyScrubbedPDF(ctx context.Context, outputBytes []byte) error {
+	pdfContext, analysis, err := readAndAnalyzePDF(ctx, outputBytes)
 	if err != nil {
 		return err
 	}
-	if len(analysis.fields) != 0 && !hasNeutralPDFCPUTrio(context, analysis) {
+	if len(analysis.fields) != 0 && !hasNeutralPDFCPUTrio(pdfContext, analysis) {
 		return errors.New("PDF metadata remained after scrub")
 	}
 	return nil
 }
 
-func removeAnalyzedMetadata(context *model.Context, analysis *pdfAnalysis) {
+func removeAnalyzedMetadata(pdfContext *model.Context, analysis *pdfAnalysis) {
 	for key := range analysis.infoDictionary {
 		delete(analysis.infoDictionary, key)
 	}
@@ -26,17 +27,17 @@ func removeAnalyzedMetadata(context *model.Context, analysis *pdfAnalysis) {
 		delete(target.dictionary, target.key)
 	}
 
-	context.Title = ""
-	context.Subject = ""
-	context.Author = ""
-	context.Creator = ""
-	context.Producer = ""
-	context.XRefTable.CreationDate = ""
-	context.ModDate = ""
-	context.Keywords = ""
-	context.KeywordList = map[string]bool{}
-	context.Properties = map[string]string{}
-	context.CatalogXMPMeta = nil
+	pdfContext.Title = ""
+	pdfContext.Subject = ""
+	pdfContext.Author = ""
+	pdfContext.Creator = ""
+	pdfContext.Producer = ""
+	pdfContext.XRefTable.CreationDate = ""
+	pdfContext.ModDate = ""
+	pdfContext.Keywords = ""
+	pdfContext.KeywordList = map[string]bool{}
+	pdfContext.Properties = map[string]string{}
+	pdfContext.CatalogXMPMeta = nil
 }
 
 type neutralPDFCPUInfo struct {
@@ -45,12 +46,12 @@ type neutralPDFCPUInfo struct {
 	modDate      string
 }
 
-func hasNeutralPDFCPUTrio(context *model.Context, analysis *pdfAnalysis) bool {
+func hasNeutralPDFCPUTrio(pdfContext *model.Context, analysis *pdfAnalysis) bool {
 	if len(analysis.metadataTargets) != 0 || len(analysis.infoDictionary) != 3 {
 		return false
 	}
 
-	trio, ok := readNeutralPDFCPUInfo(context, analysis.infoDictionary)
+	trio, ok := readNeutralPDFCPUInfo(pdfContext, analysis.infoDictionary)
 	if !ok || trio.producer != "pdfcpu "+model.VersionStr || trio.creationDate != trio.modDate {
 		return false
 	}
@@ -58,7 +59,7 @@ func hasNeutralPDFCPUTrio(context *model.Context, analysis *pdfAnalysis) bool {
 	return validDate
 }
 
-func readNeutralPDFCPUInfo(context *model.Context, infoDictionary types.Dict) (neutralPDFCPUInfo, bool) {
+func readNeutralPDFCPUInfo(pdfContext *model.Context, infoDictionary types.Dict) (neutralPDFCPUInfo, bool) {
 	var trio neutralPDFCPUInfo
 	for key, object := range infoDictionary {
 		logicalKey, err := types.DecodeName(key)
@@ -76,7 +77,7 @@ func readNeutralPDFCPUInfo(context *model.Context, infoDictionary types.Dict) (n
 		default:
 			return neutralPDFCPUInfo{}, false
 		}
-		value, err := infoObjectValue(context, object)
+		value, err := infoObjectValue(pdfContext, object)
 		if err != nil {
 			return neutralPDFCPUInfo{}, false
 		}

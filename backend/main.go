@@ -18,7 +18,6 @@ import (
 	"metadata-scrubber/internal/config"
 	"metadata-scrubber/internal/handler"
 	"metadata-scrubber/internal/httpx"
-	"metadata-scrubber/internal/scrub"
 	"metadata-scrubber/internal/storage"
 	"metadata-scrubber/internal/telemetry"
 )
@@ -31,7 +30,6 @@ const (
 func main() {
 	logger := slog.New(slog.NewJSONHandler(os.Stdout, nil))
 	slog.SetDefault(logger)
-	scrub.DisableConfigDir()
 
 	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
 	err := run(ctx, logger)

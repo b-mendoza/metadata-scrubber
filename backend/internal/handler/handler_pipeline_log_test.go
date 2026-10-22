@@ -89,7 +89,7 @@ func TestPipelineLogsRecordFailureCacheHitAndShortCircuitFacts(t *testing.T) {
 		require.NoError(t, fake.SetSource(fileIDOne, storage.SourceObject{PDFBytes: []byte("%PDF-one"), ETag: canonicalETagOne}))
 		logs := &pipelineLogHandler{Handler: slog.DiscardHandler}
 		handler := newTestHandler(t)
-		handler.inspect = func([]byte) ([]scrub.Field, error) {
+		handler.inspect = func(context.Context, []byte) ([]scrub.Field, error) {
 			return nil, errors.New("inspect failed")
 		}
 		handler.logger = slog.New(logs)
@@ -112,7 +112,7 @@ func TestPipelineLogsRecordFailureCacheHitAndShortCircuitFacts(t *testing.T) {
 		require.NoError(t, fake.SetSource(fileIDOne, storage.SourceObject{PDFBytes: []byte("%PDF-one"), ETag: canonicalETagOne}))
 		logs := &pipelineLogHandler{Handler: slog.DiscardHandler}
 		handler := newTestHandler(t)
-		handler.clean = func([]byte) ([]byte, error) {
+		handler.clean = func(context.Context, []byte) ([]byte, error) {
 			return nil, errors.New("clean failed")
 		}
 		handler.logger = slog.New(logs)
@@ -183,7 +183,7 @@ func TestPipelineLogsExcludeSeededSensitiveValues(t *testing.T) {
 		objectStorage := &sensitiveGrantStorage{Storage: fake}
 		var logs bytes.Buffer
 		handler := newTestHandler(t)
-		handler.inspect = func([]byte) ([]scrub.Field, error) {
+		handler.inspect = func(context.Context, []byte) ([]scrub.Field, error) {
 			return []scrub.Field{{Name: "title", Preview: "metadata-preview-secret", Action: scrub.ActionRemove}}, nil
 		}
 		handler.logger = slog.New(slog.NewJSONHandler(&logs, nil))

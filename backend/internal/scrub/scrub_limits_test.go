@@ -2,6 +2,7 @@ package scrub
 
 import (
 	"bytes"
+	"context"
 	"fmt"
 	"slices"
 	"strings"
@@ -38,8 +39,8 @@ func TestPDFPathsRejectAggregateDecodedMetadataBudgetBeforeWriting(t *testing.T)
 	catalog.Insert("SyntheticParents", parents)
 	pdfBytes := writeTypedPDFFixture(t, pdfContext)
 
-	fields, inspectErr := InspectPDF(pdfBytes)
-	outputBytes, scrubErr := CleanPDF(pdfBytes)
+	fields, inspectErr := InspectPDF(t.Context(), pdfBytes)
+	outputBytes, scrubErr := CleanPDF(t.Context(), pdfBytes)
 
 	require.ErrorIs(t, inspectErr, ErrInspectionLimit)
 	require.Nil(t, fields)
@@ -69,12 +70,12 @@ func TestPDFPathsRejectOversizedCompressedCatalogMetadataBeforeValidation(t *tes
 	require.Less(t, len(pdfBytes), MaxInputBytes)
 	validationCalls := 0
 
-	pdfContext, readErr := readPDFWithValidator(pdfBytes, func(validationContext *model.Context) error {
+	pdfContext, readErr := readPDFWithValidator(t.Context(), pdfBytes, func(ctx context.Context, validationContext *model.Context) error {
 		validationCalls++
-		return api.ValidateContext(validationContext)
+		return api.ValidateContext(ctx, validationContext)
 	})
-	fields, inspectErr := InspectPDF(pdfBytes)
-	outputBytes, scrubErr := CleanPDF(pdfBytes)
+	fields, inspectErr := InspectPDF(t.Context(), pdfBytes)
+	outputBytes, scrubErr := CleanPDF(t.Context(), pdfBytes)
 
 	require.ErrorIs(t, readErr, ErrInspectionLimit)
 	require.Nil(t, pdfContext)
@@ -105,7 +106,7 @@ func TestAnalyzePDFReleasesDecodedMetadataStreamCaches(t *testing.T) {
 	}
 	catalog.Insert("SyntheticParents", parents)
 	pdfBytes := writeTypedPDFFixture(t, fixtureContext)
-	pdfContext, err := readPDFWithValidator(pdfBytes, api.ValidateContext)
+	pdfContext, err := readPDFWithValidator(t.Context(), pdfBytes, api.ValidateContext)
 	require.NoError(t, err)
 	for _, reference := range metadataReferences {
 		entry := pdfContext.Table[reference.ObjectNumber.Value()]
@@ -119,7 +120,7 @@ func TestAnalyzePDFReleasesDecodedMetadataStreamCaches(t *testing.T) {
 		entry.Object = stream
 	}
 
-	analysis, err := analyzePDF(pdfContext)
+	analysis, err := analyzePDF(t.Context(), pdfContext)
 
 	require.NoError(t, err)
 	require.Len(t, analysis.fields, 2)
@@ -171,20 +172,20 @@ func TestPDFByteAPIsEnforceAggregateInputLimit(t *testing.T) {
 	require.LessOrEqual(t, len(basePDF), MaxInputBytes)
 	exactLimitPDF := slices.Concat(basePDF, bytes.Repeat([]byte{' '}, MaxInputBytes-len(basePDF)))
 
-	fields, err := InspectPDF(exactLimitPDF)
+	fields, err := InspectPDF(t.Context(), exactLimitPDF)
 	require.NoError(t, err)
 	require.Empty(t, fields)
 
-	outputBytes, err := CleanPDF(exactLimitPDF)
+	outputBytes, err := CleanPDF(t.Context(), exactLimitPDF)
 	require.NoError(t, err)
 	require.Equal(t, exactLimitPDF, outputBytes)
 
 	overLimitPDF := slices.Concat(exactLimitPDF, []byte{' '})
-	fields, err = InspectPDF(overLimitPDF)
+	fields, err = InspectPDF(t.Context(), overLimitPDF)
 	require.ErrorIs(t, err, ErrInputTooLarge)
 	require.Nil(t, fields)
 
-	outputBytes, err = CleanPDF(overLimitPDF)
+	outputBytes, err = CleanPDF(t.Context(), overLimitPDF)
 	require.ErrorIs(t, err, ErrInputTooLarge)
 	require.Nil(t, outputBytes)
 }
@@ -198,7 +199,7 @@ func TestInspectPDFBoundsIdentitiesDerivedFromLongCustomKeys(t *testing.T) {
 	pdfContext.Info = infoReference
 	pdfBytes := writeTypedPDFFixture(t, pdfContext)
 
-	fields, err := InspectPDF(pdfBytes)
+	fields, err := InspectPDF(t.Context(), pdfBytes)
 
 	require.NoError(t, err)
 	require.Equal(t, []Field{{
@@ -212,16 +213,16 @@ func TestInspectPDFBoundsIdentitiesDerivedFromLongCustomKeys(t *testing.T) {
 
 func TestInspectPDFEnforcesFieldCountAtomically(t *testing.T) {
 	acceptedPDF := buildInfoFieldCountPDFFixture(t, maxInspectionFields)
-	acceptedFields, err := InspectPDF(acceptedPDF)
+	acceptedFields, err := InspectPDF(t.Context(), acceptedPDF)
 	require.NoError(t, err)
 	require.Len(t, acceptedFields, maxInspectionFields)
 
 	rejectedPDF := buildInfoFieldCountPDFFixture(t, maxInspectionFields+1)
-	fields, err := InspectPDF(rejectedPDF)
+	fields, err := InspectPDF(t.Context(), rejectedPDF)
 	require.ErrorIs(t, err, ErrInspectionLimit)
 	require.Nil(t, fields)
 
-	outputBytes, err := CleanPDF(rejectedPDF)
+	outputBytes, err := CleanPDF(t.Context(), rejectedPDF)
 	require.ErrorIs(t, err, ErrInspectionLimit)
 	require.Nil(t, outputBytes)
 }
@@ -237,11 +238,11 @@ func TestInspectPDFEnforcesAggregateSummaryBudgetAtomically(t *testing.T) {
 	pdfContext.Info = infoReference
 	pdfBytes := writeTypedPDFFixture(t, pdfContext)
 
-	fields, err := InspectPDF(pdfBytes)
+	fields, err := InspectPDF(t.Context(), pdfBytes)
 	require.ErrorIs(t, err, ErrInspectionLimit)
 	require.Nil(t, fields)
 
-	outputBytes, err := CleanPDF(pdfBytes)
+	outputBytes, err := CleanPDF(t.Context(), pdfBytes)
 	require.ErrorIs(t, err, ErrInspectionLimit)
 	require.Nil(t, outputBytes)
 }

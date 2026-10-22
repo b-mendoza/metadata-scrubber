@@ -134,8 +134,6 @@ func TestStorageAndScrubSizeLimitsAgree(t *testing.T) {
 }
 
 func TestNewServerSharesOneCapacityTwoGateAcrossDryRunAndScrubMisses(t *testing.T) {
-	scrub.DisableConfigDir()
-
 	type dryRunRequest struct {
 		StorageKey string `json:"storageKey"`
 	}

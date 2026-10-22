@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"maps"
 	"os"
+	"path/filepath"
 	"slices"
 	"strings"
 	"testing"
@@ -17,9 +18,20 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func TestMain(m *testing.M) {
-	DisableConfigDir()
-	os.Exit(m.Run())
+func TestPDFByteAPIsDoNotCreateUserConfiguration(t *testing.T) {
+	home := t.TempDir()
+	t.Setenv("HOME", home)
+	t.Setenv("XDG_CONFIG_HOME", home)
+	configDirectory, err := os.UserConfigDir()
+	require.NoError(t, err)
+	inputBytes := buildDeepMetadataPDFFixture(t)
+
+	_, err = InspectPDF(t.Context(), inputBytes)
+	require.NoError(t, err)
+	_, err = CleanPDF(t.Context(), inputBytes)
+	require.NoError(t, err)
+
+	require.NoDirExists(t, filepath.Join(configDirectory, "pdfcpu"))
 }
 
 func TestInspectPDFRejectsMalformedCandidatesWithoutSignedClassification(t *testing.T) {
@@ -32,8 +44,8 @@ func TestInspectPDFRejectsMalformedCandidatesWithoutSignedClassification(t *test
 	}
 	for _, testCase := range testCases {
 		t.Run(testCase.name, func(t *testing.T) {
-			fields, inspectErr := InspectPDF(testCase.inputBytes)
-			outputBytes, cleanErr := CleanPDF(testCase.inputBytes)
+			fields, inspectErr := InspectPDF(t.Context(), testCase.inputBytes)
+			outputBytes, cleanErr := CleanPDF(t.Context(), testCase.inputBytes)
 
 			require.ErrorIs(t, inspectErr, ErrMalformedPDF)
 			require.Nil(t, fields)
@@ -46,7 +58,7 @@ func TestInspectPDFRejectsMalformedCandidatesWithoutSignedClassification(t *test
 }
 
 func TestVerifyScrubbedPDFWireContractPreservesUnderlyingError(t *testing.T) {
-	err := verifyScrubbedPDF([]byte("%PDF-1.7\n"))
+	err := verifyScrubbedPDF(t.Context(), []byte("%PDF-1.7\n"))
 
 	require.Error(t, err)
 	require.NotErrorIs(t, err, ErrMalformedPDF)
@@ -55,7 +67,7 @@ func TestVerifyScrubbedPDFWireContractPreservesUnderlyingError(t *testing.T) {
 func TestInspectPDFEnumeratesDeepMetadataDeterministically(t *testing.T) {
 	pdfBytes := buildDeepMetadataPDFFixture(t)
 
-	fields, err := InspectPDF(pdfBytes)
+	fields, err := InspectPDF(t.Context(), pdfBytes)
 	require.NoError(t, err)
 
 	expectedFields := []Field{
@@ -91,7 +103,7 @@ func TestInspectPDFReturnsBoundedDecodedPreviews(t *testing.T) {
 	for _, testCase := range testCases {
 		t.Run(testCase.name, func(t *testing.T) {
 			pdfContext := newSinglePagePDFContext(t)
-			escapedValue, err := types.Escape(testCase.value)
+			escapedValue, err := types.EscapedUTF16String(testCase.value)
 			require.NoError(t, err)
 			info := types.Dict{"Title": types.StringLiteral(*escapedValue)}
 			infoReference, err := pdfContext.IndRefForNewObject(info)
@@ -99,7 +111,7 @@ func TestInspectPDFReturnsBoundedDecodedPreviews(t *testing.T) {
 			pdfContext.Info = infoReference
 			pdfBytes := writeTypedPDFFixture(t, pdfContext)
 
-			fields, err := InspectPDF(pdfBytes)
+			fields, err := InspectPDF(t.Context(), pdfBytes)
 
 			require.NoError(t, err)
 			require.Len(t, fields, 1)
@@ -125,19 +137,19 @@ func TestInspectPDFPreservesSharedCompressedMetadataReferences(t *testing.T) {
 	catalog, err := pdfContext.Catalog()
 	require.NoError(t, err)
 	catalog.Insert("Metadata", *metadataReference)
-	page, _, _, err := pdfContext.PageDict(1, false)
+	page, _, _, err := pdfContext.PageDict(t.Context(), 1, false)
 	require.NoError(t, err)
 	page.Insert("Metadata", *metadataReference)
 	inputBytes := writeTypedPDFFixture(t, pdfContext)
 
-	fields, err := InspectPDF(inputBytes)
+	fields, err := InspectPDF(t.Context(), inputBytes)
 	require.NoError(t, err)
 	require.Equal(t, []string{"metadata.catalog", "metadata.page.0001"}, fieldNames(fields))
 
-	outputBytes, err := CleanPDF(inputBytes)
+	outputBytes, err := CleanPDF(t.Context(), inputBytes)
 	require.NoError(t, err)
 	require.NotNil(t, outputBytes)
-	require.NoError(t, verifyScrubbedPDF(outputBytes))
+	require.NoError(t, verifyScrubbedPDF(t.Context(), outputBytes))
 }
 
 func TestVerifyScrubbedPDFRejectsEveryNeutralTrioNearMiss(t *testing.T) {
@@ -192,7 +204,7 @@ func TestVerifyScrubbedPDFRejectsEveryNeutralTrioNearMiss(t *testing.T) {
 			}
 			pdfBytes := writeTypedPDFFixture(t, pdfContext)
 
-			err = verifyScrubbedPDF(pdfBytes)
+			err = verifyScrubbedPDF(t.Context(), pdfBytes)
 
 			require.ErrorContains(t, err, "PDF metadata remained after scrub")
 		})
@@ -226,8 +238,8 @@ func TestPDFPathsRejectUndecodableMetadataAtomically(t *testing.T) {
 	}
 	for _, testCase := range testCases {
 		t.Run(testCase.name, func(t *testing.T) {
-			fields, inspectErr := InspectPDF(testCase.pdfBytes)
-			outputBytes, scrubErr := CleanPDF(testCase.pdfBytes)
+			fields, inspectErr := InspectPDF(t.Context(), testCase.pdfBytes)
+			outputBytes, scrubErr := CleanPDF(t.Context(), testCase.pdfBytes)
 
 			require.Error(t, inspectErr)
 			require.Nil(t, fields)
@@ -281,8 +293,8 @@ func TestSignedPDFWireContractsReturnErrSignedPDFAndNilOutput(t *testing.T) {
 			maps.Copy(objects, testCase.objects)
 			pdfBytes := buildPDF(t, pdfFixture{objects: objects, rootObjectNumber: 1})
 
-			fields, inspectErr := InspectPDF(pdfBytes)
-			outputBytes, scrubErr := CleanPDF(pdfBytes)
+			fields, inspectErr := InspectPDF(t.Context(), pdfBytes)
+			outputBytes, scrubErr := CleanPDF(t.Context(), pdfBytes)
 
 			require.ErrorIs(t, inspectErr, ErrSignedPDF)
 			require.Nil(t, fields)
@@ -306,7 +318,7 @@ func TestUnsignedSignatureLikeWireContractIsAccepted(t *testing.T) {
 		infoObjectNumber: 6,
 	})
 
-	fields, err := InspectPDF(pdfBytes)
+	fields, err := InspectPDF(t.Context(), pdfBytes)
 
 	require.NotErrorIs(t, err, ErrSignedPDF, "unexpected signed-PDF classification: %v", err)
 	require.NoError(t, err)
@@ -376,18 +388,29 @@ type pdfFixture struct {
 func newSinglePagePDFContext(t *testing.T) *model.Context {
 	t.Helper()
 
-	configuration := model.NewDefaultConfiguration()
+	configuration := model.NewStatelessConfiguration()
 	configuration.WriteObjectStream = false
 	configuration.WriteXRefStream = false
 	pdfContext, err := pdfcpu.CreateContextWithXRefTable(configuration, types.PaperSize["A4"])
 	require.NoError(t, err)
-	catalog, err := pdfContext.Catalog()
+	pagesReference, err := pdfContext.Pages()
 	require.NoError(t, err)
-	catalog.Delete("Pages")
-	page := model.NewPage(types.RectForFormat("A4"), nil)
-	_, err = page.Buf.WriteString("BT 20 100 Td (Synthetic page) Tj ET")
+	pages, err := pdfContext.DereferenceDict(*pagesReference)
 	require.NoError(t, err)
-	require.NoError(t, pdfcpu.AddPageTreeWithSamplePage(pdfContext.XRefTable, catalog, page))
+	content, err := pdfContext.NewStreamDictForBuf([]byte("BT 20 100 Td (Synthetic page) Tj ET"))
+	require.NoError(t, err)
+	require.NoError(t, content.Encode())
+	contentReference, err := pdfContext.IndRefForNewObject(*content)
+	require.NoError(t, err)
+	pageReference, err := pdfContext.IndRefForNewObject(types.Dict{
+		"Type":      types.Name("Page"),
+		"Parent":    *pagesReference,
+		"MediaBox":  types.RectForFormat("A4").Array(),
+		"Resources": types.Dict{},
+		"Contents":  *contentReference,
+	})
+	require.NoError(t, err)
+	require.NoError(t, model.AppendPageTree(pageReference, 1, pages))
 	pdfContext.PageCount = 1
 	return pdfContext
 }
@@ -421,7 +444,7 @@ func buildDeepMetadataPDFFixture(t *testing.T) []byte {
 	require.NoError(t, err)
 	catalog.Insert("Metadata", metadataReference(metadataFixtureValues.catalogXMP))
 	catalog.Insert("Synthetic", types.Dict{"Metadata": metadataReference(metadataFixtureValues.nestedXMP)})
-	page, _, _, err := pdfContext.PageDict(1, false)
+	page, _, _, err := pdfContext.PageDict(t.Context(), 1, false)
 	require.NoError(t, err)
 	pageMetadataReference := metadataReference(metadataFixtureValues.pageXMP)
 	page.Insert("Metadata", pageMetadataReference)

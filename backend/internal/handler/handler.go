@@ -2,6 +2,7 @@
 package handler
 
 import (
+	"context"
 	"crypto/rand"
 	"errors"
 	"log/slog"
@@ -75,8 +76,8 @@ type Handler struct {
 	// An empty channel means every permit was returned.
 	// A length of ProcessingPermitCount means the admission gate is saturated.
 	permits          chan struct{}
-	inspect          func([]byte) ([]scrub.Field, error)
-	clean            func([]byte) ([]byte, error)
+	inspect          func(context.Context, []byte) ([]scrub.Field, error)
+	clean            func(context.Context, []byte) ([]byte, error)
 	admissionJitter  func() int
 	now              func() time.Time
 	admissionTimeout time.Duration
