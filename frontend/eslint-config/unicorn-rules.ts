@@ -15,6 +15,9 @@ export const unicornRules = {
       },
     },
   ],
+  // The project keeps * prefixes in documentation comments.
+  [`${PLUGIN_NAMES.Unicorn}/no-asterisk-prefix-in-documentation-comments`]:
+    SEVERITY_LEVELS.Off,
   [`${PLUGIN_NAMES.Unicorn}/no-null`]: SEVERITY_LEVELS.Off,
   [`${PLUGIN_NAMES.Unicorn}/text-encoding-identifier-case`]: [
     SEVERITY_LEVELS.Error,
