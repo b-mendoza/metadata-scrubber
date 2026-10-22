@@ -23,7 +23,3 @@ export const TRPCProvider = (props: TRPCProviderProps) => {
 export type RouterInputs = inferRouterInputs<AppRouter>;
 
 export type RouterOutputs = inferRouterOutputs<AppRouter>;
-
-// type TRPCClientTypes = inferTRPCClientTypes<AppRouter>;
-
-// export type TRPCClientError = TRPCClientErrorLike<TRPCClientTypes>;
