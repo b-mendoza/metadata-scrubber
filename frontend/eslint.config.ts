@@ -1,20 +1,20 @@
 /**
- * Never edit .oxlintrc.json.
- * The user updates .oxlintrc.json after each rule change in these files.
- * A new rule stays undefined in oxlint until the user updates that file.
- * Keep these rules in ESLint only:
- * promise/prefer-catch: oxlint skips void promise.then(a, b).
- * unicorn/prefer-string-raw: oxlint skips values with identifier property keys.
- * unicorn/no-array-callback-reference: oxlint skips member-expression receivers.
- * no-misleading-character-class: oxlint skips RegExp patterns held in constants.
- * unicorn/prefer-regexp-test: oxlint skips match calls on string literals.
- * Keep @eslint-community/eslint-plugin-eslint-comments in ESLint:
- * all six enabled rules can throw RangeError in oxlint when they report directives.
- * Keep @eslint-react/eslint-plugin and @tanstack/eslint-plugin-start in ESLint:
- * oxlint's JS-plugin API gives getParserServices no type information, even with
- * --type-aware, so their type-aware rules throw and oxlint exits 1.
- * Oxlint then drops all other JS-plugin diagnostics for that file.
- */
+Never edit .oxlintrc.json.
+The user updates .oxlintrc.json after each rule change in these files.
+A new rule stays undefined in oxlint until the user updates that file.
+Keep these rules in ESLint only:
+promise/prefer-catch: oxlint skips void promise.then(a, b).
+unicorn/prefer-string-raw: oxlint skips values with identifier property keys.
+unicorn/no-array-callback-reference: oxlint skips member-expression receivers.
+no-misleading-character-class: oxlint skips RegExp patterns held in constants.
+unicorn/prefer-regexp-test: oxlint skips match calls on string literals.
+Keep @eslint-community/eslint-plugin-eslint-comments in ESLint:
+all six enabled rules can throw RangeError in oxlint when they report directives.
+Keep @eslint-react/eslint-plugin and @tanstack/eslint-plugin-start in ESLint:
+oxlint's JS-plugin API gives getParserServices no type information, even with
+--type-aware, so their type-aware rules throw and oxlint exits 1.
+Oxlint then drops all other JS-plugin diagnostics for that file.
+*/
 import e18e from "@e18e/eslint-plugin";
 import eslint from "@eslint/js";
 import eslintReact from "@eslint-react/eslint-plugin";
@@ -185,10 +185,10 @@ export default defineConfig(
   ...toolingRules,
   ...testRules,
   /**
-   * This final oxlint entry turns off ESLint rules that the bridge
-   * maps to enabled Oxlint rules.
-   * All eight custom rules still run in both tools.
-   */
+  This final oxlint entry turns off ESLint rules that the bridge
+  maps to enabled Oxlint rules.
+  All eight custom rules still run in both tools.
+  */
   ...oxlintConfigs,
   {
     // Keep this block after the bridge, even when .oxlintrc.json enables these rules.

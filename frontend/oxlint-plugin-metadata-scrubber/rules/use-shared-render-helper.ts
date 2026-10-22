@@ -63,8 +63,12 @@ export default defineRule({
 
     return {
       ImportDeclaration(node) {
-        if (!TESTING_LIBRARY_SOURCES.has(node.source.value)) return;
-        if (node.importKind === "type") return;
+        if (
+          !TESTING_LIBRARY_SOURCES.has(node.source.value) ||
+          node.importKind === "type"
+        ) {
+          return;
+        }
         for (const specifier of node.specifiers) {
           if (
             specifier.type !== "ImportSpecifier" ||

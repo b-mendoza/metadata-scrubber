@@ -3,9 +3,10 @@ import { devtools } from "@tanstack/devtools-vite";
 import { tanstackStart } from "@tanstack/react-start/plugin/vite";
 import react from "@vitejs/plugin-react";
 import { nitro } from "nitro/vite";
+import type { UserConfig } from "vite";
 import { defineConfig } from "vite";
 
-export default defineConfig({
+export default defineConfig((): UserConfig => ({
   css: {
     transformer: "lightningcss",
   },
@@ -18,4 +19,4 @@ export default defineConfig({
       compiler: true,
     }),
   ],
-});
+}));
