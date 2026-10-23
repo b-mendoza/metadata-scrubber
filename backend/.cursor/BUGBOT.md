@@ -68,5 +68,4 @@ Report as a non-blocking bug.
 
 ## Review context
 
-- [Backend guide](../AGENTS.md)
 - [Decided backend conventions](../docs/conventions.md)

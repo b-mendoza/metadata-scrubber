@@ -45,6 +45,7 @@ For `**/*.md`, report a violation of this section as a non-blocking bug.
 ## Review context
 
 - [Repository guide](../AGENTS.md)
+- [Backend guide](../backend/AGENTS.md)
 - [Code design](../docs/agent/code-design.md)
 - [Testing principles](../docs/agent/testing.md)
 - [Workflow and task scoping](../docs/agent/workflow.md)

@@ -22,8 +22,7 @@
     },
     {
       "path": "backend/AGENTS.md",
-      "description": "General practices for the selected scope.",
-      "scope": ["backend/**"]
+      "description": "General backend practices for runtime limits and code design."
     },
     {
       "path": "frontend/AGENTS.md",
