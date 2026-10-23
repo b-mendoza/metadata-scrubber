@@ -46,6 +46,7 @@ For `**/*.md`, report a violation of this section as a non-blocking bug.
 
 - [Repository guide](../AGENTS.md)
 - [Backend guide](../backend/AGENTS.md)
+- [Frontend guide](../frontend/AGENTS.md)
 - [Code design](../docs/agent/code-design.md)
 - [Testing principles](../docs/agent/testing.md)
 - [Workflow and task scoping](../docs/agent/workflow.md)

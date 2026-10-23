@@ -26,8 +26,7 @@
     },
     {
       "path": "frontend/AGENTS.md",
-      "description": "General practices for the selected scope.",
-      "scope": ["frontend/src/**"]
+      "description": "General frontend practices for runtime limits and checks."
     },
     {
       "path": "frontend/docs/agent/code-conventions.md",
