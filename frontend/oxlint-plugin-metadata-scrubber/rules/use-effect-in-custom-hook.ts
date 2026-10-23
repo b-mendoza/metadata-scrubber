@@ -54,13 +54,10 @@ const getOutermostExpression = (node: ESTree.Node): ESTree.Node => {
 const isPatternTarget = (node: ESTree.Node): boolean => {
   const { parent } = node;
   if (parent?.type === "AssignmentPattern") return parent.left === node;
-  if (parent?.type === "Property") {
-    return parent.value === node && parent.parent.type === "ObjectPattern";
-  }
-  return (
-    parent != null &&
-    ["ArrayPattern", "ObjectPattern", "RestElement"].includes(parent.type)
-  );
+  return parent?.type === "Property"
+    ? parent.value === node && parent.parent.type === "ObjectPattern"
+    : parent != null &&
+        ["ArrayPattern", "ObjectPattern", "RestElement"].includes(parent.type);
 };
 
 const isWriteOnlyTarget = (node: ESTree.Node): boolean => {
@@ -68,19 +65,15 @@ const isWriteOnlyTarget = (node: ESTree.Node): boolean => {
   const { parent } = expression;
   if (parent == null) return false;
   if (isPatternTarget(expression)) return isWriteOnlyTarget(parent);
-  if (parent.type === "AssignmentExpression") {
-    return parent.operator === "=" && parent.left === expression;
-  }
-  return (
-    (parent.type === "ForInStatement" || parent.type === "ForOfStatement") &&
-    parent.left === expression
-  );
+  return parent.type === "AssignmentExpression"
+    ? parent.operator === "=" && parent.left === expression
+    : (parent.type === "ForInStatement" || parent.type === "ForOfStatement") &&
+        parent.left === expression;
 };
 
 const getImportedName = (specifier: ESTree.ImportSpecifier): string => {
   const { imported } = specifier;
-  if (imported.type === "Identifier") return imported.name;
-  return imported.value;
+  return imported.type === "Identifier" ? imported.name : imported.value;
 };
 
 const isReactEffectImport = (definition: Definition): boolean =>
@@ -144,13 +137,10 @@ const hasHookOwner = (node: ESTree.Node): boolean => {
   while (ancestor != null) {
     if (isFunction(ancestor)) {
       const { parent } = getOutermostExpression(ancestor);
-      if (
-        parent?.type === "VariableDeclarator" &&
+      return parent?.type === "VariableDeclarator" &&
         parent.id.type === "Identifier"
-      ) {
-        return HOOK_NAME_PATTERN.test(parent.id.name);
-      }
-      return ancestor.id != null && HOOK_NAME_PATTERN.test(ancestor.id.name);
+        ? HOOK_NAME_PATTERN.test(parent.id.name)
+        : ancestor.id != null && HOOK_NAME_PATTERN.test(ancestor.id.name);
     }
     ancestor = ancestor.parent;
   }
@@ -175,8 +165,9 @@ const getStaticKeyValue = (node: ESTree.Node): string | null => {
 const getDestructuredPropertyName = (
   node: ESTree.BindingProperty,
 ): string | null => {
-  if (!node.computed && node.key.type === "Identifier") return node.key.name;
-  return getStaticKeyValue(node.key);
+  return !node.computed && node.key.type === "Identifier"
+    ? node.key.name
+    : getStaticKeyValue(node.key);
 };
 
 const getDestructuringSource = (
@@ -186,10 +177,7 @@ const getDestructuringSource = (
   if (parent.type === "VariableDeclarator") {
     return parent.init;
   }
-  if (parent.type === "AssignmentExpression") {
-    return parent.right;
-  }
-  return null;
+  return parent.type === "AssignmentExpression" ? parent.right : null;
 };
 
 export default defineRule({
