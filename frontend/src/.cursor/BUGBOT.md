@@ -25,3 +25,10 @@ Report as a blocking bug.
 
 - Require every generic type parameter to declare an explicit, meaningful
   constraint.
+
+## Failed checks
+
+Report as a blocking bug.
+
+- Require a fix for the cause of a failed check.
+- Accept a narrow exception with a stated reason. Reject broad exceptions.
