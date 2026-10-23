@@ -10,7 +10,7 @@ require (
 	github.com/caarlos0/env/v11 v11.4.1
 	github.com/go-playground/validator/v10 v10.30.5
 	github.com/pdfcpu/pdfcpu v0.16.3
-	github.com/posthog/posthog-go v1.36.0
+	github.com/posthog/posthog-go v1.37.0
 	github.com/stretchr/testify v1.12.1
 	go.opentelemetry.io/contrib/bridges/otelslog v0.21.0
 	go.opentelemetry.io/otel v1.47.0
