@@ -6,8 +6,7 @@
     },
     {
       "path": "docs/agent/code-design.md",
-      "description": "General practices for the selected scope.",
-      "scope": ["backend/**", "frontend/src/**"]
+      "description": "General practices for code design."
     },
     {
       "path": "docs/agent/testing.md",
