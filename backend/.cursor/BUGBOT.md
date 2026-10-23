@@ -36,7 +36,7 @@ Report as a blocking bug.
 
 ## Test payloads
 
-For `backend/**/*_test.go`, report as a non-blocking bug.
+Report as a non-blocking bug.
 
 - Require each test to build request and response payloads from the concrete typed
   contracts at the call site.
