@@ -51,5 +51,6 @@ For `**/*.md`, report a violation of this section as a non-blocking bug.
 - [Testing principles](../docs/agent/testing.md)
 - [Workflow and task scoping](../docs/agent/workflow.md)
 - [Verification](../docs/agent/verification.md)
+- [Frontend design practices](../frontend/docs/agent/code-conventions.md)
 - [Decided frontend conventions](../frontend/docs/conventions.md)
 - [Decided backend conventions](../backend/docs/conventions.md)

@@ -73,7 +73,3 @@ Report as a non-blocking bug.
 
 - Review names for clear domain meaning beyond any deterministic denylist.
 - Accept short conventional names that the language community uses.
-
-## Review context
-
-- [Frontend design practices](../../docs/agent/code-conventions.md)

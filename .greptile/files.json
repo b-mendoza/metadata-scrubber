@@ -30,8 +30,7 @@
     },
     {
       "path": "frontend/docs/agent/code-conventions.md",
-      "description": "General practices for the selected scope.",
-      "scope": ["frontend/src/**"]
+      "description": "General frontend practices for dependencies, resources, and checks."
     },
     {
       "path": "frontend/docs/conventions.md",
