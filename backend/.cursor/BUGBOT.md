@@ -45,7 +45,7 @@ Report as a non-blocking bug.
 
 ## Partial call assertions
 
-For `backend/**/*_test.go`, report as a non-blocking bug.
+Report as a non-blocking bug.
 
 - Review test call assertions. Require partial assertions for values with fields
   that the code under test does not control.

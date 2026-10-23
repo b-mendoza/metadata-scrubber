@@ -10,8 +10,8 @@
     {
       "id": "backend-partial-call-assertions",
       "severity": "medium",
-      "scope": ["backend/**/*_test.go"],
-      "rule": "Review call assertions. Require partial assertions for values with fields that the code under test does not control. Do not require an exact full-structure assertion unless the code controls the complete value."
+      "scope": ["backend/**"],
+      "rule": "Review test call assertions. Require partial assertions for values with fields that the code under test does not control. Do not require an exact full-structure assertion unless the code controls the complete value."
     },
     {
       "id": "frontend-boundary-contracts",
@@ -28,8 +28,8 @@
     {
       "id": "frontend-partial-call-assertions",
       "severity": "medium",
-      "scope": ["frontend/src/**/*.test.*", "frontend/src/**/*.spec.*"],
-      "rule": "Review call assertions. Require a partial matcher when the code controls only part of a value. Do not require an exact full-structure assertion unless the code controls the complete value."
+      "scope": ["frontend/src/**"],
+      "rule": "Review test call assertions. Require a partial matcher when the code controls only part of a value. Do not require an exact full-structure assertion unless the code controls the complete value."
     },
     {
       "id": "design-intent-and-simplicity",

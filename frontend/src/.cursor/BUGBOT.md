@@ -53,8 +53,7 @@ Report as a blocking bug.
 
 ## Partial call assertions
 
-For `frontend/src/**/*.test.*` and `frontend/src/**/*.spec.*`, report as a
-non-blocking bug.
+Report as a non-blocking bug.
 
 - Review test call assertions. Require a partial matcher when the code controls
   only part of a value.
