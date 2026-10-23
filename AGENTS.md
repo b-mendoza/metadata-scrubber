@@ -49,6 +49,15 @@ Review the user's instructions before you act. Treat them as a starting point fo
 
 Use subagents to keep intermediate file dumps out of the main thread. Keep each conclusion in the main thread. Delegate when a skill or task requires delegation. Delegate broad searches, audits across many files, self-contained investigations, and subtasks that can run at the same time. Give each subagent a bounded objective, a definition of done, scope constraints, and the required result format. Ask before you dispatch if you are unsure whether to delegate or which subagent to use.
 
+In the T3 Code harness, `delegate_task` can run a child task in a different harness. Use `orchestrator_capabilities` to find the available providers and models. When a site blocks your harness, send the read to a harness that can reach it:
+
+- Use the Codex harness (`codex`) for web pages that your harness cannot fetch, such as Reddit.
+- Use the Grok harness (`grok`) with the `grok-4.6` model for posts on X (Twitter). Do not use `grok-4.7`, because it does not work as expected.
+
+Set `reasoningEffort` in `target.options` for each child task in these harnesses. Choose `low`, `medium`, or `high` for what the task needs. Do not use a level above `high`.
+
+Delegate after the first blocked fetch. Do not try other URLs, user agents, or scrapers to get past the block. Tell the child task to quote only the content that it retrieves.
+
 ## Open when relevant
 
 General guides:
