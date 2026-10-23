@@ -10,8 +10,7 @@ const TESTING_LIBRARY_SOURCES = new Set([
 
 const getImportedName = (specifier: ESTree.ImportSpecifier): string => {
   const { imported } = specifier;
-  if (imported.type === "Identifier") return imported.name;
-  return imported.value;
+  return imported.type === "Identifier" ? imported.name : imported.value;
 };
 
 const getTestingLibraryNamespaceImportSource = (
