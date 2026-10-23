@@ -4,7 +4,8 @@
 reviews:
   profile: assertive
   request_changes_workflow: true
-  high_level_summary: true
+  # Bugbot writes the summary into the PR description.
+  high_level_summary: false
   auto_review:
     auto_incremental_review: false
 

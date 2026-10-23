@@ -2,5 +2,5 @@ triggers:
   # Avoid repeated automatic reviews on later pushes.
   frequency: oncePerPr
 prSummary:
-  # Keep Bugbot out of the PR description that CodeRabbit updates.
-  mode: comment
+  # Write the summary into the PR description. CodeRabbit does not edit it.
+  mode: description
