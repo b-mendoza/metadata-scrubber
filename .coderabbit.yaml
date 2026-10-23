@@ -49,3 +49,5 @@ knowledge_base:
       - "**/AGENTS.md"
       - "docs/agent/**/*.md"
       - "frontend/docs/agent/**/*.md"
+      - "frontend/docs/conventions.md"
+      - "backend/docs/conventions.md"

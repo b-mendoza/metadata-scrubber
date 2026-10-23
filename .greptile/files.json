@@ -32,6 +32,16 @@
       "path": "frontend/docs/agent/code-conventions.md",
       "description": "General practices for the selected scope.",
       "scope": ["frontend/src/**"]
+    },
+    {
+      "path": "frontend/docs/conventions.md",
+      "description": "Decided frontend patterns and their reasons. Require new and changed code to follow them. Report mismatches instead of copying code that disagrees.",
+      "scope": ["frontend/**"]
+    },
+    {
+      "path": "backend/docs/conventions.md",
+      "description": "Decided backend patterns and their reasons. Require new and changed code to follow them. Report mismatches instead of copying code that disagrees.",
+      "scope": ["backend/**"]
     }
   ]
 }
