@@ -68,3 +68,10 @@ Report as a non-blocking bug.
 
 - Report unclear or needless abstractions.
 - Check that the change solves the stated problem with the smallest clear design.
+
+## Names
+
+Report as a non-blocking bug.
+
+- Review names for clear domain meaning beyond any deterministic denylist.
+- Accept short conventional names that the language community uses.
