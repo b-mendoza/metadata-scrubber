@@ -1,5 +1,5 @@
 {
-  "instructions": "Review only concerns that deterministic checks cannot enforce. Never waive, override, or discount a failing deterministic check. Keep this review advisory. Do not provide the only merge approval. The code and its configured checks are the source of truth. A document does not override them. If a document and the code disagree, review against the code and report the stale document.",
+  "instructions": "Review only concerns that deterministic checks cannot enforce. Never waive, override, or discount a failing deterministic check. Keep this review advisory. Do not provide the only merge approval. For factual references, the code is the source of truth. If a factual reference and the code disagree, follow the code and report the stale reference. Read `frontend/docs/conventions.md` and `backend/docs/conventions.md` for each service's decided conventions. Require new and changed code to follow its service's conventions. Report a mismatch instead of copying code that disagrees.",
   "rules": [
     {
       "id": "backend-boundary-contracts",
@@ -53,7 +53,7 @@
       "id": "deterministic-rule-boundary",
       "severity": "high",
       "scope": ["backend/**", "frontend/src/**", "**/*.md"],
-      "rule": "Do not review complexity limits, switch statements, class syntax, lookup-map structure, formatting, or any other rule that deterministic checks own. Never waive, override, or discount a failing deterministic check."
+      "rule": "Do not review complexity limits, switch statements, class syntax, lookup-map structure, formatting, or any other rule that deterministic checks own. Review each decided convention even when it names one of these constructs. Never waive, override, or discount a failing deterministic check."
     },
     {
       "id": "specific-explicit-application-code",

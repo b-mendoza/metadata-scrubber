@@ -2,16 +2,16 @@
   "files": [
     {
       "path": "AGENTS.md",
-      "description": "General practices for the selected scope. The code is the source of truth."
+      "description": "Documentation model and general practices for the repository."
     },
     {
       "path": "docs/agent/code-design.md",
-      "description": "General practices for the selected scope. The code is the source of truth.",
+      "description": "General practices for the selected scope.",
       "scope": ["backend/**", "frontend/src/**"]
     },
     {
       "path": "docs/agent/testing.md",
-      "description": "General practices for the selected scope. The code is the source of truth.",
+      "description": "General practices for the selected scope.",
       "scope": [
         "backend/**/*_test.go",
         "frontend/src/**/*.test.*",
@@ -20,17 +20,17 @@
     },
     {
       "path": "backend/AGENTS.md",
-      "description": "General practices for the selected scope. The code is the source of truth.",
+      "description": "General practices for the selected scope.",
       "scope": ["backend/**"]
     },
     {
       "path": "frontend/AGENTS.md",
-      "description": "General practices for the selected scope. The code is the source of truth.",
+      "description": "General practices for the selected scope.",
       "scope": ["frontend/src/**"]
     },
     {
       "path": "frontend/docs/agent/code-conventions.md",
-      "description": "General practices for the selected scope. The code is the source of truth.",
+      "description": "General practices for the selected scope.",
       "scope": ["frontend/src/**"]
     }
   ]

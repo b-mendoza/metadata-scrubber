@@ -11,14 +11,14 @@ reviews:
   path_instructions:
     - path: "**"
       instructions: |
-        The code and its configured checks are the source of truth. A document does not override them. If a document and the code disagree, review against the code and report the stale document.
+        For factual references, the code is the source of truth. If a factual reference and the code disagree, follow the code and report the stale reference. Read `frontend/docs/conventions.md` and `backend/docs/conventions.md` for each service's decided conventions. Require new and changed code to follow its service's conventions. Report a mismatch instead of copying code that disagrees.
     - path: "backend/**"
       instructions: |
         Review boundary contracts. Require each boundary to declare and validate its input before domain logic runs. Require contract violations and unknown values to return an explicit error. Do not accept silent coercion, default values, or dropped input.
         Require a fix for the cause of a failed check. Accept a narrow exception with a stated reason. Reject broad exceptions. Keep an exception only where an external API forces it.
         Review test call assertions. Require partial assertions for values with fields that the code under test does not control. Do not require an exact full-structure assertion unless the code controls the complete value.
         Review names for clear domain meaning beyond any deterministic denylist. Accept short conventional names that the language community uses.
-        Do not review complexity limits, switch statements, lookup-map structure, formatting, or other rules that deterministic checks own.
+        Do not review complexity limits, switch statements, lookup-map structure, formatting, or other rules that deterministic checks own. Review each decided convention even when it names one of these constructs.
     - path: "{backend/**,frontend/src/**}"
       instructions: |
         Review only concerns that deterministic checks cannot enforce.
@@ -31,7 +31,7 @@ reviews:
         Review test call assertions. Require a partial matcher when the code controls only part of a value. Do not require an exact full-structure assertion unless the code controls the complete value.
         Review design intent and simplicity. Prefer construction that removes invalid states. Report unclear or needless abstractions.
         Review names for clear domain meaning beyond any deterministic denylist.
-        Do not review complexity limits, switch statements, class syntax, lookup-map structure, formatting, or other rules that deterministic checks own.
+        Do not review complexity limits, switch statements, class syntax, lookup-map structure, formatting, or other rules that deterministic checks own. Review each decided convention even when it names one of these constructs.
     - path: "{backend/lint/**,frontend/oxlint-plugin-metadata-scrubber/**}"
       instructions: |
         Review custom lint rule messages. Require each message to be descriptive, actionable, and educational. Do not accept text that states how to silence or bypass the rule.
