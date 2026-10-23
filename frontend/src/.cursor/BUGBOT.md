@@ -42,3 +42,12 @@ non-blocking bug.
   contracts at the call site.
 - Require serialization at that call site and a check of each error.
 - Accept raw wire literals only in dedicated wire-contract tests.
+
+## Frontend server HTTP boundaries
+
+Report as a blocking bug.
+
+- Require service URLs from request-scoped application bindings.
+- Require server code to return client-safe errors.
+- Reject client-facing messages that include backend response bodies, service
+  URLs, schema issues, or dependency error text.
