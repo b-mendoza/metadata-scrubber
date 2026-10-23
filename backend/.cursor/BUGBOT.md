@@ -65,7 +65,3 @@ Report as a non-blocking bug.
 
 - Review names for clear domain meaning beyond any deterministic denylist.
 - Accept short conventional names that the language community uses.
-
-## Review context
-
-- [Decided backend conventions](../docs/conventions.md)

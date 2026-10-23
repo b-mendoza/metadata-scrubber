@@ -41,8 +41,7 @@
     },
     {
       "path": "backend/docs/conventions.md",
-      "description": "Decided backend patterns and their reasons.",
-      "scope": ["backend/**"]
+      "description": "Decided backend patterns and their reasons."
     }
   ]
 }

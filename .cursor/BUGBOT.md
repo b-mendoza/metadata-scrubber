@@ -50,3 +50,4 @@ For `**/*.md`, report a violation of this section as a non-blocking bug.
 - [Testing principles](../docs/agent/testing.md)
 - [Workflow and task scoping](../docs/agent/workflow.md)
 - [Verification](../docs/agent/verification.md)
+- [Decided backend conventions](../backend/docs/conventions.md)
