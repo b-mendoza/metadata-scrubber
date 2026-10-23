@@ -51,3 +51,13 @@ Report as a blocking bug.
 - Require server code to return client-safe errors.
 - Reject client-facing messages that include backend response bodies, service
   URLs, schema issues, or dependency error text.
+
+## Partial call assertions
+
+For `frontend/src/**/*.test.*` and `frontend/src/**/*.spec.*`, report as a
+non-blocking bug.
+
+- Review test call assertions. Require a partial matcher when the code controls
+  only part of a value.
+- Do not require an exact full-structure assertion unless the code controls the
+  complete value.

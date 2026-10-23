@@ -42,3 +42,12 @@ For `backend/**/*_test.go`, report as a non-blocking bug.
   contracts at the call site.
 - Require serialization at that call site and a check of each error.
 - Accept raw wire literals only in dedicated wire-contract tests.
+
+## Partial call assertions
+
+For `backend/**/*_test.go`, report as a non-blocking bug.
+
+- Review test call assertions. Require partial assertions for values with fields
+  that the code under test does not control.
+- Do not require an exact full-structure assertion unless the code controls the
+  complete value.
