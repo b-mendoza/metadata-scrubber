@@ -37,3 +37,7 @@ For `**/*.md`, report a violation of this section as a non-blocking bug.
 - Require removal of conventions that lint rules enforce or that no longer match
   the project's choice.
 - Keep command inventories in project manifests.
+
+## Markdown design
+
+- For `**/*.md`, review design intent, clarity, and simplicity.
