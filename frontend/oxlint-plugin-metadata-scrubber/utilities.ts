@@ -36,16 +36,13 @@ export const getReferencedVariable = (
 export const getConstDeclaratorInitializer = (
   definition: Definition,
 ): ESTree.Expression | null => {
-  if (
-    definition.type !== "Variable" ||
-    definition.node.type !== "VariableDeclarator" ||
-    definition.node.id.type !== "Identifier" ||
-    definition.parent?.type !== "VariableDeclaration" ||
-    definition.parent.kind !== "const"
-  ) {
-    return null;
-  }
-  return definition.node.init;
+  return definition.type === "Variable" &&
+    definition.node.type === "VariableDeclarator" &&
+    definition.node.id.type === "Identifier" &&
+    definition.parent?.type === "VariableDeclaration" &&
+    definition.parent.kind === "const"
+    ? definition.node.init
+    : null;
 };
 
 export const getStaticPropertyName = (
@@ -55,14 +52,11 @@ export const getStaticPropertyName = (
   if (!node.computed && node.property.type === "Identifier") {
     return node.property.name;
   }
-  if (
-    node.computed &&
+  return node.computed &&
     node.property.type === "Literal" &&
     typeof node.property.value === "string"
-  ) {
-    return node.property.value;
-  }
-  return null;
+    ? node.property.value
+    : null;
 };
 
 export const isFunction = (
