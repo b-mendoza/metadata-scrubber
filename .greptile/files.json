@@ -35,12 +35,12 @@
     },
     {
       "path": "frontend/docs/conventions.md",
-      "description": "Decided frontend patterns and their reasons. Require new and changed code to follow them. Report mismatches instead of copying code that disagrees.",
+      "description": "Decided frontend patterns and their reasons.",
       "scope": ["frontend/**"]
     },
     {
       "path": "backend/docs/conventions.md",
-      "description": "Decided backend patterns and their reasons. Require new and changed code to follow them. Report mismatches instead of copying code that disagrees.",
+      "description": "Decided backend patterns and their reasons.",
       "scope": ["backend/**"]
     }
   ]
