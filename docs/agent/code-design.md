@@ -4,7 +4,7 @@ Use these general design practices in every service and language. For facts, the
 
 ## Construction over validation
 
-- Construct a structured value when one part of it can vary. Accept the variable part as input. Keep the fixed parts in code. Check whether construction can remove a state before you add validation for it.
+- Construct a structured value when one part of it can vary. Accept the variable part as input. Keep the fixed parts in code. Check whether construction can remove a state before you add validation for it. When construction removes an invalid state, delete its validator and rejection tests.
 - Validate external input before use. Match each check to the input's meaning and risk. A format check does not prove that a resource exists or that access is permitted.
 
 ## Decisions
