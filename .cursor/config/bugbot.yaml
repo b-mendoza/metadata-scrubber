@@ -1,0 +1,3 @@
+triggers:
+  # Avoid repeated automatic reviews on later pushes.
+  frequency: oncePerPr
