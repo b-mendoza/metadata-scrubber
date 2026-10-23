@@ -13,6 +13,10 @@
       "description": "General practices for test scope, assertions, and failures."
     },
     {
+      "path": "docs/agent/workflow.md",
+      "description": "General practices for simplicity and task scope."
+    },
+    {
       "path": "backend/AGENTS.md",
       "description": "General practices for the selected scope.",
       "scope": ["backend/**"]
