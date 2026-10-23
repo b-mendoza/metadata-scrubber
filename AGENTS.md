@@ -64,6 +64,8 @@ Delegate after the first blocked fetch. Do not try other URLs, user agents, or s
 
 ## Open when relevant
 
+Follow the decided conventions for the service you change: [frontend](frontend/docs/conventions.md) and [backend](backend/docs/conventions.md).
+
 General guides:
 
 - [Code design](docs/agent/code-design.md) covers general design practices.
