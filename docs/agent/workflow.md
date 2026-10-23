@@ -1,6 +1,6 @@
 # Workflow and task scoping
 
-These are general work practices. The code is the source of truth.
+These are general work practices. For facts, the code is the source of truth.
 
 ## Simplicity
 

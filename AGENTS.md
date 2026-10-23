@@ -4,15 +4,19 @@
 
 ## Documentation model
 
-Documents describe general practices only. Do not prescribe a specific use case, code pattern, or implementation.
+Use general guides for general practices, not for specific use cases, code patterns, or implementations.
 
-Documents are never the source of truth. The code is the source of truth. If the code and a document disagree, the code wins.
+For factual references, the code is the source of truth. If the code and a factual reference disagree, follow the code.
 
 Factual references, such as architecture, layout, and known issues, can describe the current code and tools. They do not define requirements. Check them against the code. Update them when they become wrong.
 
+Use decided conventions to name the pattern the project chose when two or more patterns are valid. Give the reason for the choice. You can name the rejected alternative. Follow decided conventions in new and changed code. If code disagrees, report the mismatch and do not copy that code.
+
+Keep each service's decided conventions in `<service>/docs/conventions.md`. Include no versions, file inventories, or commands. Verify that each named identifier exists in the code. Remove a convention when a lint rule enforces it or the project changes the choice.
+
 The project manifest defines available commands and scripts. Use `package.json` for the frontend and `Taskfile.yml` for the backend. Do not keep a separate command inventory in a document.
 
-Keep a guidance rule only when it states a useful general practice. Use observed failures to find general lessons. Remove case-specific fixes and duplicate guidance. Remove a rule when it no longer changes agent behavior. Every agent loads these files into its context. Keep each line tied to an agent action. State the required action instead of listing prohibited actions. Use a standalone prohibition when it addresses a repeated failure.
+Keep guidance only for useful general practices or decided conventions. Use observed failures to find general lessons or decided conventions. Remove case-specific fixes that state neither. Remove duplicate guidance. Remove a rule when it no longer changes agent behavior. Every agent loads these files into its context. Keep each line tied to an agent action. State the required action instead of listing prohibited actions. Use a standalone prohibition when it addresses a repeated failure.
 
 ## Language
 
@@ -40,7 +44,7 @@ Review the user's instructions before you act. Treat them as a starting point fo
 
 ## Required workflow
 
-- Read each service's `AGENTS.md` before you edit files in that service. Use it for general practices. Find available commands in the service's project manifest. A guide does not override the code.
+- Read each service's `AGENTS.md` before you edit files in that service. Use it for general practices. Find available commands in the service's project manifest. For facts, a guide does not override the code.
 - Run the affected service's lint check after a substantive change. Run its test suite before you commit. Select commands from the project manifest. Passing checks do not prove that a change is correct. Escalate if you are unsure about correctness. Do not declare success while that doubt remains.
 - Treat the linter configuration as the enforced style standard in each service.
 - Editing does not give permission to publish. Do not commit, push, open a pull request, or create an issue unless the user asks. If you commit, stage the paths that the task touched and no other paths.

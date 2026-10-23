@@ -1,6 +1,6 @@
 # Code design
 
-Use these general design practices in every service and language. The code is the source of truth.
+Use these general design practices in every service and language. For facts, the code is the source of truth.
 
 ## Construction over validation
 

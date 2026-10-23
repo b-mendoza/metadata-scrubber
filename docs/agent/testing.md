@@ -1,6 +1,6 @@
 # Testing principles
 
-Use these general test practices in every service and language. The code is the source of truth.
+Use these general test practices in every service and language. For facts, the code is the source of truth.
 
 ## Test scope
 

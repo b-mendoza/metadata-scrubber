@@ -1,6 +1,6 @@
 # Verifying your work
 
-These are general verification practices. The code is the source of truth. Passing tests do not prove that a change is correct. Complete these steps after a substantive change.
+These are general verification practices. For facts, the code is the source of truth. Passing tests do not prove that a change is correct. Complete these steps after a substantive change.
 
 - Read the project manifest before choosing a check. Report a configured check that is missing or broken. Do not guess a replacement.
 - Report a check as passing after you run it against the current change and see it pass. Include failures and warnings in the result. Do not make the result appear cleaner than the command output.
