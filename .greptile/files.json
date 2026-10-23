@@ -10,12 +10,7 @@
     },
     {
       "path": "docs/agent/testing.md",
-      "description": "General practices for the selected scope.",
-      "scope": [
-        "backend/**/*_test.go",
-        "frontend/src/**/*.test.*",
-        "frontend/src/**/*.spec.*"
-      ]
+      "description": "General practices for test scope, assertions, and failures."
     },
     {
       "path": "backend/AGENTS.md",
