@@ -26,8 +26,7 @@ const TEST_FUNCTION_NAMES = new Set<TestApi>(["it", "test"]);
 
 const getImportedName = (specifier: ESTree.ImportSpecifier): string => {
   const { imported } = specifier;
-  if (imported.type === "Identifier") return imported.name;
-  return imported.value;
+  return imported.type === "Identifier" ? imported.name : imported.value;
 };
 
 const isTestApiName = (name: string): name is TestApi =>
