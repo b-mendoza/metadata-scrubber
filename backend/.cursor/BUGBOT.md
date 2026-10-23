@@ -33,3 +33,12 @@ Report as a blocking bug.
 - Require a fix for the cause of a failed check.
 - Accept a narrow exception with a stated reason. Reject broad exceptions.
 - Keep an exception only where an external API forces it.
+
+## Test payloads
+
+For `backend/**/*_test.go`, report as a non-blocking bug.
+
+- Require each test to build request and response payloads from the concrete typed
+  contracts at the call site.
+- Require serialization at that call site and a check of each error.
+- Accept raw wire literals only in dedicated wire-contract tests.

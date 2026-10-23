@@ -32,3 +32,13 @@ Report as a blocking bug.
 
 - Require a fix for the cause of a failed check.
 - Accept a narrow exception with a stated reason. Reject broad exceptions.
+
+## Test payloads
+
+For `frontend/src/**/*.test.*` and `frontend/src/**/*.spec.*`, report as a
+non-blocking bug.
+
+- Require each test to build request and response payloads from the concrete typed
+  contracts at the call site.
+- Require serialization at that call site and a check of each error.
+- Accept raw wire literals only in dedicated wire-contract tests.
