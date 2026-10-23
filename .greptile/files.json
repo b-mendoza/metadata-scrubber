@@ -35,8 +35,7 @@
     },
     {
       "path": "frontend/docs/conventions.md",
-      "description": "Decided frontend patterns and their reasons.",
-      "scope": ["frontend/**"]
+      "description": "Decided frontend patterns and their reasons."
     },
     {
       "path": "backend/docs/conventions.md",
