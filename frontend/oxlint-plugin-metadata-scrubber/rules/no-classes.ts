@@ -4,10 +4,9 @@ import { defineRule } from "@oxlint/plugins";
 const getClassName = (node: ESTree.Class): string => {
   if (node.id != null) return node.id.name;
   const { parent } = node;
-  if (parent.type === "VariableDeclarator" && parent.id.type === "Identifier") {
-    return parent.id.name;
-  }
-  return "anonymous class";
+  return parent.type === "VariableDeclarator" && parent.id.type === "Identifier"
+    ? parent.id.name
+    : "anonymous class";
 };
 
 export default defineRule({
