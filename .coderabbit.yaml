@@ -27,11 +27,13 @@ reviews:
         Require every generic type parameter to declare an explicit, meaningful constraint.
         Require a fix for the cause of a failed check. Accept a narrow exception with a stated reason. Reject broad exceptions.
         Review test request and response payloads. Require each test to build payloads from the concrete typed contracts at the call site and serialize them there with errors checked. Accept raw wire literals only in dedicated wire-contract tests.
-        Review frontend server HTTP boundaries. Require code to build service URLs from request-scoped application bindings. Require server code to return client-safe errors. Reject client-facing messages that include backend response bodies, service URLs, schema issues, or dependency error text.
         Review test call assertions. Require a partial matcher when the code controls only part of a value. Do not require an exact full-structure assertion unless the code controls the complete value.
         Review design intent and simplicity. Prefer construction that removes invalid states. Report unclear or needless abstractions.
         Review names for clear domain meaning beyond any deterministic denylist.
         Do not review complexity limits, switch statements, class syntax, lookup-map structure, formatting, or other rules that deterministic checks own. Review each decided convention even when it names one of these constructs.
+    - path: "frontend/src/**"
+      instructions: |
+        Review frontend server HTTP boundaries. Require code to build service URLs from request-scoped application bindings. Require server code to return client-safe errors. Reject client-facing messages that include backend response bodies, service URLs, schema issues, or dependency error text.
     - path: "{backend/lint/**,frontend/oxlint-plugin-metadata-scrubber/**}"
       instructions: |
         Review custom lint rule messages. Require each message to be descriptive, actionable, and educational. Do not accept text that states how to silence or bypass the rule.
