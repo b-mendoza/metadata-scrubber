@@ -61,3 +61,10 @@ non-blocking bug.
   only part of a value.
 - Do not require an exact full-structure assertion unless the code controls the
   complete value.
+
+## Design intent and simplicity
+
+Report as a non-blocking bug.
+
+- Report unclear or needless abstractions.
+- Check that the change solves the stated problem with the smallest clear design.

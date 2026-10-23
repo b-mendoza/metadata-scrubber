@@ -51,3 +51,10 @@ For `backend/**/*_test.go`, report as a non-blocking bug.
   that the code under test does not control.
 - Do not require an exact full-structure assertion unless the code controls the
   complete value.
+
+## Design intent and simplicity
+
+Report as a non-blocking bug.
+
+- Report unclear or needless abstractions.
+- Check that the change solves the stated problem with the smallest clear design.
