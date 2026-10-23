@@ -1,6 +1,6 @@
 # Frontend agent guide
 
-This guide describes general practices, not specific use cases or implementations. A guide does not override the code.
+This guide describes general practices, not specific use cases or implementations. For facts, the code is the source of truth. Decided conventions in docs/conventions.md define the chosen patterns.
 
 Use the package manager and version declared by the project manifest.
 
@@ -22,6 +22,7 @@ Use the package manager and version declared by the project manifest.
 ## Open when relevant
 
 - Read the [frontend design guide](docs/agent/code-conventions.md) for general practices.
+- Follow the [decided frontend conventions](docs/conventions.md) in new and changed code. Report mismatches.
 
 ## Factual references
 
