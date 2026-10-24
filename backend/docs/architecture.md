@@ -27,6 +27,8 @@ The backend is a Go HTTP service. It grants direct uploads to private storage. I
 
 Stock `golangci-lint` checks all packages, including analyzer code. Git ignores the generated `coverage.out` file.
 
+The frontend `pnpm install` installs Git hooks. The pre-commit hook runs lint-staged from the Git root. Staged backend files use `lint-staged.config.mjs`. That config formats Go files with `golangci-lint fmt` in this directory. It then runs `golangci-lint` and `go run ./lint/cmd/analyzers . ./internal/...`.
+
 ## HTTP API
 
 The server registers these routes:

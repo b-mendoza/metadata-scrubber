@@ -8,6 +8,7 @@ export const toolingRules = defineConfig(
     files: [
       "eslint.config.ts",
       "eslint-config/**/*.ts",
+      "lint-staged.config.ts",
       "scripts/**/*.ts",
       "vite.config.ts",
       "vitest.config.ts",

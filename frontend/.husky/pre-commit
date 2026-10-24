@@ -1,0 +1,2 @@
+# Run from the Git root so lint-staged finds frontend and backend configs.
+frontend/node_modules/.bin/lint-staged --concurrent false
