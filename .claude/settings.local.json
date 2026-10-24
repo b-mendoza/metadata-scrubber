@@ -8,7 +8,7 @@
   "disableBundledSkills": true,
   "enabledMcpjsonServers": [
     "chrome-devtools",
-    "cloudflare",
+    "cloudflare-api",
     "context7",
     "notion",
     "posthog",
