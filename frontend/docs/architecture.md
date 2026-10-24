@@ -114,6 +114,8 @@ The root [architecture reference](../../docs/architecture.md) describes service 
 ## Tooling
 
 - [package.json](../package.json) defines the available commands and scripts.
+- `pnpm install` runs the `prepare` script. The script installs Git hooks from `frontend/.husky`.
+- The pre-commit hook runs lint-staged. lint-staged formats staged files with oxfmt. It lints staged JavaScript and TypeScript with Oxlint and ESLint. It type-checks the frontend when a TypeScript file is staged.
 - `scripts/setup-node.sh` installs the pinned Node.js runtime and pnpm. It installs dependencies, then runs lint, fixes, tests, coverage, and a production build.
 - `scripts/hard-clean.ts` and `scripts/soft-clean.ts` import only Node built-ins. They can run without installed dependencies.
 - The lint checks cover ESLint rules, React Doctor findings, unused code, formatting, Oxlint rules, and TypeScript types. Knip checks unused files, dependencies, and exports. oxfmt checks formatting.
