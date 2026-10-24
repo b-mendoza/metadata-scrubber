@@ -23,6 +23,7 @@
     "lint:oxfmt": "oxfmt --check",
     "lint:oxlint": "oxlint --deny-warnings",
     "lint:types": "tsrs --build --pretty",
+    "prepare": "cd .. && husky frontend/.husky",
     "preview": "vite preview",
     "test": "vitest run",
     "test:coverage": "vitest run --coverage",
