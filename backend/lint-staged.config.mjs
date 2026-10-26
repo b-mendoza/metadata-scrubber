@@ -1,16 +1,28 @@
+// @ts-check
+
 const EMPTY_FILE_COUNT = 0;
 
 const GOLANGCI_LINT_CONFIG = ".golangci.yml";
 
 const APPLICATION_PACKAGES = [".", "./internal/..."];
 
+/**
+ * @param {string[]} files
+ */
 const quoteFiles = (files) =>
   files.map((file) => JSON.stringify(file)).join(" ");
 
+/**
+ * @param {string} file
+ */
 const isGoFile = (file) => file.endsWith(".go");
 
-// lint-staged can call this task once for each file chunk. The lint tasks
-// after it run only when all chunks are formatted.
+/**
+ * @param {string[]} files
+ * @returns {string[]}
+ * lint-staged can call this task once for each file chunk. The lint tasks
+ * after it run only when all chunks are formatted.
+ */
 const formatStagedGoFiles = (files) => {
   const goFiles = files.filter((file) => isGoFile(file));
 
