@@ -10,3 +10,6 @@ opencode.jsonc
 .env.*
 !backend/.env.example
 !frontend/.env.example
+
+# Agent run handoffs
+.handoffs/
