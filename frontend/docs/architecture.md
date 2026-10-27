@@ -115,7 +115,8 @@ The root [architecture reference](../../docs/architecture.md) describes service 
 
 - [package.json](../package.json) defines the available commands and scripts.
 - The backend Go module owns lefthook. Run lefthook with `go -C ../backend tool lefthook`.
-- Install Git hooks once after you clone. From `backend/`, run `go tool lefthook install` or `task hooks:install`.
+- Install Git hooks once after you clone. From `backend/`, run `task hooks:install`.
+- The task removes the repository-local `core.hooksPath` only if its value is exactly `frontend/.husky/_`. This removes the old Husky setting. The task leaves all other local and global values unchanged.
 - `pnpm install` does not install hooks.
 - lefthook reads lefthook.yml at the repository root. Git hooks call lefthook with `go -C backend tool lefthook`.
 - lefthook skips a job when no staged file matches that job's root or glob.
