@@ -4,7 +4,6 @@ version: "3.51.1"
 
 vars:
   BINARY: metadata-scrubber
-  GOLANGCI_LINT_CONFIG: .golangci.yml
   # Custom analyzers check application packages only. Add new application directories here.
   APPLICATION_PACKAGES: . ./internal/...
 
@@ -46,7 +45,7 @@ tasks:
   lint:golangci:
     desc: Run golangci-lint and verify formatting (read-only)
     cmds:
-      - go tool golangci-lint run --config {{.GOLANGCI_LINT_CONFIG}}
+      - go tool golangci-lint run
 
   lint:analyzers:
     desc: Run custom analyzers on application packages (read-only)
@@ -71,8 +70,8 @@ tasks:
   fix:
     desc: Apply lint auto-fixes and format the source code (writes files)
     cmds:
-      - go tool golangci-lint run --config {{.GOLANGCI_LINT_CONFIG}} --fix
-      - go tool golangci-lint fmt --config {{.GOLANGCI_LINT_CONFIG}}
+      - go tool golangci-lint run --fix
+      - go tool golangci-lint fmt
       - go run ./lint/cmd/analyzers {{.APPLICATION_PACKAGES}}
 
   tidy:
