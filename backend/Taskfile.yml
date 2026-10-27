@@ -78,9 +78,4 @@ tasks:
   hooks:install:
     desc: Install Git hooks with lefthook from this Go module
     cmds:
-      - |
-        # One-time Husky migration: remove only the old repository-local hook path.
-        if [ "$(git config --local --get core.hooksPath)" = "frontend/.husky/_" ]; then
-          git config --local --unset core.hooksPath
-        fi
       - go tool lefthook install
