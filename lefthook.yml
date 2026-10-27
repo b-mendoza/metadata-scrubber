@@ -1,7 +1,5 @@
 # Jobs run in order. Format runs before lint because format can change the files that lint reads.
 
-min_version: 2.2.2
-assert_lefthook_installed: true
 glob_matcher: doublestar
 # Git hooks run lefthook through the backend Go module.
 lefthook: go -C backend tool lefthook
