@@ -27,7 +27,7 @@ The backend is a Go HTTP service. It grants direct uploads to private storage. I
 
 Stock `golangci-lint` checks all packages, including analyzer code. Git ignores the generated `coverage.out` file.
 
-The frontend `pnpm install` installs Git hooks. lefthook reads lefthook.yml at the repository root. lefthook formats staged Go files with `golangci-lint fmt` in this directory. It then runs `golangci-lint` and `go run ./lint/cmd/analyzers . ./internal/...` when any backend file is staged.
+This module owns lefthook as a Go tool. Run lefthook with `go tool lefthook`. The `hooks:install` task runs `go tool lefthook install`. lefthook reads lefthook.yml at the repository root. Git hooks call lefthook with `go -C backend tool lefthook`. lefthook formats staged Go files with `golangci-lint fmt` in this directory. It then runs `golangci-lint` and `go run ./lint/cmd/analyzers . ./internal/...` when any backend file is staged.
 
 ## HTTP API
 

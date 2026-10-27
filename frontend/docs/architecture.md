@@ -114,8 +114,9 @@ The root [architecture reference](../../docs/architecture.md) describes service 
 ## Tooling
 
 - [package.json](../package.json) defines the available commands and scripts.
-- `pnpm install` runs the `prepare` script. The script runs lefthook install.
-- lefthook reads lefthook.yml at the repository root.
+- The backend Go module owns lefthook. Run lefthook with `go -C ../backend tool lefthook`.
+- `pnpm install` runs the `prepare` script. The script runs `go -C ../backend tool lefthook install` when `go` is on PATH. The script skips hook install when `go` is missing.
+- lefthook reads lefthook.yml at the repository root. Git hooks call lefthook with `go -C backend tool lefthook`.
 - lefthook skips a job when no staged file matches that job's root or glob.
 - Sequential jobs keep format ahead of lint.
 - Frontend jobs format staged frontend files with oxfmt. They lint staged JavaScript and TypeScript with Oxlint and ESLint. They type-check the frontend when a TypeScript file is staged.
