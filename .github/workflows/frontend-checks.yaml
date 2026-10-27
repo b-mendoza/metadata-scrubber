@@ -11,6 +11,7 @@ on:
     branches:
       - main
     paths:
+      - .github/actions/frontend/**
       - .github/workflows/frontend-checks.yaml
       - frontend/**
 
