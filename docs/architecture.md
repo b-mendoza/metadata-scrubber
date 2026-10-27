@@ -11,6 +11,16 @@
 | `docs/`              | Cross-service documentation. General guides are under `docs/agent/`. Factual references include this file.                         |
 | `docker-compose.yml` | Runs the backend and frontend together for local development.                                                                      |
 
+## Worktree setup
+
+`scripts/setup-worktree.sh` prepares a fresh checkout. The script installs frontend dependencies with `pnpm install --frozen-lockfile`. It downloads Go modules. It installs Git hooks with lefthook. It then checks `go -C backend tool task --version`. Run the script from the repository root with `bash scripts/setup-worktree.sh`.
+
+Cursor reads `.cursor/worktrees.json`. On Unix it runs the setup script. The generic setup key reports that Windows is not supported yet.
+
+T3 Code reads `t3.json`. New threads use a worktree. T3 Code runs the setup script when it creates that worktree.
+
+The script copies `backend/.env` and `frontend/.env` from the original checkout when those files exist. It copies them only when `ROOT_WORKTREE_PATH` or `T3CODE_PROJECT_ROOT` is set. The script does not print env file contents.
+
 ## Service integration
 
 - Clients send public application requests to the frontend. Frontend server code calls the backend over HTTP.
