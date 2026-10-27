@@ -79,3 +79,8 @@ tasks:
     desc: Add missing and remove unused module dependencies
     cmds:
       - go mod tidy
+
+  hooks:install:
+    desc: Install Git hooks with lefthook from this Go module
+    cmds:
+      - go tool lefthook install
