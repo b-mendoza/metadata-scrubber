@@ -2,16 +2,11 @@
 
 version: "3.51.1"
 
-vars:
-  BINARY: metadata-scrubber
-  # Custom analyzers check application packages only. Add new application directories here.
-  APPLICATION_PACKAGES: . ./internal/...
-
 tasks:
   build:
     desc: Compile the project into a binary
     cmds:
-      - go build -o {{.BINARY}} .
+      - go build -o metadata-scrubber .
 
   run:
     desc: Run the project
@@ -47,10 +42,11 @@ tasks:
     cmds:
       - go tool golangci-lint run
 
+  # Custom analyzers check application packages only. Add new application directories here.
   lint:analyzers:
     desc: Run custom analyzers on application packages (read-only)
     cmds:
-      - go run ./lint/cmd/analyzers {{.APPLICATION_PACKAGES}}
+      - go run ./lint/cmd/analyzers . ./internal/...
 
   # Task runs deps in parallel. golangci-lint and the custom analyzers do not
   # depend on each other.
