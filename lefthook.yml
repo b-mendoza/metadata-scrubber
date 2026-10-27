@@ -1,5 +1,4 @@
-# Sequential jobs keep format ahead of lint. Format can change the files that lint reads.
-# lefthook skips a job when no staged file matches that job's root or glob.
+# Jobs run in order. Format runs before lint because format can change the files that lint reads.
 
 min_version: 2.2.2
 assert_lefthook_installed: true
