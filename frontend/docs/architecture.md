@@ -114,10 +114,12 @@ The root [architecture reference](../../docs/architecture.md) describes service 
 ## Tooling
 
 - [package.json](../package.json) defines the available commands and scripts.
-- `pnpm install` runs the `prepare` script. The script installs Git hooks from `frontend/.husky`.
-- The pre-commit hook runs lint-staged from the Git root. lint-staged uses the closest config for each staged file.
-- The frontend config lives in `lint-staged.config.ts`. It formats staged frontend files with oxfmt. It lints staged JavaScript and TypeScript with Oxlint and ESLint. It type-checks the frontend when a TypeScript file is staged.
-- The backend config lives in `../backend/lint-staged.config.mjs`. It formats staged Go files with `golangci-lint fmt`. It then runs `golangci-lint` and the custom analyzers from the backend directory.
+- `pnpm install` runs the `prepare` script. The script runs lefthook install.
+- lefthook reads lefthook.yml at the repository root.
+- lefthook skips a job when no staged file matches that job's root or glob.
+- Sequential jobs keep format ahead of lint.
+- Frontend jobs format staged frontend files with oxfmt. They lint staged JavaScript and TypeScript with Oxlint and ESLint. They type-check the frontend when a TypeScript file is staged.
+- Backend jobs format staged Go files with `golangci-lint fmt`. They then run `golangci-lint` and the custom analyzers from the backend directory when any backend file is staged.
 - `scripts/setup-node.sh` installs the pinned Node.js runtime and pnpm. It installs dependencies, then runs lint, fixes, tests, coverage, and a production build.
 - `scripts/hard-clean.ts` and `scripts/soft-clean.ts` import only Node built-ins. They can run without installed dependencies.
 - The lint checks cover ESLint rules, React Doctor findings, unused code, formatting, Oxlint rules, and TypeScript types. Knip checks unused files, dependencies, and exports. oxfmt checks formatting.
