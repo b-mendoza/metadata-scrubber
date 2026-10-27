@@ -53,8 +53,8 @@ jobs:
         # Astral publishes no fork release or image yet. Pin a reviewed commit.
         # The fork accepts $/ refs and background/wait-all steps.
         # Upstream still rejects those forms. See rhysd/actionlint#711 and #693.
-        # https://github.com/astral-sh/actionlint/commit/07fc2e389a52682854f5aaf4b862a9b86e01d0a2
-        run: go install github.com/astral-sh/actionlint/cmd/actionlint@07fc2e389a52682854f5aaf4b862a9b86e01d0a2
+        # https://github.com/astral-sh/actionlint/commit/dbad7bbbc92988579c4050c3389de41e9762123a
+        run: go install github.com/astral-sh/actionlint/cmd/actionlint@dbad7bbbc92988579c4050c3389de41e9762123a
 
       - name: Check workflows with actionlint
         # ubuntu-latest includes shellcheck. actionlint uses it when it is on PATH.
