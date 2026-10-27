@@ -23,8 +23,8 @@ permissions:
   contents: read
 
 jobs:
-  quality-checks:
-    name: Lint, vet and test the backend
+  lint:
+    name: Lint the backend
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -34,10 +34,28 @@ jobs:
       - name: "Setup Go and Task"
         uses: $/.github/actions/backend/setup-env
 
-      - name: Lint and verify formatting
+      - name: Run golangci-lint
         working-directory: ./backend
-        run: task lint
+        run: task lint:golangci
         background: true
+
+      - name: Run custom analyzers
+        working-directory: ./backend
+        run: task lint:analyzers
+        background: true
+
+      - wait-all:
+
+  test:
+    name: Test the backend
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: "Setup Go and Task"
+        uses: $/.github/actions/backend/setup-env
 
       - name: Test
         working-directory: ./backend
@@ -55,6 +73,22 @@ jobs:
         background: true
 
       - wait-all:
+
+  quality-checks:
+    name: Lint, vet and test the backend
+    runs-on: ubuntu-latest
+    needs:
+      - lint
+      - test
+    if: ${{ always() && !cancelled() }}
+    steps:
+      - name: Require lint and test to pass
+        env:
+          LINT_RESULT: ${{ needs.lint.result }}
+          TEST_RESULT: ${{ needs.test.result }}
+        run: |
+          test "$LINT_RESULT" = "success"
+          test "$TEST_RESULT" = "success"
 
   security:
     name: Run backend security scan
