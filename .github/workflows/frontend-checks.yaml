@@ -3,7 +3,6 @@ name: Frontend Quality Checks
 on:
   pull_request:
     paths:
-      - .github/actions/frontend/**
       - .github/workflows/frontend-checks.yaml
       - frontend/**
 
@@ -11,7 +10,6 @@ on:
     branches:
       - main
     paths:
-      - .github/actions/frontend/**
       - .github/workflows/frontend-checks.yaml
       - frontend/**
 
