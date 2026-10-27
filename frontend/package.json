@@ -23,7 +23,6 @@
     "lint:oxfmt": "oxfmt --check",
     "lint:oxlint": "oxlint --deny-warnings",
     "lint:types": "tsrs --build --pretty",
-    "prepare": "go -C ../backend tool lefthook install || ! command -v go >/dev/null",
     "preview": "vite preview",
     "test": "vitest run",
     "test:coverage": "vitest run --coverage",
