@@ -1,6 +1,6 @@
 name: "Setup Node.js, pnpm and dependencies"
 
-description: Setup Node.js environment, pnpm package manager, restore/save the pnpm store cache, and install project dependencies
+description: Setup Node.js environment, pnpm package manager, restore/save the pnpm store and lint caches, and install project dependencies
 
 runs:
   using: composite
@@ -50,3 +50,14 @@ runs:
       with:
         path: ${{ steps.pnpm-store-path.outputs.path }}
         key: ${{ steps.cache-restore.outputs.cache-primary-key }}
+
+    # Restore after install so pnpm does not wipe node_modules/.cache.
+    # The combined cache action saves at job end after lint writes results.
+    - name: Cache ESLint and type-check results
+      uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+      with:
+        path: frontend/node_modules/.cache
+        key: frontend-lint-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('frontend/pnpm-lock.yaml') }}-${{ github.job }}
+        restore-keys: |
+          frontend-lint-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('frontend/pnpm-lock.yaml') }}-
+          frontend-lint-${{ runner.os }}-${{ runner.arch }}-

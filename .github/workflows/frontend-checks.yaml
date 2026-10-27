@@ -34,9 +34,37 @@ jobs:
       - name: "Setup Node.js, pnpm and dependencies"
         uses: $/.github/actions/frontend/setup-env
 
-      - name: "Run linting, formatting and type checks"
+      # lint:* already runs in parallel through run-p. Separate steps keep the
+      # same one-job wall clock and record each script's duration. Extra jobs
+      # would repeat the ~25s setup for checks that already finish in ~27s.
+      - name: Run ESLint
         working-directory: ./frontend
-        run: pnpm run lint
+        run: pnpm run lint:eslint
+        background: true
+
+      - name: Run Oxlint
+        working-directory: ./frontend
+        run: pnpm run lint:oxlint
+        background: true
+
+      - name: Check formatting
+        working-directory: ./frontend
+        run: pnpm run lint:oxfmt
+        background: true
+
+      - name: Check types
+        working-directory: ./frontend
+        run: pnpm run lint:types
+        background: true
+
+      - name: Run knip
+        working-directory: ./frontend
+        run: pnpm run lint:knip
+        background: true
+
+      - name: Run React Doctor
+        working-directory: ./frontend
+        run: pnpm run lint:doctor
         background: true
 
       - name: Run tests
