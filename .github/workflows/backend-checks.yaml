@@ -80,7 +80,7 @@ jobs:
     needs:
       - lint
       - test
-    if: ${{ always() && !cancelled() }}
+    if: ${{ !cancelled() }}
     steps:
       - name: Require lint and test to pass
         env:
