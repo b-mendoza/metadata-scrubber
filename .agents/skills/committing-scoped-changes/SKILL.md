@@ -1,6 +1,6 @@
 ---
 name: "committing-scoped-changes"
-description: "Creates reviewable atomic git commits from an explicit list of files or folders after the user asks, in words, to commit. Use when the user says commit these files, commit only src/x, split my changes into atomic commits, commit the ticket work, or keep unrelated work out of the commit. Shows the exact commit plan for approval before any commit and preserves unrelated staged and unstaged work. Does not push, amend, or rewrite history. Does not open pull requests. Does not summarize recent project state."
+description: "Creates reviewable atomic git commits from an explicit list of files or folders after the user asks, in words, to commit. Use when the user says commit these files, commit only src/x, split my changes into atomic commits, commit the ticket work, or keep unrelated work out of the commit."
 ---
 
 # Committing Scoped Changes

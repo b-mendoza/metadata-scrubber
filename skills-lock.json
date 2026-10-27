@@ -35,13 +35,13 @@
       "source": "b-mendoza/agent-skills",
       "sourceType": "github",
       "skillPath": "skills/committing-scoped-changes/SKILL.md",
-      "computedHash": "979c061e2200a64a1d155e22354332c44d070b1fc0aa07529ecdf7b4f34b9a88"
+      "computedHash": "886a08042072fae488fc72a4672fec91cd32637bcc165ca84d4e8d4bf01b32e8"
     },
     "creating-work-item-children": {
       "source": "b-mendoza/agent-skills",
       "sourceType": "github",
       "skillPath": "skills/creating-work-item-children/SKILL.md",
-      "computedHash": "a4fcb20e06cfb39af06b66e6427ac57bf43cc6c173f5c20f3fcfa32bf68e9e8c"
+      "computedHash": "580daa3d2f8e780c51781ae67063bb160433b55ccadd742fa5c241e05db9322d"
     },
     "diagnosing-root-causes": {
       "source": "b-mendoza/agent-skills",
@@ -65,7 +65,7 @@
       "source": "b-mendoza/agent-skills",
       "sourceType": "github",
       "skillPath": "skills/executing-work-item-task/SKILL.md",
-      "computedHash": "7a888c901a7da12c9233e442b45d1d034553497e01d314b84cdd932ed244a02a"
+      "computedHash": "5361e888013f4268c9e5b432f2f2a70988bba83ae081818ea5ebe7f6ca476bc7"
     },
     "fetching-work-item": {
       "source": "b-mendoza/agent-skills",
@@ -107,13 +107,13 @@
       "source": "b-mendoza/agent-skills",
       "sourceType": "github",
       "skillPath": "skills/planning-task-execution/SKILL.md",
-      "computedHash": "4dabd6d69478622dc83000d33049b8929555db640737236aab8ec7514d193fc1"
+      "computedHash": "cf63b01cb3543b9a768f4bd65211d267ce82cf49a5a82e033b5dcf35e3bf4f1a"
     },
     "planning-work-item-tasks": {
       "source": "b-mendoza/agent-skills",
       "sourceType": "github",
       "skillPath": "skills/planning-work-item-tasks/SKILL.md",
-      "computedHash": "341197082b4bb07cd97887b895546dfcb6799617cbc2b9830f276a2aae87effc"
+      "computedHash": "a288cb154edfeb0113be6d0bea043008a84ec8669a5a16b76948f03036f0209d"
     },
     "pr-creator": {
       "source": "b-mendoza/agent-skills",
@@ -143,7 +143,7 @@
       "source": "b-mendoza/agent-skills",
       "sourceType": "github",
       "skillPath": "skills/reporting-skill-issues/SKILL.md",
-      "computedHash": "df50e4cbd32148e8825f3fbc649bb7404aa044ca5bdf3588efc017c481d0051b"
+      "computedHash": "509b0b34c99b6597190bdb7779778494a44a6a2220523a6327599762ffb69d9f"
     },
     "responding-to-pr-review-comments": {
       "source": "b-mendoza/agent-skills",
@@ -155,7 +155,7 @@
       "source": "b-mendoza/agent-skills",
       "sourceType": "github",
       "skillPath": "skills/review-pull-request/SKILL.md",
-      "computedHash": "34bb48e65e5c2325661db6639cb5d0c634af80890dc48372c3c4067ecf4e9c45"
+      "computedHash": "4137e1255ba0dff1bde586894b8f187fd66cc78e25dabbab828d78578c7562b1"
     },
     "rewriting-code-strictly": {
       "source": "b-mendoza/agent-skills",

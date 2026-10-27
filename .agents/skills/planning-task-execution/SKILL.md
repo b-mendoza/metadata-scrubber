@@ -1,6 +1,6 @@
 ---
 name: "planning-task-execution"
-description: "Plans how to execute exactly one already-selected numbered Jira or GitHub task by producing an execution brief, implementation plan, behavior-oriented test specification, and scoped refactoring recommendation. Use for Phase 5 task-execution planning with a workflow key and TASK_NUMBER. Does not decompose the parent work item, plan multiple tasks, implement code, or advance to the next task."
+description: "Plans how to execute exactly one already-selected numbered Jira or GitHub task by producing an execution brief, implementation plan, behavior-oriented test specification, and scoped refactoring recommendation. Use for Phase 5 task-execution planning with a workflow key and TASK_NUMBER."
 ---
 
 # Planning Task Execution

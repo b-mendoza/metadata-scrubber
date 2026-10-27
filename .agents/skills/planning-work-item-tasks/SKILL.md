@@ -1,6 +1,6 @@
 ---
 name: "planning-work-item-tasks"
-description: "Plans a Phase 1 Jira ticket or GitHub issue snapshot into staged, validated Phase 2 task-plan artifacts with deterministic branch names. Use when an orchestrator or user asks to decompose docs/<KEY>.md, plan Jira tasks, plan GitHub issue tasks, or re-plan a work item after critique. Does not fetch work items, create subtasks or child issues, implement tasks, or mutate the work-item platform."
+description: "Plans a Phase 1 Jira ticket or GitHub issue snapshot into staged, validated Phase 2 task-plan artifacts with deterministic branch names. Use when an orchestrator or user asks to decompose docs/<KEY>.md, plan Jira tasks, plan GitHub issue tasks, or re-plan a work item after critique."
 ---
 
 # Planning Work Item Tasks

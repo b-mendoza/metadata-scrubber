@@ -1,6 +1,6 @@
 ---
 name: "creating-work-item-children"
-description: "Creates or reconciles GitHub child task issues or Jira subtasks from an approved Phase 4 task plan, then updates docs/<KEY>-tasks.md with validated remote linkage. Use after the task plan has been clarified and the user has approved the exact platform writes plus scoped plan-file update. Does not plan tasks, implement code, commit changes, or mutate unrelated tracker state."
+description: "Creates or reconciles GitHub child task issues or Jira subtasks from an approved Phase 4 task plan, then updates docs/<KEY>-tasks.md with validated remote linkage. Use after the task plan has been clarified and the user has approved the exact platform writes plus scoped plan-file update."
 ---
 
 # Creating Work Item Children

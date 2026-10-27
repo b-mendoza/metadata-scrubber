@@ -1,6 +1,6 @@
 ---
 name: reporting-skill-issues
-description: Reports observed defects and explicit improvement requests from runs of b-mendoza/agent-skills. Use when a library skill has ambiguous or contradictory instructions, missing files, broken scripts, wrong outputs, or does not cover something the user asked it to do. Checks for covering issues, then shows exact new drafts for batch approval. Does not debug application code, run reproductions, fix skills, maintain existing issues, or publish unseen drafts.
+description: Reports observed defects and explicit improvement requests from runs of b-mendoza/agent-skills. Use when a library skill has ambiguous or contradictory instructions, missing files, broken scripts, wrong outputs, or does not cover something the user asked it to do.
 ---
 
 # Reporting skill issues

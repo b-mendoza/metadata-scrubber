@@ -1,6 +1,6 @@
 ---
 name: "executing-work-item-task"
-description: "Executes exactly one planned Jira or GitHub work-item task after critique approval. Use when a numbered task should move through kickoff, implementation, documentation, requirements verification, clean-code, architecture, and security gates, targeted fix cycles, tracker finalization, and a final report without continuing to the next task. Does not plan tasks or select the next task."
+description: "Executes exactly one planned Jira or GitHub work-item task after critique approval. Use when a numbered task should move through kickoff, implementation, documentation, requirements verification, clean-code, architecture, and security gates, targeted fix cycles, tracker finalization, and a final report."
 ---
 
 # Executing Work Item Task
