@@ -33,11 +33,11 @@ runs:
           ${{ steps.go-cache-paths.outputs.buildcache }}
           ${{ steps.go-cache-paths.outputs.golangci }}
         # github.job keeps lint, test, and security from writing the same key.
-        # restore-keys still let a cold job reuse another job's modules for the
-        # same go.sum. The post step saves this job's compile output.
-        key: go-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('backend/go.sum') }}-${{ github.job }}
+        # restore-keys let a cold job reuse another job's modules for the same
+        # go.mod and go.sum. The post step saves this job's compile output.
+        key: go-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('backend/go.mod', 'backend/go.sum') }}-${{ github.job }}
         restore-keys: |
-          go-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('backend/go.sum') }}-
+          go-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('backend/go.mod', 'backend/go.sum') }}-
           go-${{ runner.os }}-${{ runner.arch }}-
 
     - name: Setup Task
