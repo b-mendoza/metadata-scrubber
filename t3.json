@@ -1,0 +1,33 @@
+{
+  "$schema": "https://t3.codes/schema/t3.json",
+  "defaultThreadEnvMode": "worktree",
+  "scripts": [
+    {
+      "name": "Prepare worktree",
+      "command": "bash scripts/setup-worktree.sh",
+      "icon": "configure",
+      "runOnWorktreeCreate": true,
+      "async": false
+    },
+    {
+      "name": "Lint frontend",
+      "command": "pnpm --dir frontend lint",
+      "icon": "lint"
+    },
+    {
+      "name": "Test frontend",
+      "command": "pnpm --dir frontend test",
+      "icon": "test"
+    },
+    {
+      "name": "Lint backend",
+      "command": "go -C backend tool task lint",
+      "icon": "lint"
+    },
+    {
+      "name": "Test backend",
+      "command": "go -C backend tool task test",
+      "icon": "test"
+    }
+  ]
+}
