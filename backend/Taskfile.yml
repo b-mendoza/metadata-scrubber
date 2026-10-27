@@ -75,7 +75,6 @@ tasks:
     cmds:
       - go mod tidy
 
-  # lefthook.yml is at the repository root. lefthook uses the repository git directory.
   hooks:install:
     desc: Install Git hooks with lefthook from this Go module
     aliases: [hooks]
