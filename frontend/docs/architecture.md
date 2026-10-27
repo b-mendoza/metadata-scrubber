@@ -114,14 +114,7 @@ The root [architecture reference](../../docs/architecture.md) describes service 
 ## Tooling
 
 - [package.json](../package.json) defines the available commands and scripts.
-- The backend Go module owns lefthook. Run lefthook with `go -C ../backend tool lefthook`.
-- Install Git hooks once after you clone. From `backend/`, run `task hooks:install`.
-- `pnpm install` does not install hooks.
-- lefthook reads lefthook.yml at the repository root. Git hooks call lefthook with `go -C backend tool lefthook`.
-- lefthook skips a job when no staged file matches that job's root or glob.
-- Sequential jobs keep format ahead of lint.
-- Frontend jobs format staged frontend files with oxfmt. They lint staged JavaScript and TypeScript with Oxlint and ESLint. They type-check the frontend when a TypeScript file is staged.
-- Backend jobs format staged Go files with `golangci-lint fmt`. They then run `golangci-lint` and the custom analyzers from the backend directory when any backend file is staged.
+- lefthook.yml at the repository root defines the Git hook jobs. The [backend architecture reference](../../backend/docs/architecture.md#tooling-layout) describes hook installation.
 - `scripts/setup-node.sh` installs the pinned Node.js runtime and pnpm. It installs dependencies, then runs lint, fixes, tests, coverage, and a production build.
 - `scripts/hard-clean.ts` and `scripts/soft-clean.ts` import only Node built-ins. They can run without installed dependencies.
 - The lint checks cover ESLint rules, React Doctor findings, unused code, formatting, Oxlint rules, and TypeScript types. Knip checks unused files, dependencies, and exports. oxfmt checks formatting.
