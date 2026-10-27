@@ -59,6 +59,16 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
+      # Restore after install so pnpm does not wipe node_modules/.cache.
+      # The combined cache action saves at job end after lint writes results.
+      - name: Cache ESLint and type-check results
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: frontend/node_modules/.cache
+          key: frontend-lint-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('frontend/pnpm-lock.yaml') }}
+          restore-keys: |
+            frontend-lint-${{ runner.os }}-${{ runner.arch }}-
+
       # lint:* already runs in parallel through run-p. Separate steps keep the
       # same one-job wall clock and record each script's duration. Extra jobs
       # would repeat the ~25s setup for checks that already finish in ~27s.
