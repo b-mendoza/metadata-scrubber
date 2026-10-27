@@ -4,7 +4,6 @@ glob_matcher: doublestar
 lefthook: go -C backend tool lefthook
 
 pre-commit:
-  parallel: false
   jobs:
     - name: frontend-format
       root: frontend/
