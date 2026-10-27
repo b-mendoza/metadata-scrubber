@@ -58,8 +58,12 @@ export COREPACK_ENABLE_DOWNLOAD_PROMPT=0
 printf 'Downloading Go modules\n'
 go -C "${BACKEND_DIR}" mod download
 
-printf 'Installing Git hooks\n'
-go -C "${BACKEND_DIR}" tool lefthook install
+if git -C "${REPO_ROOT}" config --get core.hooksPath >/dev/null 2>&1; then
+  printf 'Skip lefthook install because core.hooksPath is set\n'
+else
+  printf 'Installing Git hooks\n'
+  go -C "${BACKEND_DIR}" tool lefthook install
+fi
 
 printf 'Verifying Task\n'
 go -C "${BACKEND_DIR}" tool task --version
