@@ -1,0 +1,4 @@
+{
+  "setup-worktree-unix": "../scripts/setup-worktree.sh",
+  "setup-worktree": ["echo Windows is not supported yet"]
+}
