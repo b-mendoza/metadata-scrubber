@@ -73,12 +73,6 @@
       "skillPath": "skills/fetching-work-item/SKILL.md",
       "computedHash": "2820d334516a0c1d16e8ce086d2b3fd7e78e157b5ba5db54d032a6790ef90af8"
     },
-    "idea-refine": {
-      "source": "addyosmani/agent-skills",
-      "sourceType": "github",
-      "skillPath": "skills/idea-refine/SKILL.md",
-      "computedHash": "77739c4f6a29c0fad465a30bab9e862445a3f1b0f92808ffcd541fa02ed0637b"
-    },
     "improving-test-suites": {
       "source": "b-mendoza/agent-skills",
       "sourceType": "github",
