@@ -46,10 +46,13 @@ runs:
 
     # Restore after install so pnpm does not wipe node_modules/.cache.
     # The combined cache action saves at job end after lint writes results.
+    # A cache entry cannot change, so the run ID gives each run a new key.
+    # The restore keys pick the newest entry, first for the same lockfile.
     - name: Cache ESLint and type-check results
       uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
       with:
         path: frontend/node_modules/.cache
-        key: frontend-lint-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('frontend/pnpm-lock.yaml') }}
+        key: frontend-lint-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('frontend/pnpm-lock.yaml') }}-${{ github.run_id }}
         restore-keys: |
+          frontend-lint-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('frontend/pnpm-lock.yaml') }}-
           frontend-lint-${{ runner.os }}-${{ runner.arch }}-
