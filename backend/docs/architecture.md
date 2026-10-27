@@ -27,7 +27,7 @@ The backend is a Go HTTP service. It grants direct uploads to private storage. I
 
 Stock `golangci-lint` checks all packages, including analyzer code. Git ignores the generated `coverage.out` file.
 
-This module owns lefthook as a Go tool. Run lefthook with `go tool lefthook`. Install Git hooks once after you clone. Run `go tool lefthook install` or `task hooks:install`. lefthook reads lefthook.yml at the repository root. Git hooks call lefthook with `go -C backend tool lefthook`. lefthook formats staged Go files with `golangci-lint fmt` in this directory. It then runs `golangci-lint` and `go run ./lint/cmd/analyzers . ./internal/...` when any backend file is staged.
+This module owns lefthook as a Go tool. Run lefthook with `go tool lefthook`. Install Git hooks once after you clone. Run `task hooks:install`. The task removes the repository-local `core.hooksPath` only if its value is exactly `frontend/.husky/_`. This removes the old Husky setting. The task leaves all other local and global values unchanged. lefthook reads lefthook.yml at the repository root. Git hooks call lefthook with `go -C backend tool lefthook`. lefthook formats staged Go files with `golangci-lint fmt` in this directory. It then runs `golangci-lint` and `go run ./lint/cmd/analyzers . ./internal/...` when any backend file is staged.
 
 ## HTTP API
 
