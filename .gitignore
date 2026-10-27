@@ -4,8 +4,6 @@
 *.bak
 /.codex/
 opencode.jsonc
-lefthook-local.yml
-
 
 # Local environment files
 .env
