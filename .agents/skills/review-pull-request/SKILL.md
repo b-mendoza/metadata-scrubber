@@ -135,8 +135,6 @@ Reason: <one-line cause>
 Next step: <one safe action>
 ```
 
-`validate-by-observation` exception: no automated workflow cases. Script self-tests and static checks do not prove both-runtime dispatch or live GitHub behavior. Report unexecuted fresh-context checks honestly; live posting requires separate disposable-target authority.
-
 ## Example
 
 `PR_URL=https://github.com/org/repo/pull/1020`, draft-only: context proposes correctness and tests; both chunks pass, one with empty findings; author confirms one defect and drafts exact text; verifier passes; renderer exclusively creates `pr-1020-review.md`. Finish `PR_REVIEW: VERIFIED_DRAFT_SAVED`, noting observed checks and that no tests were executed by this review.
