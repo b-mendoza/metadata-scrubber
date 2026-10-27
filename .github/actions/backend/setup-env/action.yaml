@@ -8,12 +8,37 @@ runs:
     - name: Setup Go
       uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
       with:
-        # go-version-file keeps the CI toolchain in lockstep with go.mod, and
-        # cache-dependency-path caches the module + build cache keyed on go.sum.
-        # That cache is what amortizes golangci-lint's from-source compile across
-        # runs — without it every runner rebuilds ~300 linter modules from zero.
         go-version-file: ./backend/go.mod
-        cache-dependency-path: ./backend/go.sum
+        # setup-go's built-in cache uses one key per go.sum. Parallel jobs then
+        # race to save that key. The faster security job wins and stores a cache
+        # that does not include the golangci-lint compile. Later lint jobs
+        # restore that incomplete cache and cannot replace it.
+        cache: false
+
+    - name: Resolve Go cache paths
+      id: go-cache-paths
+      shell: bash
+      run: |
+        golangci_cache="${GOLANGCI_LINT_CACHE:-$HOME/.cache/golangci-lint}"
+        mkdir -p "$(go env GOMODCACHE)" "$(go env GOCACHE)" "$golangci_cache"
+        echo "modcache=$(go env GOMODCACHE)" >> "$GITHUB_OUTPUT"
+        echo "buildcache=$(go env GOCACHE)" >> "$GITHUB_OUTPUT"
+        echo "golangci=$golangci_cache" >> "$GITHUB_OUTPUT"
+
+    - name: Cache Go modules, build output, and golangci-lint
+      uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+      with:
+        path: |
+          ${{ steps.go-cache-paths.outputs.modcache }}
+          ${{ steps.go-cache-paths.outputs.buildcache }}
+          ${{ steps.go-cache-paths.outputs.golangci }}
+        # github.job keeps lint, test, and security from writing the same key.
+        # restore-keys still let a cold job reuse another job's modules for the
+        # same go.sum. The post step saves this job's compile output.
+        key: go-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('backend/go.sum') }}-${{ github.job }}
+        restore-keys: |
+          go-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('backend/go.sum') }}-
+          go-${{ runner.os }}-${{ runner.arch }}-
 
     - name: Setup Task
       uses: arduino/setup-task@c0bc642852239c2689f73f4ea6459c29405f3c52 # v3.0.0
