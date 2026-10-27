@@ -43,12 +43,23 @@ tasks:
     cmds:
       - task: test
 
-  # golangci-lint run checks formatting as well as lint rules.
-  lint:
-    desc: Lint and verify formatting (read-only)
+  lint:golangci:
+    desc: Run golangci-lint and verify formatting (read-only)
     cmds:
       - go tool golangci-lint run --config {{.GOLANGCI_LINT_CONFIG}}
+
+  lint:analyzers:
+    desc: Run custom analyzers on application packages (read-only)
+    cmds:
       - go run ./lint/cmd/analyzers {{.APPLICATION_PACKAGES}}
+
+  # Task runs deps in parallel. golangci-lint and the custom analyzers do not
+  # depend on each other.
+  lint:
+    desc: Lint and verify formatting (read-only)
+    deps:
+      - task: lint:golangci
+      - task: lint:analyzers
 
   # Advisory security scan. It queries the changing Go vulnerability database.
   security:
