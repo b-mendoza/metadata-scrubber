@@ -19,11 +19,8 @@ runs:
       id: go-cache-paths
       shell: bash
       run: |
-        golangci_cache="${GOLANGCI_LINT_CACHE:-$HOME/.cache/golangci-lint}"
-        mkdir -p "$(go env GOMODCACHE)" "$(go env GOCACHE)" "$golangci_cache"
         echo "modcache=$(go env GOMODCACHE)" >> "$GITHUB_OUTPUT"
         echo "buildcache=$(go env GOCACHE)" >> "$GITHUB_OUTPUT"
-        echo "golangci=$golangci_cache" >> "$GITHUB_OUTPUT"
 
     - name: Cache Go modules, build output, and golangci-lint
       uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
@@ -31,7 +28,7 @@ runs:
         path: |
           ${{ steps.go-cache-paths.outputs.modcache }}
           ${{ steps.go-cache-paths.outputs.buildcache }}
-          ${{ steps.go-cache-paths.outputs.golangci }}
+          ~/.cache/golangci-lint
         # github.job keeps lint, test, and security from writing the same key.
         # restore-keys let a cold job reuse another job's modules for the same
         # go.mod and go.sum. The post step saves this job's compile output.
