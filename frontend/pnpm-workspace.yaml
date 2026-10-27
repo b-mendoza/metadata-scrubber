@@ -1,7 +1,6 @@
 allowBuilds:
   # core-js only prints a funding banner. It has no build step.
   core-js: false
-  lefthook: true
   unrs-resolver: true
 permissions:
   "@tanstack/devtools-vite":
