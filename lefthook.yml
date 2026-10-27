@@ -48,3 +48,14 @@ pre-commit:
     - name: backend-analyzers
       root: backend/
       run: go run ./lint/cmd/analyzers . ./internal/...
+
+# Remove the trailer that Cursor adds to commit messages.
+commit-msg:
+  jobs:
+    - name: remove-cursor-trailer
+      run: |
+        message='{1}'
+        tmp="$message.tmp"
+        trap 'rm -f "$tmp"' 0
+        grep -v -x -F 'Co-authored-by: Cursor <cursoragent@cursor.com>' "$message" >"$tmp" || { status=$?; [ "$status" -eq 1 ] || exit "$status"; }
+        mv "$tmp" "$message"
