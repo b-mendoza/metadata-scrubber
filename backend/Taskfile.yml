@@ -77,7 +77,6 @@ tasks:
 
   hooks:install:
     desc: Install Git hooks with lefthook from this Go module
-    aliases: [hooks]
     cmds:
       - |
         # One-time Husky migration: remove only the old repository-local hook path.
