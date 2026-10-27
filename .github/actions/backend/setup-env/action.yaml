@@ -44,12 +44,6 @@ runs:
         # Avoids GitHub API rate limits when resolving the Task release.
         repo-token: ${{ github.token }}
 
-    - name: Show tool versions
-      shell: bash
-      run: |
-        go version
-        task --version
-
     - name: Download dependencies
       shell: bash
       working-directory: ./backend
