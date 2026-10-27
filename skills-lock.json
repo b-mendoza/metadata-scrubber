@@ -35,7 +35,7 @@
       "source": "b-mendoza/agent-skills",
       "sourceType": "github",
       "skillPath": "skills/committing-scoped-changes/SKILL.md",
-      "computedHash": "886a08042072fae488fc72a4672fec91cd32637bcc165ca84d4e8d4bf01b32e8"
+      "computedHash": "a3cb367ef5666e927816063279ed1149f9934dab33e08b5110c32acc634f6342"
     },
     "creating-work-item-children": {
       "source": "b-mendoza/agent-skills",
