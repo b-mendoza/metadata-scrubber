@@ -126,6 +126,8 @@ The root [architecture reference](../../docs/architecture.md) describes service 
 
 - `vitest.config.ts` runs `src/**/*.server.test.ts` in the `server` project with Node and no setup file. It runs the other `src/**/*.test.{ts,tsx}` files in the `client` project with happy-dom and `src/tests/setup-test-environment.ts`.
 - Direct tRPC caller tests cover all six workflow procedures and root-router registration.
+- Vitest server tests use per-file `setupServer` from `msw/node` for backend contracts, status mapping, headers, and caller cancellation. Each server uses `onUnhandledFrame: "error"` and resets handlers after each test.
+- Direct fetch fakes remain for fake-timer checks, exact injected errors, and browser tRPC adapter tests. The health failure test keeps a Ky hook to check cause identity.
 - Tests check exact backend methods, paths, and JSON bodies. They compare each request body with its typed procedure input.
 - Tests cover canonical ETag validation, invalid procedure inputs, invalid backend success bodies, safe status mapping, invalid backend error bodies, timeouts, and caller cancellation.
 - Router tests cover backend status `413` as the safe tRPC `PAYLOAD_TOO_LARGE` error.
