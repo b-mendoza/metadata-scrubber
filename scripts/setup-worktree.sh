@@ -17,25 +17,9 @@ copy_local_env() {
   fi
 }
 
-# Use pnpm on PATH, or run the declared version through Corepack.
+# A PATH pnpm can be a Corepack shim; a prompt would block non-interactive setup.
 export COREPACK_ENABLE_DOWNLOAD_PROMPT=0
-(
-  cd frontend
-  if command -v pnpm >/dev/null 2>&1; then
-    pnpm_command=(pnpm)
-  elif command -v corepack >/dev/null 2>&1; then
-    printf 'Enabling Corepack pnpm\n'
-    if ! corepack enable pnpm; then
-      printf 'Warning: Could not enable the pnpm shim. Using corepack pnpm.\n' >&2
-    fi
-    pnpm_command=(corepack pnpm)
-  else
-    printf 'pnpm is required. Enable Corepack or install pnpm.\n' >&2
-    exit 1
-  fi
-  printf 'Installing frontend dependencies\n'
-  "${pnpm_command[@]}" install --frozen-lockfile
-)
+pnpm --dir frontend install --frozen-lockfile
 
 printf 'Downloading Go modules\n'
 go -C backend mod download
