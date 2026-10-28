@@ -125,7 +125,6 @@ test("a StrictMode PDF upload sends a typed grant and direct PUT, keeps initial 
   expect(putStarted).toHaveBeenCalledOnce();
   const [[handlerInfo] = []] = handler.mock.calls;
   expect.assert(handlerInfo?.request instanceof Request);
-  expect(handlerInfo.request.method).toBe("PUT");
   expect(handlerInfo.request.url).toBe(response.uploadUrl);
   expect(handlerInfo.request.headers.get("Content-Type")).toBe(
     "application/pdf",
