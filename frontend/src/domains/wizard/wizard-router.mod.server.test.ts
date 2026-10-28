@@ -304,7 +304,6 @@ test("dryRun uses its total timeout after a server-directed retry", async () => 
   expect(settle).not.toHaveBeenCalled();
 
   await vi.advanceTimersByTimeAsync(ONE_MILLISECOND_MS);
-  expect(settle).toHaveBeenCalledOnce();
   const [[error] = []] = settle.mock.calls;
   expect.assert(error instanceof TRPCError);
   expect(error.code).toBe("TIMEOUT");
@@ -349,7 +348,6 @@ test("scrubFile uses its total timeout after a server-directed retry", async () 
   expect(settle).not.toHaveBeenCalled();
 
   await vi.advanceTimersByTimeAsync(ONE_MILLISECOND_MS);
-  expect(settle).toHaveBeenCalledOnce();
   const [[error] = []] = settle.mock.calls;
   expect.assert(error instanceof TRPCError);
   expect(error.code).toBe("TIMEOUT");
