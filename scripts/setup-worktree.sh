@@ -1,6 +1,5 @@
 #!/usr/bin/env bash
-# Prepare frontend and backend dependencies and local env files for a worktree.
-# Git hooks live in the shared Git directory. Run `go -C backend tool task hooks:install` once per clone.
+# Prepare frontend and backend dependencies, local env files, and Git hooks for a worktree.
 set -euo pipefail
 
 cd "$(dirname "$0")/.."
@@ -19,3 +18,6 @@ for file in backend/.env frontend/.env; do
     printf 'Copied %s from the main checkout\n' "$file"
   fi
 done
+
+# Git hooks live in the shared Git directory, so this also updates them for the main checkout and every worktree.
+go -C backend tool task hooks:install

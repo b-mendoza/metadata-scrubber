@@ -17,7 +17,7 @@
 
 The script finds the main checkout through the Git common directory. It copies `backend/.env` and `frontend/.env` from that checkout when the source files exist and the worktree lacks them. It does not print env file contents.
 
-The script does not install Git hooks because they live in the shared Git directory. Run `go -C backend tool task hooks:install` once after you clone.
+The script then installs Git hooks with `go -C backend tool task hooks:install`. Git hooks live in the shared Git directory, so this step also updates the hooks for the main checkout and every other worktree. The step fails when `core.hooksPath` is set, because lefthook does not install hooks over that setting.
 
 Cursor reads `.cursor/worktrees.json`. On Unix it runs the setup script.
 
