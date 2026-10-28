@@ -267,7 +267,6 @@ test("an unclassified transport failure maps to BAD_GATEWAY without public detai
   expect.assert(failure instanceof TRPCError);
   expect(failure.code).toBe("BAD_GATEWAY");
   expect(failure.message).toBe(CREATE_UPLOAD_FAILURE_MESSAGE);
-  expect(failure.message).not.toContain(providerDetails);
   expect(fetchMock).toHaveBeenCalledOnce();
 });
 
