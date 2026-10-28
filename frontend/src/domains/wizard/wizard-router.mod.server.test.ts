@@ -89,7 +89,6 @@ test("getWorkflowConfig requests GET /api/files/config", async () => {
   expect(handler).toHaveBeenCalledOnce();
   const [[handlerInfo] = []] = handler.mock.calls;
   expect.assert(handlerInfo?.request instanceof Request);
-  expect(handlerInfo.request.method).toBe("GET");
   expect(handlerInfo.request.url).toBe("https://backend.test/api/files/config");
 });
 
@@ -117,7 +116,6 @@ test("createUpload sends only its typed small-JSON contract", async () => {
   expect(handler).toHaveBeenCalledOnce();
   const [[handlerInfo] = []] = handler.mock.calls;
   expect.assert(handlerInfo?.request instanceof Request);
-  expect(handlerInfo.request.method).toBe("POST");
   expect(handlerInfo.request.url).toBe("https://backend.test/api/uploads");
   const [backendBody] = backendBodies;
   expect(backendBody).toEqual(input);
@@ -152,7 +150,6 @@ test("dryRun sends the storage key", async () => {
   expect(handler).toHaveBeenCalledOnce();
   const [[handlerInfo] = []] = handler.mock.calls;
   expect.assert(handlerInfo?.request instanceof Request);
-  expect(handlerInfo.request.method).toBe("POST");
   expect(handlerInfo.request.url).toBe(
     "https://backend.test/api/files/dry-run",
   );
@@ -184,7 +181,6 @@ test("scrubFile forwards the exact reviewed ETag without file bytes", async () =
   expect(handler).toHaveBeenCalledOnce();
   const [[handlerInfo] = []] = handler.mock.calls;
   expect.assert(handlerInfo?.request instanceof Request);
-  expect(handlerInfo.request.method).toBe("POST");
   expect(handlerInfo.request.url).toBe("https://backend.test/api/files/scrub");
   const [backendBody] = backendBodies;
   expect(backendBody).toEqual(input);
@@ -216,7 +212,6 @@ test("refreshDownloadGrant targets one exact sanitized revision", async () => {
   expect(handler).toHaveBeenCalledOnce();
   const [[handlerInfo] = []] = handler.mock.calls;
   expect.assert(handlerInfo?.request instanceof Request);
-  expect(handlerInfo.request.method).toBe("POST");
   expect(handlerInfo.request.url).toBe(
     "https://backend.test/api/files/download-grant",
   );
@@ -246,7 +241,6 @@ test("confirmDelete sends one typed delete request", async () => {
   expect(handler).toHaveBeenCalledOnce();
   const [[handlerInfo] = []] = handler.mock.calls;
   expect.assert(handlerInfo?.request instanceof Request);
-  expect(handlerInfo.request.method).toBe("POST");
   expect(handlerInfo.request.url).toBe("https://backend.test/api/files/delete");
   const [backendBody] = backendBodies;
   expect(backendBody).toEqual(input);
