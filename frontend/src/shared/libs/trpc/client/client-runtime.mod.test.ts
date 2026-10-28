@@ -3,7 +3,7 @@ import ky from "ky";
 import posthog from "posthog-js";
 import { afterEach, expect, test, vi } from "vitest";
 
-import type { RouterOutputs } from "#/shared/libs/trpc/client/client.mod";
+import type { MessageResponse } from "#/domains/products/products-router.mod.server";
 import { appRouter } from "#/shared/libs/trpc/routers/routers.mod.server";
 import { createTRPCRequestContext } from "#/shared/libs/trpc/utils/initializer/initializer.mod.server";
 import { getAppBindings } from "#/shared/middlewares/app-bindings/app-bindings.mod";
@@ -19,7 +19,7 @@ afterEach(() => {
 });
 
 function setupClient() {
-  const healthResponse: RouterOutputs["products"]["getMessage"] = {
+  const healthResponse: MessageResponse = {
     status: "reachable",
   };
   vi.mocked(getAppBindings).mockReturnValue({

@@ -18,6 +18,8 @@ const messageResponseSchema = z.object({
   }),
 });
 
+export type MessageResponse = z.output<typeof messageResponseSchema>;
+
 const BACKEND_HEALTH_STATUS_ENDPOINT = "/api/health";
 
 export const productsRouter = createTRPCRouter({
