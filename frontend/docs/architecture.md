@@ -137,7 +137,8 @@ The root [architecture reference](../../docs/architecture.md) describes service 
 - Workflow client tests cover the 4000 ms retry cap, the configured retry limit, and rejected retry conditions.
 - Router transport tests check the dry-run and scrub total timeouts after a server-directed retry. They also cover config requests without retries, safe transport errors, and caller cancellation.
 - Health transport tests check the 3000 ms attempt timeout, no retry after that timeout, and the one-retry limit for status `502`. They do not test the 5000 ms total timeout or either 250 ms cap.
-- `playwright.config.ts` uses Playwright's default Chromium browser. The suite requires both real services at the Docker Compose ports and starts no services.
+- `playwright.config.ts` uses Playwright's default Chromium browser and the list and HTML reporters. The HTML reporter writes to `playwright-report/` and never opens the report on its own. The `test:e2e:report` script opens the report.
+- The suite requires both real services at the Docker Compose ports and starts no services.
 - The suite uses the frontend at `http://localhost:3000`. It has no global setup. A stopped frontend or backend service causes the test to fail.
 - The frontend server calls the real backend through `BACKEND_URL`.
 - The home-page test checks the title `Home`, the heading `Hello, world!`, and the visible text `reachable`.
