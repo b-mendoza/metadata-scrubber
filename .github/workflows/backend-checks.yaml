@@ -31,7 +31,7 @@ jobs:
         with:
           persist-credentials: false
 
-      - name: "Setup Go and Task"
+      - name: "Setup Go"
         uses: $/.github/actions/backend/setup-env
 
       - name: Run golangci-lint
@@ -54,7 +54,7 @@ jobs:
         with:
           persist-credentials: false
 
-      - name: "Setup Go and Task"
+      - name: "Setup Go"
         uses: $/.github/actions/backend/setup-env
 
       - name: Test
@@ -98,7 +98,7 @@ jobs:
         with:
           persist-credentials: false
 
-      - name: "Setup Go and Task"
+      - name: "Setup Go"
         uses: $/.github/actions/backend/setup-env
 
       - name: Run vulnerability scan
