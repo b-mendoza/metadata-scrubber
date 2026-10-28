@@ -2,6 +2,7 @@
 
 # Test files and folders
 /coverage/
+/playwright-report/
 /test-results/
 
 # Artifacts
