@@ -8,11 +8,11 @@ import { StrictMode } from "react";
 import { afterAll, afterEach, beforeAll, expect, test, vi } from "vitest";
 
 import { FileUploader } from "#/domains/wizard/components/file-uploader/file-uploader.mod";
-import { getFileInput } from "#/domains/wizard/components/file-uploader/file-uploader.test-helper";
 import type {
   RouterInputs,
   RouterOutputs,
 } from "#/shared/libs/trpc/client/client.mod";
+import { getFileInput } from "#/tests/utils/file-input/file-input.mod";
 import { renderComponent } from "#/tests/utils/renderers/renderers.mod";
 
 const UPLOAD_ONE_FILE_BUTTON_NAME = /upload 1 file/iv;

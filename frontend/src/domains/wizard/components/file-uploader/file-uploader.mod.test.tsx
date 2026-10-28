@@ -9,11 +9,11 @@ import { setupServer } from "msw/node";
 import { afterAll, afterEach, beforeAll, expect, test, vi } from "vitest";
 
 import { FileUploader } from "#/domains/wizard/components/file-uploader/file-uploader.mod";
-import { getFileInput } from "#/domains/wizard/components/file-uploader/file-uploader.test-helper";
 import type {
   RouterInputs,
   RouterOutputs,
 } from "#/shared/libs/trpc/client/client.mod";
+import { getFileInput } from "#/tests/utils/file-input/file-input.mod";
 import { renderComponent } from "#/tests/utils/renderers/renderers.mod";
 
 type CreateUpload = (
