@@ -3,9 +3,6 @@
 # Test files and folders
 /coverage/
 /test-results/
-/playwright-report/
-/blob-report/
-/playwright/.cache/
 
 # Artifacts
 /.output/
