@@ -1,14 +1,15 @@
-import { act, screen, waitFor } from "@testing-library/react";
+import { Buffer } from "node:buffer";
+
+import { screen, waitFor } from "@testing-library/react";
 import AwsS3 from "@uppy/aws-s3";
 import Uppy from "@uppy/core";
-import { afterEach, expect, test, vi } from "vitest";
+import type { HttpResponseResolver } from "msw";
+import { http, HttpResponse } from "msw";
+import { setupServer } from "msw/node";
+import { afterAll, afterEach, beforeAll, expect, test, vi } from "vitest";
 
 import { FileUploader } from "#/domains/wizard/components/file-uploader/file-uploader.mod";
-import {
-  FakeXMLHttpRequest,
-  getFileInput,
-  installXMLHttpRequestFake,
-} from "#/domains/wizard/components/file-uploader/file-uploader.test-helper";
+import { getFileInput } from "#/domains/wizard/components/file-uploader/file-uploader.test-helper";
 import type {
   RouterInputs,
   RouterOutputs,
@@ -30,10 +31,39 @@ const TEST_MAX_FILE_SIZE_BYTES = 10_485_760;
 const TEST_OVER_MAX_FILE_SIZE_BYTES = 10_485_761;
 const TEST_FRACTIONAL_FILE_SIZE_BYTES = 1_572_864;
 
+// A cross-origin PUT with a PDF body requires a CORS preflight.
+const server = setupServer(
+  http.options(
+    "https://uploads.test/*",
+    () =>
+      new HttpResponse(null, {
+        headers: {
+          "Access-Control-Allow-Origin": "*",
+          "Access-Control-Allow-Methods": "PUT",
+          "Access-Control-Allow-Headers": "Content-Type",
+        },
+        status: 204,
+      }),
+  ),
+);
+const putStarted = vi.fn<(request: Request) => void>();
+
+beforeAll(() => {
+  server.events.on("request:start", ({ request }) => {
+    if (request.method === "PUT") {
+      putStarted(request);
+    }
+  });
+  server.listen({ onUnhandledFrame: "error" });
+});
+
 afterEach(() => {
-  vi.useRealTimers();
-  vi.restoreAllMocks();
-  FakeXMLHttpRequest.reset();
+  server.resetHandlers();
+  putStarted.mockClear();
+});
+
+afterAll(() => {
+  server.close();
 });
 
 test("Uppy keeps its initial instance when uploader props change", () => {
@@ -163,7 +193,6 @@ test("the Dashboard note shows a fractional runtime MiB limit", () => {
 });
 
 test("a PDF at the inclusive runtime limit gets a grant and uploads directly", async () => {
-  installXMLHttpRequestFake();
   const input: RouterInputs["wizard"]["createUpload"] = {
     fileName: "boundary.pdf",
     fileSizeBytes: TEST_MAX_FILE_SIZE_BYTES,
@@ -172,6 +201,19 @@ test("a PDF at the inclusive runtime limit gets a grant and uploads directly", a
     storageKey: "uploads/00000000-0000-4000-8000-000000000010",
     uploadUrl: "https://uploads.test/boundary.pdf",
   };
+  const uploadBodies: ArrayBuffer[] = [];
+  const handler = vi.fn<HttpResponseResolver>(async ({ request }) => {
+    uploadBodies.push(await request.arrayBuffer());
+    return new HttpResponse(null, {
+      headers: {
+        "Access-Control-Allow-Origin": "*",
+        "Access-Control-Expose-Headers": "ETag",
+        ETag: '"boundary-etag"',
+      },
+      status: 200,
+    });
+  });
+  server.use(http.put(response.uploadUrl, handler));
   const createUpload = vi.fn<CreateUpload>().mockResolvedValue(response);
   const onUploadComplete = vi.fn<OnUploadComplete>();
   const file = new File(
@@ -196,32 +238,24 @@ test("a PDF at the inclusive runtime limit gets a grant and uploads directly", a
   );
 
   await waitFor(() => {
-    expect(createUpload.mock.calls).toEqual([[input]]);
-    expect(FakeXMLHttpRequest.requests).toHaveLength(EXPECTED_SINGLE_COUNT);
-  });
-  const [request] = FakeXMLHttpRequest.requests;
-  if (request == null) {
-    throw new Error("The direct upload request did not start");
-  }
-
-  expect(request.body).toBe(file);
-
-  await act(async () => {
-    await request.respond({
-      headers: { ETag: '"boundary-etag"' },
-      status: 200,
-    });
-  });
-
-  await waitFor(() => {
-    expect(onUploadComplete).toHaveBeenCalledWith({
+    expect(onUploadComplete).toHaveBeenCalledExactlyOnceWith({
       storageKey: response.storageKey,
     });
   });
+  expect(createUpload).toHaveBeenCalledExactlyOnceWith(input);
+  expect(handler).toHaveBeenCalledOnce();
+  expect(putStarted).toHaveBeenCalledOnce();
+  const [[handlerInfo] = []] = handler.mock.calls;
+  expect.assert(handlerInfo?.request instanceof Request);
+  expect(handlerInfo.request.method).toBe("PUT");
+  expect(handlerInfo.request.url).toBe(response.uploadUrl);
+  const [body] = uploadBodies;
+  expect.assert(body instanceof ArrayBuffer);
+  const fileBytes = Buffer.from(await file.arrayBuffer());
+  expect(Buffer.from(body).equals(fileBytes)).toBe(true);
 });
 
 test("a PDF over the runtime limit stops before grant and upload work", async () => {
-  installXMLHttpRequestFake();
   const createUpload = vi.fn<CreateUpload>();
   const onUploadComplete = vi.fn<OnUploadComplete>();
   const file = new File(
@@ -245,11 +279,10 @@ test("a PDF over the runtime limit stops before grant and upload work", async ()
   expect(await screen.findAllByRole("alert")).not.toEqual([]);
   expect(screen.queryAllByRole("listitem")).toEqual([]);
   expect(createUpload).not.toHaveBeenCalled();
-  expect(FakeXMLHttpRequest.requests).toEqual([]);
+  expect(putStarted).not.toHaveBeenCalled();
 });
 
 test("a non-PDF stops before grant and upload work", async () => {
-  installXMLHttpRequestFake();
   const createUpload = vi.fn<CreateUpload>();
   const onUploadComplete = vi.fn<OnUploadComplete>();
   const file = new File(["plain text"], "notes.txt", {
@@ -270,11 +303,10 @@ test("a non-PDF stops before grant and upload work", async () => {
   expect(await screen.findAllByRole("alert")).not.toEqual([]);
   expect(screen.queryAllByRole("listitem")).toEqual([]);
   expect(createUpload).not.toHaveBeenCalled();
-  expect(FakeXMLHttpRequest.requests).toEqual([]);
+  expect(putStarted).not.toHaveBeenCalled();
 });
 
 test("a second PDF is rejected while the first PDF stays queued", async () => {
-  installXMLHttpRequestFake();
   const createUpload = vi.fn<CreateUpload>();
   const onUploadComplete = vi.fn<OnUploadComplete>();
   const firstFile = new File(["first"], "first.pdf", {
@@ -302,5 +334,5 @@ test("a second PDF is rejected while the first PDF stays queued", async () => {
   expect(screen.getByText(firstFile.name)).toBeVisible();
   expect(screen.queryByText(secondFile.name)).not.toBeInTheDocument();
   expect(createUpload).not.toHaveBeenCalled();
-  expect(FakeXMLHttpRequest.requests).toEqual([]);
+  expect(putStarted).not.toHaveBeenCalled();
 });
