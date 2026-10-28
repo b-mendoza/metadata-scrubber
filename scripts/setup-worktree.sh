@@ -1,5 +1,6 @@
 #!/usr/bin/env bash
-# Prepare a fresh Git worktree or agent checkout.
+# Prepare frontend dependencies and local env files for a worktree.
+# Git hooks live in the shared Git directory. Run `go -C backend tool task hooks:install` once per clone.
 set -euo pipefail
 
 cd "$(dirname "$0")/.."
@@ -21,19 +22,6 @@ copy_local_env() {
 export COREPACK_ENABLE_DOWNLOAD_PROMPT=0
 pnpm --dir frontend install --frozen-lockfile
 
-printf 'Downloading Go modules\n'
-go -C backend mod download
-
-if git config --get core.hooksPath >/dev/null 2>&1; then
-  printf 'Skip lefthook install because core.hooksPath is set\n'
-else
-  printf 'Installing Git hooks\n'
-  go -C backend tool lefthook install
-fi
-
-printf 'Verifying Task\n'
-go -C backend tool task --version
-
 # Copy local env files from the original checkout. Do not print file contents.
 ORIGIN_ROOT="${ROOT_WORKTREE_PATH:-${T3CODE_PROJECT_ROOT:-}}"
 if [ -n "${ORIGIN_ROOT}" ] && [ -d "${ORIGIN_ROOT}" ]; then
@@ -43,5 +31,3 @@ if [ -n "${ORIGIN_ROOT}" ] && [ -d "${ORIGIN_ROOT}" ]; then
     copy_local_env "${ORIGIN_ROOT}" frontend/.env
   fi
 fi
-
-printf 'Worktree setup complete\n'
