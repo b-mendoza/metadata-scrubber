@@ -1,5 +1,8 @@
 import { HTTPError, NetworkError } from "ky";
-import { afterEach, expect, test, vi } from "vitest";
+import type { HttpResponseResolver } from "msw";
+import { http, HttpResponse } from "msw";
+import { setupServer } from "msw/node";
+import { afterAll, afterEach, beforeAll, expect, test, vi } from "vitest";
 
 import {
   SERVICE_UNAVAILABLE_STATUS_CODE,
@@ -11,6 +14,21 @@ import {
   WORKFLOW_SERVER_DIRECTED_RETRY_OPTIONS,
 } from "./workflow-http-client.mod.server";
 
+const server = setupServer();
+
+beforeAll(() => {
+  server.listen({ onUnhandledFrame: "error" });
+});
+
+afterEach(() => {
+  server.resetHandlers();
+  vi.useRealTimers();
+});
+
+afterAll(() => {
+  server.close();
+});
+
 const BACKEND_BASE_URL = new URL("https://backend.test/");
 const WORKFLOW_PATH = "/api/files/dry-run";
 const ONE_MILLISECOND_MS = 1;
@@ -18,10 +36,6 @@ const INITIAL_FETCH_ATTEMPT_COUNT = 1;
 const TWO_FETCH_ATTEMPTS = 2;
 const EXPECTED_RETRY_LIMIT = 2;
 const EXPECTED_MAX_RETRY_AFTER_MS = 4000;
-
-afterEach(() => {
-  vi.useRealTimers();
-});
 
 test("an eligible 503 Retry-After value is capped at the configured maximum", async () => {
   vi.useFakeTimers();
@@ -92,13 +106,14 @@ test.each([
   ["HTTP date", "Wed, 21 Oct 2015 07:28:00 GMT"],
   ["unsafe integer", "9007199254740992"],
 ])("a 503 with a %s Retry-After value does not retry", async (_name, value) => {
-  const fetchMock = vi.fn<typeof fetch>().mockResolvedValue(
-    new Response(null, {
-      headers: { "Retry-After": value },
-      status: SERVICE_UNAVAILABLE_STATUS_CODE,
-    }),
+  const handler = vi.fn<HttpResponseResolver>(
+    () =>
+      new HttpResponse(null, {
+        headers: { "Retry-After": value },
+        status: SERVICE_UNAVAILABLE_STATUS_CODE,
+      }),
   );
-  vi.stubGlobal("fetch", fetchMock);
+  server.use(http.post("https://backend.test/api/files/dry-run", handler));
   const client = createWorkflowHttpClient(BACKEND_BASE_URL);
 
   let failure: unknown = null;
@@ -111,17 +126,18 @@ test.each([
   }
 
   expect(failure).toBeInstanceOf(HTTPError);
-  expect(fetchMock).toHaveBeenCalledOnce();
+  expect(handler).toHaveBeenCalledOnce();
 });
 
 test("a 429 with a valid Retry-After value does not retry", async () => {
-  const fetchMock = vi.fn<typeof fetch>().mockResolvedValue(
-    new Response(null, {
-      headers: { "Retry-After": "1" },
-      status: TOO_MANY_REQUESTS_STATUS_CODE,
-    }),
+  const handler = vi.fn<HttpResponseResolver>(
+    () =>
+      new HttpResponse(null, {
+        headers: { "Retry-After": "1" },
+        status: TOO_MANY_REQUESTS_STATUS_CODE,
+      }),
   );
-  vi.stubGlobal("fetch", fetchMock);
+  server.use(http.post("https://backend.test/api/files/dry-run", handler));
   const client = createWorkflowHttpClient(BACKEND_BASE_URL);
 
   let failure: unknown = null;
@@ -134,7 +150,7 @@ test("a 429 with a valid Retry-After value does not retry", async () => {
   }
 
   expect(failure).toBeInstanceOf(HTTPError);
-  expect(fetchMock).toHaveBeenCalledOnce();
+  expect(handler).toHaveBeenCalledOnce();
 });
 
 test("workflow retries reject a network failure after one attempt", async () => {
@@ -155,4 +171,23 @@ test("workflow retries reject a network failure after one attempt", async () => 
   expect.assert(failure instanceof NetworkError);
   expect(failure.cause).toBe(networkFailure);
   expect(fetchMock).toHaveBeenCalledOnce();
+});
+
+test("workflow retries reject an intercepted network failure after one attempt", async () => {
+  const handler = vi.fn<HttpResponseResolver>(() => HttpResponse.error());
+  server.use(http.post("https://backend.test/api/files/dry-run", handler));
+  const client = createWorkflowHttpClient(BACKEND_BASE_URL);
+
+  let failure: unknown = null;
+  try {
+    await client.post(WORKFLOW_PATH, {
+      retry: WORKFLOW_SERVER_DIRECTED_RETRY_OPTIONS,
+    });
+  } catch (error) {
+    failure = error;
+  }
+
+  expect.assert(failure instanceof NetworkError);
+  expect(failure.cause).toBeInstanceOf(TypeError);
+  expect(handler).toHaveBeenCalledOnce();
 });
