@@ -130,7 +130,7 @@ The root [architecture reference](../../docs/architecture.md) describes service 
 - Tests cover canonical ETag validation, invalid procedure inputs, invalid backend success bodies, safe status mapping, invalid backend error bodies, timeouts, and caller cancellation.
 - Router tests cover backend status `413` as the safe tRPC `PAYLOAD_TOO_LARGE` error.
 - Uploader tests cover runtime size restrictions, the PDF-only and one-file restrictions, non-multipart PUT signing, direct browser PUT requests, successful metadata handoff, grant failures, PUT failures, and manual retries.
-- Uploader tests use the real `@uppy/aws-s3` plugin and a test-local `XMLHttpRequest` fake. They do not call R2.
+- Uploader tests use the real `@uppy/aws-s3` plugin and XHR transport with per-file MSW servers. Handlers return upload responses and CORS preflight responses for cross-origin PUT requests. Tests check request bytes, content type, exact URLs, and PUT counts. They do not call R2.
 - Workflow client tests cover the 4000 ms retry cap, the configured retry limit, and rejected retry conditions.
 - Router transport tests check the dry-run and scrub total timeouts after a server-directed retry. They also cover config requests without retries, safe transport errors, and caller cancellation.
 - Health transport tests check the 3000 ms attempt timeout, no retry after that timeout, and the one-retry limit for status `502`. They do not test the 5000 ms total timeout or either 250 ms cap.

@@ -1,124 +1,8 @@
 import { screen } from "@testing-library/react";
-import { vi } from "vitest";
 
 import type { renderComponent } from "#/tests/utils/renderers/renderers.mod";
 
 const BROWSE_FILES_BUTTON_NAME = /browse files/iv;
-const EMPTY_REQUEST_COUNT = 0;
-const NO_HTTP_STATUS = 0;
-
-interface FakeXMLHttpResponse {
-  headers?: Record<string, string>;
-  responseText?: string;
-  status: number;
-  statusText?: string;
-}
-
-export interface FakeXMLHttpRequest extends EventTarget {
-  body: XMLHttpRequestBodyInit | null;
-  method: string;
-  onload: ((event: ProgressEvent) => unknown) | null;
-  responseText: string;
-  responseType: XMLHttpRequestResponseType;
-  status: number;
-  statusText: string;
-  upload: EventTarget & {
-    onprogress: ((event: ProgressEvent) => void) | null;
-  };
-  url: string;
-  withCredentials: boolean;
-  abort: () => void;
-  getRequestHeader: (name: string) => string | null;
-  getResponseHeader: (name: string) => string | null;
-  open: (method: string, url: string | URL) => void;
-  respond: (response: FakeXMLHttpResponse) => Promise<void>;
-  send: (body?: XMLHttpRequestBodyInit | null) => void;
-  setRequestHeader: (name: string, value: string) => void;
-}
-
-const automaticResponse: { current: FakeXMLHttpResponse | null } = {
-  current: null,
-};
-const requests: FakeXMLHttpRequest[] = [];
-
-const createFakeXMLHttpRequest = (): FakeXMLHttpRequest => {
-  const requestHeaders = new Map<string, string>();
-  const responseHeaders = new Map<string, string>();
-  const responseType: XMLHttpRequestResponseType = "";
-  const upload = Object.assign(new EventTarget(), {
-    onprogress: null as ((event: ProgressEvent) => void) | null,
-  });
-  const request = Object.assign(new EventTarget(), {
-    body: null as XMLHttpRequestBodyInit | null,
-    method: "",
-    onload: null as ((event: ProgressEvent) => unknown) | null,
-    responseText: "",
-    responseType,
-    status: NO_HTTP_STATUS,
-    statusText: "",
-    upload,
-    url: "",
-    withCredentials: false,
-    abort: () => {
-      request.statusText = "Aborted";
-    },
-    getRequestHeader: (name: string) => {
-      return requestHeaders.get(name.toLowerCase()) ?? null;
-    },
-    getResponseHeader: (name: string) => {
-      return responseHeaders.get(name.toLowerCase()) ?? null;
-    },
-    open: (method: string, url: string | URL) => {
-      request.method = method;
-      request.url = url.toString();
-    },
-    respond: async (response: FakeXMLHttpResponse) => {
-      request.status = response.status;
-      request.statusText = response.statusText ?? "";
-      request.responseText = response.responseText ?? "";
-      responseHeaders.clear();
-
-      const responseHeaderEntries = Object.entries(response.headers ?? {});
-
-      for (const [name, value] of responseHeaderEntries) {
-        responseHeaders.set(name.toLowerCase(), value);
-      }
-
-      await request.onload?.(new ProgressEvent("load"));
-    },
-    send: (body: XMLHttpRequestBodyInit | null = null) => {
-      request.body = body;
-      requests.push(request);
-
-      if (automaticResponse.current != null) {
-        void request.respond(automaticResponse.current);
-      }
-    },
-    setRequestHeader: (name: string, value: string) => {
-      requestHeaders.set(name.toLowerCase(), value);
-    },
-  });
-
-  return request;
-};
-
-const fakeXMLHttpRequestConstructor = vi.fn(
-  function FakeXMLHttpRequestConstructor() {
-    return createFakeXMLHttpRequest();
-  },
-);
-
-export const FakeXMLHttpRequest = Object.assign(fakeXMLHttpRequestConstructor, {
-  requests,
-  reset: () => {
-    automaticResponse.current = null;
-    requests.length = EMPTY_REQUEST_COUNT;
-  },
-  respondAutomaticallyWith: (response: FakeXMLHttpResponse) => {
-    automaticResponse.current = response;
-  },
-});
-
 export const getFileInput = async (
   user: ReturnType<typeof renderComponent>["user"],
 ) => {
@@ -148,9 +32,4 @@ export const getFileInput = async (
   }
 
   return capturedFileInput.current;
-};
-
-export const installXMLHttpRequestFake = () => {
-  FakeXMLHttpRequest.reset();
-  vi.stubGlobal("XMLHttpRequest", FakeXMLHttpRequest);
 };
