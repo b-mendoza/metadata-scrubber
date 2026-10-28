@@ -1,6 +1,8 @@
 # Jobs run in order. Format runs before lint because format can change the files that lint reads.
 
 glob_matcher: doublestar
+# Run lefthook from the repository root. Git sets GIT_DIR in a linked worktree,
+# so `go -C backend tool lefthook` would use backend/ as the root.
 lefthook: '"$(go -C backend tool -n lefthook)"'
 
 pre-commit:
