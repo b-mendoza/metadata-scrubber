@@ -42,18 +42,20 @@ fi
 export COREPACK_ENABLE_DOWNLOAD_PROMPT=0
 (
   cd "${FRONTEND_DIR}"
-  if command -v corepack >/dev/null 2>&1; then
+  if command -v pnpm >/dev/null 2>&1; then
+    pnpm_command=(pnpm)
+  elif command -v corepack >/dev/null 2>&1; then
     printf 'Enabling Corepack pnpm\n'
     if ! corepack enable pnpm; then
       printf 'Warning: Could not enable the pnpm shim. Using corepack pnpm.\n' >&2
     fi
-  fi
-  if ! command -v pnpm >/dev/null 2>&1; then
+    pnpm_command=(corepack pnpm)
+  else
     printf 'pnpm is required. Enable Corepack or install pnpm.\n' >&2
     exit 1
   fi
   printf 'Installing frontend dependencies\n'
-  pnpm install --frozen-lockfile
+  "${pnpm_command[@]}" install --frozen-lockfile
 )
 
 printf 'Downloading Go modules\n'
