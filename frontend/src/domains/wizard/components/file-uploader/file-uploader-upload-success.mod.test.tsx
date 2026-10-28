@@ -15,12 +15,6 @@ import type {
 } from "#/shared/libs/trpc/client/client.mod";
 import { renderComponent } from "#/tests/utils/renderers/renderers.mod";
 
-type CreateUpload = (
-  input: RouterInputs["wizard"]["createUpload"],
-) => Promise<RouterOutputs["wizard"]["createUpload"]>;
-
-type OnUploadComplete = (result: { storageKey: string }) => void;
-
 const UPLOAD_ONE_FILE_BUTTON_NAME = /upload 1 file/iv;
 const TEST_MAX_FILE_SIZE_BYTES = 10_485_760;
 const TEST_REPLACEMENT_MAX_FILE_SIZE_BYTES = 1;
@@ -61,6 +55,12 @@ afterAll(() => {
 });
 
 test("a StrictMode PDF upload sends a typed grant and direct PUT, keeps initial settings, and reports to the latest callback", async () => {
+  type CreateUpload = (
+    input: RouterInputs["wizard"]["createUpload"],
+  ) => Promise<RouterOutputs["wizard"]["createUpload"]>;
+
+  type OnUploadComplete = (result: { storageKey: string }) => void;
+
   const input: RouterInputs["wizard"]["createUpload"] = {
     fileName: "report.pdf",
     fileSizeBytes: 3,
