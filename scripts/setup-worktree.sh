@@ -38,7 +38,7 @@ if ! command -v go >/dev/null 2>&1; then
   exit 1
 fi
 
-# frontend/package.json declares packageManager. Corepack installs that pnpm.
+# Use pnpm on PATH, or run the declared version through Corepack.
 export COREPACK_ENABLE_DOWNLOAD_PROMPT=0
 (
   cd "${FRONTEND_DIR}"
