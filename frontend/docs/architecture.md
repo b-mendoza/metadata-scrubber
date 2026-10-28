@@ -137,3 +137,8 @@ The root [architecture reference](../../docs/architecture.md) describes service 
 - Workflow client tests cover the 4000 ms retry cap, the configured retry limit, and rejected retry conditions.
 - Router transport tests check the dry-run and scrub total timeouts after a server-directed retry. They also cover config requests without retries, safe transport errors, and caller cancellation.
 - Health transport tests check the 3000 ms attempt timeout, no retry after that timeout, and the one-retry limit for status `502`. They do not test the 5000 ms total timeout or either 250 ms cap.
+- `playwright.config.ts` runs the end-to-end suite in Chromium only. The suite requires both real services to run and starts no services.
+- `e2e/global-setup.mod.ts` checks the frontend at `http://localhost:3000/` and the backend at `http://localhost:8080/api/health` once before the tests. These URLs use the Docker Compose ports. A failed request stops the suite with instructions to start both services.
+- The frontend server calls the real backend through `BACKEND_URL`.
+- The home-page test checks the title `Home`, the heading `Hello, world!`, and the visible text `reachable`.
+- The end-to-end suite does not cover the wizard because no route mounts `FileUploader`. It does not cover backend failure responses.
