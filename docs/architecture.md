@@ -15,13 +15,13 @@
 
 `scripts/setup-worktree.sh` installs frontend dependencies with `pnpm install --frozen-lockfile`. `pnpm` must be on PATH. Run the script from the repository root with `bash scripts/setup-worktree.sh`.
 
+The script finds the main checkout through the Git common directory. It copies `backend/.env` and `frontend/.env` from that checkout when the source files exist and the worktree lacks them. It does not print env file contents.
+
 The script does not install Git hooks because they live in the shared Git directory. Run `go -C backend tool task hooks:install` once after you clone.
 
 Cursor reads `.cursor/worktrees.json`. On Unix it runs the setup script. The generic setup key reports that Windows is not supported yet.
 
 T3 Code reads `t3.json`. New threads use a worktree. T3 Code runs the setup script when it creates that worktree.
-
-The script copies `backend/.env` and `frontend/.env` from the original checkout when those files exist. It copies them only when `ROOT_WORKTREE_PATH` or `T3CODE_PROJECT_ROOT` is set. The script does not print env file contents.
 
 ## Service integration
 

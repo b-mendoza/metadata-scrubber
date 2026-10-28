@@ -9,12 +9,10 @@ cd "$(dirname "$0")/.."
 export COREPACK_ENABLE_DOWNLOAD_PROMPT=0
 pnpm --dir frontend install --frozen-lockfile
 
-origin="${ROOT_WORKTREE_PATH:-${T3CODE_PROJECT_ROOT:-}}"
-if [ -d "$origin" ]; then
-  for file in backend/.env frontend/.env; do
-    if [ -f "$origin/$file" ] && [ ! -e "$file" ]; then
-      cp -- "$origin/$file" "$file"
-      printf 'Copied %s from the original checkout\n' "$file"
-    fi
-  done
-fi
+main_checkout="$(dirname "$(git rev-parse --path-format=absolute --git-common-dir)")"
+for file in backend/.env frontend/.env; do
+  if [ -f "$main_checkout/$file" ] && [ ! -e "$file" ]; then
+    cp -- "$main_checkout/$file" "$file"
+    printf 'Copied %s from the main checkout\n' "$file"
+  fi
+done
