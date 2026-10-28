@@ -1,3 +1,4 @@
+import { usePostHog } from "@posthog/react";
 import AwsS3 from "@uppy/aws-s3";
 import Uppy from "@uppy/core";
 import Dashboard from "@uppy/dashboard";
@@ -22,6 +23,17 @@ const uploadedFileMetadataSchema = z.object({
   storageKey: z.string().trim().nonempty(),
 });
 
+const uploadServiceErrorSchema = z.object({
+  status: z.int(),
+  // eslint-disable-next-line zod/prefer-string-schema-with-trim -- Keep the approved provider service code unchanged.
+  serviceCode: z.string().optional(),
+});
+
+const uploadNetworkErrorSchema = z.object({
+  code: z.literal("NETWORK"),
+  status: z.undefined().optional(),
+});
+
 interface FileUploaderProps {
   createUpload: (
     input: RouterInputs["wizard"]["createUpload"],
@@ -34,6 +46,26 @@ const useUppyDashboard = (props: FileUploaderProps) => {
   const containerRef = useRef<HTMLDivElement>(null);
   const getInitialProps = useEffectEvent(() => props);
   const onComplete = useEffectEvent(props.onUploadComplete);
+  const posthog = usePostHog();
+  const onUploadError = useEffectEvent((error: unknown) => {
+    // Use fields because minification can change AwsS3 error names.
+    const serviceError = uploadServiceErrorSchema.safeParse(error);
+    if (serviceError.success) {
+      posthog.capture("upload_put_failed", {
+        http_status: serviceError.data.status,
+        service_code: serviceError.data.serviceCode ?? null,
+      });
+      return;
+    }
+
+    const networkError = uploadNetworkErrorSchema.safeParse(error);
+    if (networkError.success) {
+      posthog.capture("upload_put_failed", {
+        http_status: 0,
+        service_code: networkError.data.code,
+      });
+    }
+  });
 
   useEffect(() => {
     const container = containerRef.current;
@@ -97,6 +129,9 @@ const useUppyDashboard = (props: FileUploaderProps) => {
       height: 400,
       hideProgressAfterFinish: true,
       note: `Upload exactly one PDF file (max ${maxFileSizeMebibytes} MiB)`,
+    });
+    instance.on("upload-error", (_file, error) => {
+      onUploadError(error);
     });
     instance.on("complete", (uploadResult) => {
       const [successfulFile] = uploadResult.successful ?? [];
