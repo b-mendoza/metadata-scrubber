@@ -44,7 +44,9 @@ export COREPACK_ENABLE_DOWNLOAD_PROMPT=0
   cd "${FRONTEND_DIR}"
   if command -v corepack >/dev/null 2>&1; then
     printf 'Enabling Corepack pnpm\n'
-    corepack enable pnpm
+    if ! corepack enable pnpm; then
+      printf 'Warning: Could not enable the pnpm shim. Using corepack pnpm.\n' >&2
+    fi
   fi
   if ! command -v pnpm >/dev/null 2>&1; then
     printf 'pnpm is required. Enable Corepack or install pnpm.\n' >&2
