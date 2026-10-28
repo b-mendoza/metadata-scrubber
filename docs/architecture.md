@@ -19,7 +19,7 @@ The script finds the main checkout through the Git common directory. It copies `
 
 The script does not install Git hooks because they live in the shared Git directory. Run `go -C backend tool task hooks:install` once after you clone.
 
-Cursor reads `.cursor/worktrees.json`. On Unix it runs the setup script. The generic setup key reports that Windows is not supported yet.
+Cursor reads `.cursor/worktrees.json`. On Unix it runs the setup script.
 
 T3 Code reads `t3.json`. New threads use a worktree. T3 Code runs the setup script when it creates that worktree.
 
