@@ -1,4 +1,4 @@
-import { act, screen, waitFor } from "@testing-library/react";
+import { act, screen, waitFor, within } from "@testing-library/react";
 import type { HttpResponseResolver } from "msw";
 import { http, HttpResponse } from "msw";
 import { setupServer } from "msw/node";
@@ -84,6 +84,16 @@ test("a grant failure does not send a PUT or advance the wizard", async () => {
   expect(
     await screen.findByRole("button", { name: RETRY_UPLOAD_BUTTON_NAME }),
   ).toBeVisible();
+  expect(
+    screen.getByRole("button", {
+      name: "Could not create the upload. Try again.",
+    }),
+  ).toBeVisible();
+  for (const alert of screen.getAllByRole("alert")) {
+    expect(within(alert).getByRole("tooltip")).toHaveAccessibleName(
+      "Could not create the upload. Try again.",
+    );
+  }
   expect(createUpload).toHaveBeenCalledOnce();
   expect(putStarted).not.toHaveBeenCalled();
   expect(onUploadComplete).not.toHaveBeenCalled();
