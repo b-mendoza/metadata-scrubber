@@ -65,9 +65,13 @@ const useUppyDashboard = (props: FileUploaderProps) => {
           throw new Error("The upload file size is not available");
         }
 
-        const { storageKey, uploadUrl } = await createUpload({
+        const upload = createUpload({
           fileName: file.name,
           fileSizeBytes: file.size,
+        });
+        // eslint-disable-next-line unicorn/prefer-await -- Replace only the grant rejection without retaining private fields or its cause.
+        const { storageKey, uploadUrl } = await upload.catch(() => {
+          throw new Error("Could not create the upload. Try again.");
         });
 
         instance.setFileMeta(file.id, { storageKey });
