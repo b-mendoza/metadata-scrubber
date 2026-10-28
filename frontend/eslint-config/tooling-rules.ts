@@ -6,6 +6,8 @@ import { PLUGIN_NAMES, SEVERITY_LEVELS } from "./constants.ts";
 export const toolingRules = defineConfig(
   {
     files: [
+      "e2e/**/*.ts",
+      "playwright.config.ts",
       "eslint.config.ts",
       "eslint-config/**/*.ts",
       "scripts/**/*.ts",
