@@ -1,7 +1,7 @@
 # Jobs run in order. Format runs before lint because format can change the files that lint reads.
 
 glob_matcher: doublestar
-lefthook: go -C backend tool lefthook
+lefthook: '"$(go -C backend tool -n lefthook)"'
 
 pre-commit:
   jobs:
