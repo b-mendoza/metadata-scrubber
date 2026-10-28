@@ -2,7 +2,10 @@ import { once } from "node:events";
 
 import { TRPCError } from "@trpc/server";
 import ky from "ky";
-import { afterEach, expect, test, vi } from "vitest";
+import type { HttpResponseResolver } from "msw";
+import { http, HttpResponse } from "msw";
+import { setupServer } from "msw/node";
+import { afterAll, afterEach, beforeAll, expect, test, vi } from "vitest";
 
 import { SERVICE_UNAVAILABLE_STATUS_CODE } from "#/shared/constants/http/status-codes/status-codes.mod";
 import { createWorkflowHttpClient } from "#/shared/libs/ky/workflow-http-client.mod.server";
@@ -24,6 +27,21 @@ import {
   SCRUB_FILE_FAILURE_MESSAGE,
   WORKFLOW_CONFIG_FAILURE_MESSAGE,
 } from "./wizard-router.mod.server";
+
+const server = setupServer();
+
+beforeAll(() => {
+  server.listen({ onUnhandledFrame: "error" });
+});
+
+afterEach(() => {
+  server.resetHandlers();
+  vi.useRealTimers();
+});
+
+afterAll(() => {
+  server.close();
+});
 
 vi.mock(import("#/shared/middlewares/app-bindings/app-bindings.mod"), () => ({
   getAppBindings: vi.fn(),
@@ -60,19 +78,19 @@ test("getWorkflowConfig requests GET /api/files/config", async () => {
   const response: RouterOutputs["wizard"]["getWorkflowConfig"] = {
     maxFileSizeBytes: 7_340_032,
   };
-  const fetchMock = vi
-    .fn<typeof fetch>()
-    .mockResolvedValue(Response.json(response));
-  vi.stubGlobal("fetch", fetchMock);
+  const handler = vi.fn<HttpResponseResolver>(() =>
+    HttpResponse.json(response),
+  );
+  server.use(http.get("https://backend.test/api/files/config", handler));
   const request = new Request(FRONTEND_URL);
 
   await callerForRequest(request).getWorkflowConfig();
 
-  expect(fetchMock).toHaveBeenCalledOnce();
-  const [[backendRequest] = []] = fetchMock.mock.calls;
-  expect.assert(backendRequest instanceof Request);
-  expect(backendRequest.method).toBe("GET");
-  expect(backendRequest.url).toBe("https://backend.test/api/files/config");
+  expect(handler).toHaveBeenCalledOnce();
+  const [[handlerInfo] = []] = handler.mock.calls;
+  expect.assert(handlerInfo?.request instanceof Request);
+  expect(handlerInfo.request.method).toBe("GET");
+  expect(handlerInfo.request.url).toBe("https://backend.test/api/files/config");
 });
 
 test("createUpload sends only its typed small-JSON contract", async () => {
@@ -85,20 +103,22 @@ test("createUpload sends only its typed small-JSON contract", async () => {
     uploadUrl: "https://uploads.test/source.pdf",
   };
   const backendBodies: unknown[] = [];
-  const fetchMock = vi.fn<typeof fetch>(async (fetchInput) => {
-    backendBodies.push(await new Request(fetchInput).json());
-    return Response.json(response);
-  });
-  vi.stubGlobal("fetch", fetchMock);
+  const handler = vi.fn<HttpResponseResolver>(
+    async ({ request: backendRequest }) => {
+      backendBodies.push(await backendRequest.json());
+      return HttpResponse.json(response);
+    },
+  );
+  server.use(http.post("https://backend.test/api/uploads", handler));
   const request = new Request(FRONTEND_URL);
 
   await callerForRequest(request).createUpload(input);
 
-  expect(fetchMock).toHaveBeenCalledOnce();
-  const [[backendRequest] = []] = fetchMock.mock.calls;
-  expect.assert(backendRequest instanceof Request);
-  expect(backendRequest.method).toBe("POST");
-  expect(backendRequest.url).toBe("https://backend.test/api/uploads");
+  expect(handler).toHaveBeenCalledOnce();
+  const [[handlerInfo] = []] = handler.mock.calls;
+  expect.assert(handlerInfo?.request instanceof Request);
+  expect(handlerInfo.request.method).toBe("POST");
+  expect(handlerInfo.request.url).toBe("https://backend.test/api/uploads");
   const [backendBody] = backendBodies;
   expect(backendBody).toEqual(input);
 });
@@ -118,20 +138,24 @@ test("dryRun sends the storage key", async () => {
     ],
   };
   const backendBodies: unknown[] = [];
-  const fetchMock = vi.fn<typeof fetch>(async (fetchInput) => {
-    backendBodies.push(await new Request(fetchInput).json());
-    return Response.json(response);
-  });
-  vi.stubGlobal("fetch", fetchMock);
+  const handler = vi.fn<HttpResponseResolver>(
+    async ({ request: backendRequest }) => {
+      backendBodies.push(await backendRequest.json());
+      return HttpResponse.json(response);
+    },
+  );
+  server.use(http.post("https://backend.test/api/files/dry-run", handler));
   const request = new Request(FRONTEND_URL);
 
   await callerForRequest(request).dryRun(input);
 
-  expect(fetchMock).toHaveBeenCalledOnce();
-  const [[backendRequest] = []] = fetchMock.mock.calls;
-  expect.assert(backendRequest instanceof Request);
-  expect(backendRequest.method).toBe("POST");
-  expect(backendRequest.url).toBe("https://backend.test/api/files/dry-run");
+  expect(handler).toHaveBeenCalledOnce();
+  const [[handlerInfo] = []] = handler.mock.calls;
+  expect.assert(handlerInfo?.request instanceof Request);
+  expect(handlerInfo.request.method).toBe("POST");
+  expect(handlerInfo.request.url).toBe(
+    "https://backend.test/api/files/dry-run",
+  );
   const [backendBody] = backendBodies;
   expect(backendBody).toEqual(input);
 });
@@ -146,20 +170,22 @@ test("scrubFile forwards the exact reviewed ETag without file bytes", async () =
     status: "done",
   };
   const backendBodies: unknown[] = [];
-  const fetchMock = vi.fn<typeof fetch>(async (fetchInput) => {
-    backendBodies.push(await new Request(fetchInput).json());
-    return Response.json(response);
-  });
-  vi.stubGlobal("fetch", fetchMock);
+  const handler = vi.fn<HttpResponseResolver>(
+    async ({ request: backendRequest }) => {
+      backendBodies.push(await backendRequest.json());
+      return HttpResponse.json(response);
+    },
+  );
+  server.use(http.post("https://backend.test/api/files/scrub", handler));
   const request = new Request(FRONTEND_URL);
 
   await callerForRequest(request).scrubFile(input);
 
-  expect(fetchMock).toHaveBeenCalledOnce();
-  const [[backendRequest] = []] = fetchMock.mock.calls;
-  expect.assert(backendRequest instanceof Request);
-  expect(backendRequest.method).toBe("POST");
-  expect(backendRequest.url).toBe("https://backend.test/api/files/scrub");
+  expect(handler).toHaveBeenCalledOnce();
+  const [[handlerInfo] = []] = handler.mock.calls;
+  expect.assert(handlerInfo?.request instanceof Request);
+  expect(handlerInfo.request.method).toBe("POST");
+  expect(handlerInfo.request.url).toBe("https://backend.test/api/files/scrub");
   const [backendBody] = backendBodies;
   expect(backendBody).toEqual(input);
 });
@@ -174,20 +200,24 @@ test("refreshDownloadGrant targets one exact sanitized revision", async () => {
     expiresAt: "2026-09-01T12:15:00Z",
   };
   const backendBodies: unknown[] = [];
-  const fetchMock = vi.fn<typeof fetch>(async (fetchInput) => {
-    backendBodies.push(await new Request(fetchInput).json());
-    return Response.json(response);
-  });
-  vi.stubGlobal("fetch", fetchMock);
+  const handler = vi.fn<HttpResponseResolver>(
+    async ({ request: backendRequest }) => {
+      backendBodies.push(await backendRequest.json());
+      return HttpResponse.json(response);
+    },
+  );
+  server.use(
+    http.post("https://backend.test/api/files/download-grant", handler),
+  );
   const request = new Request(FRONTEND_URL);
 
   await callerForRequest(request).refreshDownloadGrant(input);
 
-  expect(fetchMock).toHaveBeenCalledOnce();
-  const [[backendRequest] = []] = fetchMock.mock.calls;
-  expect.assert(backendRequest instanceof Request);
-  expect(backendRequest.method).toBe("POST");
-  expect(backendRequest.url).toBe(
+  expect(handler).toHaveBeenCalledOnce();
+  const [[handlerInfo] = []] = handler.mock.calls;
+  expect.assert(handlerInfo?.request instanceof Request);
+  expect(handlerInfo.request.method).toBe("POST");
+  expect(handlerInfo.request.url).toBe(
     "https://backend.test/api/files/download-grant",
   );
   const [backendBody] = backendBodies;
@@ -202,26 +232,24 @@ test("confirmDelete sends one typed delete request", async () => {
     status: "deleted",
   };
   const backendBodies: unknown[] = [];
-  const fetchMock = vi.fn<typeof fetch>(async (fetchInput) => {
-    backendBodies.push(await new Request(fetchInput).json());
-    return Response.json(response);
-  });
-  vi.stubGlobal("fetch", fetchMock);
+  const handler = vi.fn<HttpResponseResolver>(
+    async ({ request: backendRequest }) => {
+      backendBodies.push(await backendRequest.json());
+      return HttpResponse.json(response);
+    },
+  );
+  server.use(http.post("https://backend.test/api/files/delete", handler));
   const request = new Request(FRONTEND_URL);
 
   await callerForRequest(request).confirmDelete(input);
 
-  expect(fetchMock).toHaveBeenCalledOnce();
-  const [[backendRequest] = []] = fetchMock.mock.calls;
-  expect.assert(backendRequest instanceof Request);
-  expect(backendRequest.method).toBe("POST");
-  expect(backendRequest.url).toBe("https://backend.test/api/files/delete");
+  expect(handler).toHaveBeenCalledOnce();
+  const [[handlerInfo] = []] = handler.mock.calls;
+  expect.assert(handlerInfo?.request instanceof Request);
+  expect(handlerInfo.request.method).toBe("POST");
+  expect(handlerInfo.request.url).toBe("https://backend.test/api/files/delete");
   const [backendBody] = backendBodies;
   expect(backendBody).toEqual(input);
-});
-
-afterEach(() => {
-  vi.useRealTimers();
 });
 
 test("an unclassified transport failure maps to BAD_GATEWAY without public details", async () => {
@@ -340,13 +368,13 @@ test("getWorkflowConfig rejects a backend 503 without a retry", async () => {
   const response: BackendErrorResponse = {
     error: "processing capacity temporarily unavailable",
   };
-  const fetchMock = vi.fn<typeof fetch>().mockResolvedValue(
-    Response.json(response, {
+  const handler = vi.fn<HttpResponseResolver>(() =>
+    HttpResponse.json(response, {
       headers: { "Retry-After": "1" },
       status: SERVICE_UNAVAILABLE_STATUS_CODE,
     }),
   );
-  vi.stubGlobal("fetch", fetchMock);
+  server.use(http.get("https://backend.test/api/files/config", handler));
   const request = new Request(FRONTEND_URL);
 
   let failure: unknown = null;
@@ -359,22 +387,20 @@ test("getWorkflowConfig rejects a backend 503 without a retry", async () => {
   expect.assert(failure instanceof TRPCError);
   expect(failure.code).toBe("SERVICE_UNAVAILABLE");
   expect(failure.message).toBe(WORKFLOW_CONFIG_FAILURE_MESSAGE);
-  expect(fetchMock).toHaveBeenCalledOnce();
+  expect(handler).toHaveBeenCalledOnce();
 });
 
 test("caller cancellation maps safely and starts no extra fetch", async () => {
   const input: RouterInputs["wizard"]["dryRun"] = { storageKey: STORAGE_KEY };
   const fetchStarted = Promise.withResolvers<boolean>();
-  const fetchMock = vi.fn<typeof fetch>(
-    async (fetchInput): Promise<Response> => {
-      const backendRequest =
-        fetchInput instanceof Request ? fetchInput : new Request(fetchInput);
+  const handler = vi.fn<HttpResponseResolver>(
+    async ({ request: backendRequest }) => {
       fetchStarted.resolve(true);
       await once(backendRequest.signal, "abort");
-      throw new DOMException("aborted", "AbortError");
+      return HttpResponse.error();
     },
   );
-  vi.stubGlobal("fetch", fetchMock);
+  server.use(http.post("https://backend.test/api/files/dry-run", handler));
   const controller = new AbortController();
   const request = new Request(FRONTEND_URL, { signal: controller.signal });
 
@@ -391,5 +417,5 @@ test("caller cancellation maps safely and starts no extra fetch", async () => {
   expect.assert(failure instanceof TRPCError);
   expect(failure.code).toBe("BAD_GATEWAY");
   expect(failure.message).toBe(DRY_RUN_FAILURE_MESSAGE);
-  expect(fetchMock).toHaveBeenCalledOnce();
+  expect(handler).toHaveBeenCalledOnce();
 });
