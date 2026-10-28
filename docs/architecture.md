@@ -21,7 +21,7 @@ The script then installs Git hooks with `go -C backend tool task hooks:install`.
 
 Cursor reads `.cursor/worktrees.json`. On Unix it runs the setup script.
 
-T3 Code reads `t3.json`. New threads use a worktree. T3 Code runs the setup script when it creates the worktree. It waits for the script to finish because `async` is `false`.
+T3 Code reads `t3.json`. New threads use a worktree. T3 Code does not run the scripts in `t3.json` directly. Import them from the "From t3.json" section of the project actions menu. After the import, T3 Code runs the setup script when it creates a worktree. It waits for the script to finish because `async` is `false`. T3 Code keeps its own copy of each imported script. Later changes to `t3.json` do not apply until you change that copy in T3 Code.
 
 ## Service integration
 
