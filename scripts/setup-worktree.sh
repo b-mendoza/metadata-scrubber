@@ -45,7 +45,6 @@ export COREPACK_ENABLE_DOWNLOAD_PROMPT=0
   if command -v corepack >/dev/null 2>&1; then
     printf 'Enabling Corepack pnpm\n'
     corepack enable pnpm
-    corepack install
   fi
   if ! command -v pnpm >/dev/null 2>&1; then
     printf 'pnpm is required. Enable Corepack or install pnpm.\n' >&2
