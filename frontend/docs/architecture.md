@@ -28,7 +28,7 @@ Developers build the frontend with [TanStack Start](https://tanstack.com/start) 
 - The wizard domain contains the typed file-workflow tRPC router, its wire contracts, and its tests.
 - Developers keep cross-domain code under `src/shared/`. It contains `config`, `constants`, `libs` for tRPC and Ky, `middlewares`, and `utils`.
 - TanStack Router reads file-based routes from `src/routes/`. Developers keep API routes under `src/routes/api/`.
-- Developers keep test setup and shared render helpers under `src/tests/`. The render helpers are in `src/tests/utils/renderers/`.
+- Developers keep test setup under `src/tests/` and shared test helpers under `src/tests/utils/`.
 - `e2e/` contains the Playwright tests and the global setup that checks both real services.
 - Module files use `.mod.ts` or `.mod.tsx`. Server-only modules use `.mod.server.ts`.
 - Source tests use `.test.ts` or `.test.tsx` and sit next to the code they test.
