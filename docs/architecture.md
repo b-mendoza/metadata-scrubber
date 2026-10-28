@@ -13,7 +13,7 @@
 
 ## Worktree setup
 
-`scripts/setup-worktree.sh` prepares a fresh checkout. The script installs frontend dependencies with `pnpm install --frozen-lockfile`. It downloads Go modules. It installs Git hooks with lefthook when Git `core.hooksPath` is unset. It then checks `go -C backend tool task --version`. Run the script from the repository root with `bash scripts/setup-worktree.sh`.
+`scripts/setup-worktree.sh` prepares a fresh checkout. The script installs frontend dependencies with `pnpm install --frozen-lockfile`. `pnpm` must be on PATH. It downloads Go modules. It installs Git hooks with lefthook when Git `core.hooksPath` is unset. It then checks `go -C backend tool task --version`. Run the script from the repository root with `bash scripts/setup-worktree.sh`.
 
 Cursor reads `.cursor/worktrees.json`. On Unix it runs the setup script. The generic setup key reports that Windows is not supported yet.
 
