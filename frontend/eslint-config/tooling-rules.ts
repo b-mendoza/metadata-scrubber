@@ -31,16 +31,6 @@ export const toolingRules = defineConfig(
     },
   },
   {
-    files: ["playwright.config.ts"],
-    rules: {
-      // Playwright's defineConfig combines settings when this config loads.
-      [`${PLUGIN_NAMES.Unicorn}/no-top-level-side-effects`]: [
-        SEVERITY_LEVELS.Error,
-        { allow: { "@playwright/test": ["defineConfig"] } },
-      ],
-    },
-  },
-  {
     files: ["oxlint-plugin-metadata-scrubber/index.ts"],
     rules: {
       // definePlugin returns the plugin unchanged and provides its type contract.
