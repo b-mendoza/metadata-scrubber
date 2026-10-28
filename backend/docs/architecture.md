@@ -27,7 +27,7 @@ The backend is a Go HTTP service. It grants direct uploads to private storage. I
 
 Stock `golangci-lint` checks all packages, including analyzer code. Git ignores the generated `coverage.out` file.
 
-This module owns lefthook as a Go tool. Run `task hooks:install` once after you clone. lefthook.yml at the repository root defines the Git hook jobs. Git hooks run lefthook with `go -C backend tool lefthook`.
+This module owns lefthook as a Go tool. Run `task hooks:install` once after you clone. lefthook.yml at the repository root defines the Git hook jobs. Git hooks build lefthook with `go -C backend tool -n lefthook` and run it from the repository root.
 
 ## HTTP API
 
