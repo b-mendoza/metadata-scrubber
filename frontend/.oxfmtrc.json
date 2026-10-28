@@ -1,6 +1,14 @@
 {
   "$schema": "./node_modules/oxfmt/configuration_schema.json",
-  "ignorePatterns": [".output/", "coverage/", "src/routeTree.gen.ts"],
+  "ignorePatterns": [
+    ".output/",
+    "coverage/",
+    "test-results/",
+    "playwright-report/",
+    "blob-report/",
+    "playwright/.cache/",
+    "src/routeTree.gen.ts"
+  ],
   "printWidth": 80,
   "sortPackageJson": {
     "sortScripts": true
