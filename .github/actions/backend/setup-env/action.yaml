@@ -1,6 +1,6 @@
-name: "Setup Go and Task"
+name: "Setup Go"
 
-description: "Sets up the Go toolchain and the Task runner, restores the Go build/module cache, and downloads dependencies"
+description: "Sets up the Go toolchain, restores the Go build/module cache, and downloads dependencies"
 
 runs:
   using: composite
@@ -36,13 +36,6 @@ runs:
         restore-keys: |
           go-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('backend/go.mod', 'backend/go.sum') }}-
           go-${{ runner.os }}-${{ runner.arch }}-
-
-    - name: Setup Task
-      uses: arduino/setup-task@c0bc642852239c2689f73f4ea6459c29405f3c52 # v3.0.0
-      with:
-        version: 3.x
-        # Avoids GitHub API rate limits when resolving the Task release.
-        repo-token: ${{ github.token }}
 
     - name: Download dependencies
       shell: bash
