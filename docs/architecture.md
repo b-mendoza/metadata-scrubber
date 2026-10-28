@@ -21,7 +21,7 @@ The script does not install Git hooks because they live in the shared Git direct
 
 Cursor reads `.cursor/worktrees.json`. On Unix it runs the setup script.
 
-T3 Code reads `t3.json`. New threads use a worktree. T3 Code runs the setup script when it creates that worktree.
+T3 Code reads `t3.json`. New threads use a worktree. T3 Code runs the setup script when it creates the worktree. It waits for the script to finish because `async` is `false`.
 
 ## Service integration
 
