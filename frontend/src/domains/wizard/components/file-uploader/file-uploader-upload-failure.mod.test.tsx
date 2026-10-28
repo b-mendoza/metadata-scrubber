@@ -135,7 +135,7 @@ test("a final direct PUT failure does not advance the wizard", async () => {
   vi.useRealTimers();
 
   expect(handler).toHaveBeenCalledTimes(EXPECTED_PUT_ATTEMPTS);
-  expect(putStarted).toHaveBeenCalledTimes(EXPECTED_PUT_ATTEMPTS);
+  expect(putStarted).toHaveBeenCalledTimes(handler.mock.calls.length);
   expect(createUpload).toHaveBeenCalledOnce();
   const [[handlerInfo] = []] = handler.mock.calls;
   expect.assert(handlerInfo?.request instanceof Request);
