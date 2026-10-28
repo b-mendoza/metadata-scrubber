@@ -2478,6 +2478,8 @@
     },
     {
       "files": [
+        "e2e/**/*.ts",
+        "playwright.config.ts",
         "eslint.config.ts",
         "eslint-config/**/*.ts",
         "scripts/**/*.ts",
