@@ -1,5 +1,8 @@
 import ky from "ky";
-import { expect, test, vi } from "vitest";
+import type { HttpResponseResolver } from "msw";
+import { http, HttpResponse } from "msw";
+import { setupServer } from "msw/node";
+import { afterAll, afterEach, beforeAll, expect, test, vi } from "vitest";
 
 import {
   BAD_GATEWAY_STATUS_CODE,
@@ -31,6 +34,20 @@ import {
   wizardRouter,
   WORKFLOW_CONFIG_FAILURE_MESSAGE,
 } from "./wizard-router.mod.server";
+
+const server = setupServer();
+
+beforeAll(() => {
+  server.listen({ onUnhandledFrame: "error" });
+});
+
+afterEach(() => {
+  server.resetHandlers();
+});
+
+afterAll(() => {
+  server.close();
+});
 
 vi.mock(import("#/shared/middlewares/app-bindings/app-bindings.mod"), () => ({
   getAppBindings: vi.fn(),
@@ -73,8 +90,8 @@ test.each([
     etag,
     storageKey: STORAGE_KEY,
   };
-  const fetchMock = vi.fn<typeof fetch>();
-  vi.stubGlobal("fetch", fetchMock);
+  const handler = vi.fn<HttpResponseResolver>(() => HttpResponse.error());
+  server.use(http.all("*", handler));
   const request = new Request(FRONTEND_URL);
 
   await expect(
@@ -82,7 +99,7 @@ test.each([
   ).rejects.toMatchObject({
     code: "BAD_REQUEST",
   });
-  expect(fetchMock).not.toHaveBeenCalled();
+  expect(handler).not.toHaveBeenCalled();
 });
 
 test.each([
@@ -103,8 +120,8 @@ test.each([
     fileName,
     fileSizeBytes: ONE_BYTE,
   };
-  const fetchMock = vi.fn<typeof fetch>();
-  vi.stubGlobal("fetch", fetchMock);
+  const handler = vi.fn<HttpResponseResolver>(() => HttpResponse.error());
+  server.use(http.all("*", handler));
   const request = new Request(FRONTEND_URL);
 
   await expect(
@@ -112,21 +129,21 @@ test.each([
   ).rejects.toMatchObject({
     code: "BAD_REQUEST",
   });
-  expect(fetchMock).not.toHaveBeenCalled();
+  expect(handler).not.toHaveBeenCalled();
 });
 
 test("dryRun rejects an invalid storage key before fetch", async () => {
   const input: RouterInputs["wizard"]["dryRun"] = {
     storageKey: "source/not-public",
   };
-  const fetchMock = vi.fn<typeof fetch>();
-  vi.stubGlobal("fetch", fetchMock);
+  const handler = vi.fn<HttpResponseResolver>(() => HttpResponse.error());
+  server.use(http.all("*", handler));
   const request = new Request(FRONTEND_URL);
 
   await expect(callerForRequest(request).dryRun(input)).rejects.toMatchObject({
     code: "BAD_REQUEST",
   });
-  expect(fetchMock).not.toHaveBeenCalled();
+  expect(handler).not.toHaveBeenCalled();
 });
 
 test("the scrub input schema rejects a missing ETag", () => {
@@ -140,8 +157,8 @@ test("refreshDownloadGrant rejects an invalid ETag before fetch", async () => {
     etag: `"${CANONICAL_ETAG}"`,
     storageKey: STORAGE_KEY,
   };
-  const fetchMock = vi.fn<typeof fetch>();
-  vi.stubGlobal("fetch", fetchMock);
+  const handler = vi.fn<HttpResponseResolver>(() => HttpResponse.error());
+  server.use(http.all("*", handler));
   const request = new Request(FRONTEND_URL);
 
   await expect(
@@ -149,15 +166,15 @@ test("refreshDownloadGrant rejects an invalid ETag before fetch", async () => {
   ).rejects.toMatchObject({
     code: "BAD_REQUEST",
   });
-  expect(fetchMock).not.toHaveBeenCalled();
+  expect(handler).not.toHaveBeenCalled();
 });
 
 test("confirmDelete rejects an invalid storage key before fetch", async () => {
   const input: RouterInputs["wizard"]["confirmDelete"] = {
     storageKey: "uploads/not-a-uuid",
   };
-  const fetchMock = vi.fn<typeof fetch>();
-  vi.stubGlobal("fetch", fetchMock);
+  const handler = vi.fn<HttpResponseResolver>(() => HttpResponse.error());
+  server.use(http.all("*", handler));
   const request = new Request(FRONTEND_URL);
 
   await expect(
@@ -165,14 +182,14 @@ test("confirmDelete rejects an invalid storage key before fetch", async () => {
   ).rejects.toMatchObject({
     code: "BAD_REQUEST",
   });
-  expect(fetchMock).not.toHaveBeenCalled();
+  expect(handler).not.toHaveBeenCalled();
 });
 
 test("getWorkflowConfig rejects a malformed backend config body", async () => {
-  const fetchMock = vi
-    .fn<typeof fetch>()
-    .mockResolvedValue(Response.json({ maxFileSizeBytes: "big" }));
-  vi.stubGlobal("fetch", fetchMock);
+  const handler = vi.fn<HttpResponseResolver>(() =>
+    HttpResponse.json({ maxFileSizeBytes: "big" }),
+  );
+  server.use(http.get("https://backend.test/api/files/config", handler));
   const request = new Request(FRONTEND_URL);
 
   await expect(
@@ -181,6 +198,7 @@ test("getWorkflowConfig rejects a malformed backend config body", async () => {
     code: "BAD_GATEWAY",
     message: WORKFLOW_CONFIG_FAILURE_MESSAGE,
   });
+  expect(handler).toHaveBeenCalledOnce();
 });
 
 test("createUpload rejects an invalid backend upload URL", async () => {
@@ -188,12 +206,10 @@ test("createUpload rejects an invalid backend upload URL", async () => {
     fileName: "report.pdf",
     fileSizeBytes: ONE_BYTE,
   };
-  const fetchMock = vi
-    .fn<typeof fetch>()
-    .mockResolvedValue(
-      Response.json({ storageKey: STORAGE_KEY, uploadUrl: "not-a-url" }),
-    );
-  vi.stubGlobal("fetch", fetchMock);
+  const handler = vi.fn<HttpResponseResolver>(() =>
+    HttpResponse.json({ storageKey: STORAGE_KEY, uploadUrl: "not-a-url" }),
+  );
+  server.use(http.post("https://backend.test/api/uploads", handler));
   const request = new Request(FRONTEND_URL);
 
   await expect(
@@ -202,22 +218,22 @@ test("createUpload rejects an invalid backend upload URL", async () => {
     code: "BAD_GATEWAY",
     message: CREATE_UPLOAD_FAILURE_MESSAGE,
   });
+  expect(handler).toHaveBeenCalledOnce();
 });
 
 test("dryRun rejects an invalid backend ETag", async () => {
   const input: RouterInputs["wizard"]["dryRun"] = { storageKey: STORAGE_KEY };
-  const fetchMock = vi
-    .fn<typeof fetch>()
-    .mockResolvedValue(
-      Response.json({ etag: `"${CANONICAL_ETAG}"`, fields: [] }),
-    );
-  vi.stubGlobal("fetch", fetchMock);
+  const handler = vi.fn<HttpResponseResolver>(() =>
+    HttpResponse.json({ etag: `"${CANONICAL_ETAG}"`, fields: [] }),
+  );
+  server.use(http.post("https://backend.test/api/files/dry-run", handler));
   const request = new Request(FRONTEND_URL);
 
   await expect(callerForRequest(request).dryRun(input)).rejects.toMatchObject({
     code: "BAD_GATEWAY",
     message: DRY_RUN_FAILURE_MESSAGE,
   });
+  expect(handler).toHaveBeenCalledOnce();
 });
 
 test("scrubFile rejects an invalid backend success payload", async () => {
@@ -225,13 +241,13 @@ test("scrubFile rejects an invalid backend success payload", async () => {
     etag: CANONICAL_ETAG,
     storageKey: STORAGE_KEY,
   };
-  const fetchMock = vi.fn<typeof fetch>().mockResolvedValue(
-    Response.json({
+  const handler = vi.fn<HttpResponseResolver>(() =>
+    HttpResponse.json({
       result: { downloadUrl: "not-a-url" },
       status: "done",
     }),
   );
-  vi.stubGlobal("fetch", fetchMock);
+  server.use(http.post("https://backend.test/api/files/scrub", handler));
   const request = new Request(FRONTEND_URL);
 
   await expect(
@@ -240,6 +256,7 @@ test("scrubFile rejects an invalid backend success payload", async () => {
     code: "BAD_GATEWAY",
     message: SCRUB_FILE_FAILURE_MESSAGE,
   });
+  expect(handler).toHaveBeenCalledOnce();
 });
 
 test("refreshDownloadGrant rejects an invalid backend timestamp", async () => {
@@ -247,12 +264,12 @@ test("refreshDownloadGrant rejects an invalid backend timestamp", async () => {
     etag: CANONICAL_ETAG,
     storageKey: STORAGE_KEY,
   };
-  const fetchMock = vi
-    .fn<typeof fetch>()
-    .mockResolvedValue(
-      Response.json({ downloadUrl: DOWNLOAD_URL, expiresAt: "tomorrow" }),
-    );
-  vi.stubGlobal("fetch", fetchMock);
+  const handler = vi.fn<HttpResponseResolver>(() =>
+    HttpResponse.json({ downloadUrl: DOWNLOAD_URL, expiresAt: "tomorrow" }),
+  );
+  server.use(
+    http.post("https://backend.test/api/files/download-grant", handler),
+  );
   const request = new Request(FRONTEND_URL);
 
   await expect(
@@ -261,16 +278,17 @@ test("refreshDownloadGrant rejects an invalid backend timestamp", async () => {
     code: "BAD_GATEWAY",
     message: REFRESH_DOWNLOAD_GRANT_FAILURE_MESSAGE,
   });
+  expect(handler).toHaveBeenCalledOnce();
 });
 
 test("confirmDelete rejects an unconfirmed backend success payload", async () => {
   const input: RouterInputs["wizard"]["confirmDelete"] = {
     storageKey: STORAGE_KEY,
   };
-  const fetchMock = vi
-    .fn<typeof fetch>()
-    .mockResolvedValue(Response.json({ status: "pending" }));
-  vi.stubGlobal("fetch", fetchMock);
+  const handler = vi.fn<HttpResponseResolver>(() =>
+    HttpResponse.json({ status: "pending" }),
+  );
+  server.use(http.post("https://backend.test/api/files/delete", handler));
   const request = new Request(FRONTEND_URL);
 
   await expect(
@@ -279,6 +297,7 @@ test("confirmDelete rejects an unconfirmed backend success payload", async () =>
     code: "BAD_GATEWAY",
     message: CONFIRM_DELETE_FAILURE_MESSAGE,
   });
+  expect(handler).toHaveBeenCalledOnce();
 });
 
 test.each([
@@ -299,17 +318,17 @@ test.each([
   const response: BackendErrorResponse = {
     error: "safe backend error",
   };
-  const fetchMock = vi
-    .fn<typeof fetch>()
-    .mockResolvedValue(Response.json(response, { status }));
-  vi.stubGlobal("fetch", fetchMock);
+  const handler = vi.fn<HttpResponseResolver>(() =>
+    HttpResponse.json(response, { status }),
+  );
+  server.use(http.post("https://backend.test/api/files/dry-run", handler));
   const request = new Request(FRONTEND_URL);
 
   await expect(callerForRequest(request).dryRun(input)).rejects.toMatchObject({
     code,
     message: DRY_RUN_FAILURE_MESSAGE,
   });
-  expect(fetchMock).toHaveBeenCalledOnce();
+  expect(handler).toHaveBeenCalledOnce();
 });
 
 test("a non-contract backend error body maps to BAD_GATEWAY without public details", async () => {
@@ -317,12 +336,10 @@ test("a non-contract backend error body maps to BAD_GATEWAY without public detai
     storageKey: STORAGE_KEY,
   };
   const providerDetails = "provider-request-id-and-object-key";
-  const fetchMock = vi
-    .fn<typeof fetch>()
-    .mockResolvedValue(
-      new Response(providerDetails, { status: CONFLICT_STATUS_CODE }),
-    );
-  vi.stubGlobal("fetch", fetchMock);
+  const handler = vi.fn<HttpResponseResolver>(
+    () => new HttpResponse(providerDetails, { status: CONFLICT_STATUS_CODE }),
+  );
+  server.use(http.post("https://backend.test/api/files/delete", handler));
   const request = new Request(FRONTEND_URL);
 
   await expect(
@@ -331,5 +348,5 @@ test("a non-contract backend error body maps to BAD_GATEWAY without public detai
     code: "BAD_GATEWAY",
     message: CONFIRM_DELETE_FAILURE_MESSAGE,
   });
-  expect(fetchMock).toHaveBeenCalledOnce();
+  expect(handler).toHaveBeenCalledOnce();
 });
