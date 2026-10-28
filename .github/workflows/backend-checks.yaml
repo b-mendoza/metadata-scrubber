@@ -36,12 +36,12 @@ jobs:
 
       - name: Run golangci-lint
         working-directory: ./backend
-        run: task lint:golangci
+        run: go tool task lint:golangci
         background: true
 
       - name: Run custom analyzers
         working-directory: ./backend
-        run: task lint:analyzers
+        run: go tool task lint:analyzers
         background: true
 
       - wait-all:
@@ -59,7 +59,7 @@ jobs:
 
       - name: Test
         working-directory: ./backend
-        run: task test
+        run: go tool task test
         background: true
 
       - name: Verify modules
@@ -103,4 +103,4 @@ jobs:
 
       - name: Run vulnerability scan
         working-directory: ./backend
-        run: task security
+        run: go tool task security
