@@ -50,12 +50,14 @@ Report code that conflicts with a choice instead of copying that code.
 
 - Export a schema-derived type beside its schema when tests need it. Tests then use the production contract.
 - Call tRPC procedures through `createCallerFactory` with the real router type. Reflection would lose the typed input and output checks.
-- Use MSW at network boundaries in unit tests to model realistic responses with less test setup code. Keep request construction and response handling in the test. Keep a direct fake only when it preserves behavior that MSW cannot test, such as exact injected errors or deterministic timeouts.
+- Use MSW at network boundaries in unit tests to model realistic responses with less test setup code. Keep request construction and response handling in the test. Keep a direct fake only when it preserves behavior that MSW cannot test, such as exact injected errors or deterministic timeouts. Do not use MSW to replace a running service in end-to-end tests.
 - Set MSW's `onUnhandledFrame` to `"error"` and reset handlers after each test. Check handler calls in failure tests so a missing handler cannot pass as the expected request failure.
 - Read or clone request bodies inside the MSW handler or retained fetch fake. Ky can consume the body before a later assertion reads it.
 - Capture a rejected error, then narrow it once with `expect.assert` before unconditional assertions. Apply this pattern in test helpers too. Conditional-expect lint does not check every helper.
 - Use `expect.assert` when a prerequisite assertion must narrow a TypeScript type. A Boolean matcher does not supply that narrowing.
 - Keep Vitest's failure for empty test discovery enabled. A suite with no tests must not pass.
+- Run end-to-end tests against the real frontend and backend services, not mocks. Mocks can produce false passes and false failures.
+- Start both services before running end-to-end tests. The suite starts no services. Its global setup checks both services at the Docker Compose ports before Chromium tests run.
 
 ## Components and functions
 
