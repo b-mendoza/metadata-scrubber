@@ -29,7 +29,7 @@ Developers build the frontend with [TanStack Start](https://tanstack.com/start) 
 - Developers keep cross-domain code under `src/shared/`. It contains `config`, `constants`, `libs` for tRPC and Ky, `middlewares`, and `utils`.
 - TanStack Router reads file-based routes from `src/routes/`. Developers keep API routes under `src/routes/api/`.
 - Developers keep test setup under `src/tests/` and shared test helpers under `src/tests/utils/`.
-- `e2e/` contains the Playwright tests and the global setup that checks both real services.
+- `e2e/` contains only the Playwright tests.
 - Module files use `.mod.ts` or `.mod.tsx`. Server-only modules use `.mod.server.ts`.
 - Source tests use `.test.ts` or `.test.tsx` and sit next to the code they test.
 - `tsconfig.app.json` maps the `#/` import alias to `src/`.
@@ -138,7 +138,7 @@ The root [architecture reference](../../docs/architecture.md) describes service 
 - Router transport tests check the dry-run and scrub total timeouts after a server-directed retry. They also cover config requests without retries, safe transport errors, and caller cancellation.
 - Health transport tests check the 3000 ms attempt timeout, no retry after that timeout, and the one-retry limit for status `502`. They do not test the 5000 ms total timeout or either 250 ms cap.
 - `playwright.config.ts` uses Playwright's default Chromium browser. The suite requires both real services at the Docker Compose ports and starts no services.
-- `e2e/global-setup.mod.ts` checks the frontend at `http://localhost:3000/` and the backend at `http://localhost:8080/api/health` once before the tests. These URLs use the Docker Compose ports. A failed request stops the suite with instructions to start both services.
+- The suite uses the frontend at `http://localhost:3000`. It has no global setup. A stopped frontend or backend service causes the test to fail.
 - The frontend server calls the real backend through `BACKEND_URL`.
 - The home-page test checks the title `Home`, the heading `Hello, world!`, and the visible text `reachable`.
 - The end-to-end suite does not cover the wizard because no route mounts `FileUploader`. It does not cover backend failure responses.

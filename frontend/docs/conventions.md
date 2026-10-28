@@ -57,7 +57,7 @@ Report code that conflicts with a choice instead of copying that code.
 - Use `expect.assert` when a prerequisite assertion must narrow a TypeScript type. A Boolean matcher does not supply that narrowing.
 - Keep Vitest's failure for empty test discovery enabled. A suite with no tests must not pass.
 - Run end-to-end tests against the real frontend and backend services, not mocks. Mocks can produce false passes and false failures.
-- Start both services before running end-to-end tests. The suite starts no services. Its global setup checks both services at the Docker Compose ports before Chromium tests run.
+- Start both services before running end-to-end tests. The suite starts no services.
 
 ## Components and functions
 
