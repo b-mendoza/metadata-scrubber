@@ -1,0 +1,4 @@
+#!/bin/sh
+# Git hooks call this script from the repository root. Exit 1 when go fails, so the hooks do not skip their jobs.
+bin=$(go -C backend tool -n lefthook) || exit 1
+exec "$bin" "$@"
