@@ -21,6 +21,7 @@ type OnUploadComplete = (result: { storageKey: string }) => void;
 const RETRY_UPLOAD_BUTTON_NAME = /retry upload/iv;
 const UPLOAD_ONE_FILE_BUTTON_NAME = /upload 1 file/iv;
 const EXPECTED_RETRY_REQUEST_COUNT = 2;
+const SAFE_FAILURE_ALERT = /^Could not upload the file\. Try again\. \?$/v;
 const TEST_MAX_FILE_SIZE_BYTES = 10_485_760;
 
 // A cross-origin PUT with a PDF body requires a CORS preflight.
@@ -90,6 +91,7 @@ test("a grant failure does not send a PUT or advance the wizard", async () => {
     }),
   ).toBeVisible();
   for (const alert of screen.getAllByRole("alert")) {
+    expect(alert).toHaveTextContent(SAFE_FAILURE_ALERT);
     expect(within(alert).getByRole("tooltip")).toHaveAccessibleName(
       "Could not create the upload. Try again.",
     );
@@ -152,6 +154,9 @@ test("a final direct PUT failure does not advance the wizard", async () => {
   expect(
     await screen.findByRole("button", { name: RETRY_UPLOAD_BUTTON_NAME }),
   ).toBeVisible();
+  for (const alert of screen.getAllByRole("alert")) {
+    expect(alert).toHaveTextContent(SAFE_FAILURE_ALERT);
+  }
   expect(onUploadComplete).not.toHaveBeenCalled();
 });
 
@@ -211,9 +216,13 @@ test("a manual retry gets a fresh grant and gives the wizard only the newest key
   await user.click(
     screen.getByRole("button", { name: UPLOAD_ONE_FILE_BUTTON_NAME }),
   );
-  await user.click(
-    await screen.findByRole("button", { name: RETRY_UPLOAD_BUTTON_NAME }),
-  );
+  const retryButton = await screen.findByRole("button", {
+    name: RETRY_UPLOAD_BUTTON_NAME,
+  });
+  for (const alert of screen.getAllByRole("alert")) {
+    expect(alert).toHaveTextContent(SAFE_FAILURE_ALERT);
+  }
+  await user.click(retryButton);
 
   await waitFor(() => {
     expect(onUploadComplete).toHaveBeenCalledExactlyOnceWith({
@@ -230,4 +239,60 @@ test("a manual retry gets a fresh grant and gives the wizard only the newest key
   expect.assert(secondInfo?.request instanceof Request);
   expect(firstInfo.request.url).toBe(responseOne.uploadUrl);
   expect(secondInfo.request.url).toBe(responseTwo.uploadUrl);
+});
+
+test("a terminal network failure keeps safe details", async () => {
+  const response: RouterOutputs["wizard"]["createUpload"] = {
+    storageKey: "uploads/00000000-0000-4000-8000-000000000016",
+    uploadUrl: "https://uploads.test/network-key",
+  };
+  const uploadResponse = Promise.withResolvers<null>();
+  const handler = vi.fn<HttpResponseResolver>(async () => {
+    await uploadResponse.promise;
+    return HttpResponse.error();
+  });
+  server.use(http.put(response.uploadUrl, handler));
+  const createUpload = vi.fn<CreateUpload>().mockResolvedValue(response);
+  const onUploadComplete = vi.fn<OnUploadComplete>();
+  const file = new File(["pdf"], "report.pdf", {
+    type: "application/pdf",
+  });
+  const { user } = renderComponent(
+    <FileUploader
+      createUpload={createUpload}
+      maxFileSizeBytes={TEST_MAX_FILE_SIZE_BYTES}
+      onUploadComplete={onUploadComplete}
+    />,
+  );
+  const fileInput = await getFileInput(user);
+
+  await user.upload(fileInput, file);
+  await user.click(
+    screen.getByRole("button", { name: UPLOAD_ONE_FILE_BUTTON_NAME }),
+  );
+  await waitFor(() => {
+    expect(handler).toHaveBeenCalledOnce();
+  });
+
+  // Date must advance with timers so Dashboard debounce timers can finish.
+  vi.useFakeTimers({ toFake: ["setTimeout", "clearTimeout", "Date"] });
+  await act(async () => {
+    uploadResponse.resolve(null);
+    await vi.runAllTimersAsync();
+  });
+  vi.useRealTimers();
+
+  expect(
+    await screen.findByRole("button", { name: RETRY_UPLOAD_BUTTON_NAME }),
+  ).toBeVisible();
+  expect(
+    screen.getByRole("button", { name: "Network error during S3 request" }),
+  ).toBeVisible();
+  for (const alert of screen.getAllByRole("alert")) {
+    expect(alert).toHaveTextContent(SAFE_FAILURE_ALERT);
+    expect(within(alert).getByRole("tooltip")).toHaveAccessibleName(
+      "Network error during S3 request",
+    );
+  }
+  expect(onUploadComplete).not.toHaveBeenCalled();
 });

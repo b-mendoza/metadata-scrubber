@@ -52,6 +52,14 @@ const useUppyDashboard = (props: FileUploaderProps) => {
       },
     });
 
+    instance.setOptions({
+      locale: {
+        strings: {
+          failedToUpload: "Could not upload the file. Try again.",
+        },
+      },
+    });
+
     instance.use(AwsS3, {
       generateObjectKey: (file) => file.id,
       shouldUseMultipart: false,
