@@ -1,6 +1,27 @@
-import { afterEach, beforeEach, expect, test, vi } from "vitest";
+import type { HttpResponseResolver } from "msw";
+import { http, HttpResponse } from "msw";
+import { setupServer } from "msw/node";
+import {
+  afterAll,
+  afterEach,
+  beforeAll,
+  beforeEach,
+  expect,
+  test,
+  vi,
+} from "vitest";
 
 import { appBindingsMiddleware, getAppBindings } from "./app-bindings.mod";
+
+const server = setupServer();
+
+beforeAll(() => {
+  server.listen({ onUnhandledFrame: "error" });
+});
+
+afterAll(() => {
+  server.close();
+});
 
 beforeEach(() => {
   vi.stubEnv("BACKEND_URL", "https://backend.test/");
@@ -9,6 +30,7 @@ beforeEach(() => {
 
 afterEach(() => {
   vi.unstubAllEnvs();
+  server.resetHandlers();
 });
 
 test.each([
@@ -71,10 +93,10 @@ test.each([
         Cookie: "private=value",
       },
     });
-    const fetchMock = vi
-      .fn<typeof fetch>()
-      .mockResolvedValue(new Response(null));
-    vi.stubGlobal("fetch", fetchMock);
+    const handlerResponse = vi.fn<HttpResponseResolver>(
+      () => new HttpResponse(null),
+    );
+    server.use(http.get("https://backend.test/api/config", handlerResponse));
     const handler = appBindingsMiddleware.options.server;
     expect.assert(handler != null);
     const completed = new Error("The outbound request is complete");
@@ -95,12 +117,16 @@ test.each([
       }),
     ).rejects.toBe(completed);
 
-    const [[outgoing] = []] = fetchMock.mock.calls;
-    expect.assert(outgoing instanceof Request);
-    expect(outgoing.headers.get("X-POSTHOG-DISTINCT-ID")).toBe(distinctId);
-    expect(outgoing.headers.get("X-POSTHOG-SESSION-ID")).toBe(sessionId);
-    expect(outgoing.headers.has("Authorization")).toBe(false);
-    expect(outgoing.headers.has("Cookie")).toBe(false);
+    const [[handlerInfo] = []] = handlerResponse.mock.calls;
+    expect.assert(handlerInfo?.request instanceof Request);
+    expect(handlerInfo.request.headers.get("X-POSTHOG-DISTINCT-ID")).toBe(
+      distinctId,
+    );
+    expect(handlerInfo.request.headers.get("X-POSTHOG-SESSION-ID")).toBe(
+      sessionId,
+    );
+    expect(handlerInfo.request.headers.has("Authorization")).toBe(false);
+    expect(handlerInfo.request.headers.has("Cookie")).toBe(false);
   },
 );
 
@@ -111,8 +137,10 @@ test("health calls never forward incoming PostHog IDs", async () => {
       "X-POSTHOG-SESSION-ID": "session-a",
     },
   });
-  const fetchMock = vi.fn<typeof fetch>().mockResolvedValue(new Response(null));
-  vi.stubGlobal("fetch", fetchMock);
+  const handlerResponse = vi.fn<HttpResponseResolver>(
+    () => new HttpResponse(null),
+  );
+  server.use(http.get("https://backend.test/api/health", handlerResponse));
   const handler = appBindingsMiddleware.options.server;
   expect.assert(handler != null);
   const completed = new Error("The outbound request is complete");
@@ -133,8 +161,8 @@ test("health calls never forward incoming PostHog IDs", async () => {
     }),
   ).rejects.toBe(completed);
 
-  const [[outgoing] = []] = fetchMock.mock.calls;
-  expect.assert(outgoing instanceof Request);
-  expect(outgoing.headers.has("X-POSTHOG-DISTINCT-ID")).toBe(false);
-  expect(outgoing.headers.has("X-POSTHOG-SESSION-ID")).toBe(false);
+  const [[handlerInfo] = []] = handlerResponse.mock.calls;
+  expect.assert(handlerInfo?.request instanceof Request);
+  expect(handlerInfo.request.headers.has("X-POSTHOG-DISTINCT-ID")).toBe(false);
+  expect(handlerInfo.request.headers.has("X-POSTHOG-SESSION-ID")).toBe(false);
 });
