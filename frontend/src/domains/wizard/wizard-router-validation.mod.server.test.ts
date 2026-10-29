@@ -4,6 +4,17 @@ import { http, HttpResponse } from "msw";
 import { setupServer } from "msw/node";
 import { afterAll, afterEach, beforeAll, expect, test, vi } from "vitest";
 
+import type { BackendErrorResponse } from "#/domains/wizard/wizard-contracts.mod.server";
+import { scrubFileInputSchema } from "#/domains/wizard/wizard-contracts.mod.server";
+import {
+  CONFIRM_DELETE_FAILURE_MESSAGE,
+  CREATE_UPLOAD_FAILURE_MESSAGE,
+  DRY_RUN_FAILURE_MESSAGE,
+  REFRESH_DOWNLOAD_GRANT_FAILURE_MESSAGE,
+  SCRUB_FILE_FAILURE_MESSAGE,
+  wizardRouter,
+  WORKFLOW_CONFIG_FAILURE_MESSAGE,
+} from "#/domains/wizard/wizard-router.mod.server";
 import {
   BAD_GATEWAY_STATUS_CODE,
   BAD_REQUEST_STATUS_CODE,
@@ -22,18 +33,6 @@ import {
   createTRPCRequestContext,
 } from "#/shared/libs/trpc/utils/initializer/initializer.mod.server";
 import { getAppBindings } from "#/shared/middlewares/app-bindings/app-bindings.mod";
-
-import type { BackendErrorResponse } from "./wizard-contracts.mod.server";
-import { scrubFileInputSchema } from "./wizard-contracts.mod.server";
-import {
-  CONFIRM_DELETE_FAILURE_MESSAGE,
-  CREATE_UPLOAD_FAILURE_MESSAGE,
-  DRY_RUN_FAILURE_MESSAGE,
-  REFRESH_DOWNLOAD_GRANT_FAILURE_MESSAGE,
-  SCRUB_FILE_FAILURE_MESSAGE,
-  wizardRouter,
-  WORKFLOW_CONFIG_FAILURE_MESSAGE,
-} from "./wizard-router.mod.server";
 
 const server = setupServer();
 
