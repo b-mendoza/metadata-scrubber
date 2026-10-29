@@ -9,6 +9,13 @@ Report code that conflicts with a choice instead of copying that code.
 - Use `#/` for imports from `src/`. The alias does not depend on the caller's directory.
 - Review module initialization before removing the last runtime import. Keep a side-effect import when initialization is required. Type-only imports do not execute the module.
 
+The workflow Ky client uses this split:
+
+```ts
+import type { KyInstance, RetryOptions, ShouldRetryState } from "ky";
+import ky, { HTTPError } from "ky";
+```
+
 ## Server code
 
 - Keep the frontend server a thin proxy to the Go backend. Send small JSON contracts through tRPC procedures, not file bytes. Concurrent file buffers multiply memory use.
@@ -27,6 +34,53 @@ Report code that conflicts with a choice instead of copying that code.
 - Use `async`/`await` without the result library in `scripts/hard-clean.ts` and `scripts/soft-clean.ts`. These scripts must run without installed dependencies.
 - Use `ResultAsync.fromPromise` when a server handler intentionally maps a dependency failure. Map the failure at the operation, not around the whole handler. This keeps unrelated programming errors out of that mapping.
 - Follow the `getMessage` failure pattern in `src/domains/products/products-router.mod.server.ts`. Await the `ResultAsync`, check `isErr()`, and throw its error at the route or tRPC boundary before returning its value. Explicit checks keep the failure path visible.
+
+```ts
+const backendHealthStatusResult = await ResultAsync.fromPromise(
+  httpClient
+    .get(BACKEND_HEALTH_STATUS_ENDPOINT, {
+      signal: signal ?? null,
+    })
+    .json(messageResponseSchema),
+  (cause: unknown) =>
+    new TRPCError({
+      cause,
+      code: "BAD_GATEWAY",
+      message: BACKEND_HEALTH_CHECK_FAILURE_MESSAGE,
+    }),
+);
+
+if (backendHealthStatusResult.isErr()) {
+  throw backendHealthStatusResult.error;
+}
+
+return backendHealthStatusResult.value;
+```
+
+Do not catch the dependency failure around the whole handler:
+
+```ts
+try {
+  return await httpClient
+    .get(BACKEND_HEALTH_STATUS_ENDPOINT, {
+      signal: signal ?? null,
+    })
+    .json(messageResponseSchema);
+} catch (cause) {
+  throw new TRPCError({
+    cause,
+    code: "BAD_GATEWAY",
+    message: BACKEND_HEALTH_CHECK_FAILURE_MESSAGE,
+  });
+}
+```
+
+| API                       | Use it when                                                                          | Example                                                                       |
+| ------------------------- | ------------------------------------------------------------------------------------ | ----------------------------------------------------------------------------- |
+| `ResultAsync.fromPromise` | Map a promise rejection to a known error value with the original failure in `cause`. | `src/domains/products/products-router.mod.server.ts`, `getMessage`            |
+| `isErr()`                 | Check a result before reading its error or value.                                    | `src/domains/products/products-router.mod.server.ts`, `getMessage`            |
+| `safeParse`               | Validate a value without throwing and branch on `success`.                           | `src/domains/wizard/wizard-router.mod.server.ts`, `mapWorkflowRequestFailure` |
+
 - Leave schema validation with tRPC `.input()` and Ky `.json()` when those APIs own the call. Let direct boundary `.parse()` calls throw unless the handler intentionally maps their failure. A second wrapper would add another failure owner.
 - Review discarded synchronous `Result` values and awaited `ResultAsync` values whose inner result is ignored. Thenable lint checks do not prove that the code handles the result.
 
