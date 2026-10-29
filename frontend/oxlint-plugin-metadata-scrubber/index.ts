@@ -11,6 +11,7 @@ import noSilentTestPrerequisite from "./rules/no-silent-test-prerequisite.ts";
 import noTestLocalObjectType from "./rules/no-test-local-object-type.ts";
 import requireColocatedTest from "./rules/require-colocated-test.ts";
 import requireModuleFileName from "./rules/require-module-file-name.ts";
+import requireStrictMswServer from "./rules/require-strict-msw-server.ts";
 import separateTypeImports from "./rules/separate-type-imports.ts";
 import useEffectInCustomHook from "./rules/use-effect-in-custom-hook.ts";
 import useSharedRenderHelper from "./rules/use-shared-render-helper.ts";
@@ -31,6 +32,7 @@ export default definePlugin({
     "no-test-local-object-type": noTestLocalObjectType,
     "require-colocated-test": requireColocatedTest,
     "require-module-file-name": requireModuleFileName,
+    "require-strict-msw-server": requireStrictMswServer,
     "separate-type-imports": separateTypeImports,
     "use-effect-in-custom-hook": useEffectInCustomHook,
     "use-shared-render-helper": useSharedRenderHelper,
