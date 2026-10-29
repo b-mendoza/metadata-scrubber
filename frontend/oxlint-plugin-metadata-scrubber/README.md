@@ -12,6 +12,8 @@ This plugin encodes the project's coding standards as enforceable Oxlint rules. 
 
 `check-fixtures.ts` uses `fixture.config.json`, not the main Oxlint config. It checks that each positive fixture has no diagnostics from the rule under test. It compares the exact ordered negative messages. It validates the tool output, including `diagnostics` and a positive `number_of_files`. It rejects diagnostic text with leading or trailing whitespace. The fixture check runs separately from the main lint and test checks.
 
+Directory fixtures run from their own root, so their `src/` paths match real source paths. Single-file fixtures still run from the frontend root. The check validates each diagnostic file name and sorts diagnostics by file name. It keeps message order within each file.
+
 ## Rules
 
 - `no-classes` requires plain functions and objects instead of class declarations and class expressions. It also rejects classes that extend `Error`.
