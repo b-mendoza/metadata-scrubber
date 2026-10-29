@@ -3,6 +3,7 @@ import { definePlugin } from "@oxlint/plugins";
 import noClasses from "./rules/no-classes.ts";
 import noExpectTypeOf from "./rules/no-expect-type-of.ts";
 import noLifecycleHookNames from "./rules/no-lifecycle-hook-names.ts";
+import noModuleScopeHttpClient from "./rules/no-module-scope-http-client.ts";
 import noMutableModuleStateInServerCode from "./rules/no-mutable-module-state-in-server-code.ts";
 import noQueryClientProps from "./rules/no-query-client-props.ts";
 import noSilentTestPrerequisite from "./rules/no-silent-test-prerequisite.ts";
@@ -21,6 +22,7 @@ export default definePlugin({
     "no-classes": noClasses,
     "no-expect-type-of": noExpectTypeOf,
     "no-lifecycle-hook-names": noLifecycleHookNames,
+    "no-module-scope-http-client": noModuleScopeHttpClient,
     "no-mutable-module-state-in-server-code": noMutableModuleStateInServerCode,
     "no-query-client-props": noQueryClientProps,
     "no-silent-test-prerequisite": noSilentTestPrerequisite,

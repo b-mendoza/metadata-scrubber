@@ -90,7 +90,20 @@ export const toProjectPath = (filename: string, cwd: string): string => {
     ? normalizedFilename.slice(prefix.length)
     : normalizedFilename;
 };
+
+const APP_BINDINGS_MODULE =
+  "#/shared/middlewares/app-bindings/app-bindings.mod";
 const EMPTY_ITEM_COUNT = 0;
+
+type HttpBindingKind =
+  | "app-bindings-module"
+  | "bindings-getter"
+  | "bindings"
+  | "backend-client"
+  | "ky-module"
+  | "ky"
+  | "factory-module"
+  | "factory";
 
 const unwrapHttpExpression = (node: ESTree.Node): ESTree.Node => {
   if (
@@ -104,6 +117,24 @@ const unwrapHttpExpression = (node: ESTree.Node): ESTree.Node => {
     return unwrapHttpExpression(node.expression);
   }
   return node;
+};
+
+const HTTP_MEMBER_KINDS: Partial<
+  Record<HttpBindingKind, Readonly<Record<string, HttpBindingKind>>>
+> = {
+  "app-bindings-module": { getAppBindings: "bindings-getter" },
+  "ky-module": { default: "ky" },
+  ky: { create: "factory", extend: "factory" },
+};
+
+const getHttpMemberKind = (
+  objectKind: HttpBindingKind | null,
+  property: string | null,
+): HttpBindingKind | null => {
+  if (objectKind == null || property == null) return null;
+  if (objectKind === "bindings") return "backend-client";
+  if (objectKind === "factory-module") return "factory";
+  return HTTP_MEMBER_KINDS[objectKind]?.[property] ?? null;
 };
 
 const getTemplatePrefix = (node: ESTree.TemplateLiteral): string | null => {
@@ -140,6 +171,122 @@ const getRuntimeImportDeclaration = (
     return null;
   }
   return declaration;
+};
+
+const getHttpImportKind = (definition: Definition): HttpBindingKind | null => {
+  const declaration = getRuntimeImportDeclaration(definition);
+  if (declaration == null) return null;
+  const moduleKind = getHttpImportModuleKind(declaration.source.value);
+  const specifier = definition.node;
+  if (specifier.type === "ImportNamespaceSpecifier") return moduleKind;
+  const member =
+    specifier.type === "ImportSpecifier" ? specifier.imported : null;
+  const name = member?.type === "Identifier" ? member.name : member?.value;
+  return getHttpMemberKind(moduleKind, name ?? "default");
+};
+
+const getHttpImportModuleKind = (source: string): HttpBindingKind | null => {
+  if (source === "ky") return "ky-module";
+  if (source === APP_BINDINGS_MODULE) return "app-bindings-module";
+  return source.startsWith("#/shared/libs/ky/") ? "factory-module" : null;
+};
+
+const getConstInitializedDeclarator = (
+  definition: Definition,
+): {
+  node: ESTree.VariableDeclarator;
+  initializer: ESTree.Expression;
+} | null => {
+  const { node, parent } = definition;
+  if (
+    node.type !== "VariableDeclarator" ||
+    parent?.type !== "VariableDeclaration" ||
+    parent.kind !== "const" ||
+    node.init == null
+  ) {
+    return null;
+  }
+  return { node, initializer: node.init };
+};
+
+const getDestructuredHttpKind = ({
+  definition,
+  name,
+  sourceCode,
+  seen,
+}: {
+  definition: Definition;
+  name: string;
+  sourceCode: SourceCode;
+  seen: Set<Variable>;
+}): HttpBindingKind | null => {
+  const declaration = getConstInitializedDeclarator(definition);
+  if (
+    definition.type !== "Variable" ||
+    declaration?.node.id.type !== "ObjectPattern"
+  ) {
+    return null;
+  }
+  const property = declaration.node.id.properties.find(
+    (candidate) =>
+      candidate.type === "Property" &&
+      candidate.value.type === "Identifier" &&
+      candidate.value.name === name,
+  );
+  if (property?.type !== "Property") return null;
+  return getHttpMemberKind(
+    getHttpBindingKind(declaration.initializer, sourceCode, seen),
+    getHttpPropertyName(property),
+  );
+};
+
+const getHttpVariableKind = (
+  variable: Variable,
+  sourceCode: SourceCode,
+  seen: Set<Variable>,
+): HttpBindingKind | null => {
+  for (const definition of variable.defs) {
+    const imported = getHttpImportKind(definition);
+    if (imported != null) return imported;
+    const initializer = getConstDeclaratorInitializer(definition);
+    if (initializer != null) {
+      return getHttpBindingKind(initializer, sourceCode, seen);
+    }
+    const destructured = getDestructuredHttpKind({
+      definition,
+      name: variable.name,
+      sourceCode,
+      seen,
+    });
+    if (destructured != null) return destructured;
+  }
+  return null;
+};
+
+// Follow local const aliases only. Cross-file and mutable data flow need type analysis.
+export const getHttpBindingKind = (
+  expression: ESTree.Node,
+  sourceCode: SourceCode,
+  seen = new Set<Variable>(),
+): HttpBindingKind | null => {
+  const node = unwrapHttpExpression(expression);
+  if (node.type === "CallExpression") {
+    return getHttpBindingKind(node.callee, sourceCode, seen) ===
+      "bindings-getter"
+      ? "bindings"
+      : null;
+  }
+  if (node.type === "MemberExpression") {
+    return getHttpMemberKind(
+      getHttpBindingKind(node.object, sourceCode, seen),
+      getStaticPropertyName(node),
+    );
+  }
+  if (node.type !== "Identifier") return null;
+  const variable = getReferencedVariable(node, sourceCode);
+  if (variable == null || seen.has(variable)) return null;
+  seen.add(variable);
+  return getHttpVariableKind(variable, sourceCode, seen);
 };
 
 type QueryBindingKind =

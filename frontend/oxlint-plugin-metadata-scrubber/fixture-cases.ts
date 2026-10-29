@@ -74,6 +74,22 @@ export const fixtureCases: readonly FixtureCase[] = [
     ],
   ],
   [
+    "no-module-scope-http-client",
+    "no-module-scope-http-client.ts",
+    [
+      "`request.create` creates an HTTP client at module scope. Create clients in `appBindingsMiddleware` for each request and read them with `getAppBindings()`.",
+      "`request.extend` creates an HTTP client at module scope. Create clients in `appBindingsMiddleware` for each request and read them with `getAppBindings()`.",
+      "`alias.create` creates an HTTP client at module scope. Create clients in `appBindingsMiddleware` for each request and read them with `getAppBindings()`.",
+      "`buildClient` creates an HTTP client at module scope. Create clients in `appBindingsMiddleware` for each request and read them with `getAppBindings()`.",
+      "`buildAgain` creates an HTTP client at module scope. Create clients in `appBindingsMiddleware` for each request and read them with `getAppBindings()`.",
+      "`workflow.createWorkflowHttpClient` creates an HTTP client at module scope. Create clients in `appBindingsMiddleware` for each request and read them with `getAppBindings()`.",
+      "`kyModule.default.create` creates an HTTP client at module scope. Create clients in `appBindingsMiddleware` for each request and read them with `getAppBindings()`.",
+      "`request.extend` creates an HTTP client at module scope. Create clients in `appBindingsMiddleware` for each request and read them with `getAppBindings()`.",
+      "`makeClient` creates an HTTP client at module scope. Create clients in `appBindingsMiddleware` for each request and read them with `getAppBindings()`.",
+    ],
+  ],
+  ["no-module-scope-http-client", "no-module-scope-http-client.test.ts", []],
+  [
     "no-mutable-module-state-in-server-code",
     "mutable-module-state.server.ts",
     [
