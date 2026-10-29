@@ -712,11 +712,22 @@ Do not wrap a one-off call in an immediately invoked function.
 
 ## File names
 
-- Name source modules `*.mod.ts`, or `*.mod.tsx` when they contain JSX. This marks modules as different from route files.
-- Name server-only modules `*.mod.server.ts`. The server suffix keeps them out of browser bundles.
-- Name tests `*.test.ts` or `*.test.tsx`. Use `*.server.test.ts` for server tests so Vitest runs them in Node instead of a DOM environment.
-- Put each test beside its module. Keep `src/tests/` for setup and shared helpers. This keeps behavior tests beside the code they check.
-- Regenerate `src/routeTree.gen.ts` after route changes instead of editing it. The route generator replaces manual changes.
+Name source modules `*.mod.ts`, or `*.mod.tsx` when they contain JSX.
+Name server-only modules `*.mod.server.ts`.
+Name tests `*.test.ts` or `*.test.tsx`. Use `*.server.test.ts` for server tests.
+Put each test beside its module. Keep `src/tests/` for setup and shared helpers.
+
+```
+src/domains/products/products-router.mod.server.ts
+src/domains/products/products-router.mod.server.test.ts
+src/domains/wizard/components/file-uploader/file-uploader.mod.tsx
+src/domains/wizard/components/file-uploader/file-uploader.mod.test.tsx
+src/routes/index.tsx
+src/tests/setup-test-environment.ts
+src/tests/utils/file-input/file-input.mod.ts
+```
+
+Regenerate `src/routeTree.gen.ts` after route changes. Do not edit that file.
 
 ## Lint rules and checks
 
