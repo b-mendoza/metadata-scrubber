@@ -25,6 +25,17 @@ Use the package manager and version declared by the project manifest.
 - Follow the [decided frontend conventions](docs/conventions.md) in new and changed code. Report mismatches.
 - Treat route data as optional. Do not await it in a `loader`. Read it with `useSuspenseQuery` inside `Suspense`. A child component must call `trpcContext.useTRPC()` and `useQueryClient`. Do not pass those clients as props except during `TRPCProvider` setup.
 
+```ts
+const trpc = trpcContext.useTRPC();
+const queryClient = useQueryClient();
+```
+
+Do not pass those clients into a child:
+
+```tsx
+function Message({ trpc }: { trpc: TRPCOptionsProxy<AppRouter> }) {
+```
+
 ## Factual references
 
 These references describe current facts. Check them against the code.
