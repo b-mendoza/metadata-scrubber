@@ -318,19 +318,14 @@ await ResultAsync.fromPromise(/* ... */);
 
 ## Route data
 
-- Treat every piece of route data as optional.
-- Do not `await` a data request in a `loader`. If the `loader` waits, the user cannot move to another route. A user who opens the app from another site also waits. The route cannot render until every waiting request finishes.
-- Start each query without waiting. Do not return that promise from the `loader`. The `.catch` stops a promise error that no other code handles. The component that reads the query uses the cache.
-
-Loader:
+Treat every piece of route data as optional. Optional data can prefetch in the `loader`. The route can render before the query finishes. TanStack Query calls this prefetching: fill the cache ahead of time and do not wait for the result. See [Prefetching & Router Integration](https://tanstack.com/query/latest/docs/framework/react/guides/prefetching).
+Start each query in the `loader` without waiting. Do not return that promise. The `.catch` stops a promise error that no other code handles.
 
 ```ts
-import { createFileRoute } from "@tanstack/react-router";
-
 export const Route = createFileRoute("/")({
   component: IndexRoute,
-  loader(loaderFunctionContext) {
-    const { queryClient, trpc } = loaderFunctionContext.context;
+  loader({ context }) {
+    const { queryClient, trpc } = context;
 
     void queryClient
       .query(trpc.products.getMessage.queryOptions())
@@ -339,19 +334,17 @@ export const Route = createFileRoute("/")({
 });
 ```
 
-Do not await the query:
+Do not `await` the query in the `loader`. The user cannot move to another route until every waiting request finishes.
 
 ```ts
 await queryClient.query(trpc.products.getMessage.queryOptions());
 ```
 
-- Read query data with `useSuspenseQuery` only. Do not use `useQuery`.
-- Put the data fetch in a child component. Wrap that child in a `Suspense` boundary with a `fallback`. The route then shows a static shell first. The shell is the page content that does not wait for the query. The user can use the page while data loads. This stops LCP, INP, and CLS from getting worse. Those names are page-speed scores.
-- Put the loading UI in the `fallback`. Do not use loading flags. Do not write extra checks for missing data while it loads.
+Read query data with `useSuspenseQuery` only.
+Put the fetch in a child component. Wrap that child in a `Suspense` boundary. Put the loading UI in the `fallback`.
+The route then shows a static shell first. The shell is the page content that does not wait for the query. The user can use the page while data loads. If the route waits for the query, LCP, INP, and CLS can get worse. Those three names are Core Web Vitals.
 
 ```tsx
-import { Suspense } from "react";
-
 function IndexRoute() {
   return (
     <>
@@ -363,37 +356,57 @@ function IndexRoute() {
     </>
   );
 }
-```
 
-Do not read the query with `useQuery`:
-
-```tsx
-const messageQuery = useQuery(trpc.products.getMessage.queryOptions());
-```
-
-- Review the actual parent `Suspense` and error boundaries, data needs, and retry behavior. Include parents in other files. Add a loader only when the route needs one. Import rules cannot check these relationships.
-- Do not mark route data as required. The operator decides that. An agent may mark data as required only when a later fetch needs that first result. Await only that first fetch. Keep the later fetches optional.
-
-A page that needs a signed-in user first fetches that user's data. Later fetches use that user. The user fetch is required. The later fetches stay optional.
-
-- Read `trpc` and `queryClient` from loader context in a `loader`.
-- One route file must use one source for the clients. In that file, a route component and any regular component (for example `Message` in `src/routes/index.tsx`) must read both clients from `Route.useRouteContext()`. Do not import `trpcContext` in a route file.
-
-```tsx
 const Message = () => {
-  const { trpc, queryClient } = Route.useRouteContext();
-
+  const { trpc } = Route.useRouteContext();
   const messageQuery = useSuspenseQuery(
     trpc.products.getMessage.queryOptions(),
   );
 
-  const message = messageQuery.data.status;
-
-  return <div>{message}</div>;
+  return <div>{messageQuery.data.status}</div>;
 };
 ```
 
-Do not import `trpcContext` in a route file:
+Do not read the query with `useQuery`. Do not use loading flags or extra checks for missing data while it loads.
+
+```tsx
+const messageQuery = useQuery(trpc.products.getMessage.queryOptions());
+if (messageQuery.isLoading) {
+  return <div>Loading...</div>;
+}
+```
+
+Read parent `Suspense` and error boundaries, including parents in other files, before you add a loader. Import rules cannot check those relationships.
+
+Do not mark route data as required. The operator decides that.
+An agent may await a first fetch only when a later fetch needs that result. Keep the later fetches optional. `firstQueryOptions` and `laterQueryOptions` are placeholders. This app has no such queries today.
+
+```ts
+loader({ context }) {
+  const { queryClient } = context;
+  const required = await queryClient.ensureQueryData(firstQueryOptions);
+
+  void queryClient
+    .query(laterQueryOptions(required))
+    .catch(() => null);
+}
+```
+
+Read `trpc` and `queryClient` from loader context in a `loader`.
+In a route file, the route component and any regular component in that file read both clients from `Route.useRouteContext()`.
+
+```tsx
+const Message = () => {
+  const { trpc, queryClient } = Route.useRouteContext();
+  const messageQuery = useSuspenseQuery(
+    trpc.products.getMessage.queryOptions(),
+  );
+
+  return <div>{messageQuery.data.status}</div>;
+};
+```
+
+Do not import `trpcContext` in a route file.
 
 ```tsx
 import { trpcContext } from "#/shared/libs/trpc/client/client-runtime.mod";
@@ -402,7 +415,7 @@ const Message = () => {
   const trpc = trpcContext.useTRPC();
 ```
 
-- When a component lives in its own file, not a route file, import `trpcContext` from `#/shared/libs/trpc/client/client-runtime.mod` and call `trpcContext.useTRPC()`. Import `useQueryClient` from `@tanstack/react-query` when that file needs `queryClient`.
+When a component lives in its own file, import `trpcContext` and `useQueryClient`.
 
 ```tsx
 import { useQueryClient } from "@tanstack/react-query";
@@ -421,9 +434,15 @@ const Example = () => {
 };
 ```
 
-- Pass `trpc` and `queryClient` as props only during `TRPCProvider` setup. Do not pass these clients to child components.
+Pass `trpc` and `queryClient` as props only during `TRPCProvider` setup.
 
-Do not pass the clients to a child as props:
+```tsx
+<trpcContext.TRPCProvider trpcClient={trpcClient} queryClient={queryClient}>
+  {children}
+</trpcContext.TRPCProvider>
+```
+
+Do not pass these clients to child components.
 
 ```tsx
 <Message trpc={trpc} queryClient={queryClient} />
