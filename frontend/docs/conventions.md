@@ -349,15 +349,6 @@ const Message = () => {
 };
 ```
 
-Do not read the query with `useQuery`. Do not use loading flags or extra checks for missing data while it loads.
-
-```tsx
-const messageQuery = useQuery(trpc.products.getMessage.queryOptions());
-if (messageQuery.isLoading) {
-  return <div>Loading...</div>;
-}
-```
-
 Read parent `Suspense` and error boundaries, including parents in other files, before you add a loader. Import rules cannot check those relationships.
 
 Do not mark route data as required. The operator decides that.
