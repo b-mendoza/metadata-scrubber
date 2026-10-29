@@ -2,6 +2,10 @@ import { defineConfig } from "eslint/config";
 import globals from "globals";
 
 import { PLUGIN_NAMES, SEVERITY_LEVELS } from "./constants.ts";
+import {
+  restrictedImportPatterns,
+  restrictedQueryImports,
+} from "./import-restriction-rules.ts";
 import { restrictedSyntax } from "./syntax-rules.ts";
 
 export const toolingRules = defineConfig(
@@ -65,6 +69,17 @@ export const toolingRules = defineConfig(
       [`${PLUGIN_NAMES.Unicorn}/no-top-level-side-effects`]: [
         SEVERITY_LEVELS.Error,
         { allow: { "@oxlint/plugins": ["defineRule"] } },
+      ],
+    },
+  },
+  {
+    files: ["scripts/**"],
+    ignores: ["**/*.test.ts", "**/*.test.tsx"],
+    rules: {
+      // Scripts can use ResultAsync without adding it to browser or test code.
+      "no-restricted-imports": [
+        SEVERITY_LEVELS.Error,
+        { paths: restrictedQueryImports, patterns: restrictedImportPatterns },
       ],
     },
   },
