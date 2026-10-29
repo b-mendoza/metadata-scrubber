@@ -4,8 +4,21 @@ set -euo pipefail
 
 cd "$(dirname "$0")/.."
 
-# A PATH pnpm can be a Corepack shim; a prompt would block non-interactive setup.
-export COREPACK_ENABLE_DOWNLOAD_PROMPT=0
+# The standalone pnpm binary does not need Node.js. pnpm then installs the
+# Node.js version that frontend/package.json declares.
+PNPM_HOME="${PNPM_HOME:-${HOME}/.local/share/pnpm}"
+export PNPM_HOME
+if [[ ":${PATH}:" != *":${PNPM_HOME}/bin:"* ]]; then
+    export PATH="${PNPM_HOME}/bin:${PATH}"
+fi
+if [[ ":${PATH}:" != *":${PNPM_HOME}:"* ]]; then
+    export PATH="${PNPM_HOME}:${PATH}"
+fi
+
+if [[ ! -x "${PNPM_HOME}/pnpm" && ! -x "${PNPM_HOME}/bin/pnpm" ]]; then
+    curl -fsSL https://get.pnpm.io/install.sh | sh -
+fi
+
 pnpm --dir frontend install --frozen-lockfile
 
 # Fill the shared Go module cache so later Go commands work without network access.

@@ -1,30 +1,25 @@
 #!/usr/bin/env bash
-# Bootstrap Node tooling and run the project smoke test suite.
+# Install the project's pnpm and Node.js versions, then run the smoke test suite.
 set -euo pipefail
 
 # Resolve the frontend root from this script location so it can be run from anywhere.
 FRONTEND_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "${FRONTEND_ROOT}"
 
-# Ensure fnm's install directory is on PATH (idempotent – avoids duplicate entries).
-FNM_PATH="${FNM_PATH:-$HOME/.local/share/fnm}"
-if [[ ":${PATH}:" != *":${FNM_PATH}:"* ]]; then
-    export PATH="${FNM_PATH}:${PATH}"
+# The standalone pnpm binary does not need Node.js. pnpm then installs the
+# Node.js version that package.json declares.
+PNPM_HOME="${PNPM_HOME:-${HOME}/.local/share/pnpm}"
+export PNPM_HOME
+if [[ ":${PATH}:" != *":${PNPM_HOME}/bin:"* ]]; then
+    export PATH="${PNPM_HOME}/bin:${PATH}"
+fi
+if [[ ":${PATH}:" != *":${PNPM_HOME}:"* ]]; then
+    export PATH="${PNPM_HOME}:${PATH}"
 fi
 
-# Install fnm (Fast Node Manager) if not already available.
-if ! command -v fnm &>/dev/null; then
-    curl -fsSL https://fnm.vercel.app/install | bash -s -- --skip-shell
+if [[ ! -x "${PNPM_HOME}/pnpm" && ! -x "${PNPM_HOME}/bin/pnpm" ]]; then
+    curl -fsSL https://get.pnpm.io/install.sh | sh -
 fi
-
-# Activate fnm's Node version management for this session.
-eval "$(fnm env --shell bash)"
-
-# Install and use the Node.js version required by this project (.nvmrc).
-fnm use --install-if-missing
-
-corepack enable pnpm
-corepack install
 
 pnpm install --frozen-lockfile
 
