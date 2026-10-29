@@ -13,7 +13,7 @@
 
 ## Worktree setup
 
-`scripts/setup-worktree.sh` installs frontend dependencies with `pnpm install --frozen-lockfile`. `pnpm` and `go` must be on PATH. The script also runs `go -C backend mod download`. This command downloads all modules in `backend/go.mod`, including the Go tools, into the Go module cache. Later Go commands can then run without network access, for example in an agent sandbox. Run the script from the repository root with `bash scripts/setup-worktree.sh`.
+`scripts/setup-worktree.sh` installs the standalone `pnpm` binary when that copy is missing. `pnpm` then reads `frontend/package.json` and installs the pinned `pnpm` and Node.js versions. The script installs frontend dependencies with `pnpm install --frozen-lockfile`. `go` must be on PATH. The script also runs `go -C backend mod download`. This command downloads all modules in `backend/go.mod`, including the Go tools, into the Go module cache. Later Go commands can then run without network access, for example in an agent sandbox. Run the script from the repository root with `bash scripts/setup-worktree.sh`.
 
 The script finds the main checkout through the Git common directory. It copies `backend/.env` and `frontend/.env` from that checkout when the source files exist and the worktree lacks them. It does not print env file contents.
 
