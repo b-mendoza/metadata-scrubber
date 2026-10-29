@@ -2,6 +2,7 @@ import { defineConfig } from "eslint/config";
 import globals from "globals";
 
 import { PLUGIN_NAMES, SEVERITY_LEVELS } from "./constants.ts";
+import { restrictedSyntax } from "./syntax-rules.ts";
 
 export const sourceRules = defineConfig(
   // Source files can mix browser and Node code. shared-node-browser omits window and process.
@@ -28,6 +29,21 @@ export const sourceRules = defineConfig(
       [`${PLUGIN_NAMES.Zod}/no-transform-in-record-key`]: SEVERITY_LEVELS.Error,
       [`${PLUGIN_NAMES.Zod}/no-unnecessary-readonly`]: SEVERITY_LEVELS.Error,
       [`${PLUGIN_NAMES.Zod}/prefer-validate`]: SEVERITY_LEVELS.Error,
+    },
+  },
+  {
+    files: ["src/**/*.server.ts"],
+    rules: {
+      // A broad catch can map programming errors as dependency failures.
+      "no-restricted-syntax": [
+        SEVERITY_LEVELS.Error,
+        ...restrictedSyntax,
+        {
+          selector: "TryStatement",
+          message:
+            "A server try/catch can catch programming errors as dependency failures. Await ResultAsync.fromPromise for the dependency call, check result.isErr(), then throw result.error at the tRPC boundary.",
+        },
+      ],
     },
   },
 );
