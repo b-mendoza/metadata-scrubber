@@ -20,6 +20,20 @@ export const importRestrictionRules = {
           message:
             "Runtime useQuery does not suspend for pending data. Use named useSuspenseQuery imports with an ancestor Suspense boundary and suitable error handling. Replace namespace imports and wildcard exports with explicit allowed APIs.",
         },
+        {
+          name: "@tanstack/react-query",
+          importNames: ["useQueries"],
+          allowTypeImports: true,
+          message:
+            "Runtime useQueries does not suspend for pending data. Replace it with named useSuspenseQueries imports, an ancestor Suspense boundary, and suitable error handling. Replace namespace imports and wildcard exports with explicit allowed APIs.",
+        },
+        {
+          name: "@tanstack/react-query",
+          importNames: ["useInfiniteQuery"],
+          allowTypeImports: true,
+          message:
+            "Runtime useInfiniteQuery does not suspend for pending data. Replace it with named useSuspenseInfiniteQuery imports, an ancestor Suspense boundary, and suitable error handling. Replace namespace imports and wildcard exports with explicit allowed APIs.",
+        },
       ],
       patterns: [
         {
