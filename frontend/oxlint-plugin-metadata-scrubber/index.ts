@@ -3,6 +3,7 @@ import { definePlugin } from "@oxlint/plugins";
 import noClasses from "./rules/no-classes.ts";
 import noDiscardedResult from "./rules/no-discarded-result.ts";
 import noExpectTypeOf from "./rules/no-expect-type-of.ts";
+import noLateRequestBodyRead from "./rules/no-late-request-body-read.ts";
 import noLifecycleHookNames from "./rules/no-lifecycle-hook-names.ts";
 import noModuleScopeHttpClient from "./rules/no-module-scope-http-client.ts";
 import noMutableModuleStateInServerCode from "./rules/no-mutable-module-state-in-server-code.ts";
@@ -24,6 +25,7 @@ export default definePlugin({
     "no-classes": noClasses,
     "no-discarded-result": noDiscardedResult,
     "no-expect-type-of": noExpectTypeOf,
+    "no-late-request-body-read": noLateRequestBodyRead,
     "no-lifecycle-hook-names": noLifecycleHookNames,
     "no-module-scope-http-client": noModuleScopeHttpClient,
     "no-mutable-module-state-in-server-code": noMutableModuleStateInServerCode,

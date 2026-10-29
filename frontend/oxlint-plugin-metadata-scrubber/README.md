@@ -19,6 +19,7 @@ Directory fixtures run from their own root, so their `src/` paths match real sou
 - `no-classes` requires plain functions and objects instead of class declarations and class expressions. It also rejects classes that extend `Error`.
 - `no-discarded-result` rejects expression statements that discard known `neverthrow` results, including `await`, `void`, and result method chains. It resolves named and namespace imports, including renamed imports. It requires assignment and an `isErr()` check at the boundary.
 - `no-expect-type-of` requires TypeScript contracts instead of Vitest `expectTypeOf(...)` calls, including renamed imports.
+- `no-late-request-body-read` rejects request body reads from Vitest mock call records. It follows the first call argument and its `request` property through local `const` aliases and destructuring. Read or clone the body in the MSW handler instead.
 - `no-module-scope-http-client` rejects module-scope `ky.create`, `ky.extend`, and calls to imported factories from `#/shared/libs/ky/`. It follows import aliases and local `const` aliases. Test files remain exempt because test setup can own a shared client without serving requests.
 - `no-lifecycle-hook-names` rejects function declarations and function-valued variable declarations with mount-timing hook names. A suffix must start with an uppercase letter, digit, or underscore. It rejects `useMountUploader` but allows `useMountedState`, which describes state rather than mount timing.
 - `no-mutable-module-state-in-server-code` rejects module-scope `let` and `var` declarations in server modules.
@@ -66,6 +67,7 @@ Make each diagnostic clear enough to explain the required correction. Explain th
 - The client-prop rule follows static members and local `const` aliases. It does not inspect prop spreads, mutable assignments, custom hooks, or cross-file re-exports. Provider exceptions resolve the known import bindings, not component names alone.
 
 - The strict MSW rule checks calls in one file. It accepts direct hook callbacks, not named callbacks or cross-file setup. It does not prove execution order or whether conditional setup runs. It does not follow aliases of imported APIs, mutable server aliases, or destructured server methods.
+- The late-body rule follows local `const` aliases from imported Vitest `vi.fn`, `vi.spyOn`, and `vi.mocked`. It checks the first call argument and its `request` property. It does not prove that a first argument is a Fetch `Request`. It does not follow mutable aliases, returned values, or cross-file helpers.
 - The object-type rule checks syntax, not schema equivalence. It allows function types, nested object types, arrays, unions, intersections, and schema-derived aliases. It does not prove that a type needs a schema or that an imported type is schema-derived.
 
 - The discarded-result rule follows direct `neverthrow` imports and known result-producing methods. It does not follow stored results, local aliases, re-exports, or dynamic member keys. Results returned from user functions need type information. Assigning a result passes this rule; the rule does not prove that later code handles it.
