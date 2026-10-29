@@ -4,6 +4,7 @@ import globals from "globals";
 import { PLUGIN_NAMES, SEVERITY_LEVELS } from "./constants.ts";
 import {
   restrictedImportPatterns,
+  restrictedImports,
   restrictedQueryImports,
 } from "./import-restriction-rules.ts";
 import { restrictedSyntax } from "./syntax-rules.ts";
@@ -80,6 +81,26 @@ export const toolingRules = defineConfig(
       "no-restricted-imports": [
         SEVERITY_LEVELS.Error,
         { paths: restrictedQueryImports, patterns: restrictedImportPatterns },
+      ],
+    },
+  },
+  {
+    files: ["scripts/hard-clean.ts", "scripts/soft-clean.ts"],
+    rules: {
+      // Clean scripts must run after node_modules has been removed.
+      "no-restricted-imports": [
+        SEVERITY_LEVELS.Error,
+        {
+          paths: restrictedImports,
+          patterns: [
+            ...restrictedImportPatterns,
+            {
+              group: ["**", "!node:*", "!node:*/**"],
+              message:
+                "This clean script must run without installed dependencies. Replace this import with a Node built-in whose source starts with node:.",
+            },
+          ],
+        },
       ],
     },
   },
