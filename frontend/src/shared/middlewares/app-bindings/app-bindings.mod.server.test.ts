@@ -11,7 +11,10 @@ import {
   vi,
 } from "vitest";
 
-import { appBindingsMiddleware, getAppBindings } from "./app-bindings.mod";
+import {
+  appBindingsMiddleware,
+  getAppBindings,
+} from "#/shared/middlewares/app-bindings/app-bindings.mod";
 
 const server = setupServer();
 
