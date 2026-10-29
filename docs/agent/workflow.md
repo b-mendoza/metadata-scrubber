@@ -8,8 +8,12 @@ These are general work practices. For facts, the code is the source of truth.
 
 ## Scope control
 
-- Keep each diff limited to the task requirements. A reviewer must be able to map each hunk to the stated goal. Exclude unrelated refactors and reformatting. Do not add documentation, a helper script, an abstraction, or a test file when the task does not require it. Extend the canonical file when the task does not require a new file and the canonical file can hold the change. Report unrelated bugs and cleanup options to the maintainer instead of adding them to the diff.
+- Keep each diff limited to the task requirements. A reviewer must be able to map each hunk to the stated goal. Exclude unrelated refactors and reformatting. Do not add documentation, a helper script, an abstraction, or a test file when the task does not require it. Change the existing file when the task does not need a new file and that file can hold the change. Report unrelated bugs and cleanup options to the maintainer instead of adding them to the diff.
 - Add a compatibility shim only when a real contract needs it. Real contracts include a published API, stored data, and deployed clients. If no contract needs the old path, make the change and delete that path.
+
+Keep `POST /api/files/download-grant`. Clients call that path.
+
+When you rename a private helper that has no callers, delete the old name. Do not leave a wrapper that only calls the new name.
 
 ## Task management
 
