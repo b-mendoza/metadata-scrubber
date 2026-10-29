@@ -22,6 +22,7 @@ Directory fixtures run from their own root, so their `src/` paths match real sou
 - `no-mutable-module-state-in-server-code` rejects module-scope `let` and `var` declarations in server modules.
 - `no-silent-test-prerequisite` rejects `.skip` calls on Vitest test APIs, including chains such as `test.skip.each(...)`. It also rejects bare test prerequisite returns in test callbacks.
 - `no-test-local-object-type` rejects direct object-literal type aliases and interfaces in test files. It allows function aliases, imported types, and schema-derived types.
+- `require-colocated-test` requires each source test outside `src/tests/` to sit beside a source module whose stem is a prefix of the test stem. It uses the longest matching stem, then file-name order. It maps `-root.test.tsx` to `__root.tsx`. A test of a `.server` module must end with `.server.test.ts` so Vitest uses Node.
 - `require-module-file-name` requires the six module suffixes under `src/`: `.mod.ts`, `.mod.tsx`, `.mod.server.ts`, `.mod.test.ts`, `.mod.test.tsx`, and `.mod.server.test.ts`. It rejects a non-test `.mod.tsx` file without JSX. It also checks shared test helpers.
 - `separate-type-imports` rejects inline `type` specifiers and requires separate `import type` declarations. It reports once per declaration, including declarations with only inline type specifiers. Standalone named, default, and namespace type imports remain allowed.
 - `use-effect-in-custom-hook` requires direct React `useEffect` calls inside the nearest named custom hook. It rejects runtime extraction of the Effect reference. Renamed imports, static React members, and immutable namespace aliases retain their React binding. Nested callbacks need their own valid owner. Type-only uses remain allowed.
@@ -33,6 +34,7 @@ Directory fixtures run from their own root, so their `src/` paths match real sou
 - `src/router.tsx` and `src/start.ts` keep TanStack's entry-point names.
 - `src/routeTree.gen.ts` keeps the generated route-tree name.
 - `src/tests/setup-test-environment.ts` keeps the exact setup path in `vitest.config.ts`. Other setup files and `src/tests/utils/**` still need module names.
+- The colocated-test rule leaves `src/tests/**` for test setup and shared helpers. It does not check files outside `src/`.
 
 ## Core Query import restrictions
 
@@ -53,6 +55,8 @@ Make each diagnostic clear enough to explain the required correction. Explain th
 
 ## Known limitations
 
+- Lint caches do not track sibling-file changes. Run lint without its cache after you move, add, or remove a module or test.
+- The colocated-test rule matches file names, not imports or test behavior. If no sibling matches, it searches the source tree to suggest a move. When no module matches anywhere, it gives a naming example instead of inventing a target path. Directory read failures produce a diagnostic.
 - The file-name rule detects JSX syntax, not whether a file renders a component. It does not prove server-only execution.
 
 - The object-type rule checks syntax, not schema equivalence. It allows function types, nested object types, arrays, unions, intersections, and schema-derived aliases. It does not prove that a type needs a schema or that an imported type is schema-derived.
