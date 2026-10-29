@@ -18,6 +18,7 @@ Directory fixtures run from their own root, so their `src/` paths match real sou
 
 - `no-classes` requires plain functions and objects instead of class declarations and class expressions. It also rejects classes that extend `Error`.
 - `no-expect-type-of` requires TypeScript contracts instead of Vitest `expectTypeOf(...)` calls, including renamed imports.
+- `no-module-scope-http-client` rejects module-scope `ky.create`, `ky.extend`, and calls to imported factories from `#/shared/libs/ky/`. It follows import aliases and local `const` aliases. Test files remain exempt because test setup can own a shared client without serving requests.
 - `no-lifecycle-hook-names` rejects function declarations and function-valued variable declarations with mount-timing hook names. A suffix must start with an uppercase letter, digit, or underscore. It rejects `useMountUploader` but allows `useMountedState`, which describes state rather than mount timing.
 - `no-mutable-module-state-in-server-code` rejects module-scope `let` and `var` declarations in server modules.
 - `no-query-client-props` rejects `trpc` and `queryClient` props. It also rejects other prop names when their values resolve to route clients or query hooks. It allows the imported tRPC providers and `QueryClientProvider` setup.
@@ -66,10 +67,11 @@ Make each diagnostic clear enough to explain the required correction. Explain th
 
 - The lifecycle-name rule checks a fixed list of timing names at word boundaries. It does not check object methods, wrapped function initializers, or other timing words. It cannot prove that an allowed name describes the external system.
 
+- The HTTP rules follow resolved imports, direct binding reads, object destructuring, and local `const` aliases. They do not follow mutable aliases, re-exports, dynamic member names, or cross-file data flow.
 - The Effect rule tracks static member names and immutable namespace aliases. It does not evaluate dynamic keys, follow mutable namespace aliases, or prove arbitrary runtime data flow.
 - The Effect rule checks the nearest function owner. It cannot prove that external synchronization is necessary or that the hook name describes its purpose.
 - The type-import rule does not establish whether module initialization is required.
-- The module-state rule checks only `let` and `var`. A module-level `const` client can still share state between requests.
+- The module-state rule checks only `let` and `var`. The HTTP client rule also checks known client factories at module scope, including `const` initializers. It does not follow local factory wrappers or calls made inside immediately invoked functions.
 - Namespace Vitest calls such as `vitest.expectTypeOf(...)` and `vitest.test.skip(...)` are not resolved.
 - Disabled Vitest calls through `test.todo(...)` and `test.skipIf(true)(...)` are not reported.
 - Suggested guard assertions do not preserve TypeScript control-flow narrowing.
