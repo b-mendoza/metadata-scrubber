@@ -68,4 +68,19 @@ export const toolingRules = defineConfig(
       ],
     },
   },
+  {
+    files: ["e2e/**"],
+    rules: {
+      "no-restricted-syntax": [
+        SEVERITY_LEVELS.Error,
+        ...restrictedSyntax,
+        {
+          selector:
+            "CallExpression[callee.type='MemberExpression']:matches([callee.property.name=/^(route|routeFromHAR|routeWebSocket)$/], [callee.property.value=/^(route|routeFromHAR|routeWebSocket)$/])",
+          message:
+            "route, routeFromHAR, and routeWebSocket replace real network behavior in an end-to-end test. Remove the mocking call and use the real frontend and backend services.",
+        },
+      ],
+    },
+  },
 );
