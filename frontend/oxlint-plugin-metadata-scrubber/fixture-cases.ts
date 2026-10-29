@@ -181,6 +181,25 @@ export const fixtureCases: readonly FixtureCase[] = [
     ],
   ],
   [
+    "prefetch-route-data-without-waiting",
+    "prefetch-route-data-without-waiting.ts",
+    [
+      "`cache.query(options)` waits for route query data. Start it without waiting: `void cache.query(options).catch(() => null)`. Do not return the query promise.",
+      "`context.queryClient.fetchQuery(options)` waits for route query data. Start it without waiting: `void context.queryClient.fetchQuery(options).catch(() => null)`. Do not return the query promise.",
+      "`cache.ensureQueryData(options)` waits for route query data. Start it without waiting: `void cache.ensureQueryData(options).catch(() => null)`. Do not return the query promise.",
+      "`cache.prefetchQuery(options)` waits for route query data. Start it without waiting: `void cache.prefetchQuery(options).catch(() => null)`. Do not return the query promise.",
+      "`cache.fetchInfiniteQuery(infiniteOptions)` waits for route query data. Start it without waiting: `void cache.fetchInfiniteQuery(infiniteOptions).catch(() => null)`. Do not return the query promise.",
+      "`cache.ensureInfiniteQueryData(infiniteOptions)` waits for route query data. Start it without waiting: `void cache.ensureInfiniteQueryData(infiniteOptions).catch(() => null)`. Do not return the query promise.",
+      "`cache.prefetchInfiniteQuery(infiniteOptions)` waits for route query data. Start it without waiting: `void cache.prefetchInfiniteQuery(infiniteOptions).catch(() => null)`. Do not return the query promise.",
+      "`cache.query(options)` drops a route query promise without an error handler. Use `void cache.query(options).catch(() => null)`.",
+      "`context.queryClient.query(options)` waits for route query data. Start it without waiting: `void context.queryClient.query(options).catch(() => null)`. Do not return the query promise.",
+      "`localCache.query(options)` drops a route query promise without an error handler. Use `void localCache.query(options).catch(() => null)`.",
+      "`queryClient.query(options)` drops a route query promise without an error handler. Use `void queryClient.query(options).catch(() => null)`.",
+      "`queryClient.query(options)` drops a route query promise without an error handler. Use `void queryClient.query(options).catch(() => null)`.",
+      '`queryClient["fetchQuery"](options)` waits for route query data. Start it without waiting: `void queryClient["fetchQuery"](options).catch(() => null)`. Do not return the query promise.',
+    ],
+  ],
+  [
     "require-backend-request-signal",
     "require-backend-request-signal.server.ts",
     [

@@ -374,7 +374,7 @@ const getQueryImportKind = (
   );
 };
 
-const getPatternPath = (
+export const getPatternPath = (
   identifier: ESTree.Node,
   pattern: ESTree.Node,
 ): readonly string[] | null => {
