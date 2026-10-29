@@ -10,6 +10,7 @@ import noMutableModuleStateInServerCode from "./rules/no-mutable-module-state-in
 import noQueryClientProps from "./rules/no-query-client-props.ts";
 import noSilentTestPrerequisite from "./rules/no-silent-test-prerequisite.ts";
 import noTestLocalObjectType from "./rules/no-test-local-object-type.ts";
+import requireBackendRequestSignal from "./rules/require-backend-request-signal.ts";
 import requireColocatedTest from "./rules/require-colocated-test.ts";
 import requireModuleFileName from "./rules/require-module-file-name.ts";
 import requireStrictMswServer from "./rules/require-strict-msw-server.ts";
@@ -32,6 +33,7 @@ export default definePlugin({
     "no-query-client-props": noQueryClientProps,
     "no-silent-test-prerequisite": noSilentTestPrerequisite,
     "no-test-local-object-type": noTestLocalObjectType,
+    "require-backend-request-signal": requireBackendRequestSignal,
     "require-colocated-test": requireColocatedTest,
     "require-module-file-name": requireModuleFileName,
     "require-strict-msw-server": requireStrictMswServer,
