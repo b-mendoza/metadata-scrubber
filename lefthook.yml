@@ -43,6 +43,15 @@ pre-commit:
       root: backend/
       run: go run ./lint/cmd/analyzers . ./internal/...
 
+# script: always runs. A run: job skips when the push has no file changes.
+# use_stdin passes the Git ref list. Without it lefthook keeps stdin open.
+pre-push:
+  jobs:
+    - name: reject-merge-commits
+      script: reject-merge-commits
+      runner: sh
+      use_stdin: true
+
 # Remove the trailer that Cursor adds to commit messages.
 commit-msg:
   jobs:
