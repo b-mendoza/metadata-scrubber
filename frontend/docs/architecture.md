@@ -10,7 +10,7 @@ The index route starts `products.getMessage` in its `loader` without waiting. `I
 
 ## Browser analytics
 
-- [`src/routes/__root.tsx`](../src/routes/__root.tsx) sends a public project token and fixed options through root loader data. [`posthog-browser-config.mod.server.ts`](../src/shared/config/posthog/posthog-browser-config.mod.server.ts) supplies both values. The root route starts `posthog-js` with `@posthog/react` in the browser.
+- [`src/routes/__root.tsx`](../src/routes/__root.tsx) sends a public project token and fixed options through root loader data. The root `loader` awaits `loadPostHogBrowserConfig()`. That wait is an allowed exception. The value is not a TanStack Query. [`posthog-browser-config.mod.server.ts`](../src/shared/config/posthog/posthog-browser-config.mod.server.ts) supplies both values. The root route starts `posthog-js` with `@posthog/react` in the browser.
 - Development builds and SSR do not initialize PostHog. Vercel preview deployments use production builds.
 - The client sends events and flag requests to PostHog US Cloud through `/relay`. It enables browser error tracking and web vitals.
 - Session recording is off. The client uses default autocapture and `identified_only` person profiles.
