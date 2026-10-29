@@ -107,6 +107,21 @@ export const toolingRules = defineConfig(
   {
     files: ["e2e/**"],
     rules: {
+      // End-to-end tests exercise the running services, not mocked responses.
+      "no-restricted-imports": [
+        SEVERITY_LEVELS.Error,
+        {
+          paths: restrictedImports,
+          patterns: [
+            ...restrictedImportPatterns,
+            {
+              group: ["msw", "msw/**"],
+              message:
+                "MSW replaces real service responses in an end-to-end test. Remove the msw import and run the test against the real frontend and backend services.",
+            },
+          ],
+        },
+      ],
       "no-restricted-syntax": [
         SEVERITY_LEVELS.Error,
         ...restrictedSyntax,
