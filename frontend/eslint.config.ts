@@ -99,7 +99,6 @@ export default defineConfig(
   ...regexpRules,
   ...noUnsanitizedConfigs,
   ...tailwindcssRules,
-  ...sourceRules,
   ...reactRules,
   {
     // The Oxlint bridge turns off ESLint rules that map to native Oxlint rules.
@@ -182,6 +181,8 @@ export default defineConfig(
       ],
     },
   },
+  // File-scoped restrictions extend the base rules before the Oxlint bridge.
+  ...sourceRules,
   ...toolingRules,
   ...testRules,
   /**
