@@ -6,14 +6,36 @@ Report code that conflicts with a choice instead of copying that code.
 
 ## Imports
 
-- Use `#/` for imports from `src/`. The alias does not depend on the caller's directory.
-- Review what the module does when it first loads before you remove the last runtime import. Keep a side-effect import when that first load must run. Type-only imports do not run the module.
+Import from `src/` with `#/`. The alias does not depend on the caller's directory.
 
-The workflow Ky client splits types and runtime values like this:
+```ts
+import { getAppBindings } from "#/shared/middlewares/app-bindings/app-bindings.mod";
+```
+
+Do not use a relative path into `src/`:
+
+```ts
+import { getAppBindings } from "../../shared/middlewares/app-bindings/app-bindings.mod";
+```
+
+Split type imports from runtime imports. Type-only imports do not run the module.
 
 ```ts
 import type { KyInstance, RetryOptions, ShouldRetryState } from "ky";
 import ky, { HTTPError } from "ky";
+```
+
+Do not mix inline `type` specifiers into a runtime import:
+
+```ts
+import ky, { type KyInstance, HTTPError } from "ky";
+```
+
+Review what a module does when it first loads before you remove the last runtime import. Keep a side-effect import when that first load must run.
+
+```ts
+import type { Matcher } from "./register-matchers.mod";
+import "./register-matchers.mod";
 ```
 
 ## Server code
