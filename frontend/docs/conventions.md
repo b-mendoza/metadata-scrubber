@@ -145,37 +145,11 @@ const messageQuery = useQuery(trpc.products.getMessage.queryOptions());
 A page that needs a signed-in user first fetches that user's data. Later fetches use that user. The user fetch is required. The later fetches stay optional.
 
 - Read `trpc` and `queryClient` from loader context in a `loader`.
-- Read `trpc` from `Route.useRouteContext()` in a route component.
-- In a child component, import `trpcContext` and call `trpcContext.useTRPC()` for the `trpc` client. Import `useQueryClient` from `@tanstack/react-query` when the child needs `queryClient`.
-- Pass `trpc` and `queryClient` as props only during `TRPCProvider` setup. Do not pass these clients to child components.
-
-Route component:
+- One route file must use one source for the clients. In that file, a route component and any regular component (for example `Message` in `src/routes/index.tsx`) must read both clients from `Route.useRouteContext()`. Do not import `trpcContext` in a route file.
 
 ```tsx
-import { useSuspenseQuery } from "@tanstack/react-query";
-
-function IndexRoute() {
-  const { trpc } = Route.useRouteContext();
-
-  const messageQuery = useSuspenseQuery(
-    trpc.products.getMessage.queryOptions(),
-  );
-
-  const message = messageQuery.data.status;
-
-  return <div>{message}</div>;
-}
-```
-
-Child component with `trpc`:
-
-```tsx
-import { useSuspenseQuery } from "@tanstack/react-query";
-
-import { trpcContext } from "#/shared/libs/trpc/client/client-runtime.mod";
-
 const Message = () => {
-  const trpc = trpcContext.useTRPC();
+  const { trpc, queryClient } = Route.useRouteContext();
 
   const messageQuery = useSuspenseQuery(
     trpc.products.getMessage.queryOptions(),
@@ -187,7 +161,16 @@ const Message = () => {
 };
 ```
 
-Child component that also needs `queryClient`:
+Do not import `trpcContext` in a route file:
+
+```tsx
+import { trpcContext } from "#/shared/libs/trpc/client/client-runtime.mod";
+
+const Message = () => {
+  const trpc = trpcContext.useTRPC();
+```
+
+- When a component lives in its own file, not a route file, import `trpcContext` from `#/shared/libs/trpc/client/client-runtime.mod` and call `trpcContext.useTRPC()`. Import `useQueryClient` from `@tanstack/react-query` when that file needs `queryClient`.
 
 ```tsx
 import { useQueryClient } from "@tanstack/react-query";
@@ -196,7 +179,6 @@ import { trpcContext } from "#/shared/libs/trpc/client/client-runtime.mod";
 
 const Example = () => {
   const queryClient = useQueryClient();
-
   const trpc = trpcContext.useTRPC();
 
   const onClick = () => {
@@ -206,6 +188,8 @@ const Example = () => {
   return <button onClick={onClick}>Invalidate</button>;
 };
 ```
+
+- Pass `trpc` and `queryClient` as props only during `TRPCProvider` setup. Do not pass these clients to child components.
 
 Do not pass the clients to a child as props:
 
