@@ -11,6 +11,7 @@
     "metadata-scrubber/no-query-client-props": "error",
     "metadata-scrubber/no-silent-test-prerequisite": "error",
     "metadata-scrubber/no-test-local-object-type": "error",
+    "metadata-scrubber/prefetch-route-data-without-waiting": "error",
     "metadata-scrubber/require-backend-request-signal": "error",
     "metadata-scrubber/require-colocated-test": "error",
     "metadata-scrubber/require-ky-json-schema": "error",
