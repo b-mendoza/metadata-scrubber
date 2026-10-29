@@ -27,6 +27,7 @@ Directory fixtures run from their own root, so their `src/` paths match real sou
 - `no-test-local-object-type` rejects direct object-literal type aliases and interfaces in test files. It allows function aliases, imported types, and schema-derived types.
 - `require-colocated-test` requires each source test outside `src/tests/` to sit beside a source module whose stem is a prefix of the test stem. It uses the longest matching stem, then file-name order. It maps `-root.test.tsx` to `__root.tsx`. A test of a `.server` module must end with `.server.test.ts` so Vitest uses Node.
 - `require-module-file-name` requires the six module suffixes under `src/`: `.mod.ts`, `.mod.tsx`, `.mod.server.ts`, `.mod.test.ts`, `.mod.test.tsx`, and `.mod.server.test.ts`. It rejects a non-test `.mod.tsx` file without JSX. It also checks shared test helpers.
+- `require-strict-msw-server` requires `listen({ onUnhandledFrame: "error" })`, `resetHandlers()` in `afterEach`, and `close()` in `afterAll` for an MSW server. MSW 3 uses `onUnhandledFrame`, not `onUnhandledRequest`. It resolves renamed and namespace imports and local server aliases.
 - `separate-type-imports` rejects inline `type` specifiers and requires separate `import type` declarations. It reports once per declaration, including declarations with only inline type specifiers. Standalone named, default, and namespace type imports remain allowed.
 - `use-effect-in-custom-hook` requires direct React `useEffect` calls inside the nearest named custom hook. It rejects runtime extraction of the Effect reference. Renamed imports, static React members, and immutable namespace aliases retain their React binding. Nested callbacks need their own valid owner. Type-only uses remain allowed.
 - `use-shared-render-helper` requires the shared `renderComponent` helper for Testing Library rendering.
@@ -64,6 +65,7 @@ Make each diagnostic clear enough to explain the required correction. Explain th
 
 - The client-prop rule follows static members and local `const` aliases. It does not inspect prop spreads, mutable assignments, custom hooks, or cross-file re-exports. Provider exceptions resolve the known import bindings, not component names alone.
 
+- The strict MSW rule checks calls in one file. It accepts direct hook callbacks, not named callbacks or cross-file setup. It does not prove execution order or whether conditional setup runs. It does not follow aliases of imported APIs, mutable server aliases, or destructured server methods.
 - The object-type rule checks syntax, not schema equivalence. It allows function types, nested object types, arrays, unions, intersections, and schema-derived aliases. It does not prove that a type needs a schema or that an imported type is schema-derived.
 
 - The discarded-result rule follows direct `neverthrow` imports and known result-producing methods. It does not follow stored results, local aliases, re-exports, or dynamic member keys. Results returned from user functions need type information. Assigning a result passes this rule; the rule does not prove that later code handles it.
