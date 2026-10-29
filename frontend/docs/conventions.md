@@ -690,10 +690,10 @@ Do not wrap a one-off call in an immediately invoked function.
 
 ## File names
 
-Name source modules `*.mod.ts`, or `*.mod.tsx` when they contain JSX.
-Name server-only modules `*.mod.server.ts`.
-Name tests `*.test.ts` or `*.test.tsx`. Use `*.server.test.ts` for server tests.
-Put each test beside its module. Keep `src/tests/` for setup and shared helpers.
+Name source modules `*.mod.ts`, or `*.mod.tsx` when they contain JSX. This distinguishes modules from route entry points.
+Name server-only modules `*.mod.server.ts`. The server suffix keeps them out of browser bundles.
+Name tests `*.test.ts` or `*.test.tsx`. Use `*.server.test.ts` for server tests so Vitest runs them in Node instead of a DOM environment.
+Put each test beside its module. Keep `src/tests/` for setup and shared helpers. This keeps behavior tests beside the code they check.
 
 ```
 src/domains/products/products-router.mod.server.ts
