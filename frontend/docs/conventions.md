@@ -91,7 +91,91 @@ try {
 - Start optional queries with `void queryClient.query(trpc.products.getMessage.queryOptions()).catch(() => null)`, as the index route does. Keep the loader synchronous. Do not await or return that promise. The catch prevents an unhandled rejection. The consumer reads the cache.
 - Put each `useSuspenseQuery` consumer under an ancestor `Suspense` with a `fallback`. Put query loading UI there instead of loading flags or nullable-data branches in the consumer. The rest of the page can render while optional data loads.
 - Review the actual parent Suspense and error boundaries, data needs, and retry behavior. Include parents in other files. Add a loader only when the route needs one. Import rules cannot check these relationships.
-- Read `trpc` from `Route.useRouteContext()` in route components. Read `trpc` and `queryClient` from loader context in loaders. Pass clients as props only during `TRPCProvider` setup. This keeps consumers on the shared clients and cache.
+- Read `trpc` and `queryClient` from loader context in a `loader`.
+- Read `trpc` from `Route.useRouteContext()` in a route component.
+- In a child component, import `trpcContext` and call `trpcContext.useTRPC()` for the `trpc` client. Import `useQueryClient` from `@tanstack/react-query` when the child needs `queryClient`.
+- Pass `trpc` and `queryClient` as props only during `TRPCProvider` setup. Do not pass these clients to child components.
+
+Loader:
+
+```ts
+import { createFileRoute } from "@tanstack/react-router";
+
+export const Route = createFileRoute("/")({
+  component: IndexRoute,
+  loader(loaderFunctionContext) {
+    const { queryClient, trpc } = loaderFunctionContext.context;
+
+    void queryClient
+      .query(trpc.products.getMessage.queryOptions())
+      .catch(() => null);
+  },
+});
+```
+
+Route component:
+
+```tsx
+import { useSuspenseQuery } from "@tanstack/react-query";
+
+function IndexRoute() {
+  const { trpc } = Route.useRouteContext();
+
+  const messageQuery = useSuspenseQuery(
+    trpc.products.getMessage.queryOptions(),
+  );
+
+  const message = messageQuery.data.status;
+
+  return <div>{message}</div>;
+}
+```
+
+Child component with `trpc`:
+
+```tsx
+import { useSuspenseQuery } from "@tanstack/react-query";
+
+import { trpcContext } from "#/shared/libs/trpc/client/client-runtime.mod";
+
+const Message = () => {
+  const trpc = trpcContext.useTRPC();
+
+  const messageQuery = useSuspenseQuery(
+    trpc.products.getMessage.queryOptions(),
+  );
+
+  const message = messageQuery.data.status;
+
+  return <div>{message}</div>;
+};
+```
+
+Child component that also needs `queryClient`:
+
+```tsx
+import { useQueryClient } from "@tanstack/react-query";
+
+import { trpcContext } from "#/shared/libs/trpc/client/client-runtime.mod";
+
+const Example = () => {
+  const queryClient = useQueryClient();
+
+  const trpc = trpcContext.useTRPC();
+
+  const onClick = () => {
+    void queryClient.invalidateQueries(trpc.products.getMessage.queryOptions());
+  };
+
+  return <button onClick={onClick}>Invalidate</button>;
+};
+```
+
+Do not pass the clients to a child as props:
+
+```tsx
+<Message trpc={trpc} queryClient={queryClient} />
+```
 
 ## Contracts
 
