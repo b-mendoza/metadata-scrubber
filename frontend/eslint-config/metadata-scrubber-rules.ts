@@ -12,6 +12,8 @@ export const metadataScrubberRules = defineConfig({
     [`${PLUGIN_NAMES.MetadataScrubber}/no-classes`]: SEVERITY_LEVELS.Error,
     [`${PLUGIN_NAMES.MetadataScrubber}/no-expect-type-of`]:
       SEVERITY_LEVELS.Error,
+    [`${PLUGIN_NAMES.MetadataScrubber}/no-lifecycle-hook-names`]:
+      SEVERITY_LEVELS.Error,
     [`${PLUGIN_NAMES.MetadataScrubber}/no-mutable-module-state-in-server-code`]:
       SEVERITY_LEVELS.Error,
     [`${PLUGIN_NAMES.MetadataScrubber}/no-silent-test-prerequisite`]:

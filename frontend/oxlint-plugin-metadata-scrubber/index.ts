@@ -2,6 +2,7 @@ import { definePlugin } from "@oxlint/plugins";
 
 import noClasses from "./rules/no-classes.ts";
 import noExpectTypeOf from "./rules/no-expect-type-of.ts";
+import noLifecycleHookNames from "./rules/no-lifecycle-hook-names.ts";
 import noMutableModuleStateInServerCode from "./rules/no-mutable-module-state-in-server-code.ts";
 import noSilentTestPrerequisite from "./rules/no-silent-test-prerequisite.ts";
 import separateTypeImports from "./rules/separate-type-imports.ts";
@@ -15,6 +16,7 @@ export default definePlugin({
   rules: {
     "no-classes": noClasses,
     "no-expect-type-of": noExpectTypeOf,
+    "no-lifecycle-hook-names": noLifecycleHookNames,
     "no-mutable-module-state-in-server-code": noMutableModuleStateInServerCode,
     "no-silent-test-prerequisite": noSilentTestPrerequisite,
     "separate-type-imports": separateTypeImports,
