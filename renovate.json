@@ -3,7 +3,8 @@
   "extends": [
     ":automergeMinor",
     "config:best-practices",
-    ":pinAllExceptPeerDependencies"
+    ":pinAllExceptPeerDependencies",
+    "group:pnpm"
   ],
   "lockFileMaintenance": {
     "enabled": true
@@ -30,18 +31,7 @@
       "postUpdateOptions": ["gomodTidy"]
     },
     {
-      "description": "frontend/package.json and frontend/Dockerfile declare one Node.js version; CI and the container build fail when the two update separately",
-      "groupName": "Node.js Docker image and package.json",
-      "matchDatasources": ["docker", "node-version"],
-      "matchFileNames": ["frontend/package.json", "frontend/Dockerfile"],
-      "matchPackageNames": ["node"],
-      "matchUpdateTypes": ["major", "minor", "patch"],
-      "minimumGroupSize": 2
-    },
-    {
-      "description": "frontend/package.json and frontend/Dockerfile declare one pnpm version; the container build fails when the two update separately",
-      "groupName": "pnpm Docker image and package.json",
-      "matchFileNames": ["frontend/package.json", "frontend/Dockerfile"],
+      "description": "Wait for the Dockerfile pnpm image too; the npm side waits 3 days but Docker images don't",
       "matchPackageNames": ["pnpm", "ghcr.io/pnpm/pnpm"],
       "matchUpdateTypes": ["major", "minor", "patch"],
       "minimumGroupSize": 2
