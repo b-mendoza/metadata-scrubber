@@ -642,9 +642,73 @@ export default defineConfig({
 
 ## Components and functions
 
-- Remount `FileUploader` when `createUpload` or `maxFileSizeBytes` changes. Its Effect captures those values on mount.
-- Name Effect hooks for the work they keep in sync, not for mount timing. The hook-name check cannot prove that the name describes the work.
-- Call a named function instead of an immediately invoked function. Keep anonymous callbacks inline when passing or storing them. This gives each immediate call a name without moving callbacks away from their use.
+Remount `FileUploader` when `createUpload` or `maxFileSizeBytes` changes. Its Effect captures those values on mount. `createUploadKey` is any value that changes when `createUpload` changes.
+
+```tsx
+<FileUploader
+  key={`${maxFileSizeBytes}:${createUploadKey}`}
+  createUpload={createUpload}
+  maxFileSizeBytes={maxFileSizeBytes}
+  onUploadComplete={onUploadComplete}
+/>
+```
+
+Do not only change props on the same mounted instance.
+
+```tsx
+<FileUploader
+  createUpload={createUpload}
+  maxFileSizeBytes={maxFileSizeBytes}
+  onUploadComplete={onUploadComplete}
+/>
+```
+
+Name Effect hooks for the work they keep in sync, not for mount timing.
+
+```ts
+const useUppyDashboard = (props: FileUploaderProps) => {
+  useEffect(() => {
+    const instance = new Uppy({
+      restrictions: { maxFileSize: props.maxFileSizeBytes },
+    });
+    return () => {
+      instance.destroy();
+    };
+  }, []);
+};
+```
+
+Do not name the hook for mount timing.
+
+```ts
+const useMount = (callback: () => void) => {
+  useEffect(callback, []);
+};
+```
+
+Call a named function instead of an immediately invoked function. Keep anonymous callbacks inline when you pass or store them.
+
+```ts
+const loadInitialMessage = () => {
+  void queryClient.query(trpc.products.getMessage.queryOptions());
+};
+
+loadInitialMessage();
+```
+
+```ts
+void queryClient
+  .query(trpc.products.getMessage.queryOptions())
+  .catch(() => null);
+```
+
+Do not wrap a one-off call in an immediately invoked function.
+
+```ts
+(() => {
+  void queryClient.query(trpc.products.getMessage.queryOptions());
+})();
+```
 
 ## File names
 
