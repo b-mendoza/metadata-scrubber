@@ -7,9 +7,9 @@ Report code that conflicts with a choice instead of copying that code.
 ## Imports
 
 - Use `#/` for imports from `src/`. The alias does not depend on the caller's directory.
-- Review module initialization before removing the last runtime import. Keep a side-effect import when initialization is required. Type-only imports do not execute the module.
+- Review what the module does when it first loads before you remove the last runtime import. Keep a side-effect import when that first load must run. Type-only imports do not run the module.
 
-The workflow Ky client uses this split:
+The workflow Ky client splits types and runtime values like this:
 
 ```ts
 import type { KyInstance, RetryOptions, ShouldRetryState } from "ky";
@@ -18,22 +18,22 @@ import ky, { HTTPError } from "ky";
 
 ## Server code
 
-- Keep the frontend server a thin proxy to the Go backend. Send small JSON contracts through tRPC procedures, not file bytes. Concurrent file buffers multiply memory use.
+- Keep the frontend server a small proxy to the Go backend. Send small JSON contracts through tRPC procedures, not file bytes. Many file buffers at the same time use more memory.
 - Use TanStack Start route handlers and server functions for small operations. Another server framework would add a second request-handling model.
-- Keep each backend call explicit in its procedure instead of adding a shared transport wrapper. Each operation owns its request contract and failure mapping.
+- Write each backend call in its own procedure. Do not add a shared transport wrapper. Each operation owns its request contract and how it turns failures into errors.
 - Create server clients in `appBindingsMiddleware` for each request. Read them with `getAppBindings()`. A module-level `const` client can share state between requests.
-- Wrap server-only functions exported from modules without the `.server` suffix with `createServerOnlyFn`. This prevents a browser from executing the server implementation.
+- Wrap server-only functions exported from modules without the `.server` suffix with `createServerOnlyFn`. This stops a browser from running the server code.
 - Pass the request's `AbortSignal` to each backend HTTP call. Cancellation must stop backend work.
-- Use relative paths for bound Ky calls. App bindings supply the base URL.
-- Change a bound client's timeout or retry policy only for a use case that needs it. Set the change on that request so other operations keep their policy.
-- Preserve attempt timeouts, total timeouts, retry counts, retry delay caps, and accepted URL protocols when replacing Ky or Zod. A replacement must not run longer or accept new protocols.
+- Use relative paths for Ky calls after app bindings set the base URL.
+- Change a client's timeout or retry policy only for a use case that needs it. Set the change on that request so other operations keep their policy.
+- Keep attempt timeouts, total timeouts, retry counts, retry delay caps, and accepted URL protocols when replacing Ky or Zod. A replacement must not run longer or accept new protocols.
 
 ## Errors and asynchronous code
 
 - Keep `neverthrow` in non-test `.server` modules under `src/` and in `scripts/`. Use `async`/`await` in other source files and in tests. This keeps the result library out of browser code.
 - Use `async`/`await` without the result library in `scripts/hard-clean.ts` and `scripts/soft-clean.ts`. These scripts must run without installed dependencies.
-- Use `ResultAsync.fromPromise` when a server handler intentionally maps a dependency failure. Map the failure at the operation, not around the whole handler. This keeps unrelated programming errors out of that mapping.
-- Follow the `getMessage` failure pattern in `src/domains/products/products-router.mod.server.ts`. Await the `ResultAsync`, check `isErr()`, and throw its error at the route or tRPC boundary before returning its value. Explicit checks keep the failure path visible.
+- Use `ResultAsync.fromPromise` when a server handler maps a dependency failure. Map the failure at that one operation. Do not wrap the whole handler. This keeps other programming errors out of that map.
+- Follow the `getMessage` failure pattern in `src/domains/products/products-router.mod.server.ts`. Await the `ResultAsync`, check `isErr()`, and throw its error at the route or tRPC boundary before returning its value. These checks make the failure easy to see.
 
 ```ts
 const backendHealthStatusResult = await ResultAsync.fromPromise(
@@ -75,20 +75,20 @@ try {
 }
 ```
 
-| API                       | Use it when                                                                          | Example                                                                       |
-| ------------------------- | ------------------------------------------------------------------------------------ | ----------------------------------------------------------------------------- |
-| `ResultAsync.fromPromise` | Map a promise rejection to a known error value with the original failure in `cause`. | `src/domains/products/products-router.mod.server.ts`, `getMessage`            |
-| `isErr()`                 | Check a result before reading its error or value.                                    | `src/domains/products/products-router.mod.server.ts`, `getMessage`            |
-| `safeParse`               | Validate a value without throwing and branch on `success`.                           | `src/domains/wizard/wizard-router.mod.server.ts`, `mapWorkflowRequestFailure` |
+| API                       | Use it when                                                                  | Example                                                                       |
+| ------------------------- | ---------------------------------------------------------------------------- | ----------------------------------------------------------------------------- |
+| `ResultAsync.fromPromise` | Map a failed promise to a known error. Keep the original failure in `cause`. | `src/domains/products/products-router.mod.server.ts`, `getMessage`            |
+| `isErr()`                 | Check a result before you read its error or value.                           | `src/domains/products/products-router.mod.server.ts`, `getMessage`            |
+| `safeParse`               | Check a value without throwing. Then branch on `success`.                    | `src/domains/wizard/wizard-router.mod.server.ts`, `mapWorkflowRequestFailure` |
 
-- Leave schema validation with tRPC `.input()` and Ky `.json()` when those APIs own the call. Let direct boundary `.parse()` calls throw unless the handler intentionally maps their failure. A second wrapper would add another failure owner.
-- Review discarded synchronous `Result` values and awaited `ResultAsync` values whose inner result is ignored. Thenable lint checks do not prove that the code handles the result.
+- Leave schema checks with tRPC `.input()` and Ky `.json()` when those APIs handle the call. Let direct `.parse()` calls at a boundary throw unless the handler maps their failure. A second wrapper would add a second place that handles the failure.
+- Review unused `Result` values and awaited `ResultAsync` values when the code ignores the inner result. Thenable lint checks do not prove that the code handles the result.
 
 ## Route data
 
-- Treat every route data dependency as optional.
-- Do not `await` a data request in a `loader`. An awaited loader blocks navigation between routes. It also blocks a user who arrives from another domain. The route cannot render until every awaited request finishes.
-- Start each query without waiting. Do not return that promise from the `loader`. The `.catch` prevents an unhandled rejection. The consumer reads the cache.
+- Treat every piece of route data as optional.
+- Do not `await` a data request in a `loader`. If the `loader` waits, the user cannot move to another route. A user who opens the app from another site also waits. The route cannot render until every waiting request finishes.
+- Start each query without waiting. Do not return that promise from the `loader`. The `.catch` stops a promise error that no other code handles. The component that reads the query uses the cache.
 
 Loader:
 
@@ -114,8 +114,8 @@ await queryClient.query(trpc.products.getMessage.queryOptions());
 ```
 
 - Read query data with `useSuspenseQuery` only. Do not use `useQuery`.
-- Put data-fetching logic in a child component. Wrap that child in a `Suspense` boundary with a `fallback`. The route then renders a static shell first. The user can interact while data loads. This keeps LCP, INP, and CLS from regressing.
-- Put query loading UI in the `fallback`. Do not use loading flags or nullable-data branches in the consumer.
+- Put the data fetch in a child component. Wrap that child in a `Suspense` boundary with a `fallback`. The route then shows a static shell first. The shell is the page content that does not wait for the query. The user can use the page while data loads. This stops LCP, INP, and CLS from getting worse. Those names are page-speed scores.
+- Put the loading UI in the `fallback`. Do not use loading flags. Do not write extra checks for missing data while it loads.
 
 ```tsx
 import { Suspense } from "react";
@@ -140,9 +140,9 @@ const messageQuery = useQuery(trpc.products.getMessage.queryOptions());
 ```
 
 - Review the actual parent `Suspense` and error boundaries, data needs, and retry behavior. Include parents in other files. Add a loader only when the route needs one. Import rules cannot check these relationships.
-- Do not mark a data dependency as required. The operator decides that. An agent may mark a dependency as required only when another fetch is derived from it. Await only that parent fetch. Keep the derived fetches optional.
+- Do not mark route data as required. The operator decides that. An agent may mark data as required only when a later fetch needs that first result. Await only that first fetch. Keep the later fetches optional.
 
-An authenticated page first fetches the user's data. Later fetches use that user. The user fetch is required. The later fetches stay optional.
+A page that needs a signed-in user first fetches that user's data. Later fetches use that user. The user fetch is required. The later fetches stay optional.
 
 - Read `trpc` and `queryClient` from loader context in a `loader`.
 - Read `trpc` from `Route.useRouteContext()` in a route component.
@@ -215,8 +215,8 @@ Do not pass the clients to a child as props:
 
 ## Contracts
 
-- Use Zod for validation in application code and tools. One validation library keeps schema behavior consistent.
-- Treat dependency and tool output as `unknown` before validating it with Zod. A type annotation alone does not check external data.
+- Use Zod for validation in application code and tools. One validation library keeps schema behavior the same everywhere.
+- Treat dependency and tool output as `unknown` before you check it with Zod. A type name alone does not check external data.
 - Read the maximum source size from the backend at runtime. Do not add a frontend upper-limit constant or `.max()` check. The backend owns that limit.
 - Reject padding before `.trim()` for exact contract strings. Accepted strings must keep their original value.
 
@@ -224,11 +224,11 @@ Do not pass the clients to a child as props:
 
 - Export a schema-derived type beside its schema when tests need it. Tests then use the production contract.
 - Call tRPC procedures through `createCallerFactory` with the real router type. Reflection would lose the typed input and output checks.
-- Use MSW at network boundaries in unit tests to model realistic responses with less test setup code. Keep request construction and response handling in the test. Keep a direct fake only when it preserves behavior that MSW cannot test, such as exact injected errors or deterministic timeouts. Do not use MSW to replace a running service in end-to-end tests.
+- Use MSW at network boundaries in unit tests to model real responses with less test setup code. Keep request construction and response handling in the test. Keep a direct fake only when it keeps behavior that MSW cannot test, such as exact injected errors or timeouts that stay the same. Do not use MSW to replace a running service in end-to-end tests.
 - Set MSW's `onUnhandledFrame` to `"error"` and reset handlers after each test. Check handler calls in failure tests so a missing handler cannot pass as the expected request failure.
-- Read or clone request bodies inside the MSW handler or retained fetch fake. Ky can consume the body before a later assertion reads it.
-- Capture a rejected error, then narrow it once with `expect.assert` before unconditional assertions. Apply this pattern in test helpers too. Conditional-expect lint does not check every helper.
-- Use `expect.assert` when a prerequisite assertion must narrow a TypeScript type. A Boolean matcher does not supply that narrowing.
+- Read or clone request bodies inside the MSW handler or the kept fetch fake. Ky can read the body before a later assertion reads it.
+- Capture a rejected error, then narrow it once with `expect.assert` before assertions that always run. Apply this pattern in test helpers too. Conditional-expect lint does not check every helper.
+- Use `expect.assert` when a first assertion must narrow a TypeScript type. A Boolean matcher does not give that narrowing.
 - Keep Vitest's failure for empty test discovery enabled. A suite with no tests must not pass.
 - Run end-to-end tests against the real frontend and backend services, not mocks. Mocks can produce false passes and false failures.
 - Start both services before running end-to-end tests. The suite starts no services.
@@ -236,12 +236,12 @@ Do not pass the clients to a child as props:
 ## Components and functions
 
 - Remount `FileUploader` when `createUpload` or `maxFileSizeBytes` changes. Its Effect captures those values on mount.
-- Name Effect hooks for their synchronization purpose, not mount timing. The hook-name check cannot prove that the name describes the work.
+- Name Effect hooks for the work they keep in sync, not for mount timing. The hook-name check cannot prove that the name describes the work.
 - Call a named function instead of an immediately invoked function. Keep anonymous callbacks inline when passing or storing them. This gives each immediate call a name without moving callbacks away from their use.
 
 ## File names
 
-- Name source modules `*.mod.ts`, or `*.mod.tsx` when they contain JSX. This distinguishes modules from route entry points.
+- Name source modules `*.mod.ts`, or `*.mod.tsx` when they contain JSX. This marks modules as different from route files.
 - Name server-only modules `*.mod.server.ts`. The server suffix keeps them out of browser bundles.
 - Name tests `*.test.ts` or `*.test.tsx`. Use `*.server.test.ts` for server tests so Vitest runs them in Node instead of a DOM environment.
 - Put each test beside its module. Keep `src/tests/` for setup and shared helpers. This keeps behavior tests beside the code they check.
@@ -249,13 +249,13 @@ Do not pass the clients to a child as props:
 
 ## Lint rules and checks
 
-- Leave `.oxlintrc.json` unchanged. The user owns its activation updates; agent rule changes belong in the ESLint configuration.
+- Leave `.oxlintrc.json` unchanged. The user owns updates that turn rules on. Agent rule changes belong in the ESLint configuration.
 - Update `eslint-config/test-rules.ts` when adding a test category to `vitest.config.ts`. New test discovery needs matching lint coverage.
-- Keep React Doctor checks scoped to the full frontend with the configured exclusions. A changed-file scan can miss cross-file problems.
+- Keep React Doctor checks scoped to the full frontend with the configured ignored paths. A changed-file scan can miss cross-file problems.
 - Put each new ESLint rule in the configuration module for its topic. This keeps unrelated policies separate.
-- Create custom rules with `defineRule` under `oxlint-plugin-metadata-scrubber/rules/`. Register them in `oxlint-plugin-metadata-scrubber/index.ts`. The plugin must expose each rule to its consumers.
-- Enable each new custom rule in `oxlint-plugin-metadata-scrubber/fixture.config.json` and `eslint-config/metadata-scrubber-rules.ts`. Fixture checks and application lint must both exercise the rule.
-- Define diagnostic templates in `meta.messages`. Report with `messageId` and interpolation `data`. This keeps each diagnostic's wording in one place.
+- Create custom rules with `defineRule` under `oxlint-plugin-metadata-scrubber/rules/`. Register them in `oxlint-plugin-metadata-scrubber/index.ts`. The plugin must make each rule available to the code that uses it.
+- Enable each new custom rule in `oxlint-plugin-metadata-scrubber/fixture.config.json` and `eslint-config/metadata-scrubber-rules.ts`. Fixture checks and application lint must both run the rule.
+- Define error message templates in `meta.messages`. Report with `messageId` and fill-in `data`. This keeps each error message in one place.
 - Resolve bindings through `sourceCode.getScope` and resolved references. Spelling alone misses aliases and shadowing.
-- Add positive and negative fixtures for each custom rule. Pin the exact count and ordered messages in `oxlint-plugin-metadata-scrubber/check-fixtures.ts`. This detects missing and extra reports.
-- Name the failing binding or source and the exact repair API or import path in each diagnostic. Include every repair step. Name each known bypass only to forbid it when it can preserve the violation. CLI output has no separate help channel.
+- Add positive and negative fixtures for each custom rule. Set the exact count and ordered messages in `oxlint-plugin-metadata-scrubber/check-fixtures.ts`. This detects missing and extra reports.
+- Name the failing binding or source and the exact repair API or import path in each error message. Include every repair step. Name each known bypass only to forbid it when that bypass still breaks the rule. CLI output has no separate help channel.
