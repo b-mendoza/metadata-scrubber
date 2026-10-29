@@ -1,6 +1,7 @@
 import { definePlugin } from "@oxlint/plugins";
 
 import noClasses from "./rules/no-classes.ts";
+import noDiscardedResult from "./rules/no-discarded-result.ts";
 import noExpectTypeOf from "./rules/no-expect-type-of.ts";
 import noLifecycleHookNames from "./rules/no-lifecycle-hook-names.ts";
 import noModuleScopeHttpClient from "./rules/no-module-scope-http-client.ts";
@@ -20,6 +21,7 @@ export default definePlugin({
   },
   rules: {
     "no-classes": noClasses,
+    "no-discarded-result": noDiscardedResult,
     "no-expect-type-of": noExpectTypeOf,
     "no-lifecycle-hook-names": noLifecycleHookNames,
     "no-module-scope-http-client": noModuleScopeHttpClient,

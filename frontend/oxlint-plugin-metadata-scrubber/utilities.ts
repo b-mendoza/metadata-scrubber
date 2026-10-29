@@ -157,7 +157,7 @@ const getHttpPropertyName = (
   return null;
 };
 
-const getRuntimeImportDeclaration = (
+export const getRuntimeImportDeclaration = (
   definition: Definition,
 ): ESTree.ImportDeclaration | null => {
   if (definition.type !== "ImportBinding") return null;
