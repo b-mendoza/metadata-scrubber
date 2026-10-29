@@ -43,5 +43,6 @@ jobs:
         # The runner's Go downloads the toolchain that the fork's go.mod requires.
         # ubuntu-latest includes shellcheck. actionlint uses it when it is on PATH.
         run: go run github.com/astral-sh/actionlint/cmd/actionlint@dbad7bbbc92988579c4050c3389de41e9762123a
+        background: true
 
       - wait-all:
