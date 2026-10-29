@@ -5,6 +5,7 @@
     "metadata-scrubber/no-expect-type-of": "error",
     "metadata-scrubber/no-lifecycle-hook-names": "error",
     "metadata-scrubber/no-mutable-module-state-in-server-code": "error",
+    "metadata-scrubber/no-query-client-props": "error",
     "metadata-scrubber/no-silent-test-prerequisite": "error",
     "metadata-scrubber/no-test-local-object-type": "error",
     "metadata-scrubber/require-colocated-test": "error",
