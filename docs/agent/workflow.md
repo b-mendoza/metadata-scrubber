@@ -4,12 +4,12 @@ These are general work practices. For facts, the code is the source of truth.
 
 ## Simplicity
 
-- Use a solution with the least complexity that solves the problem. Before implementation, check whether fewer abstractions can solve it. Reject design made for possible future requirements that no current consumer has. Choose a design that a junior developer can understand in five minutes.
+- Use the simplest solution that solves the problem. Before you write code, check whether fewer layers can solve it. Do not design for needs that no current caller has. Choose a design that a new developer can understand in five minutes.
 
 ## Scope control
 
 - Keep each diff limited to the task requirements. A reviewer must be able to map each hunk to the stated goal. Exclude unrelated refactors and reformatting. Do not add documentation, a helper script, an abstraction, or a test file when the task does not require it. Extend the canonical file when the task does not require a new file and the canonical file can hold the change. Report unrelated bugs and cleanup options to the maintainer instead of adding them to the diff.
-- Build compatibility code for real consumers. Add a compatibility shim, deprecation path, or fallback when an actual contract requires it. Actual contracts include a published API, persisted data, and deployed clients. If no contract requires the old path, make the change and delete that path.
+- Add a compatibility shim only when a real contract needs it. Real contracts include a published API, stored data, and deployed clients. If no contract needs the old path, make the change and delete that path.
 
 ## Task management
 
