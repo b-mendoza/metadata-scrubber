@@ -162,6 +162,7 @@ z.url({ protocol: /^https?$/v });
 
 Keep `neverthrow` in non-test `.server` modules under `src/` and in `scripts/`.
 Use `async`/`await` in other source files and in tests.
+This keeps the result library out of browser code.
 
 ```ts
 import { ResultAsync } from "neverthrow";
