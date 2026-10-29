@@ -1,19 +1,43 @@
 name: "Setup Node.js, pnpm and dependencies"
 
-description: Setup pnpm and Node.js, install project dependencies, and restore lint caches
+description: Setup Node.js environment, pnpm package manager, restore and save the pnpm store and lint caches, and install project dependencies
 
 runs:
   using: composite
   steps:
-    # pnpm/setup reads frontend/package.json for the pnpm and Node.js versions.
-    # It installs both, then runs a frozen pnpm install. cache: true restores
-    # the pnpm store before the runtime install.
     - name: Setup pnpm and Node.js
       uses: pnpm/setup@fa36a5ef7dcdefc3a7cb25655c122e00cf6e636e # v3.1.2
       with:
         working-directory: frontend
-        cache: true
-        require-lockfile: true
+        install: false
+
+    - name: Set pnpm store path
+      id: pnpm-store-path
+      shell: bash
+      run: echo "path=$(pnpm store path --silent)" >> "$GITHUB_OUTPUT"
+
+    # Separate restore and save steps save the store right after install.
+    # The combined cache action saves only when the whole job succeeds.
+    - name: Restore pnpm store cache
+      id: pnpm-store-cache
+      uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+      with:
+        path: ${{ steps.pnpm-store-path.outputs.path }}
+        key: pnpm-store-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('frontend/pnpm-lock.yaml') }}
+        restore-keys: |
+          pnpm-store-${{ runner.os }}-${{ runner.arch }}-
+
+    - name: Install dependencies
+      shell: bash
+      working-directory: ./frontend
+      run: pnpm install --frozen-lockfile
+
+    - name: Save pnpm store cache
+      if: steps.pnpm-store-cache.outputs.cache-hit != 'true'
+      uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+      with:
+        path: ${{ steps.pnpm-store-path.outputs.path }}
+        key: ${{ steps.pnpm-store-cache.outputs.cache-primary-key }}
 
     # Restore after install so pnpm does not wipe node_modules/.cache.
     # The combined cache action saves at job end after lint writes results.
