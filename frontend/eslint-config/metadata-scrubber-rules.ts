@@ -16,6 +16,8 @@ export const metadataScrubberRules = defineConfig({
       SEVERITY_LEVELS.Error,
     [`${PLUGIN_NAMES.MetadataScrubber}/no-mutable-module-state-in-server-code`]:
       SEVERITY_LEVELS.Error,
+    [`${PLUGIN_NAMES.MetadataScrubber}/no-query-client-props`]:
+      SEVERITY_LEVELS.Error,
     [`${PLUGIN_NAMES.MetadataScrubber}/no-silent-test-prerequisite`]:
       SEVERITY_LEVELS.Error,
     [`${PLUGIN_NAMES.MetadataScrubber}/no-test-local-object-type`]:

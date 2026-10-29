@@ -4,6 +4,7 @@ import noClasses from "./rules/no-classes.ts";
 import noExpectTypeOf from "./rules/no-expect-type-of.ts";
 import noLifecycleHookNames from "./rules/no-lifecycle-hook-names.ts";
 import noMutableModuleStateInServerCode from "./rules/no-mutable-module-state-in-server-code.ts";
+import noQueryClientProps from "./rules/no-query-client-props.ts";
 import noSilentTestPrerequisite from "./rules/no-silent-test-prerequisite.ts";
 import noTestLocalObjectType from "./rules/no-test-local-object-type.ts";
 import requireColocatedTest from "./rules/require-colocated-test.ts";
@@ -21,6 +22,7 @@ export default definePlugin({
     "no-expect-type-of": noExpectTypeOf,
     "no-lifecycle-hook-names": noLifecycleHookNames,
     "no-mutable-module-state-in-server-code": noMutableModuleStateInServerCode,
+    "no-query-client-props": noQueryClientProps,
     "no-silent-test-prerequisite": noSilentTestPrerequisite,
     "no-test-local-object-type": noTestLocalObjectType,
     "require-colocated-test": requireColocatedTest,

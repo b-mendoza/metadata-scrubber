@@ -12,6 +12,8 @@ const NO_LIFECYCLE_HOOK_NAMES_GUIDANCE =
   "Name the hook for the external system it keeps in sync, for example `useUppyDashboard`.";
 const NO_MUTABLE_MODULE_STATE_IN_SERVER_CODE_GUIDANCE =
   "Move request-local mutation into request scope. Put request dependencies in `appBindingsMiddleware` and read them with `getAppBindings()`. Use `const` only when no request changes the value or its contents. Do not move the mutation into a module-scope object or array.";
+const NO_QUERY_CLIENT_PROPS_GUIDANCE =
+  "In a route file, read `trpc` and `queryClient` with `Route.useRouteContext()`. In a component that lives in its own file, read them with `trpcContext.useTRPC()` and `useQueryClient()` from `@tanstack/react-query`. Remove this prop.";
 const NO_SILENT_TEST_PREREQUISITE_GUIDANCE =
   "Remove `.skip` so the suite or test runs. Assert each test prerequisite with a Vitest `expect` assertion inside the test callback. Do not replace `.skip` with `.todo` or another disabled-test API. Disabled tests hide missing setup and let CI pass without required coverage. Import `expect` from `vitest` when the test file does not import it.";
 const SEPARATE_TYPE_IMPORTS_GUIDANCE =
@@ -77,6 +79,25 @@ export const fixtureCases: readonly FixtureCase[] = [
     [
       `Concurrent server requests share the module-scope \`let\` state in \`requestCount\`. ${NO_MUTABLE_MODULE_STATE_IN_SERVER_CODE_GUIDANCE}`,
       `Concurrent server requests share the module-scope \`var\` state in \`requestTotal, requestLabel\`. ${NO_MUTABLE_MODULE_STATE_IN_SERVER_CODE_GUIDANCE}`,
+    ],
+  ],
+  [
+    "no-query-client-props",
+    "no-query-client-props.tsx",
+    [
+      `\`routeRpc\` passes a query client through the \`trpc\` prop. ${NO_QUERY_CLIENT_PROPS_GUIDANCE}`,
+      `\`routeCache\` passes a query client through the \`queryClient\` prop. ${NO_QUERY_CLIENT_PROPS_GUIDANCE}`,
+      `\`routeContext.trpc\` passes a query client through the \`rpc\` prop. ${NO_QUERY_CLIENT_PROPS_GUIDANCE}`,
+      `\`routeContext.queryClient\` passes a query client through the \`cache\` prop. ${NO_QUERY_CLIENT_PROPS_GUIDANCE}`,
+      `\`cache\` passes a query client through the \`cache\` prop. ${NO_QUERY_CLIENT_PROPS_GUIDANCE}`,
+      `\`client\` passes a query client through the \`client\` prop. ${NO_QUERY_CLIENT_PROPS_GUIDANCE}`,
+      `\`alias\` passes a query client through the \`alias\` prop. ${NO_QUERY_CLIENT_PROPS_GUIDANCE}`,
+      `\`readCache()\` passes a query client through the \`direct\` prop. ${NO_QUERY_CLIENT_PROPS_GUIDANCE}`,
+      `\`rpc.useTRPC()\` passes a query client through the \`rpc\` prop. ${NO_QUERY_CLIENT_PROPS_GUIDANCE}`,
+      `\`"wrong"\` passes a query client through the \`trpc\` prop. ${NO_QUERY_CLIENT_PROPS_GUIDANCE}`,
+      `\`null\` passes a query client through the \`queryClient\` prop. ${NO_QUERY_CLIENT_PROPS_GUIDANCE}`,
+      `\`cache\` passes a query client through the \`client\` prop. ${NO_QUERY_CLIENT_PROPS_GUIDANCE}`,
+      `\`cache\` passes a query client through the \`queryClient\` prop. ${NO_QUERY_CLIENT_PROPS_GUIDANCE}`,
     ],
   ],
   [

@@ -20,6 +20,7 @@ Directory fixtures run from their own root, so their `src/` paths match real sou
 - `no-expect-type-of` requires TypeScript contracts instead of Vitest `expectTypeOf(...)` calls, including renamed imports.
 - `no-lifecycle-hook-names` rejects function declarations and function-valued variable declarations with mount-timing hook names. A suffix must start with an uppercase letter, digit, or underscore. It rejects `useMountUploader` but allows `useMountedState`, which describes state rather than mount timing.
 - `no-mutable-module-state-in-server-code` rejects module-scope `let` and `var` declarations in server modules.
+- `no-query-client-props` rejects `trpc` and `queryClient` props. It also rejects other prop names when their values resolve to route clients or query hooks. It allows the imported tRPC providers and `QueryClientProvider` setup.
 - `no-silent-test-prerequisite` rejects `.skip` calls on Vitest test APIs, including chains such as `test.skip.each(...)`. It also rejects bare test prerequisite returns in test callbacks.
 - `no-test-local-object-type` rejects direct object-literal type aliases and interfaces in test files. It allows function aliases, imported types, and schema-derived types.
 - `require-colocated-test` requires each source test outside `src/tests/` to sit beside a source module whose stem is a prefix of the test stem. It uses the longest matching stem, then file-name order. It maps `-root.test.tsx` to `__root.tsx`. A test of a `.server` module must end with `.server.test.ts` so Vitest uses Node.
@@ -58,6 +59,8 @@ Make each diagnostic clear enough to explain the required correction. Explain th
 - Lint caches do not track sibling-file changes. Run lint without its cache after you move, add, or remove a module or test.
 - The colocated-test rule matches file names, not imports or test behavior. If no sibling matches, it searches the source tree to suggest a move. When no module matches anywhere, it gives a naming example instead of inventing a target path. Directory read failures produce a diagnostic.
 - The file-name rule detects JSX syntax, not whether a file renders a component. It does not prove server-only execution.
+
+- The client-prop rule follows static members and local `const` aliases. It does not inspect prop spreads, mutable assignments, custom hooks, or cross-file re-exports. Provider exceptions resolve the known import bindings, not component names alone.
 
 - The object-type rule checks syntax, not schema equivalence. It allows function types, nested object types, arrays, unions, intersections, and schema-derived aliases. It does not prove that a type needs a schema or that an imported type is schema-derived.
 
