@@ -18,19 +18,6 @@ Do not use a relative path into `src/`:
 import { getAppBindings } from "../../shared/middlewares/app-bindings/app-bindings.mod";
 ```
 
-Split type imports from runtime imports. Type-only imports do not run the module.
-
-```ts
-import type { KyInstance, RetryOptions, ShouldRetryState } from "ky";
-import ky, { HTTPError } from "ky";
-```
-
-Do not mix inline `type` specifiers into a runtime import:
-
-```ts
-import ky, { type KyInstance, HTTPError } from "ky";
-```
-
 ## Server code
 
 Keep the frontend server a small proxy to the Go backend.
