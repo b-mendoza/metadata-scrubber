@@ -28,6 +28,23 @@
       "description": "By default Renovate only runs `go get`, which can leave go.sum without full-content checksums for shared transitive deps needed by go.mod `tool` directives (broke CI on the pdfcpu v0.14.0 PR). Run `go mod tidy` so non-major gomod PRs ship a consistent module graph (Renovate skips tidy on major updates unless gomodUpdateImportPaths is also enabled).",
       "matchManagers": ["gomod"],
       "postUpdateOptions": ["gomodTidy"]
+    },
+    {
+      "description": "frontend/package.json and frontend/Dockerfile declare one Node.js version; CI and the container build fail when the two update separately",
+      "groupName": "Node.js Docker image and package.json",
+      "matchDatasources": ["docker", "node-version"],
+      "matchFileNames": ["frontend/package.json", "frontend/Dockerfile"],
+      "matchPackageNames": ["node"],
+      "matchUpdateTypes": ["major", "minor", "patch"],
+      "minimumGroupSize": 2
+    },
+    {
+      "description": "frontend/package.json and frontend/Dockerfile declare one pnpm version; the container build fails when the two update separately",
+      "groupName": "pnpm Docker image and package.json",
+      "matchFileNames": ["frontend/package.json", "frontend/Dockerfile"],
+      "matchPackageNames": ["pnpm", "ghcr.io/pnpm/pnpm"],
+      "matchUpdateTypes": ["major", "minor", "patch"],
+      "minimumGroupSize": 2
     }
   ],
   "rebaseWhen": "conflicted",
