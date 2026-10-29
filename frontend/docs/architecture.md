@@ -6,6 +6,8 @@
 
 Developers build the frontend with [TanStack Start](https://tanstack.com/start) through `@tanstack/react-start`. They keep file-based routes under `src/routes/`. They mount tRPC at `src/routes/api/trpc.$.ts`.
 
+The index route starts `products.getMessage` in its `loader` without waiting. `IndexRoute` wraps `Message` in `Suspense`. `Message` reads `trpc` from `Route.useRouteContext()` and the query with `useSuspenseQuery`.
+
 ## Browser analytics
 
 - [`src/routes/__root.tsx`](../src/routes/__root.tsx) sends a public project token and fixed options through root loader data. [`posthog-browser-config.mod.server.ts`](../src/shared/config/posthog/posthog-browser-config.mod.server.ts) supplies both values. The root route starts `posthog-js` with `@posthog/react` in the browser.
