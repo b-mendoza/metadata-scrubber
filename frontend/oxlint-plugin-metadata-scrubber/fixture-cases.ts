@@ -212,6 +212,19 @@ export const fixtureCases: readonly FixtureCase[] = [
     ],
   ],
   [
+    "require-ky-json-schema",
+    "require-ky-json-schema.server.ts",
+    [
+      "`client.get` calls `.json()` without a response schema. Pass the Zod response schema with `.json(schema)`. Ky validates the body; do not parse it again later.",
+      "`alias.post` calls `.json()` without a response schema. Pass the Zod response schema with `.json(schema)`. Ky validates the body; do not parse it again later.",
+      "`readBindings().httpClient.get` calls `.json()` without a response schema. Pass the Zod response schema with `.json(schema)`. Ky validates the body; do not parse it again later.",
+      "`request` calls `.json()` without a response schema. Pass the Zod response schema with `.json(schema)`. Ky validates the body; do not parse it again later.",
+      "`request.get` calls `.json()` without a response schema. Pass the Zod response schema with `.json(schema)`. Ky validates the body; do not parse it again later.",
+      "`fetchJson.post` calls `.json()` without a response schema. Pass the Zod response schema with `.json(schema)`. Ky validates the body; do not parse it again later.",
+      "`kyModule.default` calls `.json()` without a response schema. Pass the Zod response schema with `.json(schema)`. Ky validates the body; do not parse it again later.",
+    ],
+  ],
+  [
     "require-module-file-name",
     "require-module-file-name",
     [
