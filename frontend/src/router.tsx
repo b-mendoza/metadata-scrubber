@@ -1,14 +1,13 @@
 import { createRouter } from "@tanstack/react-router";
 import { setupRouterSsrQueryIntegration } from "@tanstack/react-router-ssr-query";
 
+import { routeTree } from "#/routeTree.gen";
 import { TRPCProvider } from "#/shared/libs/trpc/client/client.mod";
 import {
   getBaseTRPCURL,
   getRouterContext,
   initializeTRPCClient,
 } from "#/shared/libs/trpc/client/client-runtime.mod";
-
-import { routeTree } from "./routeTree.gen";
 
 export const getRouter = () => {
   const trpcClient = initializeTRPCClient(getBaseTRPCURL());
