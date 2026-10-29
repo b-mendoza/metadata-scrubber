@@ -513,16 +513,132 @@ const fileNameSchema = z.string().trim().min(1);
 
 ## Tests
 
-- Export a schema-derived type beside its schema when tests need it. Tests then use the production contract.
-- Call tRPC procedures through `createCallerFactory` with the real router type. Reflection would lose the typed input and output checks.
-- Use MSW at network boundaries in unit tests to model real responses with less test setup code. Keep request construction and response handling in the test. Keep a direct fake only when it keeps behavior that MSW cannot test, such as exact injected errors or timeouts that stay the same. Do not use MSW to replace a running service in end-to-end tests.
-- Set MSW's `onUnhandledFrame` to `"error"` and reset handlers after each test. Check handler calls in failure tests so a missing handler cannot pass as the expected request failure.
-- Read or clone request bodies inside the MSW handler or the kept fetch fake. Ky can read the body before a later assertion reads it.
-- Capture a rejected error, then narrow it once with `expect.assert` before assertions that always run. Apply this pattern in test helpers too. Conditional-expect lint does not check every helper.
-- Use `expect.assert` when a first assertion must narrow a TypeScript type. A Boolean matcher does not give that narrowing.
-- Keep Vitest's failure for empty test discovery enabled. A suite with no tests must not pass.
-- Run end-to-end tests against the real frontend and backend services, not mocks. Mocks can produce false passes and false failures.
-- Start both services before running end-to-end tests. The suite starts no services.
+Export a schema-derived type beside its schema when tests need it.
+
+```ts
+export const backendErrorResponseSchema = z.object({
+  error: z.string().trim().nonempty(),
+});
+
+export type BackendErrorResponse = z.output<typeof backendErrorResponseSchema>;
+```
+
+```ts
+const response: BackendErrorResponse = {
+  error: "processing capacity temporarily unavailable",
+};
+```
+
+Do not write a parallel test-only type:
+
+```ts
+type BackendErrorResponse = { error: string };
+```
+
+Call tRPC procedures through `createCallerFactory` with the real router type.
+
+```ts
+const createAppCaller = createCallerFactory(appRouter);
+
+const caller = createAppCaller(createTRPCRequestContext(request), {
+  signal: request.signal,
+}).wizard;
+
+const config = await caller.getWorkflowConfig();
+```
+
+Do not call a procedure through a string path that drops router inference.
+
+```ts
+await caller.query("wizard.getWorkflowConfig");
+```
+
+Use MSW at network boundaries in unit tests. Keep request construction and response handling in the test.
+Set `onUnhandledRequest` to `"error"` and reset handlers after each test.
+
+```ts
+const server = setupServer();
+
+beforeAll(() => {
+  server.listen({ onUnhandledRequest: "error" });
+});
+
+afterEach(() => {
+  server.resetHandlers();
+});
+
+afterAll(() => {
+  server.close();
+});
+```
+
+Read or clone the request body inside the MSW handler. Ky can consume the body before a later assertion reads it.
+
+```ts
+const backendBodies: unknown[] = [];
+const handler = vi.fn<HttpResponseResolver>(
+  async ({ request: backendRequest }) => {
+    backendBodies.push(await backendRequest.json());
+    return HttpResponse.json(response);
+  },
+);
+server.use(http.post("https://backend.test/api/uploads", handler));
+
+await callerForRequest(request).createUpload(input);
+
+expect(handler).toHaveBeenCalledOnce();
+expect(backendBodies[0]).toEqual(input);
+```
+
+Do not read `handlerInfo.request.json()` after Ky has already consumed the body.
+
+Keep a direct fetch fake only when MSW cannot keep the behavior, such as an exact injected error or a timeout that stays the same.
+
+```ts
+const transportFailure = new Error("provider-credential-sentinel");
+const fetchMock = vi.fn<typeof fetch>().mockRejectedValue(transportFailure);
+vi.stubGlobal("fetch", fetchMock);
+```
+
+Do not use MSW to replace a running service in end-to-end tests.
+
+Capture a rejected error, then narrow it once with `expect.assert` before assertions that always run. Apply this in test helpers too.
+
+```ts
+let failure: unknown = null;
+try {
+  await caller.createUpload(input);
+} catch (error) {
+  failure = error;
+}
+
+expect.assert(failure instanceof TRPCError);
+expect(failure.code).toBe("BAD_GATEWAY");
+expect(failure.message).toBe(CREATE_UPLOAD_FAILURE_MESSAGE);
+```
+
+```ts
+expect.assert(fileInput instanceof HTMLInputElement);
+return fileInput;
+```
+
+Do not use a Boolean matcher when you need TypeScript narrowing on the same value.
+
+```ts
+expect(failure instanceof TRPCError).toBe(true);
+expect(failure.code).toBe("BAD_GATEWAY");
+```
+
+Run end-to-end tests against the real frontend and backend services. Start both services before the suite. The suite starts no services and uses no mocks.
+
+```ts
+export default defineConfig({
+  testDir: "./e2e",
+  use: {
+    baseURL: "http://localhost:3000",
+  },
+});
+```
 
 ## Components and functions
 
