@@ -3,8 +3,9 @@ import globals from "globals";
 
 import { PLUGIN_NAMES, SEVERITY_LEVELS } from "./constants.ts";
 import {
-  restrictedImportPatterns,
+  restrictedImports,
   restrictedQueryImports,
+  sourceRestrictedImportPatterns,
 } from "./import-restriction-rules.ts";
 import { restrictedSyntax } from "./syntax-rules.ts";
 
@@ -20,6 +21,14 @@ export const sourceRules = defineConfig(
       },
     },
     rules: {
+      // Source imports keep the global bans and use the stable #/ alias.
+      "no-restricted-imports": [
+        SEVERITY_LEVELS.Error,
+        {
+          paths: restrictedImports,
+          patterns: sourceRestrictedImportPatterns,
+        },
+      ],
       // Render purity prevents shared state changes and premature ref access.
       [`${PLUGIN_NAMES.ESLintReact}/globals`]: SEVERITY_LEVELS.Error,
       [`${PLUGIN_NAMES.ESLintReact}/immutability`]: SEVERITY_LEVELS.Error,
@@ -38,12 +47,12 @@ export const sourceRules = defineConfig(
   {
     files: ["src/**/*.server.ts"],
     rules: {
-      // Server boundaries use ResultAsync for dependency failures.
+      // Server boundaries use ResultAsync; source paths still use the alias.
       "no-restricted-imports": [
         SEVERITY_LEVELS.Error,
         {
           paths: restrictedQueryImports,
-          patterns: restrictedImportPatterns,
+          patterns: sourceRestrictedImportPatterns,
         },
       ],
       // A broad catch can map programming errors as dependency failures.
