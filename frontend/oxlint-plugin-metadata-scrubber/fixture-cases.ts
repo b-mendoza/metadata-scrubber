@@ -92,6 +92,16 @@ export const fixtureCases: readonly FixtureCase[] = [
     ],
   ],
   [
+    "no-test-local-object-type",
+    "no-test-local-object-type.test.ts",
+    [
+      "`Upload` declares a test-local object type. Export a schema-derived type beside its schema, such as `export type X = z.output<typeof xSchema>`, and import it into this test. Do not keep a parallel test-only object type.",
+      "`ResponseBody` declares a test-local object type. Export a schema-derived type beside its schema, such as `export type X = z.output<typeof xSchema>`, and import it into this test. Do not keep a parallel test-only object type.",
+      "`Inputs` declares a test-local object type. Export a schema-derived type beside its schema, such as `export type X = z.output<typeof xSchema>`, and import it into this test. Do not keep a parallel test-only object type.",
+      "`LocalBody` declares a test-local object type. Export a schema-derived type beside its schema, such as `export type X = z.output<typeof xSchema>`, and import it into this test. Do not keep a parallel test-only object type.",
+    ],
+  ],
+  [
     "separate-type-imports",
     "separate-type-imports.ts",
     [
