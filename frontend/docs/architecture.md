@@ -116,7 +116,7 @@ The root [architecture reference](../../docs/architecture.md) describes service 
 
 - [package.json](../package.json) defines the available commands and scripts. It pins Node.js in `engines` and `devEngines.runtime`. It pins `pnpm` in `devEngines.packageManager`.
 - lefthook.yml at the repository root defines the Git hook jobs. The [backend architecture reference](../../backend/docs/architecture.md#tooling-layout) describes hook installation.
-- `scripts/setup-node.sh` runs the standalone `pnpm` installer when `pnpm` on PATH is missing, has an invalid version, or has a major version below 12. `pnpm` then installs the Node.js version from `package.json`. The script installs dependencies, then runs lint, fixes, tests, coverage, and a production build.
+- `scripts/setup-node.sh` runs the standalone `pnpm` installer when `pnpm` on PATH is missing, has an invalid version, or has a major version below 12. `pnpm` then installs the pinned `pnpm` and Node.js versions from `package.json`. The script installs dependencies with `pnpm install --frozen-lockfile`.
 - `scripts/hard-clean.ts` and `scripts/soft-clean.ts` import only Node built-ins. They can run without installed dependencies.
 - The lint checks cover ESLint rules, React Doctor findings, unused code, formatting, Oxlint rules, and TypeScript types. Knip checks unused files, dependencies, and exports. oxfmt checks formatting.
 - React Doctor scans the frontend. Its configured ignores include generated output and the Oxlint plugin. It runs without interactive input. Telemetry, scoring, and the supply-chain scan are off. Warnings and errors fail the check.
