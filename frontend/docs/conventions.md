@@ -179,15 +179,58 @@ z.url({ protocol: /^https?$/v });
 
 ## Errors and asynchronous code
 
-- Keep `neverthrow` in non-test `.server` modules under `src/` and in `scripts/`. Use `async`/`await` in other source files and in tests. This keeps the result library out of browser code.
-- Use `async`/`await` without the result library in `scripts/hard-clean.ts` and `scripts/soft-clean.ts`. These scripts must run without installed dependencies.
-- Use `ResultAsync.fromPromise` when a server handler maps a dependency failure. Map the failure at that one operation. Do not wrap the whole handler. This keeps other programming errors out of that map.
-- Follow the `getMessage` failure pattern in `src/domains/products/products-router.mod.server.ts`. Await the `ResultAsync`, check `isErr()`, and throw its error at the route or tRPC boundary before returning its value. These checks make the failure easy to see.
+Keep `neverthrow` in non-test `.server` modules under `src/` and in `scripts/`.
+Use `async`/`await` in other source files and in tests.
+
+```ts
+import { ResultAsync } from "neverthrow";
+
+const backendHealthStatusResult = await ResultAsync.fromPromise(
+  httpClient
+    .get("/api/health", { signal: signal ?? null })
+    .json(messageResponseSchema),
+  (cause: unknown) =>
+    new TRPCError({
+      cause,
+      code: "BAD_GATEWAY",
+      message: BACKEND_HEALTH_CHECK_FAILURE_MESSAGE,
+    }),
+);
+```
+
+```tsx
+const messageQuery = useSuspenseQuery(trpc.products.getMessage.queryOptions());
+```
+
+Do not import `neverthrow` in a route, component, or test.
+
+```tsx
+import { ResultAsync } from "neverthrow";
+
+const messageQuery = useSuspenseQuery(trpc.products.getMessage.queryOptions());
+```
+
+`scripts/hard-clean.ts` and `scripts/soft-clean.ts` must run without installed dependencies. Use Node built-ins only.
+
+```ts
+import { rm } from "node:fs/promises";
+
+await Promise.all(
+  PATHS.map(async (path) =>
+    rm(path, {
+      force: true,
+      recursive: true,
+    }),
+  ),
+);
+```
+
+Map one dependency failure with `ResultAsync.fromPromise`. Await the result, check `isErr()`, and throw at the tRPC boundary.
 
 ```ts
 const backendHealthStatusResult = await ResultAsync.fromPromise(
   httpClient
-    .get(BACKEND_HEALTH_STATUS_ENDPOINT, {
+    .get("/api/health", {
       signal: signal ?? null,
     })
     .json(messageResponseSchema),
@@ -206,12 +249,12 @@ if (backendHealthStatusResult.isErr()) {
 return backendHealthStatusResult.value;
 ```
 
-Do not catch the dependency failure around the whole handler:
+Do not wrap the whole handler in `try`/`catch`. That map would also catch programming errors.
 
 ```ts
 try {
   return await httpClient
-    .get(BACKEND_HEALTH_STATUS_ENDPOINT, {
+    .get("/api/health", {
       signal: signal ?? null,
     })
     .json(messageResponseSchema);
@@ -224,14 +267,54 @@ try {
 }
 ```
 
-| API                       | Use it when                                                                  | Example                                                                       |
-| ------------------------- | ---------------------------------------------------------------------------- | ----------------------------------------------------------------------------- |
-| `ResultAsync.fromPromise` | Map a failed promise to a known error. Keep the original failure in `cause`. | `src/domains/products/products-router.mod.server.ts`, `getMessage`            |
-| `isErr()`                 | Check a result before you read its error or value.                           | `src/domains/products/products-router.mod.server.ts`, `getMessage`            |
-| `safeParse`               | Check a value without throwing. Then branch on `success`.                    | `src/domains/wizard/wizard-router.mod.server.ts`, `mapWorkflowRequestFailure` |
+Use `safeParse` when you check a value without throwing. Then branch on `success`.
 
-- Leave schema checks with tRPC `.input()` and Ky `.json()` when those APIs handle the call. Let direct `.parse()` calls at a boundary throw unless the handler maps their failure. A second wrapper would add a second place that handles the failure.
-- Review unused `Result` values and awaited `ResultAsync` values when the code ignores the inner result. Thenable lint checks do not prove that the code handles the result.
+```ts
+if (
+  cause instanceof HTTPError &&
+  contracts.backendErrorResponseSchema.safeParse(cause.data).success
+) {
+  code = backendStatusCodes[cause.response.status] ?? "BAD_GATEWAY";
+}
+```
+
+Leave schema checks with tRPC `.input()` and Ky `.json()` when those APIs handle the call.
+
+```ts
+publicProcedure.input(contracts.uploadInputSchema).mutation(async ({ input, signal }) => {
+  const responseResult = await ResultAsync.fromPromise(
+    workflowHttpClient
+      .post("/api/uploads", { json: input, signal: signal ?? null })
+      .json(contracts.uploadResponseSchema),
+    mapWorkflowRequestFailure(CREATE_UPLOAD_FAILURE_MESSAGE),
+  );
+```
+
+Do not parse the same success body again after Ky returns:
+
+```ts
+const raw = await workflowHttpClient
+  .post("/api/uploads", { json: input })
+  .json();
+return contracts.uploadResponseSchema.parse(raw);
+```
+
+Let a direct `.parse()` at a boundary throw unless the handler maps that failure.
+Handle every `Result` and awaited `ResultAsync`. Thenable lint checks do not prove that the code reads the inner result.
+
+```ts
+const responseResult = await ResultAsync.fromPromise(/* ... */);
+if (responseResult.isErr()) {
+  throw responseResult.error;
+}
+return responseResult.value;
+```
+
+Do not ignore the inner result:
+
+```ts
+await ResultAsync.fromPromise(/* ... */);
+```
 
 ## Route data
 
