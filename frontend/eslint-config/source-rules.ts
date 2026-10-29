@@ -67,4 +67,34 @@ export const sourceRules = defineConfig(
       ],
     },
   },
+  {
+    files: ["src/routes/**/*.ts", "src/routes/**/*.tsx"],
+    ignores: ["src/**/*.test.ts", "src/**/*.test.tsx"],
+    rules: {
+      // Route tests do not read route data; route components use their context.
+      "no-restricted-imports": [
+        SEVERITY_LEVELS.Error,
+        {
+          paths: [
+            ...restrictedImports,
+            {
+              name: "#/shared/libs/trpc/client/client-runtime.mod",
+              importNames: ["trpcContext"],
+              allowTypeImports: true,
+              message:
+                "trpcContext bypasses route context in a route file. Read trpc from loader context in a loader, or from Route.useRouteContext() in a component. Keep TRPCProvider setup outside route files.",
+            },
+            {
+              name: "@tanstack/react-query",
+              importNames: ["useQueryClient"],
+              allowTypeImports: true,
+              message:
+                "useQueryClient bypasses route context in a route file. Read queryClient from loader context in a loader, or from Route.useRouteContext() in a component.",
+            },
+          ],
+          patterns: sourceRestrictedImportPatterns,
+        },
+      ],
+    },
+  },
 );
