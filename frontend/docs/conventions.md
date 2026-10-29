@@ -450,10 +450,66 @@ Do not pass these clients to child components.
 
 ## Contracts
 
-- Use Zod for validation in application code and tools. One validation library keeps schema behavior the same everywhere.
-- Treat dependency and tool output as `unknown` before you check it with Zod. A type name alone does not check external data.
-- Read the maximum source size from the backend at runtime. Do not add a frontend upper-limit constant or `.max()` check. The backend owns that limit.
-- Reject padding before `.trim()` for exact contract strings. Accepted strings must keep their original value.
+Use Zod for validation in application code and tools.
+Treat dependency and tool output as `unknown` until a schema checks it. A type name does not check external data.
+
+```ts
+const safeEnvironmentVariables = environmentSchema.parse(process.env);
+
+const config = await workflowHttpClient
+  .get("/api/files/config", { signal: signal ?? null })
+  .json(workflowConfigResponseSchema);
+```
+
+Do not trust a type name or a cast:
+
+```ts
+type WorkflowConfigResponse = { maxFileSizeBytes: number };
+
+const config = (await response.json()) as WorkflowConfigResponse;
+return config.maxFileSizeBytes;
+```
+
+Read the maximum source size from the backend at runtime. The backend owns that limit.
+
+```tsx
+const { maxFileSizeBytes } = useSuspenseQuery(
+  trpc.wizard.getWorkflowConfig.queryOptions(),
+).data;
+
+return (
+  <FileUploader
+    createUpload={createUpload}
+    maxFileSizeBytes={maxFileSizeBytes}
+    onUploadComplete={onUploadComplete}
+  />
+);
+```
+
+Do not add a frontend upper-limit constant or a schema `.max()` for that size.
+
+```ts
+const FRONTEND_MAX_FILE_SIZE_BYTES = 7_340_032;
+
+fileSizeBytes: z.int().max(FRONTEND_MAX_FILE_SIZE_BYTES),
+```
+
+Reject padding before `.trim()` for exact contract strings. Accepted strings must keep their original value.
+
+```ts
+const fileNameSchema = z
+  .string()
+  .refine((value) => value === value.trim(), {
+    error: "The file name must not start or end with whitespace.",
+  })
+  .trim();
+```
+
+Do not trim first and accept padded strings:
+
+```ts
+const fileNameSchema = z.string().trim().min(1);
+```
 
 ## Tests
 
