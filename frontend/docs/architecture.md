@@ -114,7 +114,7 @@ The root [architecture reference](../../docs/architecture.md) describes service 
 
 ## Tooling
 
-- [package.json](../package.json) defines the available commands and scripts. It pins Node.js in `engines` and `devEngines.runtime`. It pins `pnpm` in `packageManager` and `devEngines.packageManager`.
+- [package.json](../package.json) defines the available commands and scripts. It pins Node.js in `engines` and `devEngines.runtime`. It pins `pnpm` in `devEngines.packageManager`.
 - lefthook.yml at the repository root defines the Git hook jobs. The [backend architecture reference](../../backend/docs/architecture.md#tooling-layout) describes hook installation.
 - `scripts/setup-node.sh` installs the standalone `pnpm` binary. `pnpm` then installs the Node.js version from `package.json`. The script installs dependencies, then runs lint, fixes, tests, coverage, and a production build.
 - `scripts/hard-clean.ts` and `scripts/soft-clean.ts` import only Node built-ins. They can run without installed dependencies.
