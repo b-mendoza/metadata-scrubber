@@ -22,6 +22,7 @@ if ! pnpm_version="$(pnpm --version 2>/dev/null)" \
     || [[ ! "$pnpm_version" =~ ^([0-9]+)\. ]] \
     || [[ $((10#${BASH_REMATCH[1]})) -lt 12 ]]; then
     curl -fsSL https://get.pnpm.io/install.sh | sh -
+    export PATH="${PNPM_HOME}/bin:${PATH}"
 fi
 
 pnpm install --frozen-lockfile
