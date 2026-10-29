@@ -70,6 +70,20 @@ export const fixtureCases: readonly FixtureCase[] = [
     ],
   ],
   [
+    "no-late-request-body-read",
+    "no-late-request-body-read.test.ts",
+    [
+      "`handler.mock.calls[0]?.[0].request.json()` reads a request body from a Vitest mock record. Ky can consume the body first. Read or clone it inside the MSW handler and store the value: `const bodies: unknown[] = []; const handler = vi.fn<HttpResponseResolver>(async ({ request }) => { bodies.push(await request.json()); return HttpResponse.json(response); });`. Import `vi` from `vitest` and `HttpResponseResolver` and `HttpResponse` from `msw`.",
+      "`handler.mock.lastCall?.[0].request.text()` reads a request body from a Vitest mock record. Ky can consume the body first. Read or clone it inside the MSW handler and store the value: `const bodies: unknown[] = []; const handler = vi.fn<HttpResponseResolver>(async ({ request }) => { bodies.push(await request.json()); return HttpResponse.json(response); });`. Import `vi` from `vitest` and `HttpResponseResolver` and `HttpResponse` from `msw`.",
+      "`handler.mock.calls.at(-1)?.[0].request.formData()` reads a request body from a Vitest mock record. Ky can consume the body first. Read or clone it inside the MSW handler and store the value: `const bodies: unknown[] = []; const handler = vi.fn<HttpResponseResolver>(async ({ request }) => { bodies.push(await request.json()); return HttpResponse.json(response); });`. Import `vi` from `vitest` and `HttpResponseResolver` and `HttpResponse` from `msw`.",
+      "`handlerInfo.request.arrayBuffer()` reads a request body from a Vitest mock record. Ky can consume the body first. Read or clone it inside the MSW handler and store the value: `const bodies: unknown[] = []; const handler = vi.fn<HttpResponseResolver>(async ({ request }) => { bodies.push(await request.json()); return HttpResponse.json(response); });`. Import `vi` from `vitest` and `HttpResponseResolver` and `HttpResponse` from `msw`.",
+      "`saved.blob()` reads a request body from a Vitest mock record. Ky can consume the body first. Read or clone it inside the MSW handler and store the value: `const bodies: unknown[] = []; const handler = vi.fn<HttpResponseResolver>(async ({ request }) => { bodies.push(await request.json()); return HttpResponse.json(response); });`. Import `vi` from `vitest` and `HttpResponseResolver` and `HttpResponse` from `msw`.",
+      "`request.clone()` reads a request body from a Vitest mock record. Ky can consume the body first. Read or clone it inside the MSW handler and store the value: `const bodies: unknown[] = []; const handler = vi.fn<HttpResponseResolver>(async ({ request }) => { bodies.push(await request.json()); return HttpResponse.json(response); });`. Import `vi` from `vitest` and `HttpResponseResolver` and `HttpResponse` from `msw`.",
+      "`input.json()` reads a request body from a Vitest mock record. Ky can consume the body first. Read or clone it inside the MSW handler and store the value: `const bodies: unknown[] = []; const handler = vi.fn<HttpResponseResolver>(async ({ request }) => { bodies.push(await request.json()); return HttpResponse.json(response); });`. Import `vi` from `vitest` and `HttpResponseResolver` and `HttpResponse` from `msw`.",
+      "`handler.mock.calls[index]?.[0].request.json()` reads a request body from a Vitest mock record. Ky can consume the body first. Read or clone it inside the MSW handler and store the value: `const bodies: unknown[] = []; const handler = vi.fn<HttpResponseResolver>(async ({ request }) => { bodies.push(await request.json()); return HttpResponse.json(response); });`. Import `vi` from `vitest` and `HttpResponseResolver` and `HttpResponse` from `msw`.",
+    ],
+  ],
+  [
     "no-lifecycle-hook-names",
     "no-lifecycle-hook-names.ts",
     [

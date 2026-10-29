@@ -191,7 +191,7 @@ const getHttpImportModuleKind = (source: string): HttpBindingKind | null => {
   return source.startsWith("#/shared/libs/ky/") ? "factory-module" : null;
 };
 
-const getConstInitializedDeclarator = (
+export const getConstInitializedDeclarator = (
   definition: Definition,
 ): {
   node: ESTree.VariableDeclarator;
