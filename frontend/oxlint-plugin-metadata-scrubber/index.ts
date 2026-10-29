@@ -12,6 +12,7 @@ import noSilentTestPrerequisite from "./rules/no-silent-test-prerequisite.ts";
 import noTestLocalObjectType from "./rules/no-test-local-object-type.ts";
 import requireBackendRequestSignal from "./rules/require-backend-request-signal.ts";
 import requireColocatedTest from "./rules/require-colocated-test.ts";
+import requireKyJsonSchema from "./rules/require-ky-json-schema.ts";
 import requireModuleFileName from "./rules/require-module-file-name.ts";
 import requireRelativeBackendPath from "./rules/require-relative-backend-path.ts";
 import requireStrictMswServer from "./rules/require-strict-msw-server.ts";
@@ -36,6 +37,7 @@ export default definePlugin({
     "no-test-local-object-type": noTestLocalObjectType,
     "require-backend-request-signal": requireBackendRequestSignal,
     "require-colocated-test": requireColocatedTest,
+    "require-ky-json-schema": requireKyJsonSchema,
     "require-module-file-name": requireModuleFileName,
     "require-relative-backend-path": requireRelativeBackendPath,
     "require-strict-msw-server": requireStrictMswServer,
