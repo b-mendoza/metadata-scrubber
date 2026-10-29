@@ -642,9 +642,12 @@ Name Effect hooks for the work they keep in sync, not for mount timing.
 
 ```ts
 const useUppyDashboard = (props: FileUploaderProps) => {
+  const getInitialProps = useEffectEvent(() => props);
+
   useEffect(() => {
+    const { maxFileSizeBytes } = getInitialProps();
     const instance = new Uppy({
-      restrictions: { maxFileSize: props.maxFileSizeBytes },
+      restrictions: { maxFileSize: maxFileSizeBytes },
     });
     return () => {
       instance.destroy();
