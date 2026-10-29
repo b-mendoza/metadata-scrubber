@@ -31,13 +31,6 @@ Do not mix inline `type` specifiers into a runtime import:
 import ky, { type KyInstance, HTTPError } from "ky";
 ```
 
-Review what a module does when it first loads before you remove the last runtime import. Keep a side-effect import when that first load must run.
-
-```ts
-import type { Matcher } from "./register-matchers.mod";
-import "./register-matchers.mod";
-```
-
 ## Server code
 
 Keep the frontend server a small proxy to the Go backend.
