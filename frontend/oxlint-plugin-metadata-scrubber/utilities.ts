@@ -94,6 +94,7 @@ export const toProjectPath = (filename: string, cwd: string): string => {
 const APP_BINDINGS_MODULE =
   "#/shared/middlewares/app-bindings/app-bindings.mod";
 const EMPTY_ITEM_COUNT = 0;
+const HTTP_METHODS = new Set(["get", "post", "put", "patch", "delete", "head"]);
 
 type HttpBindingKind =
   | "app-bindings-module"
@@ -105,7 +106,7 @@ type HttpBindingKind =
   | "factory-module"
   | "factory";
 
-const unwrapHttpExpression = (node: ESTree.Node): ESTree.Node => {
+export const unwrapHttpExpression = (node: ESTree.Node): ESTree.Node => {
   if (
     node.type === "ParenthesizedExpression" ||
     node.type === "TSAsExpression" ||
@@ -142,7 +143,7 @@ const getTemplatePrefix = (node: ESTree.TemplateLiteral): string | null => {
   return first?.value.cooked ?? null;
 };
 
-const getHttpPropertyName = (
+export const getHttpPropertyName = (
   node: Extract<ESTree.Node, { type: "Property" }>,
 ): string | null => {
   const key = unwrapHttpExpression(node.key);
@@ -287,6 +288,19 @@ export const getHttpBindingKind = (
   if (variable == null || seen.has(variable)) return null;
   seen.add(variable);
   return getHttpVariableKind(variable, sourceCode, seen);
+};
+
+export const getHttpRequestKind = (
+  node: ESTree.CallExpression,
+  sourceCode: SourceCode,
+): "backend-client" | "ky" | null => {
+  const callee = unwrapHttpExpression(node.callee);
+  if (getHttpBindingKind(callee, sourceCode) === "ky") return "ky";
+  if (callee.type !== "MemberExpression") return null;
+  const method = getStaticPropertyName(callee);
+  if (method == null || !HTTP_METHODS.has(method)) return null;
+  const kind = getHttpBindingKind(callee.object, sourceCode);
+  return kind === "backend-client" || kind === "ky" ? kind : null;
 };
 
 type QueryBindingKind =

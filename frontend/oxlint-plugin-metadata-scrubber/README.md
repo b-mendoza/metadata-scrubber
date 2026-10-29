@@ -26,6 +26,7 @@ Directory fixtures run from their own root, so their `src/` paths match real sou
 - `no-query-client-props` rejects `trpc` and `queryClient` props. It also rejects other prop names when their values resolve to route clients or query hooks. It allows the imported tRPC providers and `QueryClientProvider` setup.
 - `no-silent-test-prerequisite` rejects `.skip` calls on Vitest test APIs, including chains such as `test.skip.each(...)`. It also rejects bare test prerequisite returns in test callbacks.
 - `no-test-local-object-type` rejects direct object-literal type aliases and interfaces in test files. It allows function aliases, imported types, and schema-derived types.
+- `require-backend-request-signal` requires an options object literal on backend method calls in non-test server modules. An explicit `signal` must follow all spreads and dynamic keys so they cannot replace it.
 - `require-colocated-test` requires each source test outside `src/tests/` to sit beside a source module whose stem is a prefix of the test stem. It uses the longest matching stem, then file-name order. It maps `-root.test.tsx` to `__root.tsx`. A test of a `.server` module must end with `.server.test.ts` so Vitest uses Node.
 - `require-module-file-name` requires the six module suffixes under `src/`: `.mod.ts`, `.mod.tsx`, `.mod.server.ts`, `.mod.test.ts`, `.mod.test.tsx`, and `.mod.server.test.ts`. It rejects a non-test `.mod.tsx` file without JSX. It also checks shared test helpers.
 - `require-strict-msw-server` requires `listen({ onUnhandledFrame: "error" })`, `resetHandlers()` in `afterEach`, and `close()` in `afterAll` for an MSW server. MSW 3 uses `onUnhandledFrame`, not `onUnhandledRequest`. It resolves renamed and namespace imports and local server aliases.
@@ -74,6 +75,7 @@ Make each diagnostic clear enough to explain the required correction. Explain th
 - The lifecycle-name rule checks a fixed list of timing names at word boundaries. It does not check object methods, wrapped function initializers, or other timing words. It cannot prove that an allowed name describes the external system.
 
 - The HTTP rules follow resolved imports, direct binding reads, object destructuring, and local `const` aliases. They do not follow mutable aliases, re-exports, dynamic member names, or cross-file data flow.
+- The signal rule checks the options syntax, not the signal value or its source.
 - The Effect rule tracks static member names and immutable namespace aliases. It does not evaluate dynamic keys, follow mutable namespace aliases, or prove arbitrary runtime data flow.
 - The Effect rule checks the nearest function owner. It cannot prove that external synchronization is necessary or that the hook name describes its purpose.
 - The type-import rule does not establish whether module initialization is required.
