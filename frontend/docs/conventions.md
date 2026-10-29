@@ -367,6 +367,7 @@ async loader({ context }) {
 
 Read `trpc` and `queryClient` from loader context in a `loader`.
 In a route file, the route component and any regular component in that file read both clients from `Route.useRouteContext()`.
+This keeps consumers on the shared clients and cache.
 
 ```tsx
 const Message = () => {
