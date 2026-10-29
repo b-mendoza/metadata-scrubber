@@ -181,6 +181,26 @@ export const fixtureCases: readonly FixtureCase[] = [
     ],
   ],
   [
+    "require-backend-request-signal",
+    "require-backend-request-signal.server.ts",
+    [
+      "`client.get` must pass an options object literal with an explicit `signal` property after all spreads. Pass the request AbortSignal as `{ signal: signal ?? null }` so request cancellation stops the backend call.",
+      "`client.post` must pass an options object literal with an explicit `signal` property after all spreads. Pass the request AbortSignal as `{ signal: signal ?? null }` so request cancellation stops the backend call.",
+      "`client.put` must pass an options object literal with an explicit `signal` property after all spreads. Pass the request AbortSignal as `{ signal: signal ?? null }` so request cancellation stops the backend call.",
+      "`client.patch` must pass an options object literal with an explicit `signal` property after all spreads. Pass the request AbortSignal as `{ signal: signal ?? null }` so request cancellation stops the backend call.",
+      "`client.delete` must pass an options object literal with an explicit `signal` property after all spreads. Pass the request AbortSignal as `{ signal: signal ?? null }` so request cancellation stops the backend call.",
+      "`client.head` must pass an options object literal with an explicit `signal` property after all spreads. Pass the request AbortSignal as `{ signal: signal ?? null }` so request cancellation stops the backend call.",
+      "`readBindings().httpClient.get` must pass an options object literal with an explicit `signal` property after all spreads. Pass the request AbortSignal as `{ signal: signal ?? null }` so request cancellation stops the backend call.",
+      "`client.get` must pass an options object literal with an explicit `signal` property after all spreads. Pass the request AbortSignal as `{ signal: signal ?? null }` so request cancellation stops the backend call.",
+      '`alias["get"]` must pass an options object literal with an explicit `signal` property after all spreads. Pass the request AbortSignal as `{ signal: signal ?? null }` so request cancellation stops the backend call.',
+    ],
+  ],
+  [
+    "require-backend-request-signal",
+    "backend-request-scope.server.test.ts",
+    [],
+  ],
+  [
     "require-colocated-test",
     "require-colocated-test",
     [

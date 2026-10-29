@@ -28,6 +28,8 @@ export const metadataScrubberRules = defineConfig({
       SEVERITY_LEVELS.Error,
     [`${PLUGIN_NAMES.MetadataScrubber}/no-test-local-object-type`]:
       SEVERITY_LEVELS.Error,
+    [`${PLUGIN_NAMES.MetadataScrubber}/require-backend-request-signal`]:
+      SEVERITY_LEVELS.Error,
     [`${PLUGIN_NAMES.MetadataScrubber}/require-colocated-test`]:
       SEVERITY_LEVELS.Error,
     [`${PLUGIN_NAMES.MetadataScrubber}/require-module-file-name`]:
