@@ -18,7 +18,21 @@ This guide describes general practices. The code is the source of truth. This gu
 - Treat route data as optional. Do not `await` query data in a `loader`. The root loader may `await loadPostHogBrowserConfig()`. That value is not a TanStack Query.
 - Fetch route data in a child component. Wrap that child in `Suspense`. Read the data with `useSuspenseQuery` only. Do not use `useQuery`.
 - Only the operator marks route data as required. An agent may mark data as required only when a later fetch needs that first result.
-- Follow the [frontend conventions](../conventions.md) for `trpc` and `queryClient` access. A `loader` or route component may read them from route context. A child must call `trpcContext.useTRPC()` and `useQueryClient`. Do not pass those clients as props except during `TRPCProvider` setup.
+- Follow the [frontend conventions](../conventions.md) for `trpc` and `queryClient` access. A `loader` reads them from loader context. A component in a route file must read both from `Route.useRouteContext()`. Do not import `trpcContext` in a route file. A component in its own file must call `trpcContext.useTRPC()` and `useQueryClient`. Do not pass those clients as props except during `TRPCProvider` setup.
+
+```tsx
+const Message = () => {
+  const { trpc, queryClient } = Route.useRouteContext();
+```
+
+Do not import `trpcContext` in a route file:
+
+```tsx
+import { trpcContext } from "#/shared/libs/trpc/client/client-runtime.mod";
+
+const Message = () => {
+  const trpc = trpcContext.useTRPC();
+```
 
 ```tsx
 function IndexRoute() {
