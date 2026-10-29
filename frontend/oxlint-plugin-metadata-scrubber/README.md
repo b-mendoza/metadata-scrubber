@@ -4,7 +4,7 @@
 
 ## Purpose
 
-This plugin encodes the project's coding standards as enforceable Oxlint rules. Agents read the lint output. They use it to correct their code. The plugin does not import neverthrow. Its consumers do not need neverthrow as a peer dependency.
+This plugin encodes the project's coding standards as Oxlint rules. Agents read the lint output. They use it to correct their code. The plugin does not import neverthrow. Code that uses the plugin does not need neverthrow as a peer dependency.
 
 ## Checks
 
@@ -27,7 +27,19 @@ This plugin encodes the project's coding standards as enforceable Oxlint rules. 
 
 The core `no-restricted-imports` entries reject runtime `useQuery` imports and source re-exports from `@tanstack/react-query`. They also reject runtime namespace imports and wildcard exports from that package. Type-only imports and exports remain allowed. The ESLint `no-restricted-syntax` entry rejects dynamic imports with that literal source.
 
-These restrictions do not check actual Suspense or error-boundary ancestry. They do not decide route data criticality, loader use, server or client execution, streaming, or retry behavior.
+Do not import `useQuery`:
+
+```ts
+import { useQuery } from "@tanstack/react-query";
+```
+
+Import `useSuspenseQuery` instead:
+
+```ts
+import { useSuspenseQuery } from "@tanstack/react-query";
+```
+
+These restrictions do not check parent `Suspense` or error boundaries. They do not decide whether route data is required. They do not decide loader use, server or client execution, streaming, or retry behavior.
 
 ## General rule design
 

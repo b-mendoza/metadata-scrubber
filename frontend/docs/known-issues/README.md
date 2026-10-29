@@ -6,11 +6,10 @@ This directory records dependency, tooling, and framework issues that affect loc
 
 ## Issues
 
-| Issue                                                                                                                 | Area          | Status                                                                   | Workaround                                                                           |
-| --------------------------------------------------------------------------------------------------------------------- | ------------- | ------------------------------------------------------------------------ | ------------------------------------------------------------------------------------ |
-| [`@tanstack/devtools-vite@0.7.0` production build syntax error](./tanstack-devtools-vite-0-7-0-build-syntax-error.md) | Build tooling | Resolved. TanStack Devtools maintainers fixed the issue. We use `0.8.5`. | None. We used a `0.6.1` pin before the fix.                                          |
-| [`neverthrow@8.2.0` must-use lint compatibility](./neverthrow-must-use-lint-compatibility.md)                         | Lint tooling  | Open. The available rules do not cover every `Result` form.              | Thenable checks cover bare `ResultAsync` values. No complete workaround is recorded. |
-| [`tsrs` TypeScript 7 checker limits](./tsrs-typescript-7-checker.md)                                                  | Type tooling  | Open. Two checker versions remain. No Windows or Intel macOS binary.     | `typescript@6.0.3` can check the project with the older checker.                     |
+| Issue                                                                                         | Area         | Status                                                               | Workaround                                                                           |
+| --------------------------------------------------------------------------------------------- | ------------ | -------------------------------------------------------------------- | ------------------------------------------------------------------------------------ |
+| [`neverthrow@8.2.0` must-use lint compatibility](./neverthrow-must-use-lint-compatibility.md) | Lint tooling | Open. The available rules do not cover every `Result` form.          | Thenable checks cover bare `ResultAsync` values. No complete workaround is recorded. |
+| [`tsrs` TypeScript 7 checker limits](./tsrs-typescript-7-checker.md)                          | Type tooling | Open. Two checker versions remain. No Windows or Intel macOS binary. | `typescript@6.0.3` can check the project with the older checker.                     |
 
 ## Entry format
 
