@@ -40,15 +40,142 @@ import "./register-matchers.mod";
 
 ## Server code
 
-- Keep the frontend server a small proxy to the Go backend. Send small JSON contracts through tRPC procedures, not file bytes. Many file buffers at the same time use more memory.
-- Use TanStack Start route handlers and server functions for small operations. Another server framework would add a second request-handling model.
-- Write each backend call in its own procedure. Do not add a shared transport wrapper. Each operation owns its request contract and how it turns failures into errors.
-- Create server clients in `appBindingsMiddleware` for each request. Read them with `getAppBindings()`. A module-level `const` client can share state between requests.
-- Wrap server-only functions exported from modules without the `.server` suffix with `createServerOnlyFn`. This stops a browser from running the server code.
-- Pass the request's `AbortSignal` to each backend HTTP call. Cancellation must stop backend work.
-- Use relative paths for Ky calls after app bindings set the base URL.
-- Change a client's timeout or retry policy only for a use case that needs it. Set the change on that request so other operations keep their policy.
-- Keep attempt timeouts, total timeouts, retry counts, retry delay caps, and accepted URL protocols when replacing Ky or Zod. A replacement must not run longer or accept new protocols.
+Keep the frontend server a small proxy to the Go backend.
+Use TanStack Start route handlers and server functions for small operations.
+
+Write each backend call in its own procedure. That procedure owns the request contract and how failures become errors.
+
+```ts
+createUpload: publicProcedure
+  .input(contracts.uploadInputSchema)
+  .mutation(async ({ input, signal }) => {
+    const { workflowHttpClient } = getAppBindings();
+    const responseResult = await ResultAsync.fromPromise(
+      workflowHttpClient
+        .post("/api/uploads", {
+          json: input,
+          signal: signal ?? null,
+        })
+        .json(contracts.uploadResponseSchema),
+      mapWorkflowRequestFailure(CREATE_UPLOAD_FAILURE_MESSAGE),
+    );
+    if (responseResult.isErr()) {
+      throw responseResult.error;
+    }
+    return responseResult.value;
+  }),
+```
+
+Do not add a shared transport wrapper that many procedures call:
+
+```ts
+const requestWorkflow = <T>(path: string, schema: z.ZodType<T>, input: unknown) =>
+  workflowHttpClient.post(path, { json: input }).json(schema);
+
+createUpload: publicProcedure.input(contracts.uploadInputSchema).mutation(({ input }) =>
+  requestWorkflow("/api/uploads", contracts.uploadResponseSchema, input),
+),
+```
+
+Create server clients in `appBindingsMiddleware` for each request. Read them with `getAppBindings()`.
+
+```ts
+export const appBindingsMiddleware = createMiddleware({
+  type: "request",
+}).server(async (options) => {
+  const safeEnvironmentVariables = environmentSchema.parse(process.env);
+  const httpClient = createHttpClient(safeEnvironmentVariables.BACKEND_URL);
+  const workflowHttpClient = createWorkflowHttpClient(
+    safeEnvironmentVariables.BACKEND_URL,
+    options.request.headers,
+  );
+
+  return AppBindingsStore.run(
+    {
+      httpClient,
+      posthogProjectToken: safeEnvironmentVariables.POSTHOG_PROJECT_TOKEN,
+      workflowHttpClient,
+    },
+    options.next,
+  );
+});
+```
+
+Do not store a client in a module-level `const`. That client can share state between requests.
+
+```ts
+const workflowHttpClient = createWorkflowHttpClient(backendUrl);
+```
+
+Wrap server-only functions exported from modules without the `.server` suffix with `createServerOnlyFn`.
+
+```ts
+export const getAppBindings = createServerOnlyFn(() => {
+  const store = AppBindingsStore.getStore();
+  invariant(store != null, "Failed to retrieve app bindings store");
+  return store;
+});
+```
+
+Pass the request `AbortSignal` to each backend HTTP call. Use a relative path after app bindings set the base URL.
+
+```ts
+httpClient.get("/api/health", { signal: signal ?? null });
+```
+
+Do not rebuild the backend origin in the procedure:
+
+```ts
+httpClient.get(`${backendUrl}/api/health`, { signal });
+```
+
+Change timeout or retry policy only for the use case that needs it. Set the change on that request.
+
+```ts
+workflowHttpClient.post("/api/files/dry-run", {
+  json: input,
+  retry: WORKFLOW_SERVER_DIRECTED_RETRY_OPTIONS,
+  signal: signal ?? null,
+  timeout: 90_000,
+  totalTimeout: 90_000,
+});
+```
+
+Do not change the shared client factory for one operation:
+
+```ts
+return ky.create({
+  baseUrl,
+  retry: WORKFLOW_SERVER_DIRECTED_RETRY_OPTIONS,
+  timeout: 90_000,
+  totalTimeout: 90_000,
+});
+```
+
+Keep these limits when you replace Ky or Zod. A replacement must not run longer or accept new protocols.
+
+```ts
+ky.create({
+  baseUrl,
+  retry: {
+    backoffLimit: 250,
+    limit: 1,
+    maxRetryAfter: 250,
+    retryOnTimeout: false,
+  },
+  timeout: 3000,
+  totalTimeout: 5000,
+});
+
+ky.create({
+  baseUrl,
+  retry: 0,
+  timeout: 10_000,
+  totalTimeout: 10_000,
+});
+
+z.url({ protocol: /^https?$/v });
+```
 
 ## Errors and asynchronous code
 
