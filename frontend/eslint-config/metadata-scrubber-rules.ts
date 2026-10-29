@@ -30,6 +30,8 @@ export const metadataScrubberRules = defineConfig({
       SEVERITY_LEVELS.Error,
     [`${PLUGIN_NAMES.MetadataScrubber}/require-module-file-name`]:
       SEVERITY_LEVELS.Error,
+    [`${PLUGIN_NAMES.MetadataScrubber}/require-strict-msw-server`]:
+      SEVERITY_LEVELS.Error,
     [`${PLUGIN_NAMES.MetadataScrubber}/separate-type-imports`]:
       SEVERITY_LEVELS.Error,
     [`${PLUGIN_NAMES.MetadataScrubber}/use-effect-in-custom-hook`]:

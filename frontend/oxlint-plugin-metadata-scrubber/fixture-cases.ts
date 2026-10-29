@@ -194,6 +194,22 @@ export const fixtureCases: readonly FixtureCase[] = [
     ],
   ],
   [
+    "require-strict-msw-server",
+    "require-strict-msw-server.test.ts",
+    [
+      '`createServer()` creates an unnamed MSW server. Assign it with `const server = createServer();`. Call `server.listen({ onUnhandledFrame: "error" })`, `server.resetHandlers()` inside an `afterEach` callback, and `server.close()` inside an `afterAll` callback. Import the hooks from `vitest`.',
+      '`missing` is missing strict MSW lifecycle calls. Call `missing.listen({ onUnhandledFrame: "error" })`, `missing.resetHandlers()` inside an `afterEach` callback, and `missing.close()` inside an `afterAll` callback. Import the hooks from `vitest`.',
+      '`warning` is missing strict MSW lifecycle calls. Call `warning.listen({ onUnhandledFrame: "error" })`, `warning.resetHandlers()` inside an `afterEach` callback, and `warning.close()` inside an `afterAll` callback. Import the hooks from `vitest`.',
+      '`warning.listen` does not set `onUnhandledFrame` to `"error"`. Call `warning.listen({ onUnhandledFrame: "error" })`, `warning.resetHandlers()` inside an `afterEach` callback, and `warning.close()` inside an `afterAll` callback. Import the hooks from `vitest`.',
+      '`outside` is missing strict MSW lifecycle calls. Call `outside.listen({ onUnhandledFrame: "error" })`, `outside.resetHandlers()` inside an `afterEach` callback, and `outside.close()` inside an `afterAll` callback. Import the hooks from `vitest`.',
+      '`shadowed` is missing strict MSW lifecycle calls. Call `shadowed.listen({ onUnhandledFrame: "error" })`, `shadowed.resetHandlers()` inside an `afterEach` callback, and `shadowed.close()` inside an `afterAll` callback. Import the hooks from `vitest`.',
+      '`legacy` is missing strict MSW lifecycle calls. Call `legacy.listen({ onUnhandledFrame: "error" })`, `legacy.resetHandlers()` inside an `afterEach` callback, and `legacy.close()` inside an `afterAll` callback. Import the hooks from `vitest`.',
+      '`legacy.listen` does not set `onUnhandledFrame` to `"error"`. Call `legacy.listen({ onUnhandledFrame: "error" })`, `legacy.resetHandlers()` inside an `afterEach` callback, and `legacy.close()` inside an `afterAll` callback. Import the hooks from `vitest`.',
+      '`noOptions` is missing strict MSW lifecycle calls. Call `noOptions.listen({ onUnhandledFrame: "error" })`, `noOptions.resetHandlers()` inside an `afterEach` callback, and `noOptions.close()` inside an `afterAll` callback. Import the hooks from `vitest`.',
+      '`noOptions.listen` does not set `onUnhandledFrame` to `"error"`. Call `noOptions.listen({ onUnhandledFrame: "error" })`, `noOptions.resetHandlers()` inside an `afterEach` callback, and `noOptions.close()` inside an `afterAll` callback. Import the hooks from `vitest`.',
+    ],
+  ],
+  [
     "separate-type-imports",
     "separate-type-imports.ts",
     [
