@@ -3,6 +3,7 @@ import { defineConfig } from "eslint/config";
 import testingLibrary from "eslint-plugin-testing-library";
 
 import { PLUGIN_NAMES, SEVERITY_LEVELS } from "./constants.ts";
+import { restrictedSyntax } from "./syntax-rules.ts";
 
 export const testRules = defineConfig(
   {
@@ -30,6 +31,17 @@ export const testRules = defineConfig(
     rules: {
       ...vitest.configs.recommended.rules,
 
+      // Boolean matchers do not narrow the error for later assertions.
+      "no-restricted-syntax": [
+        SEVERITY_LEVELS.Error,
+        ...restrictedSyntax,
+        {
+          selector:
+            "CallExpression[callee.name='expect'] > BinaryExpression.arguments[operator='instanceof']",
+          message:
+            "expect(value instanceof Type) does not narrow value for later assertions. Use expect.assert(value instanceof Type) first, then assert on the narrowed value.",
+        },
+      ],
       // Explicit registration keeps test coverage independent of runtime branches.
       [`${PLUGIN_NAMES.Vitest}/no-conditional-tests`]: SEVERITY_LEVELS.Error,
       [`${PLUGIN_NAMES.Vitest}/prefer-each`]: SEVERITY_LEVELS.Error,
