@@ -4,8 +4,8 @@ Use these general design practices in every service and language. For facts, the
 
 ## Construction over validation
 
-- Construct a structured value when one part of it can vary. Accept the variable part as input. Keep the fixed parts in code. Check whether construction can remove a state before you add validation for it. When construction removes an invalid state, delete its validator and rejection tests.
-- Validate external input before use. Match each check to the input's meaning and risk. A format check does not prove that a resource exists or that access is permitted. Validate an input-selected destination before you send trusted data to it.
+- Build a structured value when one part of it can vary. Accept the variable part as input. Keep the fixed parts in code. Check whether construction can remove a state before you add a check for it. When construction removes an invalid state, delete its checker and rejection tests.
+- Check external input before use. Match each check to the input's meaning and risk. A format check does not prove that a resource exists or that access is allowed. Check an input-selected destination before you send trusted data to it.
 
 ## Decisions
 
@@ -18,3 +18,13 @@ Use these general design practices in every service and language. For facts, the
 ## Dependency injection
 
 - Read dependencies through request-scoped application bindings. Do not store dependencies in mutable module-level state.
+
+```ts
+const { httpClient } = getAppBindings();
+```
+
+Do not keep a shared client on the module:
+
+```ts
+export const httpClient = ky.create({ prefixUrl: process.env.BACKEND_URL });
+```
