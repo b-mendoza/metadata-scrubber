@@ -20,15 +20,13 @@ const messageResponseSchema = z.object({
 
 export type MessageResponse = z.output<typeof messageResponseSchema>;
 
-const BACKEND_HEALTH_STATUS_ENDPOINT = "/api/health";
-
 export const productsRouter = createTRPCRouter({
   getMessage: publicProcedure.query(async ({ signal }) => {
     const { httpClient } = getAppBindings();
 
     const backendHealthStatusResult = await ResultAsync.fromPromise(
       httpClient
-        .get(BACKEND_HEALTH_STATUS_ENDPOINT, {
+        .get("/api/health", {
           signal: signal ?? null,
         })
         .json(messageResponseSchema),
