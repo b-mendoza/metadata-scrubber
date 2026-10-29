@@ -390,6 +390,7 @@ const Message = () => {
 ```
 
 When a component lives in its own file, import `trpcContext` and `useQueryClient`.
+These hooks read the same clients and cache.
 
 ```tsx
 import { useQueryClient } from "@tanstack/react-query";
