@@ -17,6 +17,7 @@ Directory fixtures run from their own root, so their `src/` paths match real sou
 ## Rules
 
 - `no-classes` requires plain functions and objects instead of class declarations and class expressions. It also rejects classes that extend `Error`.
+- `no-discarded-result` rejects expression statements that discard known `neverthrow` results, including `await`, `void`, and result method chains. It resolves named and namespace imports, including renamed imports. It requires assignment and an `isErr()` check at the boundary.
 - `no-expect-type-of` requires TypeScript contracts instead of Vitest `expectTypeOf(...)` calls, including renamed imports.
 - `no-module-scope-http-client` rejects module-scope `ky.create`, `ky.extend`, and calls to imported factories from `#/shared/libs/ky/`. It follows import aliases and local `const` aliases. Test files remain exempt because test setup can own a shared client without serving requests.
 - `no-lifecycle-hook-names` rejects function declarations and function-valued variable declarations with mount-timing hook names. A suffix must start with an uppercase letter, digit, or underscore. It rejects `useMountUploader` but allows `useMountedState`, which describes state rather than mount timing.
@@ -65,6 +66,7 @@ Make each diagnostic clear enough to explain the required correction. Explain th
 
 - The object-type rule checks syntax, not schema equivalence. It allows function types, nested object types, arrays, unions, intersections, and schema-derived aliases. It does not prove that a type needs a schema or that an imported type is schema-derived.
 
+- The discarded-result rule follows direct `neverthrow` imports and known result-producing methods. It does not follow stored results, local aliases, re-exports, or dynamic member keys. Results returned from user functions need type information. Assigning a result passes this rule; the rule does not prove that later code handles it.
 - The lifecycle-name rule checks a fixed list of timing names at word boundaries. It does not check object methods, wrapped function initializers, or other timing words. It cannot prove that an allowed name describes the external system.
 
 - The HTTP rules follow resolved imports, direct binding reads, object destructuring, and local `const` aliases. They do not follow mutable aliases, re-exports, dynamic member names, or cross-file data flow.

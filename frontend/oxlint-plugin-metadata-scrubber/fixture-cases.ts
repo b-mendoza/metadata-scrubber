@@ -6,6 +6,8 @@ type FixtureCase = readonly [
 
 const NO_CLASSES_GUIDANCE =
   "Replace it with plain functions and objects. Use a factory function such as `const createService = () => ({ run: () => true })` when code must create an object. Plain functions and objects keep dependencies and mutable state explicit. The rule has no class exceptions, including classes that extend `Error`.";
+const NO_DISCARDED_RESULT_GUIDANCE =
+  "Assign the result and check `isErr()`. Throw or return the error at the boundary: `const result = await operation(); if (result.isErr()) { throw result.error; } return result.value;`.";
 const NO_EXPECT_TYPE_OF_GUIDANCE =
   "Remove this assertion. Put the expected type on the production declaration with `: ExpectedType`, or constrain the value with `satisfies ExpectedType`. TypeScript checks this contract during the type check. Use Vitest `expect(...)` only for runtime behavior.";
 const NO_LIFECYCLE_HOOK_NAMES_GUIDANCE =
@@ -31,6 +33,32 @@ export const fixtureCases: readonly FixtureCase[] = [
       `\`Service\` uses class syntax. ${NO_CLASSES_GUIDANCE}`,
       `\`ServiceExpression\` uses class syntax. ${NO_CLASSES_GUIDANCE}`,
       `\`ServiceError\` uses class syntax. ${NO_CLASSES_GUIDANCE}`,
+    ],
+  ],
+  [
+    "no-discarded-result",
+    "no-discarded-result.server.ts",
+    [
+      `\`ResultAsync.fromPromise\` discards a neverthrow result. ${NO_DISCARDED_RESULT_GUIDANCE}`,
+      `\`ResultAsync.fromSafePromise\` discards a neverthrow result. ${NO_DISCARDED_RESULT_GUIDANCE}`,
+      `\`Result.fromThrowable\` discards a neverthrow result. ${NO_DISCARDED_RESULT_GUIDANCE}`,
+      `\`ResultAsync.fromThrowable\` discards a neverthrow result. ${NO_DISCARDED_RESULT_GUIDANCE}`,
+      `\`ok\` discards a neverthrow result. ${NO_DISCARDED_RESULT_GUIDANCE}`,
+      `\`err\` discards a neverthrow result. ${NO_DISCARDED_RESULT_GUIDANCE}`,
+      `\`okAsync\` discards a neverthrow result. ${NO_DISCARDED_RESULT_GUIDANCE}`,
+      `\`errAsync\` discards a neverthrow result. ${NO_DISCARDED_RESULT_GUIDANCE}`,
+      `\`safeTry\` discards a neverthrow result. ${NO_DISCARDED_RESULT_GUIDANCE}`,
+      `\`Result.combine\` discards a neverthrow result. ${NO_DISCARDED_RESULT_GUIDANCE}`,
+      `\`ResultAsync.combine\` discards a neverthrow result. ${NO_DISCARDED_RESULT_GUIDANCE}`,
+      `\`AsyncResult.fromPromise\` discards a neverthrow result. ${NO_DISCARDED_RESULT_GUIDANCE}`,
+      `\`success\` discards a neverthrow result. ${NO_DISCARDED_RESULT_GUIDANCE}`,
+      `\`ResultAsync.fromPromise\` discards a neverthrow result. ${NO_DISCARDED_RESULT_GUIDANCE}`,
+      `\`ResultAsync.fromSafePromise\` discards a neverthrow result. ${NO_DISCARDED_RESULT_GUIDANCE}`,
+      `\`results.ok\` discards a neverthrow result. ${NO_DISCARDED_RESULT_GUIDANCE}`,
+      `\`results.ResultAsync.combine\` discards a neverthrow result. ${NO_DISCARDED_RESULT_GUIDANCE}`,
+      `\`Result.fromThrowable\` discards a neverthrow result. ${NO_DISCARDED_RESULT_GUIDANCE}`,
+      `\`ok\` discards a neverthrow result. ${NO_DISCARDED_RESULT_GUIDANCE}`,
+      `\`ok\` discards a neverthrow result. ${NO_DISCARDED_RESULT_GUIDANCE}`,
     ],
   ],
   [

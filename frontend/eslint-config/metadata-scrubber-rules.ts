@@ -10,6 +10,8 @@ export const metadataScrubberRules = defineConfig({
   },
   rules: {
     [`${PLUGIN_NAMES.MetadataScrubber}/no-classes`]: SEVERITY_LEVELS.Error,
+    [`${PLUGIN_NAMES.MetadataScrubber}/no-discarded-result`]:
+      SEVERITY_LEVELS.Error,
     [`${PLUGIN_NAMES.MetadataScrubber}/no-expect-type-of`]:
       SEVERITY_LEVELS.Error,
     [`${PLUGIN_NAMES.MetadataScrubber}/no-lifecycle-hook-names`]:
