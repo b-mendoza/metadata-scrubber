@@ -138,7 +138,9 @@ const getHttpMemberKind = (
   return HTTP_MEMBER_KINDS[objectKind]?.[property] ?? null;
 };
 
-const getTemplatePrefix = (node: ESTree.TemplateLiteral): string | null => {
+export const getTemplatePrefix = (
+  node: ESTree.TemplateLiteral,
+): string | null => {
   const [first] = node.quasis;
   return first?.value.cooked ?? null;
 };

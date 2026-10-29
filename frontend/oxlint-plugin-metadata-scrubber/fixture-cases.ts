@@ -228,6 +228,21 @@ export const fixtureCases: readonly FixtureCase[] = [
     ],
   ],
   [
+    "require-relative-backend-path",
+    "require-relative-backend-path.server.ts",
+    [
+      '`client.get` must use a path that starts with a single `/`. App bindings set the base URL; pass a relative path such as `"/api/health"` as the first argument.',
+      '`client.post` must use a path that starts with a single `/`. App bindings set the base URL; pass a relative path such as `"/api/health"` as the first argument.',
+      '`client.put` must use a path that starts with a single `/`. App bindings set the base URL; pass a relative path such as `"/api/health"` as the first argument.',
+      '`client.patch` must use a path that starts with a single `/`. App bindings set the base URL; pass a relative path such as `"/api/health"` as the first argument.',
+      '`client.delete` must use a path that starts with a single `/`. App bindings set the base URL; pass a relative path such as `"/api/health"` as the first argument.',
+      '`client.head` must use a path that starts with a single `/`. App bindings set the base URL; pass a relative path such as `"/api/health"` as the first argument.',
+      '`readBindings().httpClient.get` must use a path that starts with a single `/`. App bindings set the base URL; pass a relative path such as `"/api/health"` as the first argument.',
+      '`alias["get"]` must use a path that starts with a single `/`. App bindings set the base URL; pass a relative path such as `"/api/health"` as the first argument.',
+    ],
+  ],
+  ["require-relative-backend-path", "backend-request-scope.server.test.ts", []],
+  [
     "require-strict-msw-server",
     "require-strict-msw-server.test.ts",
     [

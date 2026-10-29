@@ -29,6 +29,7 @@ Directory fixtures run from their own root, so their `src/` paths match real sou
 - `require-backend-request-signal` requires an options object literal on backend method calls in non-test server modules. An explicit `signal` must follow all spreads and dynamic keys so they cannot replace it.
 - `require-colocated-test` requires each source test outside `src/tests/` to sit beside a source module whose stem is a prefix of the test stem. It uses the longest matching stem, then file-name order. It maps `-root.test.tsx` to `__root.tsx`. A test of a `.server` module must end with `.server.test.ts` so Vitest uses Node.
 - `require-module-file-name` requires the six module suffixes under `src/`: `.mod.ts`, `.mod.tsx`, `.mod.server.ts`, `.mod.test.ts`, `.mod.test.tsx`, and `.mod.server.test.ts`. It rejects a non-test `.mod.tsx` file without JSX. It also checks shared test helpers.
+- `require-relative-backend-path` requires a string literal or template literal with a leading single `/` on backend method calls in non-test server modules. It rejects identifiers, absolute URLs, and prefixes that start with `//` or `/\`.
 - `require-strict-msw-server` requires `listen({ onUnhandledFrame: "error" })`, `resetHandlers()` in `afterEach`, and `close()` in `afterAll` for an MSW server. MSW 3 uses `onUnhandledFrame`, not `onUnhandledRequest`. It resolves renamed and namespace imports and local server aliases.
 - `separate-type-imports` rejects inline `type` specifiers and requires separate `import type` declarations. It reports once per declaration, including declarations with only inline type specifiers. Standalone named, default, and namespace type imports remain allowed.
 - `use-effect-in-custom-hook` requires direct React `useEffect` calls inside the nearest named custom hook. It rejects runtime extraction of the Effect reference. Renamed imports, static React members, and immutable namespace aliases retain their React binding. Nested callbacks need their own valid owner. Type-only uses remain allowed.
@@ -75,7 +76,7 @@ Make each diagnostic clear enough to explain the required correction. Explain th
 - The lifecycle-name rule checks a fixed list of timing names at word boundaries. It does not check object methods, wrapped function initializers, or other timing words. It cannot prove that an allowed name describes the external system.
 
 - The HTTP rules follow resolved imports, direct binding reads, object destructuring, and local `const` aliases. They do not follow mutable aliases, re-exports, dynamic member names, or cross-file data flow.
-- The signal rule checks the options syntax, not the signal value or its source.
+- The signal rule checks the options syntax, not the signal value or its source. The path rule checks the static prefix, not interpolated values.
 - The Effect rule tracks static member names and immutable namespace aliases. It does not evaluate dynamic keys, follow mutable namespace aliases, or prove arbitrary runtime data flow.
 - The Effect rule checks the nearest function owner. It cannot prove that external synchronization is necessary or that the hook name describes its purpose.
 - The type-import rule does not establish whether module initialization is required.
@@ -85,5 +86,6 @@ Make each diagnostic clear enough to explain the required correction. Explain th
 - Suggested guard assertions do not preserve TypeScript control-flow narrowing.
 - A destructured Testing Library `render` reference is not reported after a namespace import.
 - An unresolved non-Vitest global can be reported when it uses the Vitest name `expectTypeOf`, `describe`, `it`, or `test`.
+- `require-relative-backend-path` rejects protocol-relative strings on tracked backend method calls.
 - `unicorn/consistent-function-scoping` does not report inline callbacks.
 - `vitest/no-conditional-expect` does not check a helper outside a test callback.

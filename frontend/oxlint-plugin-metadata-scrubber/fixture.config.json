@@ -14,6 +14,7 @@
     "metadata-scrubber/require-backend-request-signal": "error",
     "metadata-scrubber/require-colocated-test": "error",
     "metadata-scrubber/require-module-file-name": "error",
+    "metadata-scrubber/require-relative-backend-path": "error",
     "metadata-scrubber/require-strict-msw-server": "error",
     "metadata-scrubber/separate-type-imports": "error",
     "metadata-scrubber/use-effect-in-custom-hook": "error",
