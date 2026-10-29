@@ -23,17 +23,25 @@ Use the package manager and version declared by the project manifest.
 
 - Read the [frontend design guide](docs/agent/code-conventions.md) for general practices.
 - Follow the [decided frontend conventions](docs/conventions.md) in new and changed code. Report mismatches.
-- Treat route data as optional. Do not await query data in a `loader`. The root loader may `await loadPostHogBrowserConfig()`. That value is not a TanStack Query. Read query data with `useSuspenseQuery` inside `Suspense`. A child component must call `trpcContext.useTRPC()` and `useQueryClient`. Do not pass those clients as props except during `TRPCProvider` setup.
+- Treat route data as optional. Do not await query data in a `loader`. The root loader may `await loadPostHogBrowserConfig()`. That value is not a TanStack Query. Read query data with `useSuspenseQuery` inside `Suspense`. A component in a route file must read `trpc` and `queryClient` from `Route.useRouteContext()`. Do not import `trpcContext` in a route file. A component in its own file must call `trpcContext.useTRPC()` and `useQueryClient`. Do not pass those clients as props except during `TRPCProvider` setup.
+
+Route file:
+
+```ts
+const { trpc, queryClient } = Route.useRouteContext();
+```
+
+Do not import `trpcContext` in a route file:
+
+```ts
+import { trpcContext } from "#/shared/libs/trpc/client/client-runtime.mod";
+```
+
+Own file:
 
 ```ts
 const trpc = trpcContext.useTRPC();
 const queryClient = useQueryClient();
-```
-
-Do not pass those clients into a child:
-
-```tsx
-function Message({ trpc }: { trpc: TRPCOptionsProxy<AppRouter> }) {
 ```
 
 ## Factual references
