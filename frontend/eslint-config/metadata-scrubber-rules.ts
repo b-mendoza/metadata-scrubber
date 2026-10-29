@@ -14,6 +14,8 @@ export const metadataScrubberRules = defineConfig({
       SEVERITY_LEVELS.Error,
     [`${PLUGIN_NAMES.MetadataScrubber}/no-expect-type-of`]:
       SEVERITY_LEVELS.Error,
+    [`${PLUGIN_NAMES.MetadataScrubber}/no-late-request-body-read`]:
+      SEVERITY_LEVELS.Error,
     [`${PLUGIN_NAMES.MetadataScrubber}/no-lifecycle-hook-names`]:
       SEVERITY_LEVELS.Error,
     [`${PLUGIN_NAMES.MetadataScrubber}/no-module-scope-http-client`]:
