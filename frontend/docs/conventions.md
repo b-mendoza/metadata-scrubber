@@ -529,13 +529,13 @@ await caller.query("wizard.getWorkflowConfig");
 ```
 
 Use MSW at network boundaries in unit tests. Keep request construction and response handling in the test.
-Set `onUnhandledRequest` to `"error"` and reset handlers after each test.
+Set `onUnhandledFrame` to `"error"` and reset handlers after each test.
 
 ```ts
 const server = setupServer();
 
 beforeAll(() => {
-  server.listen({ onUnhandledRequest: "error" });
+  server.listen({ onUnhandledFrame: "error" });
 });
 
 afterEach(() => {
