@@ -23,6 +23,7 @@ Use the package manager and version declared by the project manifest.
 
 - Read the [frontend design guide](docs/agent/code-conventions.md) for general practices.
 - Follow the [decided frontend conventions](docs/conventions.md) in new and changed code. Report mismatches.
+- Treat route data as optional. Do not await it in a `loader`. Read it with `useSuspenseQuery` inside `Suspense`. A child component must call `trpcContext.useTRPC()` and `useQueryClient`. Do not pass those clients as props except during `TRPCProvider` setup.
 
 ## Factual references
 
