@@ -1,8 +1,7 @@
 import { afterEach, expect, test, vi } from "vitest";
 
+import { getPostHogBrowserConfig } from "#/shared/config/posthog/posthog-browser-config.mod.server";
 import { appBindingsMiddleware } from "#/shared/middlewares/app-bindings/app-bindings.mod";
-
-import { getPostHogBrowserConfig } from "./posthog-browser-config.mod.server";
 
 afterEach(() => {
   vi.unstubAllEnvs();
