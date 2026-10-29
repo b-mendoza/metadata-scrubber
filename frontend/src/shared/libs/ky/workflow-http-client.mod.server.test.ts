@@ -8,11 +8,10 @@ import {
   SERVICE_UNAVAILABLE_STATUS_CODE,
   TOO_MANY_REQUESTS_STATUS_CODE,
 } from "#/shared/constants/http/status-codes/status-codes.mod";
-
 import {
   createWorkflowHttpClient,
   WORKFLOW_SERVER_DIRECTED_RETRY_OPTIONS,
-} from "./workflow-http-client.mod.server";
+} from "#/shared/libs/ky/workflow-http-client.mod.server";
 
 const server = setupServer();
 
