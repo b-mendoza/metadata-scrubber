@@ -355,7 +355,7 @@ Do not mark route data as required. The operator decides that.
 An agent may await a first fetch only when a later fetch needs that result. Keep the later fetches optional. `firstQueryOptions` and `laterQueryOptions` are placeholders. This app has no such queries today.
 
 ```ts
-loader({ context }) {
+async loader({ context }) {
   const { queryClient } = context;
   const required = await queryClient.ensureQueryData(firstQueryOptions);
 
