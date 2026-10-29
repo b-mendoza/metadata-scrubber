@@ -2,6 +2,7 @@ import { defineConfig } from "eslint/config";
 import globals from "globals";
 
 import { PLUGIN_NAMES, SEVERITY_LEVELS } from "./constants.ts";
+import { restrictedSyntax } from "./syntax-rules.ts";
 
 export const toolingRules = defineConfig(
   {
@@ -43,6 +44,23 @@ export const toolingRules = defineConfig(
   {
     files: ["oxlint-plugin-metadata-scrubber/rules/*.ts"],
     rules: {
+      // Shared message templates keep diagnostics consistent and testable.
+      "no-restricted-syntax": [
+        SEVERITY_LEVELS.Error,
+        ...restrictedSyntax,
+        {
+          selector:
+            "CallExpression[callee.object.name='context']:matches([callee.property.name='report'], [callee.property.value='report']) > ObjectExpression > Property:matches([key.name='message'], [key.value='message'])",
+          message:
+            "context.report uses inline message text instead of a shared template. Add the template to meta.messages, then report with messageId and data so diagnostics stay consistent.",
+        },
+        {
+          selector:
+            "ExportDefaultDeclaration:not([declaration.type='CallExpression'][declaration.callee.name='defineRule'])",
+          message:
+            "This default export does not show the defineRule call that checks the rule contract. Use export default defineRule({ meta, create }) so the export states that contract.",
+        },
+      ],
       // defineRule returns each rule unchanged and types its visitor callbacks.
       [`${PLUGIN_NAMES.Unicorn}/no-top-level-side-effects`]: [
         SEVERITY_LEVELS.Error,
