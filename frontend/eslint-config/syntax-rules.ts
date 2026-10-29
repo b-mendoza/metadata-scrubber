@@ -3,7 +3,7 @@ import type { Linter } from "eslint";
 import { SEVERITY_LEVELS } from "./constants.ts";
 
 // Scoped syntax rules must retain these global restrictions.
-const restrictedSyntax = [
+export const restrictedSyntax = [
   {
     selector: "SwitchStatement",
     message: "Use a lookup map that raises an error for unknown keys instead.",
