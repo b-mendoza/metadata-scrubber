@@ -2,6 +2,8 @@ import { useSuspenseQuery } from "@tanstack/react-query";
 import { createFileRoute } from "@tanstack/react-router";
 import { Suspense } from "react";
 
+import { trpcContext } from "#/shared/libs/trpc/client/client-runtime.mod";
+
 export const Route = createFileRoute("/")({
   component: IndexRoute,
   loader({ context }) {
@@ -35,7 +37,7 @@ function IndexRoute() {
 }
 
 const Message = () => {
-  const { trpc } = Route.useRouteContext();
+  const trpc = trpcContext.useTRPC();
 
   const messageQuery = useSuspenseQuery(
     trpc.products.getMessage.queryOptions(),
