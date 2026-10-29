@@ -2,6 +2,10 @@ import { defineConfig } from "eslint/config";
 import globals from "globals";
 
 import { PLUGIN_NAMES, SEVERITY_LEVELS } from "./constants.ts";
+import {
+  restrictedImportPatterns,
+  restrictedQueryImports,
+} from "./import-restriction-rules.ts";
 import { restrictedSyntax } from "./syntax-rules.ts";
 
 export const sourceRules = defineConfig(
@@ -34,6 +38,14 @@ export const sourceRules = defineConfig(
   {
     files: ["src/**/*.server.ts"],
     rules: {
+      // Server boundaries use ResultAsync for dependency failures.
+      "no-restricted-imports": [
+        SEVERITY_LEVELS.Error,
+        {
+          paths: restrictedQueryImports,
+          patterns: restrictedImportPatterns,
+        },
+      ],
       // A broad catch can map programming errors as dependency failures.
       "no-restricted-syntax": [
         SEVERITY_LEVELS.Error,
