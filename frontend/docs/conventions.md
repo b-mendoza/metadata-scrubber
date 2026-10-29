@@ -88,6 +88,7 @@ const workflowHttpClient = createWorkflowHttpClient(backendUrl);
 ```
 
 Wrap server-only functions exported from modules without the `.server` suffix with `createServerOnlyFn`.
+This prevents a browser from executing the server implementation.
 
 ```ts
 export const getAppBindings = createServerOnlyFn(() => {
