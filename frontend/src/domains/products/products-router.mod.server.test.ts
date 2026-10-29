@@ -4,15 +4,14 @@ import ky from "ky";
 import { expect, test, vi } from "vitest";
 
 import {
+  BACKEND_HEALTH_CHECK_FAILURE_MESSAGE,
+  productsRouter,
+} from "#/domains/products/products-router.mod.server";
+import {
   createCallerFactory,
   createTRPCRequestContext,
 } from "#/shared/libs/trpc/utils/initializer/initializer.mod.server";
 import { getAppBindings } from "#/shared/middlewares/app-bindings/app-bindings.mod";
-
-import {
-  BACKEND_HEALTH_CHECK_FAILURE_MESSAGE,
-  productsRouter,
-} from "./products-router.mod.server";
 
 vi.mock(import("#/shared/middlewares/app-bindings/app-bindings.mod"), () => ({
   getAppBindings: vi.fn(),
