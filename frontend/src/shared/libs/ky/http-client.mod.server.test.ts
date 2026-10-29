@@ -2,12 +2,11 @@ import { HTTPError, TimeoutError } from "ky";
 import { afterEach, expect, test, vi } from "vitest";
 
 import { BAD_GATEWAY_STATUS_CODE } from "#/shared/constants/http/status-codes/status-codes.mod";
-
 import {
   createHttpClient,
   HTTP_CLIENT_ATTEMPT_TIMEOUT_MS,
   HTTP_CLIENT_RETRY_LIMIT,
-} from "./http-client.mod.server";
+} from "#/shared/libs/ky/http-client.mod.server";
 
 const ONE_MILLISECOND_MS = 1;
 const INITIAL_FETCH_ATTEMPT_COUNT = 1;
