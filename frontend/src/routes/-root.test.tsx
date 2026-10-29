@@ -3,10 +3,9 @@ import posthog from "posthog-js";
 import { memo } from "react";
 import { afterEach, expect, test, vi } from "vitest";
 
+import { RootComponent, Route } from "#/routes/__root";
 import type { getPostHogBrowserConfig } from "#/shared/config/posthog/posthog-browser-config.mod.server";
 import { renderComponent } from "#/tests/utils/renderers/renderers.mod";
-
-import { RootComponent, Route } from "./__root";
 
 vi.mock(import("@tanstack/react-router"), async (importOriginal) => {
   const original = await importOriginal();
