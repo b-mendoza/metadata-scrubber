@@ -4,11 +4,10 @@ import posthog from "posthog-js";
 import { afterEach, expect, test, vi } from "vitest";
 
 import type { MessageResponse } from "#/domains/products/products-router.mod.server";
+import { initializeTRPCClient } from "#/shared/libs/trpc/client/client-runtime.mod";
 import { appRouter } from "#/shared/libs/trpc/routers/routers.mod.server";
 import { createTRPCRequestContext } from "#/shared/libs/trpc/utils/initializer/initializer.mod.server";
 import { getAppBindings } from "#/shared/middlewares/app-bindings/app-bindings.mod";
-
-import { initializeTRPCClient } from "./client-runtime.mod";
 
 vi.mock(import("#/shared/middlewares/app-bindings/app-bindings.mod"), () => ({
   getAppBindings: vi.fn(),
