@@ -18,6 +18,7 @@ Directory fixtures run from their own root, so their `src/` paths match real sou
 
 - `no-classes` requires plain functions and objects instead of class declarations and class expressions. It also rejects classes that extend `Error`.
 - `no-expect-type-of` requires TypeScript contracts instead of Vitest `expectTypeOf(...)` calls, including renamed imports.
+- `no-lifecycle-hook-names` rejects function declarations and function-valued variable declarations with mount-timing hook names. A suffix must start with an uppercase letter, digit, or underscore. It rejects `useMountUploader` but allows `useMountedState`, which describes state rather than mount timing.
 - `no-mutable-module-state-in-server-code` rejects module-scope `let` and `var` declarations in server modules.
 - `no-silent-test-prerequisite` rejects `.skip` calls on Vitest test APIs, including chains such as `test.skip.each(...)`. It also rejects bare test prerequisite returns in test callbacks.
 - `separate-type-imports` rejects inline `type` specifiers and requires separate `import type` declarations. It reports once per declaration, including declarations with only inline type specifiers. Standalone named, default, and namespace type imports remain allowed.
@@ -42,6 +43,8 @@ The configured CLI output shows one line for each diagnostic. The line contains 
 Make each diagnostic clear enough to explain the required correction. Explain the problem. State its cause or effect. Give a clear correction. Use clear and consistent terms. State the required correction directly. Reject a change that leaves the failure in place.
 
 ## Known limitations
+
+- The lifecycle-name rule checks a fixed list of timing names at word boundaries. It does not check object methods, wrapped function initializers, or other timing words. It cannot prove that an allowed name describes the external system.
 
 - The Effect rule tracks static member names and immutable namespace aliases. It does not evaluate dynamic keys, follow mutable namespace aliases, or prove arbitrary runtime data flow.
 - The Effect rule checks the nearest function owner. It cannot prove that external synchronization is necessary or that the hook name describes its purpose.
