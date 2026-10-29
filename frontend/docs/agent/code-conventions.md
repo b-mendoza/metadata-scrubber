@@ -15,7 +15,7 @@ This guide describes general practices. The code is the source of truth. This gu
 
 ## Data and resources
 
-- Treat route data as optional. Do not `await` it in a `loader`.
+- Treat route data as optional. Do not `await` query data in a `loader`. The root loader may `await loadPostHogBrowserConfig()`. That value is not a TanStack Query.
 - Fetch route data in a child component. Wrap that child in `Suspense`. Read the data with `useSuspenseQuery` only. Do not use `useQuery`.
 - Only the operator marks route data as required. An agent may mark data as required only when a later fetch needs that first result.
 - Follow the [frontend conventions](../conventions.md) for `trpc` and `queryClient` access. A `loader` or route component may read them from route context. A child must call `trpcContext.useTRPC()` and `useQueryClient`. Do not pass those clients as props except during `TRPCProvider` setup.
