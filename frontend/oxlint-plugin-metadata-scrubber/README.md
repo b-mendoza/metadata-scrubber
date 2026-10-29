@@ -22,9 +22,17 @@ Directory fixtures run from their own root, so their `src/` paths match real sou
 - `no-mutable-module-state-in-server-code` rejects module-scope `let` and `var` declarations in server modules.
 - `no-silent-test-prerequisite` rejects `.skip` calls on Vitest test APIs, including chains such as `test.skip.each(...)`. It also rejects bare test prerequisite returns in test callbacks.
 - `no-test-local-object-type` rejects direct object-literal type aliases and interfaces in test files. It allows function aliases, imported types, and schema-derived types.
+- `require-module-file-name` requires the six module suffixes under `src/`: `.mod.ts`, `.mod.tsx`, `.mod.server.ts`, `.mod.test.ts`, `.mod.test.tsx`, and `.mod.server.test.ts`. It rejects a non-test `.mod.tsx` file without JSX. It also checks shared test helpers.
 - `separate-type-imports` rejects inline `type` specifiers and requires separate `import type` declarations. It reports once per declaration, including declarations with only inline type specifiers. Standalone named, default, and namespace type imports remain allowed.
 - `use-effect-in-custom-hook` requires direct React `useEffect` calls inside the nearest named custom hook. It rejects runtime extraction of the Effect reference. Renamed imports, static React members, and immutable namespace aliases retain their React binding. Nested callbacks need their own valid owner. Type-only uses remain allowed.
 - `use-shared-render-helper` requires the shared `renderComponent` helper for Testing Library rendering.
+
+## File-name exemptions
+
+- `src/routes/**` keeps TanStack file-route names, including ignored route tests.
+- `src/router.tsx` and `src/start.ts` keep TanStack's entry-point names.
+- `src/routeTree.gen.ts` keeps the generated route-tree name.
+- `src/tests/setup-test-environment.ts` keeps the exact setup path in `vitest.config.ts`. Other setup files and `src/tests/utils/**` still need module names.
 
 ## Core Query import restrictions
 
@@ -44,6 +52,8 @@ The configured CLI output shows one line for each diagnostic. The line contains 
 Make each diagnostic clear enough to explain the required correction. Explain the problem. State its cause or effect. Give a clear correction. Use clear and consistent terms. State the required correction directly. Reject a change that leaves the failure in place.
 
 ## Known limitations
+
+- The file-name rule detects JSX syntax, not whether a file renders a component. It does not prove server-only execution.
 
 - The object-type rule checks syntax, not schema equivalence. It allows function types, nested object types, arrays, unions, intersections, and schema-derived aliases. It does not prove that a type needs a schema or that an imported type is schema-derived.
 
