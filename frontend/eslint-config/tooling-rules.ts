@@ -83,4 +83,20 @@ export const toolingRules = defineConfig(
       ],
     },
   },
+  {
+    files: ["playwright.config.ts"],
+    rules: {
+      // The operator starts both services before the end-to-end suite.
+      "no-restricted-syntax": [
+        SEVERITY_LEVELS.Error,
+        ...restrictedSyntax,
+        {
+          selector:
+            "Property:matches([key.name='webServer'], [key.value='webServer'])",
+          message:
+            "A webServer property makes Playwright start services. Remove webServer from defineConfig and start the frontend and backend before running the suite.",
+        },
+      ],
+    },
+  },
 );
