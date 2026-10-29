@@ -1,4 +1,5 @@
 import { spawnSync } from "node:child_process";
+import { statSync } from "node:fs";
 import path from "node:path";
 import type { TestContext } from "node:test";
 import { test } from "node:test";
@@ -7,6 +8,7 @@ import * as z from "zod";
 
 import { fixtureCases } from "./fixture-cases.ts";
 
+const FILE_ORDER = new Intl.Collator("en");
 const FAILURE_EXIT_CODE = 1;
 const SUCCESS_EXIT_CODE = 0;
 
@@ -29,6 +31,7 @@ const oxlintJsonStringSchema = z
 const oxlintJsonMessageSchema = z.object({
   code: z.nullish(oxlintJsonStringSchema),
   message: oxlintJsonStringSchema,
+  filename: oxlintJsonStringSchema,
 });
 
 const oxlintJsonOutputSchema = z.object({
@@ -40,18 +43,20 @@ const getDiagnosticMessages = (
   fixturePath: string,
   ruleId: string,
 ): readonly string[] => {
+  const absoluteFixturePath = path.join(frontendDirectory, fixturePath);
+  const isDirectory = statSync(absoluteFixturePath).isDirectory();
   const result = spawnSync(
     oxlintPath,
     [
       "-c",
-      path.join("oxlint-plugin-metadata-scrubber", "fixture.config.json"),
+      path.join(pluginDirectory, "fixture.config.json"),
       "--format",
       "json",
       "--disable-nested-config",
-      fixturePath,
+      isDirectory ? "." : fixturePath,
     ],
     {
-      cwd: frontendDirectory,
+      cwd: isDirectory ? absoluteFixturePath : frontendDirectory,
       encoding: "utf-8",
     },
   );
@@ -70,6 +75,9 @@ const getDiagnosticMessages = (
   const parsed = oxlintJsonOutputSchema.parse(parsedValue);
   return parsed.diagnostics
     .filter((message) => message.code === `metadata-scrubber(${ruleId})`)
+    .toSorted((left, right) =>
+      FILE_ORDER.compare(left.filename, right.filename),
+    )
     .map((message) => message.message);
 };
 
