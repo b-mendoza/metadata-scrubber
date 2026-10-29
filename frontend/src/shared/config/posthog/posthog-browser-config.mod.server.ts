@@ -10,7 +10,6 @@ export const getPostHogBrowserConfig = () => {
     options: {
       defaults: "2026-08-30",
       api_host: "/relay",
-      // eslint-disable-next-line metadata-scrubber/no-hardcoded-backend-host -- This fixed US Cloud UI host is not the backend or the event transport.
       ui_host: "https://us.posthog.com",
       capture_exceptions: true,
       capture_performance: { web_vitals: true },
