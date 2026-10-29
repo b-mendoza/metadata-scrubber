@@ -86,15 +86,9 @@ try {
 
 ## Route data
 
-- Treat loader data as optional unless the page cannot render without it. Await only required data. Optional requests must not block navigation.
-- Await `queryClient.query` with `staleTime: "static"` for required cached query data. Let a rejection reach the router's error handling. Cached data can then satisfy the loader without another fetch.
-- Start optional queries with `void queryClient.query(trpc.products.getMessage.queryOptions()).catch(() => null)`, as the index route does. Keep the loader synchronous. Do not await or return that promise. The catch prevents an unhandled rejection. The consumer reads the cache.
-- Put each `useSuspenseQuery` consumer under an ancestor `Suspense` with a `fallback`. Put query loading UI there instead of loading flags or nullable-data branches in the consumer. The rest of the page can render while optional data loads.
-- Review the actual parent Suspense and error boundaries, data needs, and retry behavior. Include parents in other files. Add a loader only when the route needs one. Import rules cannot check these relationships.
-- Read `trpc` and `queryClient` from loader context in a `loader`.
-- Read `trpc` from `Route.useRouteContext()` in a route component.
-- In a child component, import `trpcContext` and call `trpcContext.useTRPC()` for the `trpc` client. Import `useQueryClient` from `@tanstack/react-query` when the child needs `queryClient`.
-- Pass `trpc` and `queryClient` as props only during `TRPCProvider` setup. Do not pass these clients to child components.
+- Treat every route data dependency as optional.
+- Do not `await` a data request in a `loader`. An awaited loader blocks navigation between routes. It also blocks a user who arrives from another domain. The route cannot render until every awaited request finishes.
+- Start each query without waiting. Do not return that promise from the `loader`. The `.catch` prevents an unhandled rejection. The consumer reads the cache.
 
 Loader:
 
@@ -112,6 +106,48 @@ export const Route = createFileRoute("/")({
   },
 });
 ```
+
+Do not await the query:
+
+```ts
+await queryClient.query(trpc.products.getMessage.queryOptions());
+```
+
+- Read query data with `useSuspenseQuery` only. Do not use `useQuery`.
+- Put data-fetching logic in a child component. Wrap that child in a `Suspense` boundary with a `fallback`. The route then renders a static shell first. The user can interact while data loads. This keeps LCP, INP, and CLS from regressing.
+- Put query loading UI in the `fallback`. Do not use loading flags or nullable-data branches in the consumer.
+
+```tsx
+import { Suspense } from "react";
+
+function IndexRoute() {
+  return (
+    <>
+      <h1>Hello, world!</h1>
+
+      <Suspense fallback={<div>Loading...</div>}>
+        <Message />
+      </Suspense>
+    </>
+  );
+}
+```
+
+Do not read the query with `useQuery`:
+
+```tsx
+const messageQuery = useQuery(trpc.products.getMessage.queryOptions());
+```
+
+- Review the actual parent `Suspense` and error boundaries, data needs, and retry behavior. Include parents in other files. Add a loader only when the route needs one. Import rules cannot check these relationships.
+- Do not mark a data dependency as required. The operator decides that. An agent may mark a dependency as required only when another fetch is derived from it. Await only that parent fetch. Keep the derived fetches optional.
+
+An authenticated page first fetches the user's data. Later fetches use that user. The user fetch is required. The later fetches stay optional.
+
+- Read `trpc` and `queryClient` from loader context in a `loader`.
+- Read `trpc` from `Route.useRouteContext()` in a route component.
+- In a child component, import `trpcContext` and call `trpcContext.useTRPC()` for the `trpc` client. Import `useQueryClient` from `@tanstack/react-query` when the child needs `queryClient`.
+- Pass `trpc` and `queryClient` as props only during `TRPCProvider` setup. Do not pass these clients to child components.
 
 Route component:
 
