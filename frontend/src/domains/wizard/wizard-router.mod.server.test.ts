@@ -7,6 +7,13 @@ import { http, HttpResponse } from "msw";
 import { setupServer } from "msw/node";
 import { afterAll, afterEach, beforeAll, expect, test, vi } from "vitest";
 
+import type { BackendErrorResponse } from "#/domains/wizard/wizard-contracts.mod.server";
+import {
+  CREATE_UPLOAD_FAILURE_MESSAGE,
+  DRY_RUN_FAILURE_MESSAGE,
+  SCRUB_FILE_FAILURE_MESSAGE,
+  WORKFLOW_CONFIG_FAILURE_MESSAGE,
+} from "#/domains/wizard/wizard-router.mod.server";
 import { SERVICE_UNAVAILABLE_STATUS_CODE } from "#/shared/constants/http/status-codes/status-codes.mod";
 import { createWorkflowHttpClient } from "#/shared/libs/ky/workflow-http-client.mod.server";
 import type {
@@ -19,14 +26,6 @@ import {
   createTRPCRequestContext,
 } from "#/shared/libs/trpc/utils/initializer/initializer.mod.server";
 import { getAppBindings } from "#/shared/middlewares/app-bindings/app-bindings.mod";
-
-import type { BackendErrorResponse } from "./wizard-contracts.mod.server";
-import {
-  CREATE_UPLOAD_FAILURE_MESSAGE,
-  DRY_RUN_FAILURE_MESSAGE,
-  SCRUB_FILE_FAILURE_MESSAGE,
-  WORKFLOW_CONFIG_FAILURE_MESSAGE,
-} from "./wizard-router.mod.server";
 
 const server = setupServer();
 
