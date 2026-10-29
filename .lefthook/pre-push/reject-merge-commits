@@ -1,0 +1,50 @@
+#!/bin/sh
+# Reject a push that would add merge commits.
+# Git sends one line per ref: local_ref local_sha remote_ref remote_sha.
+# A local SHA of all zeros means the ref is being deleted.
+# A remote SHA of all zeros means the ref is new on that remote.
+# For a new ref, --not --remotes keeps commits that a remote already has
+# out of the check. A new branch that starts from main can then push.
+set -eu
+
+zero=0000000000000000000000000000000000000000
+merge_shas=
+
+while read -r local_ref local_sha remote_ref remote_sha; do
+  if [ "$local_sha" = "$zero" ]; then
+    continue
+  fi
+
+  # A tag can point to a merge that is already on the remote.
+  # Skip tags so those pushes still work.
+  case "$remote_ref" in
+    refs/tags/*)
+      continue
+      ;;
+  esac
+
+  if [ "$remote_sha" = "$zero" ]; then
+    found=$(git rev-list --merges "$local_sha" --not --remotes)
+  else
+    found=$(git rev-list --merges "${remote_sha}..${local_sha}")
+  fi
+
+  if [ -n "$found" ]; then
+    merge_shas="${merge_shas}${found}
+"
+  fi
+done
+
+if [ -z "$merge_shas" ]; then
+  exit 0
+fi
+
+echo 'Push blocked. These commits are merge commits:' >&2
+printf '%s' "$merge_shas" | git log --stdin --no-walk --format='  %h %s' >&2
+echo >&2
+echo 'Rebase onto the target branch. Do not merge. Example:' >&2
+echo '  git fetch origin && git rebase origin/main' >&2
+echo 'Then push your own branch:' >&2
+echo '  git push --force-with-lease' >&2
+echo 'Do not use git merge. Do not use a pull that creates a merge.' >&2
+exit 1
