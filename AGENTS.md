@@ -39,7 +39,7 @@ Review the user's instructions before you act. Treat them as a starting point fo
 - Read the raw environment only in the frontend app-bindings middleware and the backend `config.Load()`. Pass validated values to other code through `getAppBindings()`, parameters, or request bindings.
 - Tests can set environment values to test the schema boundary.
 - Trust the validated values. Do not add later checks, defaults, or fallbacks.
-- Send a value to the browser only through server data, such as route loader data, and only when it is safe to expose.
+- Send a value to the browser only through server data, such as route loader data, and only when it is safe to expose. Do not await query data in a `loader`.
 - Vite build flags, such as `import.meta.env.DEV` and `import.meta.env.SSR`, are build constants, not environment variables. You can use them.
 
 ## Required workflow
