@@ -3,6 +3,7 @@ import { TRPCError } from "@trpc/server";
 import { HTTPError, TimeoutError } from "ky";
 import { ResultAsync } from "neverthrow";
 
+import * as contracts from "#/domains/wizard/wizard-contracts.mod.server";
 import {
   BAD_REQUEST_STATUS_CODE,
   CONFLICT_STATUS_CODE,
@@ -19,8 +20,6 @@ import {
   publicProcedure,
 } from "#/shared/libs/trpc/utils/initializer/initializer.mod.server";
 import { getAppBindings } from "#/shared/middlewares/app-bindings/app-bindings.mod";
-
-import * as contracts from "./wizard-contracts.mod.server";
 
 export const WORKFLOW_CONFIG_FAILURE_MESSAGE =
   "Could not load the file workflow configuration. Try again later.";
