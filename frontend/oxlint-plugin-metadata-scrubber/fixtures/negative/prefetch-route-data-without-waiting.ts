@@ -49,6 +49,97 @@ export const Chained = rootWithContext<{ queryClient: QueryClient }>()({
   },
 });
 
+const laterOptions = (required: string) =>
+  queryOptions({ queryKey: ["later", required], queryFn: () => required });
+
+export const UnusedResult = rootWithContext<{ queryClient: QueryClient }>()({
+  async loader({ context: { queryClient: cache } }) {
+    const unused = await cache.ensureQueryData(options);
+    return unused;
+  },
+});
+
+export const WaitedDependency = rootWithContext<{ queryClient: QueryClient }>()(
+  {
+    async loader({ context: { queryClient: cache } }) {
+      const required = await cache.ensureQueryData(options);
+      await cache.query(laterOptions(required));
+    },
+  },
+);
+
+export const OutsideQuery = rootWithContext<{ queryClient: QueryClient }>()({
+  async loader({ context: { queryClient: cache } }) {
+    const required = await cache.ensureQueryData(options);
+    return laterOptions(required);
+  },
+});
+
+export const UncaughtDependency = rootWithContext<{
+  queryClient: QueryClient;
+}>()({
+  async loader({ context: { queryClient: cache } }) {
+    const required = await cache.ensureQueryData(options);
+    void cache.query(laterOptions(required));
+  },
+});
+
+export const ShadowedResult = rootWithContext<{ queryClient: QueryClient }>()({
+  async loader({ context: { queryClient: cache } }) {
+    const required = await cache.ensureQueryData(options);
+    {
+      const required = "unrelated";
+      void cache.query(laterOptions(required)).catch(() => null);
+    }
+    return required;
+  },
+});
+
+export const NonConstResults = rootWithContext<{ queryClient: QueryClient }>()({
+  async loader({ context: { queryClient: cache } }) {
+    let mutable = await cache.ensureQueryData(options);
+    void cache.query(laterOptions(mutable)).catch(() => null);
+    const { length } = await cache.ensureQueryData(options);
+    void cache.query(laterOptions(String(length))).catch(() => null);
+  },
+});
+
+export const OtherQueryClient = rootWithContext<{ queryClient: QueryClient }>()(
+  {
+    async loader({ context: { queryClient: cache } }) {
+      const required = await cache.ensureQueryData(options);
+      const otherClient = new QueryClient();
+      void otherClient.query(laterOptions(required)).catch(() => null);
+    },
+  },
+);
+
+export const NestedQuery = rootWithContext<{ queryClient: QueryClient }>()({
+  async loader({ context: { queryClient: cache } }) {
+    const required = await cache.ensureQueryData(options);
+    const nested = () => {
+      void cache.query(laterOptions(required)).catch(() => null);
+    };
+    nested();
+  },
+});
+
+export const EarlierQuery = rootWithContext<{ queryClient: QueryClient }>()({
+  async loader({ context: { queryClient: cache } }) {
+    void cache
+      .query(queryOptions({ queryKey: ["earlier"], queryFn: () => required }))
+      .catch(() => null);
+    const required = await cache.ensureQueryData(options);
+  },
+});
+
+export const WrappedAwait = rootWithContext<{ queryClient: QueryClient }>()({
+  async loader({ context: { queryClient: cache } }) {
+    const required = String(await cache.ensureQueryData(options));
+    void cache.query(laterOptions(required)).catch(() => null);
+  },
+});
+
 declare module "@tanstack/react-router" {
   interface FileRoutesByPath {
     "/prefetch-negative": {

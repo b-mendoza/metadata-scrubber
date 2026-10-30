@@ -21,6 +21,17 @@ export const Route = rootWithContext<{ queryClient: QueryClient }>()({
   },
 });
 
+const laterOptions = (required: string) =>
+  queryOptions({ queryKey: ["later", required], queryFn: () => required });
+
+export const DependentQuery = rootWithContext<{ queryClient: QueryClient }>()({
+  async loader({ context }) {
+    const { queryClient } = context;
+    const required = await queryClient.ensureQueryData(options);
+    void queryClient.query(laterOptions(required)).catch(() => null);
+  },
+});
+
 export const ShadowedClient = rootWithContext<{ queryClient: QueryClient }>()({
   async loader({ context }) {
     const queryClient = { query: () => Promise.resolve("unrelated") };
