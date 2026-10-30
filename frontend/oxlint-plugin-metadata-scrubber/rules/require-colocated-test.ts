@@ -23,6 +23,7 @@ const getModuleStem = (filename: string): string => {
 const findModule = (
   testStem: string,
   filenames: readonly string[],
+  isServerTest: boolean,
 ): string | undefined => {
   const [module] = filenames
     .toSorted(FILE_ORDER.compare)
@@ -32,9 +33,17 @@ const findModule = (
         !isTestFile(filename) &&
         testStem.startsWith(getModuleStem(filename)),
     )
-    .toSorted(
-      (left, right) => getModuleStem(right).length - getModuleStem(left).length,
-    );
+    .toSorted((left, right) => {
+      const leftStemLength = getModuleStem(left).length;
+      const rightStemLength = getModuleStem(right).length;
+      if (leftStemLength !== rightStemLength) {
+        return rightStemLength - leftStemLength;
+      }
+      return (
+        Number(SERVER_MODULE_PATTERN.test(left) !== isServerTest) -
+        Number(SERVER_MODULE_PATTERN.test(right) !== isServerTest)
+      );
+    });
   return module;
 };
 
@@ -70,6 +79,7 @@ export default defineRule({
     const directory = path.dirname(absoluteFilename);
     const sourceDirectory = path.join(context.cwd, "src");
     const testStem = path.basename(filename).replace(TEST_SUFFIX_PATTERN, "");
+    const isServerTest = filename.endsWith(".server.test.ts");
     const matchingStem = filename.startsWith("src/routes/")
       ? testStem.replace(IGNORED_ROUTE_PREFIX_PATTERN, "")
       : testStem;
@@ -85,6 +95,7 @@ export default defineRule({
               readdirSync(directory, { withFileTypes: true })
                 .filter((entry) => entry.isFile())
                 .map((entry) => path.join(directory, entry.name)),
+              isServerTest,
             );
             const module =
               nearbyModule ??
@@ -96,6 +107,7 @@ export default defineRule({
                 })
                   .filter((entry) => entry.isFile())
                   .map((entry) => path.join(entry.parentPath, entry.name)),
+                isServerTest,
               );
             return { module };
           } catch (error) {
@@ -137,7 +149,7 @@ export default defineRule({
             messageId: "moveTest",
             data: { filename, module: modulePath, replacement },
           });
-        } else if (isServer && !filename.endsWith(".server.test.ts")) {
+        } else if (isServer && !isServerTest) {
           context.report({
             node,
             messageId: "serverTest",
