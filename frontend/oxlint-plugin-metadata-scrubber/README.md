@@ -64,7 +64,7 @@ Make each diagnostic clear enough to explain the required correction. Explain th
 
 ## Known limitations
 
-- Lint caches do not track sibling-file changes. Run lint without its cache after you move, add, or remove a module or test.
+- ESLint's cache can keep a stale result for `require-colocated-test` after sibling files change. The uncached Oxlint pass in `pnpm lint` runs the same check on every run.
 - The colocated-test rule matches file names, not imports or test behavior. If no sibling matches, it searches the source tree to suggest a move. When no module matches anywhere, it gives a naming example instead of inventing a target path. Directory read failures produce a diagnostic.
 - The file-name rule detects JSX syntax, not whether a file renders a component. It does not prove server-only execution.
 
