@@ -26,7 +26,11 @@ export const testRules = defineConfig(
     },
   },
   {
-    files: ["src/**/*.test.ts", "src/**/*.test.tsx"],
+    files: [
+      "src/**/*.test.ts",
+      "src/**/*.test.tsx",
+      "eslint-config/**/*.test.ts",
+    ],
     ...vitest.configs.recommended,
     rules: {
       ...vitest.configs.recommended.rules,
