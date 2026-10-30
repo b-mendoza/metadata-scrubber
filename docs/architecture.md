@@ -23,6 +23,14 @@ Cursor reads `.cursor/worktrees.json`. On Unix it runs the setup script.
 
 T3 Code reads `t3.json`. New threads use a worktree. T3 Code does not run the scripts in `t3.json` directly. Import them from the "From t3.json" section of the project actions menu. After the import, T3 Code runs the setup script when it creates a worktree. It waits for the script to finish because `async` is `false`. T3 Code keeps its own copy of each imported script. Later changes to `t3.json` do not apply until you change that copy in T3 Code.
 
+## Git hooks
+
+`lefthook.yml` defines the Git hook jobs. `backend/go.mod` owns lefthook as a Go tool. Git hooks run `scripts/lefthook` from the repository root. The script builds lefthook with `go -C backend tool -n lefthook` and runs it from that root. It exits 1 when `go` fails.
+
+The pre-push job rejects merge commits that the push would add. It excludes history that the destination remote already has through its advertised tips and, for a named remote, its remote-tracking refs. It allows tags and branch deletions.
+
+`scripts/test-reject-merge-commits.sh` tests the hook with pushes to temporary bare repositories. No CI job or Task runs it.
+
 ## Service integration
 
 - Clients send public application requests to the frontend. Frontend server code calls the backend over HTTP.
