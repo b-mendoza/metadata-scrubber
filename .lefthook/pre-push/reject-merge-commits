@@ -1,62 +1,33 @@
 #!/bin/sh
 # Reject a push that would add merge commits.
 # Git sends one line per ref: local_ref local_sha remote_ref remote_sha.
-# A local SHA of all zeros means the ref is being deleted.
-# Exclude the destination's remote-tracking refs for a named remote.
-# Also exclude the advertised remote commit when its object is available.
-# Check all other history. A push by URL can include inherited merges.
+# Allow deletions and tags. A tag can point to a merge that the remote already has.
 set -eu
 
-remote=$1
-named_remote=false
-if git config --get "remote.$remote.url" >/dev/null 2>&1; then
-  named_remote=true
-fi
-
 zero=0000000000000000000000000000000000000000
-merge_shas=
-
+new=
+old=
 while read -r _local_ref local_sha remote_ref remote_sha; do
-  if [ "$local_sha" = "$zero" ]; then
-    continue
-  fi
-
-  # A tag can point to a merge that is already on the remote.
-  # Skip tags so those pushes still work.
-  case "$remote_ref" in
-    refs/tags/*)
-      continue
-      ;;
+  case "$local_sha $remote_ref" in
+    "$zero "* | *" refs/tags/"*) continue ;;
   esac
-
-  set -- rev-list --merges "$local_sha" --not
-  if [ "$named_remote" = true ]; then
-    set -- "$@" "--remotes=$remote"
-  fi
-  if [ "$remote_sha" != "$zero" ] && git cat-file -e "${remote_sha}^{commit}" 2>/dev/null; then
-    set -- "$@" "$remote_sha"
-  fi
-  found=$(git "$@")
-
-  if [ -n "$found" ]; then
-    merge_shas="${merge_shas}${found}
-"
-  fi
+  new="$new $local_sha"
+  old="$old $remote_sha"
 done
+[ -n "$new" ] || exit 0
 
-if [ -z "$merge_shas" ]; then
-  exit 0
-fi
+# Exclude the advertised tips and the remote-tracking refs of a named remote.
+# A URL matches no remote-tracking refs. --ignore-missing skips missing and zero SHAs.
+# The SHA lists split on spaces on purpose.
+# shellcheck disable=SC2086
+merges=$(git log --merges --ignore-missing --format='  %h %s' $new --not "--remotes=$1" $old)
+[ -n "$merges" ] || exit 0
 
-echo 'Push blocked. These commits are merge commits:' >&2
-printf '%s' "$merge_shas" | git log --stdin --no-walk --format='  %h %s' >&2
-echo >&2
-echo 'Rebase onto the target branch. Do not merge. Example:' >&2
-echo '  git fetch origin && git rebase origin/main' >&2
-echo 'Then push your own branch:' >&2
-echo '  git push --force-with-lease' >&2
-echo 'Do not use git merge. Do not use a pull that creates a merge.' >&2
-if [ "$named_remote" = false ]; then
-  echo 'Push through a named remote to exclude history that remote already has.' >&2
-fi
+{
+  echo 'Push blocked. These commits are merge commits:'
+  echo "$merges"
+  echo 'Rebase onto the target branch. Then push your own branch:'
+  echo '  git fetch origin && git rebase origin/main'
+  echo '  git push --force-with-lease'
+} >&2
 exit 1
