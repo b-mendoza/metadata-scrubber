@@ -10,6 +10,13 @@ export default defineConfig({
       {
         test: {
           environment: "node",
+          include: ["./eslint-config/**/*.test.ts"],
+          name: "tooling",
+        },
+      },
+      {
+        test: {
+          environment: "node",
           include: ["./src/**/*.server.test.ts"],
           name: "server",
         },
