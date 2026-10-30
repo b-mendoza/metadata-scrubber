@@ -23,6 +23,16 @@ Cursor reads `.cursor/worktrees.json`. On Unix it runs the setup script.
 
 T3 Code reads `t3.json`. New threads use a worktree. T3 Code does not run the scripts in `t3.json` directly. Import them from the "From t3.json" section of the project actions menu. After the import, T3 Code runs the setup script when it creates a worktree. It waits for the script to finish because `async` is `false`. T3 Code keeps its own copy of each imported script. Later changes to `t3.json` do not apply until you change that copy in T3 Code.
 
+## Cloud agent setup
+
+`.cursor/environment.json` is the Cursor Cloud Agent environment file. Cursor runs the `install` command during an environment Build. The command runs `scripts/setup-cloud-agent.sh` from the repository root.
+
+The script installs frontend dependencies with `pnpm --dir frontend install --frozen-lockfile`. It downloads Go modules with `go -C backend mod download`. It installs Git hooks with lefthook.
+
+When Cursor sets `core.hooksPath` to its agent-hooks dispatcher, the script unsets the local value, runs lefthook, then restores the value. The dispatcher then runs the lefthook hooks in `.git/hooks` first.
+
+The personal or team saved environment must point its environment.json location at `.cursor/environment.json`. Cursor reads the file only when the saved environment records that path.
+
 ## Service integration
 
 - Clients send public application requests to the frontend. Frontend server code calls the backend over HTTP.
