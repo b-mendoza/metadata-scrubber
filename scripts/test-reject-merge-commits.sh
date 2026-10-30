@@ -41,7 +41,7 @@ setup() {
 }
 
 failed=0
-for name in rebase other-remote unfetched-lease new-linear; do
+for name in rebase other-remote unfetched-lease new-linear new-merge; do
   case_dir=$tmp/$name
   mkdir "$case_dir"
   # Run each case as a separate process. A setup error must fail that case.
@@ -116,6 +116,22 @@ for name in rebase other-remote unfetched-lease new-linear; do
         git -C "$work" commit --allow-empty -m linear
         git -C "$work" push origin linear
         test "$(git --git-dir="$origin" rev-parse refs/heads/linear)" = "$(git -C "$work" rev-parse HEAD)"
+        ;;
+      new-merge)
+        git -C "$work" switch -c side
+        git -C "$work" commit --allow-empty -m side
+        git -C "$work" switch -c feature main
+        git -C "$work" commit --allow-empty -m feature
+        git -C "$work" merge --no-ff side -m new-merge
+        if git -C "$work" push origin feature >"$case_dir/push.log" 2>&1; then
+          echo 'The push accepted a new merge.' >&2
+          exit 1
+        fi
+        grep -F 'Push blocked. These commits are merge commits:' "$case_dir/push.log"
+        if git --git-dir="$origin" show-ref --verify --quiet refs/heads/feature; then
+          echo 'The destination has the rejected branch.' >&2
+          exit 1
+        fi
         ;;
     esac
   ) >"$case_dir/case.log" 2>&1 &
