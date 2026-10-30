@@ -48,8 +48,7 @@ Review the user's instructions before you act. Treat them as a starting point fo
 - Run the affected service's lint check after a substantive change. Run its test suite before you commit. Select commands from the project manifest. Passing checks do not prove that a change is correct. Escalate if you are unsure about correctness. Do not declare success while that doubt remains.
 - Treat the linter configuration as the enforced style standard in each service.
 - Editing does not give permission to publish. Do not commit, push, open a pull request, or create an issue unless the user asks. If you commit, stage the paths that the task touched and no other paths.
-- Update a local branch with `git rebase`. Example: `git fetch origin && git rebase origin/main`. After the rebase, push that branch with `git push --force-with-lease`. Use `--force-with-lease` only on your own branch.
-- Do not create merge commits. The pre-push Git hook blocks a push that contains a merge commit.
+- Update a local branch with `git rebase`. Example: `git fetch origin && git rebase origin/main`. After the rebase, push that branch with `git push --force-with-lease`. Use `--force-with-lease` only on your own branch. Do not create merge commits. The pre-push Git hook rejects new merge commits.
 
 ## Subagents
 
