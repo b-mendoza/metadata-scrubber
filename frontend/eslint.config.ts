@@ -188,7 +188,7 @@ export default defineConfig(
   /**
    * This final oxlint entry turns off ESLint rules that the bridge
    * maps to enabled Oxlint rules.
-   * All eight custom rules still run in both tools.
+   * The bridge leaves metadata-scrubber rules enabled in ESLint.
    */
   ...oxlintConfigs,
   {
