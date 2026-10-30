@@ -2,15 +2,21 @@
 # Reject a push that would add merge commits.
 # Git sends one line per ref: local_ref local_sha remote_ref remote_sha.
 # A local SHA of all zeros means the ref is being deleted.
-# A remote SHA of all zeros means the ref is new on that remote.
-# For a new ref, --not --remotes keeps commits that a remote already has
-# out of the check. A new branch that starts from main can then push.
+# Exclude the destination's remote-tracking refs for a named remote.
+# Also exclude the advertised remote commit when its object is available.
+# Check all other history. A push by URL can include inherited merges.
 set -eu
+
+remote=$1
+named_remote=false
+if git config --get "remote.$remote.url" >/dev/null 2>&1; then
+  named_remote=true
+fi
 
 zero=0000000000000000000000000000000000000000
 merge_shas=
 
-while read -r local_ref local_sha remote_ref remote_sha; do
+while read -r _local_ref local_sha remote_ref remote_sha; do
   if [ "$local_sha" = "$zero" ]; then
     continue
   fi
@@ -23,11 +29,14 @@ while read -r local_ref local_sha remote_ref remote_sha; do
       ;;
   esac
 
-  if [ "$remote_sha" = "$zero" ]; then
-    found=$(git rev-list --merges "$local_sha" --not --remotes)
-  else
-    found=$(git rev-list --merges "${remote_sha}..${local_sha}")
+  set -- rev-list --merges "$local_sha" --not
+  if [ "$named_remote" = true ]; then
+    set -- "$@" "--remotes=$remote"
   fi
+  if [ "$remote_sha" != "$zero" ] && git cat-file -e "${remote_sha}^{commit}" 2>/dev/null; then
+    set -- "$@" "$remote_sha"
+  fi
+  found=$(git "$@")
 
   if [ -n "$found" ]; then
     merge_shas="${merge_shas}${found}
