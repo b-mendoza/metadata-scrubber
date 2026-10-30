@@ -47,7 +47,7 @@ Directory fixtures run from their own root, so their `src/` paths match real sou
 
 ## Core Query import restrictions
 
-The core `no-restricted-imports` entries reject runtime `useQuery`, `useQueries`, and `useInfiniteQuery` imports and source re-exports from `@tanstack/react-query`. Use `useSuspenseQuery`, `useSuspenseQueries`, and `useSuspenseInfiniteQuery`, respectively. The entries also reject runtime namespace imports and wildcard exports from that package. Type-only imports and exports remain allowed. The ESLint `no-restricted-syntax` entry rejects dynamic imports with that literal source. The Oxlint bridge disables the ESLint import entries. The user must copy each change to `.oxlintrc.json` for normal lint runs to enforce it.
+The core `no-restricted-imports` entries reject runtime `useQuery`, `useQueries`, and `useInfiniteQuery` imports and source re-exports from `@tanstack/react-query`. Use `useSuspenseQuery`, `useSuspenseQueries`, and `useSuspenseInfiniteQuery`, respectively. The entries also reject runtime namespace imports and wildcard exports from that package. Type-only imports and exports remain allowed. The ESLint `no-restricted-syntax` entry rejects dynamic imports with that literal source. ESLint applies the full base and scoped import restrictions after the Oxlint bridge. This keeps the policy active when the native Oxlint configuration covers only some imports.
 
 These restrictions do not check actual Suspense or error-boundary ancestry. They do not decide route data criticality, loader use, server or client execution, streaming, or retry behavior.
 
