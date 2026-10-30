@@ -115,7 +115,7 @@ The root [architecture reference](../../docs/architecture.md) describes service 
 ## Tooling
 
 - [package.json](../package.json) defines the available commands and scripts. It pins Node.js in `engines` and `devEngines.runtime`. It pins `pnpm` in `devEngines.packageManager`.
-- lefthook.yml at the repository root defines the Git hook jobs. The pre-push job rejects merge commits that the push would add. The [backend architecture reference](../../backend/docs/architecture.md#tooling-layout) describes hook installation.
+- See [Git hooks](../../docs/architecture.md#git-hooks).
 - `scripts/setup-node.sh` runs the standalone `pnpm` installer when `pnpm` on PATH is missing, has an invalid version, or has a major version below 12. `pnpm` then installs the pinned `pnpm` and Node.js versions from `package.json`. The script installs dependencies with `pnpm install --frozen-lockfile`.
 - `scripts/hard-clean.ts` and `scripts/soft-clean.ts` import only Node built-ins. They can run without installed dependencies.
 - The lint checks cover ESLint rules, React Doctor findings, unused code, formatting, Oxlint rules, and TypeScript types. Knip checks unused files, dependencies, and exports. oxfmt checks formatting.
