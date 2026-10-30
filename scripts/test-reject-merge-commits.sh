@@ -85,7 +85,6 @@ for name in rebase other-remote unfetched-lease new-linear new-merge existing-me
         git clone "$origin" "$second"
         mkdir -p "$second/.git/hooks"
         cp "$hook" "$second/.git/hooks/pre-push"
-        chmod +x "$second/.git/hooks/pre-push"
         git -C "$second" commit --allow-empty -m second-clone
         git -C "$second" push origin main
         tip=$(git -C "$second" rev-parse HEAD)
