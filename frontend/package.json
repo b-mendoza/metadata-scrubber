@@ -45,7 +45,7 @@
     "devalue": "6.0.3",
     "ky": "2.2.0",
     "neverthrow": "8.2.0",
-    "posthog-js": "1.438.24",
+    "posthog-js": "1.440.0",
     "react": "19.3.1",
     "react-dom": "19.3.1",
     "tailwindcss": "4.3.3",
