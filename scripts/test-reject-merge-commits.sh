@@ -41,7 +41,7 @@ setup() {
 }
 
 failed=0
-for name in rebase other-remote; do
+for name in rebase other-remote unfetched-lease; do
   case_dir=$tmp/$name
   mkdir "$case_dir"
   # Run each case as a separate process. A setup error must fail that case.
@@ -86,6 +86,23 @@ for name in rebase other-remote; do
           echo 'The destination has the rejected branch.' >&2
           exit 1
         fi
+        ;;
+      unfetched-lease)
+        second=$case_dir/second
+        git clone "$origin" "$second"
+        mkdir -p "$second/.git/hooks"
+        cp "$hook" "$second/.git/hooks/pre-push"
+        chmod +x "$second/.git/hooks/pre-push"
+        git -C "$second" commit --allow-empty -m second-clone
+        git -C "$second" push origin main
+        tip=$(git -C "$second" rev-parse HEAD)
+        git -C "$work" commit --allow-empty -m rewritten-main
+        if git -C "$work" cat-file -e "${tip}^{commit}" 2>/dev/null; then
+          echo 'The first clone has the tip that it must not have fetched.' >&2
+          exit 1
+        fi
+        git -C "$work" push "--force-with-lease=refs/heads/main:$tip" origin main
+        test "$(git --git-dir="$origin" rev-parse refs/heads/main)" = "$(git -C "$work" rev-parse HEAD)"
         ;;
     esac
   ) >"$case_dir/case.log" 2>&1 &
