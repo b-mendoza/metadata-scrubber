@@ -2,13 +2,7 @@
 # Test the pre-push hook with pushes to temporary bare repositories.
 set -eu
 
-script_dir=$(CDPATH='' cd "$(dirname "$0")" && pwd)
-hook=${1:-"$script_dir/../.lefthook/pre-push/reject-merge-commits"}
-case "$hook" in
-  /*) ;;
-  *) hook=$PWD/$hook ;;
-esac
-[ -f "$hook" ] || { echo "Hook not found: $hook" >&2; exit 1; }
+hook=$(CDPATH='' cd "$(dirname "$0")/.." && pwd)/.lefthook/pre-push/reject-merge-commits
 
 tmp=$(mktemp -d)
 trap 'rm -rf "$tmp"' 0
