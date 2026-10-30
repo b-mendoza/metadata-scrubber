@@ -31,7 +31,6 @@ setup() {
   git clone "$origin" "$work"
   mkdir -p "$work/.git/hooks"
   cp "$hook" "$work/.git/hooks/pre-push"
-  chmod +x "$work/.git/hooks/pre-push"
 }
 
 failed=0
