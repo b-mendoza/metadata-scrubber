@@ -41,7 +41,7 @@ setup() {
 }
 
 failed=0
-for name in rebase other-remote unfetched-lease new-linear new-merge existing-merge url-merge; do
+for name in rebase other-remote unfetched-lease new-linear new-merge existing-merge url-merge tag-and-deletion; do
   case_dir=$tmp/$name
   mkdir "$case_dir"
   # Run each case as a separate process. A setup error must fail that case.
@@ -163,6 +163,22 @@ for name in rebase other-remote unfetched-lease new-linear new-merge existing-me
         grep -F 'Push blocked. These commits are merge commits:' "$case_dir/push.log"
         if git --git-dir="$origin" show-ref --verify --quiet refs/heads/x; then
           echo 'The destination has the rejected branch.' >&2
+          exit 1
+        fi
+        ;;
+      tag-and-deletion)
+        git -C "$work" push origin HEAD:refs/heads/deletable
+        git -C "$work" switch -c side
+        git -C "$work" commit --allow-empty -m side
+        git -C "$work" switch main
+        git -C "$work" commit --allow-empty -m next-main
+        git -C "$work" merge --no-ff side -m tagged-merge
+        git -C "$work" tag merge-tag
+        git -C "$work" push origin refs/tags/merge-tag
+        test "$(git --git-dir="$origin" rev-parse refs/tags/merge-tag)" = "$(git -C "$work" rev-parse HEAD)"
+        git -C "$work" push origin --delete deletable
+        if git --git-dir="$origin" show-ref --verify --quiet refs/heads/deletable; then
+          echo 'The destination still has the deleted branch.' >&2
           exit 1
         fi
         ;;
