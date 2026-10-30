@@ -41,7 +41,7 @@ setup() {
 }
 
 failed=0
-for name in rebase other-remote unfetched-lease; do
+for name in rebase other-remote unfetched-lease new-linear; do
   case_dir=$tmp/$name
   mkdir "$case_dir"
   # Run each case as a separate process. A setup error must fail that case.
@@ -103,6 +103,19 @@ for name in rebase other-remote unfetched-lease; do
         fi
         git -C "$work" push "--force-with-lease=refs/heads/main:$tip" origin main
         test "$(git --git-dir="$origin" rev-parse refs/heads/main)" = "$(git -C "$work" rev-parse HEAD)"
+        ;;
+      new-linear)
+        git -C "$seed" switch -c upstream-side
+        git -C "$seed" commit --allow-empty -m upstream-side
+        git -C "$seed" switch main
+        git -C "$seed" commit --allow-empty -m upstream-main
+        git -C "$seed" merge --no-ff upstream-side -m upstream-merge
+        git -C "$seed" push origin main
+        git -C "$work" fetch origin
+        git -C "$work" switch -c linear origin/main
+        git -C "$work" commit --allow-empty -m linear
+        git -C "$work" push origin linear
+        test "$(git --git-dir="$origin" rev-parse refs/heads/linear)" = "$(git -C "$work" rev-parse HEAD)"
         ;;
     esac
   ) >"$case_dir/case.log" 2>&1 &
