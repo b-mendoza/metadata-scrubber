@@ -4,7 +4,8 @@
       "args": [
         "dlx",
         "-y",
-        "chrome-devtools-mcp@latest"
+        "chrome-devtools-mcp@latest",
+        "--no-usage-statistics"
       ],
       "command": "pnpm"
     },
