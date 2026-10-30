@@ -41,7 +41,7 @@ setup() {
 }
 
 failed=0
-for name in rebase other-remote unfetched-lease new-linear new-merge existing-merge; do
+for name in rebase other-remote unfetched-lease new-linear new-merge existing-merge url-merge; do
   case_dir=$tmp/$name
   mkdir "$case_dir"
   # Run each case as a separate process. A setup error must fail that case.
@@ -149,6 +149,22 @@ for name in rebase other-remote unfetched-lease new-linear new-merge existing-me
         fi
         grep -F 'Push blocked. These commits are merge commits:' "$case_dir/push.log"
         test "$(git --git-dir="$origin" rev-parse refs/heads/feature)" = "$before"
+        ;;
+      url-merge)
+        git -C "$work" switch -c side
+        git -C "$work" commit --allow-empty -m side
+        git -C "$work" switch main
+        git -C "$work" commit --allow-empty -m next-main
+        git -C "$work" merge --no-ff side -m url-merge
+        if git -C "$work" push "$origin" HEAD:refs/heads/x >"$case_dir/push.log" 2>&1; then
+          echo 'The push by URL accepted a new merge.' >&2
+          exit 1
+        fi
+        grep -F 'Push blocked. These commits are merge commits:' "$case_dir/push.log"
+        if git --git-dir="$origin" show-ref --verify --quiet refs/heads/x; then
+          echo 'The destination has the rejected branch.' >&2
+          exit 1
+        fi
         ;;
     esac
   ) >"$case_dir/case.log" 2>&1 &
