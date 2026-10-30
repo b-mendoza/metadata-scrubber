@@ -56,4 +56,7 @@ echo '  git fetch origin && git rebase origin/main' >&2
 echo 'Then push your own branch:' >&2
 echo '  git push --force-with-lease' >&2
 echo 'Do not use git merge. Do not use a pull that creates a merge.' >&2
+if [ "$named_remote" = false ]; then
+  echo 'Push through a named remote to exclude history that remote already has.' >&2
+fi
 exit 1
