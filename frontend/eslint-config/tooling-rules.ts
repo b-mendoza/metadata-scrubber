@@ -74,6 +74,40 @@ export const toolingRules = defineConfig(
     },
   },
   {
+    files: ["e2e/**"],
+    rules: {
+      "no-restricted-syntax": [
+        SEVERITY_LEVELS.Error,
+        ...restrictedSyntax,
+        {
+          selector:
+            "CallExpression[callee.type='MemberExpression']:matches([callee.property.name=/^(route|routeFromHAR|routeWebSocket)$/], [callee.property.value=/^(route|routeFromHAR|routeWebSocket)$/])",
+          message:
+            "route, routeFromHAR, and routeWebSocket replace real network behavior in an end-to-end test. Remove the mocking call and use the real frontend and backend services.",
+        },
+      ],
+    },
+  },
+  {
+    files: ["playwright.config.ts"],
+    rules: {
+      // The operator starts both services before the end-to-end suite.
+      "no-restricted-syntax": [
+        SEVERITY_LEVELS.Error,
+        ...restrictedSyntax,
+        {
+          selector:
+            "Property:matches([key.name='webServer'], [key.value='webServer'])",
+          message:
+            "A webServer property makes Playwright start services. Remove webServer from defineConfig and start the frontend and backend before running the suite.",
+        },
+      ],
+    },
+  },
+);
+
+export const toolingImportRestrictionRules = defineConfig(
+  {
     files: ["scripts/**"],
     ignores: ["**/*.test.ts", "**/*.test.tsx"],
     rules: {
@@ -120,32 +154,6 @@ export const toolingRules = defineConfig(
                 "MSW replaces real service responses in an end-to-end test. Remove the msw import and run the test against the real frontend and backend services.",
             },
           ],
-        },
-      ],
-      "no-restricted-syntax": [
-        SEVERITY_LEVELS.Error,
-        ...restrictedSyntax,
-        {
-          selector:
-            "CallExpression[callee.type='MemberExpression']:matches([callee.property.name=/^(route|routeFromHAR|routeWebSocket)$/], [callee.property.value=/^(route|routeFromHAR|routeWebSocket)$/])",
-          message:
-            "route, routeFromHAR, and routeWebSocket replace real network behavior in an end-to-end test. Remove the mocking call and use the real frontend and backend services.",
-        },
-      ],
-    },
-  },
-  {
-    files: ["playwright.config.ts"],
-    rules: {
-      // The operator starts both services before the end-to-end suite.
-      "no-restricted-syntax": [
-        SEVERITY_LEVELS.Error,
-        ...restrictedSyntax,
-        {
-          selector:
-            "Property:matches([key.name='webServer'], [key.value='webServer'])",
-          message:
-            "A webServer property makes Playwright start services. Remove webServer from defineConfig and start the frontend and backend before running the suite.",
         },
       ],
     },

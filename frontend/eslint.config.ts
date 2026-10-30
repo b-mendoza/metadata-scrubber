@@ -49,7 +49,10 @@ import {
 import { syntaxRules } from "./eslint-config/syntax-rules.ts";
 import { tailwindcssRules } from "./eslint-config/tailwindcss-rules.ts";
 import { testRules } from "./eslint-config/test-rules.ts";
-import { toolingRules } from "./eslint-config/tooling-rules.ts";
+import {
+  toolingImportRestrictionRules,
+  toolingRules,
+} from "./eslint-config/tooling-rules.ts";
 import { typescriptRules } from "./eslint-config/typescript-rules.ts";
 import { unicornRules } from "./eslint-config/unicorn-rules.ts";
 
@@ -188,6 +191,7 @@ export default defineConfig(
   ...sourceRules,
   ...sourceImportRestrictionRules,
   ...toolingRules,
+  ...toolingImportRestrictionRules,
   ...testRules,
   /**
    * This final oxlint entry turns off ESLint rules that the bridge
