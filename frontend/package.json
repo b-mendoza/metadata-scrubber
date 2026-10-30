@@ -107,7 +107,7 @@
     "oxlint-tsgolint": "7.0.2005",
     "react-doctor": "0.9.18",
     "tsrs": "0.18.0-ts7.1.0-dev.20260929",
-    "typescript": "6.0.3",
+    "typescript": "7.0.2",
     "typescript-eslint": "8.72.1",
     "vite": "8.3.5",
     "vitest": "5.0.5"
