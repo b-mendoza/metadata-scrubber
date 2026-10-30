@@ -187,14 +187,12 @@ export default defineConfig(
       ],
     },
   },
-  // File-scoped restrictions extend the base rules before the Oxlint bridge.
+  // Keep other scoped rules before the bridge to avoid duplicate Oxlint reports.
   ...sourceRules,
-  ...sourceImportRestrictionRules,
   ...toolingRules,
-  ...toolingImportRestrictionRules,
   ...testRules,
   /**
-   * This final oxlint entry turns off ESLint rules that the bridge
+   * This Oxlint entry turns off ESLint rules that the bridge
    * maps to enabled Oxlint rules.
    * The bridge leaves metadata-scrubber rules enabled in ESLint.
    */
@@ -203,6 +201,7 @@ export default defineConfig(
     // Keep this block after the bridge, even when .oxlintrc.json enables these rules.
     // ESLint must keep the full policy where native oxlint checks miss cases.
     rules: {
+      "no-restricted-imports": importRestrictionRules["no-restricted-imports"],
       [`${PLUGIN_NAMES.Promise}/prefer-catch`]: [SEVERITY_LEVELS.Error],
       [`${PLUGIN_NAMES.Unicorn}/prefer-string-raw`]: [SEVERITY_LEVELS.Error],
       [`${PLUGIN_NAMES.Unicorn}/no-array-callback-reference`]: [
@@ -220,6 +219,9 @@ export default defineConfig(
       [`${PLUGIN_NAMES.Unicorn}/prefer-regexp-test`]: [SEVERITY_LEVELS.Error],
     },
   },
+  // Native Oxlint lacks the full import policy. Extend the base after the bridge.
+  ...sourceImportRestrictionRules,
+  ...toolingImportRestrictionRules,
   globalIgnores([
     ".output/",
     "coverage/",
