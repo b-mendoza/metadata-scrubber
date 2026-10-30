@@ -42,7 +42,10 @@ import { reactRules } from "./eslint-config/react-rules.ts";
 import { regexpRules } from "./eslint-config/regexp-rules.ts";
 import { duplicateAndConflictRules } from "./eslint-config/rule-exceptions.ts";
 import { simpleImportSortRules } from "./eslint-config/simple-import-sort-rules.ts";
-import { sourceRules } from "./eslint-config/source-rules.ts";
+import {
+  sourceImportRestrictionRules,
+  sourceRules,
+} from "./eslint-config/source-rules.ts";
 import { syntaxRules } from "./eslint-config/syntax-rules.ts";
 import { tailwindcssRules } from "./eslint-config/tailwindcss-rules.ts";
 import { testRules } from "./eslint-config/test-rules.ts";
@@ -183,6 +186,7 @@ export default defineConfig(
   },
   // File-scoped restrictions extend the base rules before the Oxlint bridge.
   ...sourceRules,
+  ...sourceImportRestrictionRules,
   ...toolingRules,
   ...testRules,
   /**
