@@ -40,6 +40,28 @@ const getLoader = (
   return getRouteLoader(owner, sourceCode);
 };
 
+const getQueryLoader = (
+  node: ESTree.CallExpression,
+  sourceCode: SourceCode,
+): Loader | null => {
+  const callee = unwrapHttpExpression(node.callee);
+  if (
+    callee.type !== "MemberExpression" ||
+    !QUERY_METHODS.has(getStaticPropertyName(callee) ?? "")
+  ) {
+    return null;
+  }
+  const loader = getLoader(node, sourceCode);
+  return loader != null &&
+    getContextPath(callee.object, {
+      loader,
+      sourceCode,
+      seen: new Set<Variable>(),
+    }) === "input.context.queryClient"
+    ? loader
+    : null;
+};
+
 const getRouteLoader = (
   owner: Loader,
   sourceCode: SourceCode,
@@ -179,6 +201,57 @@ const isWaitedExpression = (expression: ESTree.Node, loader: Loader): boolean =>
   expression.parent?.type === "ReturnStatement" ||
   (loader.type === "ArrowFunctionExpression" && loader.body === expression);
 
+const getAwaitedConstVariable = (
+  expression: ESTree.Node,
+  sourceCode: SourceCode,
+): Variable | undefined => {
+  const awaited = expression.parent;
+  if (awaited?.type !== "AwaitExpression") return;
+  const declaration = awaited.parent;
+  if (
+    declaration.type !== "VariableDeclarator" ||
+    declaration.init !== awaited ||
+    declaration.id.type !== "Identifier" ||
+    declaration.parent.type !== "VariableDeclaration" ||
+    declaration.parent.kind !== "const"
+  ) {
+    return;
+  }
+  const [variable] = sourceCode.getDeclaredVariables(declaration);
+  return variable;
+};
+
+const isNeededByLaterQuery = (
+  expression: ESTree.Node,
+  loader: Loader,
+  sourceCode: SourceCode,
+): boolean => {
+  const variable = getAwaitedConstVariable(expression, sourceCode);
+  const [, queryEnd] = expression.range;
+  return (
+    variable?.references.some((reference) => {
+      if (!reference.isRead()) return false;
+      let child: ESTree.Node = reference.identifier;
+      let { parent }: { parent: ESTree.Node | null } = child;
+      while (parent != null && parent !== loader) {
+        const argumentNode = child;
+        const [parentStart] = parent.range;
+        if (
+          parent.type === "CallExpression" &&
+          parent.arguments.some((argument) => argument === argumentNode) &&
+          parentStart > queryEnd &&
+          getQueryLoader(parent, sourceCode) === loader
+        ) {
+          return true;
+        }
+        child = parent;
+        ({ parent } = child);
+      }
+      return false;
+    }) ?? false
+  );
+};
+
 const getPromiseUse = (
   call: ESTree.CallExpression,
   loader: Loader,
@@ -186,7 +259,9 @@ const getPromiseUse = (
 ): "wait" | "uncaught" | null => {
   const { expression, hasCatch } = getPromiseChain(call, sourceCode);
   const { parent } = expression;
-  if (isWaitedExpression(expression, loader)) return "wait";
+  if (isWaitedExpression(expression, loader)) {
+    return isNeededByLaterQuery(expression, loader, sourceCode) ? null : "wait";
+  }
   return !hasCatch &&
     parent?.type === "UnaryExpression" &&
     parent.operator === "void"
@@ -202,7 +277,7 @@ export default defineRule({
         "Start route queries without waiting and handle discarded query errors.",
     },
     messages: {
-      wait: "`{{ reference }}` waits for route query data. Start it without waiting: `void {{ reference }}.catch(() => null)`. Do not return the query promise.",
+      wait: "`{{ reference }}` waits for route query data. Start it without waiting: `void {{ reference }}.catch(() => null)`. Do not return the query promise. Await a route query only when a later optional route query needs its result: assign the result to a `const` and pass it to that later query.",
       uncaught:
         "`{{ reference }}` drops a route query promise without an error handler. Use `void {{ reference }}.catch(() => null)`.",
     },
@@ -211,24 +286,8 @@ export default defineRule({
     const { sourceCode } = context;
     return {
       CallExpression(node) {
-        const callee = unwrapHttpExpression(node.callee);
-        if (
-          callee.type !== "MemberExpression" ||
-          !QUERY_METHODS.has(getStaticPropertyName(callee) ?? "")
-        ) {
-          return;
-        }
-        const loader = getLoader(node, sourceCode);
-        if (
-          loader == null ||
-          getContextPath(callee.object, {
-            loader,
-            sourceCode,
-            seen: new Set<Variable>(),
-          }) !== "input.context.queryClient"
-        ) {
-          return;
-        }
+        const loader = getQueryLoader(node, sourceCode);
+        if (loader == null) return;
         const messageId = getPromiseUse(node, loader, sourceCode);
         if (messageId == null) return;
         context.report({
