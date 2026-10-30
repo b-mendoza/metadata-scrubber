@@ -1,7 +1,9 @@
 import path from "node:path";
 
 import { ESLint } from "eslint";
-import { describe, expect, it } from "vitest";
+import { beforeAll, describe, expect, it } from "vitest";
+
+const CONFIG_LOAD_TIMEOUT_MS = 30_000;
 
 const createLinter = () =>
   new ESLint({
@@ -19,6 +21,13 @@ const createLinter = () =>
   });
 
 describe("effective import restrictions after the Oxlint bridge", () => {
+  const linter = createLinter();
+
+  // Allow time for the cold load of eslint.config.ts and its plugins.
+  beforeAll(async () => {
+    await linter.calculateConfigForFile("eslint.config.ts");
+  }, CONFIG_LOAD_TIMEOUT_MS);
+
   it.each([
     ["eslint.config.ts", 'import { useQueries } from "@tanstack/react-query";'],
     [
@@ -77,7 +86,6 @@ describe("effective import restrictions after the Oxlint bridge", () => {
       'import { useQueries } from "@tanstack/react-query";',
     ],
   ])("rejects %s: %s", async (filePath, code) => {
-    const linter = createLinter();
     const [result] = await linter.lintText(code, { filePath });
 
     expect.assert(result != null);
@@ -119,7 +127,6 @@ describe("effective import restrictions after the Oxlint bridge", () => {
       'import * as z from "zod";',
     ],
   ])("allows %s: %s", async (filePath, code) => {
-    const linter = createLinter();
     const [result] = await linter.lintText(code, { filePath });
 
     expect.assert(result != null);
