@@ -21,14 +21,6 @@ export const sourceRules = defineConfig(
       },
     },
     rules: {
-      // Source imports keep the global bans and use the stable #/ alias.
-      "no-restricted-imports": [
-        SEVERITY_LEVELS.Error,
-        {
-          paths: restrictedImports,
-          patterns: sourceRestrictedImportPatterns,
-        },
-      ],
       // Render purity prevents shared state changes and premature ref access.
       [`${PLUGIN_NAMES.ESLintReact}/globals`]: SEVERITY_LEVELS.Error,
       [`${PLUGIN_NAMES.ESLintReact}/immutability`]: SEVERITY_LEVELS.Error,
@@ -47,14 +39,6 @@ export const sourceRules = defineConfig(
   {
     files: ["src/**/*.server.ts"],
     rules: {
-      // Server boundaries use ResultAsync; source paths still use the alias.
-      "no-restricted-imports": [
-        SEVERITY_LEVELS.Error,
-        {
-          paths: restrictedQueryImports,
-          patterns: sourceRestrictedImportPatterns,
-        },
-      ],
       // A broad catch can map programming errors as dependency failures.
       "no-restricted-syntax": [
         SEVERITY_LEVELS.Error,
@@ -63,6 +47,35 @@ export const sourceRules = defineConfig(
           selector: "TryStatement",
           message:
             "A server try/catch can catch programming errors as dependency failures. Await ResultAsync.fromPromise for the dependency call, check result.isErr(), then throw result.error at the tRPC boundary.",
+        },
+      ],
+    },
+  },
+);
+
+export const sourceImportRestrictionRules = defineConfig(
+  {
+    files: ["src/**/*.ts", "src/**/*.tsx"],
+    rules: {
+      // Source imports keep the global bans and use the stable #/ alias.
+      "no-restricted-imports": [
+        SEVERITY_LEVELS.Error,
+        {
+          paths: restrictedImports,
+          patterns: sourceRestrictedImportPatterns,
+        },
+      ],
+    },
+  },
+  {
+    files: ["src/**/*.server.ts"],
+    rules: {
+      // Server boundaries use ResultAsync; source paths still use the alias.
+      "no-restricted-imports": [
+        SEVERITY_LEVELS.Error,
+        {
+          paths: restrictedQueryImports,
+          patterns: sourceRestrictedImportPatterns,
         },
       ],
     },
