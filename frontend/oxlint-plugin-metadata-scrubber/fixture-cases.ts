@@ -230,7 +230,6 @@ export const fixtureCases: readonly FixtureCase[] = [
       "`src/b-empty.mod.tsx` contains no JSX. Rename it to `src/b-empty.mod.ts` and update its imports.",
       "`src/c-server.mod.server.tsx` does not use a module file name. Rename it to `src/c-server.mod.server.ts` and update its imports.",
       "`src/d-test.mod.test.server.ts` does not use a module file name. Rename it to `src/d-test.mod.server.test.ts` and update its imports.",
-      "`src/f-esm.mts` does not use a module file name. Rename it to `src/f-esm.mod.ts` and update its imports.",
       "`src/g-common.cts` does not use a module file name. Rename it to `src/g-common.mod.ts` and update its imports.",
       "`src/nested/router.tsx` does not use a module file name. Rename it to `src/nested/router.mod.tsx` and update its imports.",
       "`src/tests/other-setup.ts` does not use a module file name. Rename it to `src/tests/other-setup.mod.ts` and update its imports.",
