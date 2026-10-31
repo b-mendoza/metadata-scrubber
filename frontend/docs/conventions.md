@@ -467,7 +467,7 @@ void queryClient
 
 Name server-only modules `*.mod.server.ts`. The server suffix keeps them out of browser bundles.
 Name tests `*.test.ts` or `*.test.tsx`. Use `*.server.test.ts` for server tests so Vitest runs them in Node instead of a DOM environment.
-Put each test beside its module. Keep `src/tests/` for setup and shared helpers. This keeps behavior tests beside the code they check.
+Keep only setup and shared helpers in `src/tests/`. The colocated-test check skips that directory.
 
 Regenerate `src/routeTree.gen.ts` after route changes. Do not edit that file.
 
