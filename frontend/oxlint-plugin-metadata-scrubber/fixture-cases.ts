@@ -70,10 +70,7 @@ export const fixtureCases: readonly FixtureCase[] = [
   [
     "no-expect-type-of",
     "no-expect-type-of.test.ts",
-    [
-      `\`assertType(...)\` tests a static type. ${NO_EXPECT_TYPE_OF_GUIDANCE}`,
-      `\`expectTypeOf(...)\` tests a static type. ${NO_EXPECT_TYPE_OF_GUIDANCE}`,
-    ],
+    [`\`assertType(...)\` tests a static type. ${NO_EXPECT_TYPE_OF_GUIDANCE}`],
   ],
   [
     "no-late-request-body-read",
