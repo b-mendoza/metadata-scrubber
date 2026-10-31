@@ -115,16 +115,28 @@ func TestLogFanoutPreservesStdoutAndCapturesOnlyErrorExceptions(t *testing.T) {
 
 	require.NotContains(t, output.String(), "debug record")
 	require.Equal(t, 4, bytes.Count(output.Bytes(), []byte("\n")))
-	require.Len(t, exporter.records, 5)
-	require.Len(t, client.messages, 2)
-	exception, ok := client.messages[0].(posthog.Exception)
-	require.True(t, ok)
-	require.Equal(t, "browser-id", exception.DistinctId)
-	require.Equal(t, posthog.Properties{"$process_person_profile": false, "$session_id": "browser-session"}, exception.Properties)
-	anonymousException, ok := client.messages[1].(posthog.Exception)
-	require.True(t, ok)
-	require.Equal(t, "metadata-scrubber-backend", anonymousException.DistinctId)
-	require.Equal(t, posthog.Properties{"$process_person_profile": false}, anonymousException.Properties)
+	require.Equal(t, []exportedLogRecord{
+		{Body: "debug record", Severity: otellog.SeverityDebug},
+		{Body: "info record", Severity: otellog.SeverityInfo},
+		{Body: "warning record", Severity: otellog.SeverityWarn},
+		{Body: "error record", Severity: otellog.SeverityError},
+		{Body: "process error", Severity: otellog.SeverityError},
+	}, exporter.records)
+
+	type exceptionRecord struct {
+		DistinctID string
+		Properties posthog.Properties
+	}
+	var exceptions []exceptionRecord
+	for _, message := range client.messages {
+		exception, ok := message.(posthog.Exception)
+		require.True(t, ok)
+		exceptions = append(exceptions, exceptionRecord{DistinctID: exception.DistinctId, Properties: exception.Properties})
+	}
+	require.Equal(t, []exceptionRecord{
+		{DistinctID: "browser-id", Properties: posthog.Properties{"$process_person_profile": false, "$session_id": "browser-session"}},
+		{DistinctID: "metadata-scrubber-backend", Properties: posthog.Properties{"$process_person_profile": false}},
+	}, exceptions)
 }
 
 func TestConfiguredTokenCreatesBothClientsAndClosesEmptyQueues(t *testing.T) {
