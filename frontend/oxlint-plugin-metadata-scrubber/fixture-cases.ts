@@ -33,6 +33,8 @@ const NO_TEST_LOCAL_OBJECT_TYPE_GUIDANCE =
   "Export a schema-derived type beside its schema, such as `export type X = z.output<typeof xSchema>`, and import it into this test. Do not keep a parallel test-only object type.";
 const PREFETCH_ROUTE_DATA_WITHOUT_WAITING_GUIDANCE =
   "Do not return the query promise. Await a route query only when a later optional route query needs its result: assign the result to a `const` and pass it to that later query.";
+const REQUIRE_BACKEND_REQUEST_SIGNAL_GUIDANCE =
+  "Pass the request AbortSignal as `{ signal: signal ?? null }` so request cancellation stops the backend call.";
 
 export const fixtureCases: readonly FixtureCase[] = [
   [
@@ -223,15 +225,15 @@ export const fixtureCases: readonly FixtureCase[] = [
     "require-backend-request-signal",
     "require-backend-request-signal.server.ts",
     [
-      "`client.get` must pass an options object literal with an explicit `signal` property after all spreads. Pass the request AbortSignal as `{ signal: signal ?? null }` so request cancellation stops the backend call.",
-      "`client.post` must pass an options object literal with an explicit `signal` property after all spreads. Pass the request AbortSignal as `{ signal: signal ?? null }` so request cancellation stops the backend call.",
-      "`client.put` must pass an options object literal with an explicit `signal` property after all spreads. Pass the request AbortSignal as `{ signal: signal ?? null }` so request cancellation stops the backend call.",
-      "`client.patch` must pass an options object literal with an explicit `signal` property after all spreads. Pass the request AbortSignal as `{ signal: signal ?? null }` so request cancellation stops the backend call.",
-      "`client.delete` must pass an options object literal with an explicit `signal` property after all spreads. Pass the request AbortSignal as `{ signal: signal ?? null }` so request cancellation stops the backend call.",
-      "`client.head` must pass an options object literal with an explicit `signal` property after all spreads. Pass the request AbortSignal as `{ signal: signal ?? null }` so request cancellation stops the backend call.",
-      "`readBindings().httpClient.get` must pass an options object literal with an explicit `signal` property after all spreads. Pass the request AbortSignal as `{ signal: signal ?? null }` so request cancellation stops the backend call.",
-      "`client.get` must pass an options object literal with an explicit `signal` property after all spreads. Pass the request AbortSignal as `{ signal: signal ?? null }` so request cancellation stops the backend call.",
-      '`alias["get"]` must pass an options object literal with an explicit `signal` property after all spreads. Pass the request AbortSignal as `{ signal: signal ?? null }` so request cancellation stops the backend call.',
+      `\`client.get\` must pass an options object literal with an explicit \`signal\` property after all spreads. ${REQUIRE_BACKEND_REQUEST_SIGNAL_GUIDANCE}`,
+      `\`client.post\` must pass an options object literal with an explicit \`signal\` property after all spreads. ${REQUIRE_BACKEND_REQUEST_SIGNAL_GUIDANCE}`,
+      `\`client.put\` must pass an options object literal with an explicit \`signal\` property after all spreads. ${REQUIRE_BACKEND_REQUEST_SIGNAL_GUIDANCE}`,
+      `\`client.patch\` must pass an options object literal with an explicit \`signal\` property after all spreads. ${REQUIRE_BACKEND_REQUEST_SIGNAL_GUIDANCE}`,
+      `\`client.delete\` must pass an options object literal with an explicit \`signal\` property after all spreads. ${REQUIRE_BACKEND_REQUEST_SIGNAL_GUIDANCE}`,
+      `\`client.head\` must pass an options object literal with an explicit \`signal\` property after all spreads. ${REQUIRE_BACKEND_REQUEST_SIGNAL_GUIDANCE}`,
+      `\`readBindings().httpClient.get\` must pass an options object literal with an explicit \`signal\` property after all spreads. ${REQUIRE_BACKEND_REQUEST_SIGNAL_GUIDANCE}`,
+      `\`client.get\` must pass an options object literal with an explicit \`signal\` property after all spreads. ${REQUIRE_BACKEND_REQUEST_SIGNAL_GUIDANCE}`,
+      `\`alias["get"]\` must pass an options object literal with an explicit \`signal\` property after all spreads. ${REQUIRE_BACKEND_REQUEST_SIGNAL_GUIDANCE}`,
     ],
   ],
   [
