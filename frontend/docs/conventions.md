@@ -4,20 +4,6 @@ This file records the frontend patterns the project chose.
 Follow these choices in new and changed code.
 Report code that conflicts with a choice instead of copying that code.
 
-## Imports
-
-Import from `src/` with `#/`. The alias does not depend on the caller's directory.
-
-```ts
-import { getAppBindings } from "#/shared/middlewares/app-bindings/app-bindings.mod";
-```
-
-Do not use a relative path into `src/`:
-
-```ts
-import { getAppBindings } from "../../shared/middlewares/app-bindings/app-bindings.mod";
-```
-
 ## Server code
 
 Keep the frontend server a small proxy to the Go backend.
