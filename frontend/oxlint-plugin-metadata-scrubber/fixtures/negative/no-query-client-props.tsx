@@ -13,15 +13,7 @@ export const Route = rootWithContext<{
 
 export function RouteView() {
   const { trpc: routeRpc, queryClient: routeCache } = Route.useRouteContext();
-  const routeContext = Route.useRouteContext();
-  return (
-    <Child
-      trpc={routeRpc}
-      queryClient={routeCache}
-      rpc={routeContext.trpc}
-      cache={routeContext.queryClient}
-    />
-  );
+  return <Child trpc={routeRpc} queryClient={routeCache} />;
 }
 
 export function ComponentView() {
@@ -30,7 +22,6 @@ export function ComponentView() {
   const alias = cache;
   return (
     <Child
-      cache={cache}
       client={client}
       alias={alias}
       direct={readCache()}

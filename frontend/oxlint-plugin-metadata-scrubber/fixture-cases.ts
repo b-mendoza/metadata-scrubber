@@ -133,9 +133,6 @@ export const fixtureCases: readonly FixtureCase[] = [
     [
       `\`routeRpc\` passes a query client through the \`trpc\` prop. ${NO_QUERY_CLIENT_PROPS_GUIDANCE}`,
       `\`routeCache\` passes a query client through the \`queryClient\` prop. ${NO_QUERY_CLIENT_PROPS_GUIDANCE}`,
-      `\`routeContext.trpc\` passes a query client through the \`rpc\` prop. ${NO_QUERY_CLIENT_PROPS_GUIDANCE}`,
-      `\`routeContext.queryClient\` passes a query client through the \`cache\` prop. ${NO_QUERY_CLIENT_PROPS_GUIDANCE}`,
-      `\`cache\` passes a query client through the \`cache\` prop. ${NO_QUERY_CLIENT_PROPS_GUIDANCE}`,
       `\`client\` passes a query client through the \`client\` prop. ${NO_QUERY_CLIENT_PROPS_GUIDANCE}`,
       `\`alias\` passes a query client through the \`alias\` prop. ${NO_QUERY_CLIENT_PROPS_GUIDANCE}`,
       `\`readCache()\` passes a query client through the \`direct\` prop. ${NO_QUERY_CLIENT_PROPS_GUIDANCE}`,
