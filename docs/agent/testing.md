@@ -17,19 +17,6 @@ Use these general test practices in every service and language. For facts, the c
 ## Assertions
 
 - Import production constants when a test must verify the use of a specific constant. Do not copy the constant value into the test. An import keeps the production and test strings the same. A change to the production constant makes the test fail.
-
-```ts
-expect(failure.message).toBe(BACKEND_HEALTH_CHECK_FAILURE_MESSAGE);
-```
-
-Do not copy the string:
-
-```ts
-expect(failure.message).toBe(
-  "The backend health check failed. Try again later.",
-);
-```
-
 - For each constant that can change cost, behavior, or a contract without an error, write an exact test that checks its wiring. Import the production constant and assert that wiring. The suite can be the only check that detects this failure.
 - Test a value's wiring through the code that uses it.
 - Use inline literals for simple test data. Use a builder or factory when several tests share non-trivial setup. A builder or factory adds extra layers without value in other cases.
