@@ -36,12 +36,10 @@ export const getReferencedVariable = (
 export const getConstDeclaratorInitializer = (
   definition: Definition,
 ): ESTree.Expression | null => {
+  const declaration = getConstInitializedDeclarator(definition);
   return definition.type === "Variable" &&
-    definition.node.type === "VariableDeclarator" &&
-    definition.node.id.type === "Identifier" &&
-    definition.parent?.type === "VariableDeclaration" &&
-    definition.parent.kind === "const"
-    ? definition.node.init
+    declaration?.node.id.type === "Identifier"
+    ? declaration.initializer
     : null;
 };
 
