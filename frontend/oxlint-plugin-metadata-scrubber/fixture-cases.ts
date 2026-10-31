@@ -27,6 +27,8 @@ const USE_SHARED_RENDER_HELPER_GUIDANCE =
 
 const NO_LATE_REQUEST_BODY_READ_GUIDANCE =
   "Read or clone it inside the MSW handler and store the value: `const bodies: unknown[] = []; const handler = vi.fn<HttpResponseResolver>(async ({ request }) => { bodies.push(await request.json()); return HttpResponse.json(response); });`. Import `vi` from `vitest` and `HttpResponseResolver` and `HttpResponse` from `msw`.";
+const NO_MODULE_SCOPE_HTTP_CLIENT_GUIDANCE =
+  "Create clients in `appBindingsMiddleware` for each request and read them with `getAppBindings()`.";
 
 export const fixtureCases: readonly FixtureCase[] = [
   [
@@ -122,15 +124,15 @@ export const fixtureCases: readonly FixtureCase[] = [
     "no-module-scope-http-client",
     "no-module-scope-http-client.ts",
     [
-      "`request.create` creates an HTTP client at module scope. Create clients in `appBindingsMiddleware` for each request and read them with `getAppBindings()`.",
-      "`request.extend` creates an HTTP client at module scope. Create clients in `appBindingsMiddleware` for each request and read them with `getAppBindings()`.",
-      "`alias.create` creates an HTTP client at module scope. Create clients in `appBindingsMiddleware` for each request and read them with `getAppBindings()`.",
-      "`buildClient` creates an HTTP client at module scope. Create clients in `appBindingsMiddleware` for each request and read them with `getAppBindings()`.",
-      "`buildAgain` creates an HTTP client at module scope. Create clients in `appBindingsMiddleware` for each request and read them with `getAppBindings()`.",
-      "`workflow.createWorkflowHttpClient` creates an HTTP client at module scope. Create clients in `appBindingsMiddleware` for each request and read them with `getAppBindings()`.",
-      "`kyModule.default.create` creates an HTTP client at module scope. Create clients in `appBindingsMiddleware` for each request and read them with `getAppBindings()`.",
-      "`request.extend` creates an HTTP client at module scope. Create clients in `appBindingsMiddleware` for each request and read them with `getAppBindings()`.",
-      "`makeClient` creates an HTTP client at module scope. Create clients in `appBindingsMiddleware` for each request and read them with `getAppBindings()`.",
+      `\`request.create\` creates an HTTP client at module scope. ${NO_MODULE_SCOPE_HTTP_CLIENT_GUIDANCE}`,
+      `\`request.extend\` creates an HTTP client at module scope. ${NO_MODULE_SCOPE_HTTP_CLIENT_GUIDANCE}`,
+      `\`alias.create\` creates an HTTP client at module scope. ${NO_MODULE_SCOPE_HTTP_CLIENT_GUIDANCE}`,
+      `\`buildClient\` creates an HTTP client at module scope. ${NO_MODULE_SCOPE_HTTP_CLIENT_GUIDANCE}`,
+      `\`buildAgain\` creates an HTTP client at module scope. ${NO_MODULE_SCOPE_HTTP_CLIENT_GUIDANCE}`,
+      `\`workflow.createWorkflowHttpClient\` creates an HTTP client at module scope. ${NO_MODULE_SCOPE_HTTP_CLIENT_GUIDANCE}`,
+      `\`kyModule.default.create\` creates an HTTP client at module scope. ${NO_MODULE_SCOPE_HTTP_CLIENT_GUIDANCE}`,
+      `\`request.extend\` creates an HTTP client at module scope. ${NO_MODULE_SCOPE_HTTP_CLIENT_GUIDANCE}`,
+      `\`makeClient\` creates an HTTP client at module scope. ${NO_MODULE_SCOPE_HTTP_CLIENT_GUIDANCE}`,
     ],
   ],
   ["no-module-scope-http-client", "no-module-scope-http-client.test.ts", []],
