@@ -160,12 +160,12 @@ if (backendHealthStatusResult.isErr()) {
 return backendHealthStatusResult.value;
 ```
 
-Use `safeParse` when you check a value without throwing. Then branch on `success`.
+Use `.validate()` when only the yes-or-no result matters. It stops at the first failure and does not collect issues. `zod/prefer-validate` cannot trace a schema that another module exports, so check those calls yourself.
 
 ```ts
 if (
   cause instanceof HTTPError &&
-  contracts.backendErrorResponseSchema.safeParse(cause.data).success
+  contracts.backendErrorResponseSchema.validate(cause.data)
 ) {
   code = backendStatusCodes[cause.response.status] ?? "BAD_GATEWAY";
 }
