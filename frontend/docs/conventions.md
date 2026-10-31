@@ -709,126 +709,18 @@ Regenerate `src/routeTree.gen.ts` after route changes. Do not edit that file.
 
 ## Lint rules and checks
 
-Leave `.oxlintrc.json` unchanged. The user owns updates that turn rules on. Put agent rule changes in the ESLint configuration.
+Leave `.oxlintrc.json` unchanged. The user owns rule activation in Oxlint. Put agent rule changes in the ESLint configuration.
 
-When you add a test file pattern to `vitest.config.ts`, add the same pattern to `eslint-config/test-rules.ts`. The `*.integration.test.ts` glob below is an example of a new category. This repo does not use that suffix today.
+When you add a Vitest discovery pattern, check that the ESLint test patterns cover it. Add a pattern only when the existing patterns do not cover it.
 
-```ts
-include: ["./src/**/*.server.test.ts", "./src/**/*.integration.test.ts"],
-```
+Keep React Doctor checks on the full frontend with the configured ignored paths. A changed-file scan can miss relationships between files.
 
-```ts
-files: [
-  "src/**/*.test.ts",
-  "src/**/*.test.tsx",
-  "src/**/*.integration.test.ts",
-],
-```
+Put each new ESLint rule in the configuration module for its topic. This keeps related policy together.
 
-Keep React Doctor checks on the full frontend with the configured ignored paths. A changed-file scan can miss cross-file problems.
-
-Put each new ESLint rule in the configuration module for its topic.
-
-```ts
-// eslint-config/react-rules.ts
-[`${PLUGIN_NAMES.ESLintReact}/globals`]: SEVERITY_LEVELS.Error,
-
-// eslint-config/test-rules.ts
-[`${PLUGIN_NAMES.Vitest}/no-conditional-tests`]: SEVERITY_LEVELS.Error,
-```
-
-Create a custom rule with `defineRule`. Put message templates in `meta.messages`. Report with `messageId` and `data`.
-
-```ts
-export default defineRule({
-  meta: {
-    type: "problem",
-    docs: {
-      description:
-        "Require plain functions and objects instead of class declarations.",
-    },
-    messages: {
-      classSyntax:
-        "`{{ className }}` uses class syntax. Replace it with plain functions and objects. Use a factory function such as `const createService = () => ({ run: () => true })` when code must create an object.",
-    },
-  },
-  create(context) {
-    return {
-      ClassDeclaration(node) {
-        context.report({
-          node,
-          messageId: "classSyntax",
-          data: { className: node.id?.name ?? "anonymous class" },
-        });
-      },
-    };
-  },
-});
-```
-
-Register the rule in `oxlint-plugin-metadata-scrubber/index.ts`. Enable it in `oxlint-plugin-metadata-scrubber/fixture.config.json` and `eslint-config/metadata-scrubber-rules.ts`.
-
-```ts
-rules: {
-  "no-classes": noClasses,
-}
-```
-
-```json
-{
-  "rules": {
-    "metadata-scrubber/no-classes": "error"
-  }
-}
-```
-
-```ts
-[`${PLUGIN_NAMES.MetadataScrubber}/no-classes`]: SEVERITY_LEVELS.Error,
-```
+Register custom rules in `oxlint-plugin-metadata-scrubber/index.ts`. Enable them in `fixture.config.json` and `eslint-config/metadata-scrubber-rules.ts`. These entries give the fixture check and ESLint the same rules.
 
 Resolve bindings through `sourceCode.getScope` and resolved references. Spelling alone misses aliases and shadowing.
 
-```ts
-let scope: Scope | null = sourceCode.getScope(node);
-while (scope != null) {
-  const reference = scope.references.find(
-    (candidate) => candidate.identifier === node,
-  );
-  if (reference != null) return reference.resolved;
-  scope = scope.upper;
-}
-```
+Add a positive fixture and a negative fixture for each custom rule. Keep the exact count and ordered messages in `oxlint-plugin-metadata-scrubber/fixture-cases.ts`. These expectations check which code the rule accepts and rejects.
 
-Do not match a name with a string compare only:
-
-```ts
-if (node.name === "expectTypeOf") {
-  context.report({ node, messageId: "staticTypeAssertion" });
-}
-```
-
-Add a positive fixture and a negative fixture for each custom rule. Set the exact count and ordered messages in `oxlint-plugin-metadata-scrubber/check-fixtures.ts`.
-
-```ts
-[
-  "no-classes",
-  "no-classes.ts",
-  [
-    `\`Service\` uses class syntax. ${NO_CLASSES_GUIDANCE}`,
-    `\`ServiceExpression\` uses class syntax. ${NO_CLASSES_GUIDANCE}`,
-    `\`ServiceError\` uses class syntax. ${NO_CLASSES_GUIDANCE}`,
-  ],
-],
-```
-
-Name the failing binding or source and the exact repair API or import path in each error message. Include every repair step. Name each known bypass only to forbid it when that bypass still breaks the rule.
-
-```ts
-"`{{ className }}` uses class syntax. Replace it with plain functions and objects. Use a factory function such as `const createService = () => ({ run: () => true })` when code must create an object. The rule has no class exceptions, including classes that extend `Error`.";
-```
-
-Do not write a short label with no repair.
-
-```ts
-"Do not use a class.";
-```
+Name the failing binding or source and the exact repair API or import path in each error message. This makes the correction specific to the failure.
