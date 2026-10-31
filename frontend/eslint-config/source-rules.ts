@@ -2,11 +2,6 @@ import { defineConfig } from "eslint/config";
 import globals from "globals";
 
 import { PLUGIN_NAMES, SEVERITY_LEVELS } from "./constants.ts";
-import {
-  restrictedImports,
-  restrictedQueryImports,
-  sourceRestrictedImportPatterns,
-} from "./import-restriction-rules.ts";
 import { restrictedSyntax } from "./syntax-rules.ts";
 
 export const sourceRules = defineConfig(
@@ -47,65 +42,6 @@ export const sourceRules = defineConfig(
           selector: "TryStatement",
           message:
             "A server try/catch can catch programming errors as dependency failures. Await ResultAsync.fromPromise for the dependency call, check result.isErr(), then throw result.error at the tRPC boundary.",
-        },
-      ],
-    },
-  },
-);
-
-export const sourceImportRestrictionRules = defineConfig(
-  {
-    files: ["src/**/*.ts", "src/**/*.tsx"],
-    rules: {
-      // Source imports keep the global bans and use the stable #/ alias.
-      "no-restricted-imports": [
-        SEVERITY_LEVELS.Error,
-        {
-          paths: restrictedImports,
-          patterns: sourceRestrictedImportPatterns,
-        },
-      ],
-    },
-  },
-  {
-    files: ["src/**/*.server.ts"],
-    rules: {
-      // Server boundaries use ResultAsync; source paths still use the alias.
-      "no-restricted-imports": [
-        SEVERITY_LEVELS.Error,
-        {
-          paths: restrictedQueryImports,
-          patterns: sourceRestrictedImportPatterns,
-        },
-      ],
-    },
-  },
-  {
-    files: ["src/routes/**/*.ts", "src/routes/**/*.tsx"],
-    ignores: ["src/**/*.test.ts", "src/**/*.test.tsx"],
-    rules: {
-      // Route tests do not read route data; route components use their context.
-      "no-restricted-imports": [
-        SEVERITY_LEVELS.Error,
-        {
-          paths: [
-            ...restrictedImports,
-            {
-              name: "#/shared/libs/trpc/client/client-runtime.mod",
-              importNames: ["trpcContext"],
-              allowTypeImports: true,
-              message:
-                "trpcContext bypasses route context in a route file. Read trpc from loader context in a loader, or from Route.useRouteContext() in a component. Keep TRPCProvider setup outside route files.",
-            },
-            {
-              name: "@tanstack/react-query",
-              importNames: ["useQueryClient"],
-              allowTypeImports: true,
-              message:
-                "useQueryClient bypasses route context in a route file. Read queryClient from loader context in a loader, or from Route.useRouteContext() in a component.",
-            },
-          ],
-          patterns: sourceRestrictedImportPatterns,
         },
       ],
     },

@@ -1,9 +1,9 @@
-import type { Linter } from "eslint";
+import { defineConfig } from "eslint/config";
 
-import { PLUGIN_NAMES, SEVERITY_LEVELS } from "./constants.ts";
+import { SEVERITY_LEVELS } from "./constants.ts";
 
 // Each query API needs its own repair message, including source re-exports.
-export const restrictedQueryImports = [
+const restrictedQueryImports = [
   {
     name: "@tanstack/react-query",
     importNames: ["useQuery"],
@@ -28,7 +28,7 @@ export const restrictedQueryImports = [
 ];
 
 // Result wrappers belong only at server dependency boundaries and in scripts.
-export const restrictedImports = [
+const restrictedImports = [
   ...restrictedQueryImports,
   {
     name: "neverthrow",
@@ -38,7 +38,7 @@ export const restrictedImports = [
 ];
 
 // The zod package root is the only supported entry point.
-export const restrictedImportPatterns = [
+const restrictedImportPatterns = [
   {
     regex: "^zod/.+$",
     message:
@@ -47,7 +47,7 @@ export const restrictedImportPatterns = [
 ];
 
 // The alias keeps source imports independent of the caller's directory.
-export const sourceRestrictedImportPatterns = [
+const sourceRestrictedImportPatterns = [
   ...restrictedImportPatterns,
   {
     regex: String.raw`^\.{1,2}/`,
@@ -56,10 +56,120 @@ export const sourceRestrictedImportPatterns = [
   },
 ];
 
-export const importRestrictionRules = {
-  [`${PLUGIN_NAMES.ImportX}/newline-after-import`]: SEVERITY_LEVELS.Error,
-  "no-restricted-imports": [
-    SEVERITY_LEVELS.Error,
-    { paths: restrictedImports, patterns: restrictedImportPatterns },
-  ],
-} satisfies Linter.RulesRecord;
+export const importRestrictionRules = defineConfig(
+  {
+    rules: {
+      "no-restricted-imports": [
+        SEVERITY_LEVELS.Error,
+        { paths: restrictedImports, patterns: restrictedImportPatterns },
+      ],
+    },
+  },
+  {
+    files: ["src/**/*.ts", "src/**/*.tsx"],
+    rules: {
+      // Source imports keep the global bans and use the stable #/ alias.
+      "no-restricted-imports": [
+        SEVERITY_LEVELS.Error,
+        {
+          paths: restrictedImports,
+          patterns: sourceRestrictedImportPatterns,
+        },
+      ],
+    },
+  },
+  {
+    files: ["src/**/*.server.ts"],
+    rules: {
+      // Server boundaries use ResultAsync; source paths still use the alias.
+      "no-restricted-imports": [
+        SEVERITY_LEVELS.Error,
+        {
+          paths: restrictedQueryImports,
+          patterns: sourceRestrictedImportPatterns,
+        },
+      ],
+    },
+  },
+  {
+    files: ["src/routes/**/*.ts", "src/routes/**/*.tsx"],
+    ignores: ["src/**/*.test.ts", "src/**/*.test.tsx"],
+    rules: {
+      // Route tests do not read route data; route components use their context.
+      "no-restricted-imports": [
+        SEVERITY_LEVELS.Error,
+        {
+          paths: [
+            ...restrictedImports,
+            {
+              name: "#/shared/libs/trpc/client/client-runtime.mod",
+              importNames: ["trpcContext"],
+              allowTypeImports: true,
+              message:
+                "trpcContext bypasses route context in a route file. Read trpc from loader context in a loader, or from Route.useRouteContext() in a component. Keep TRPCProvider setup outside route files.",
+            },
+            {
+              name: "@tanstack/react-query",
+              importNames: ["useQueryClient"],
+              allowTypeImports: true,
+              message:
+                "useQueryClient bypasses route context in a route file. Read queryClient from loader context in a loader, or from Route.useRouteContext() in a component.",
+            },
+          ],
+          patterns: sourceRestrictedImportPatterns,
+        },
+      ],
+    },
+  },
+  {
+    files: ["scripts/**"],
+    ignores: ["**/*.test.ts", "**/*.test.tsx"],
+    rules: {
+      // Scripts can use ResultAsync without adding it to browser or test code.
+      "no-restricted-imports": [
+        SEVERITY_LEVELS.Error,
+        { paths: restrictedQueryImports, patterns: restrictedImportPatterns },
+      ],
+    },
+  },
+  {
+    files: ["scripts/hard-clean.ts", "scripts/soft-clean.ts"],
+    rules: {
+      // Clean scripts must run after node_modules has been removed.
+      "no-restricted-imports": [
+        SEVERITY_LEVELS.Error,
+        {
+          paths: restrictedImports,
+          patterns: [
+            ...restrictedImportPatterns,
+            {
+              group: ["**", "!node:*", "!node:*/**"],
+              message:
+                "This clean script must run without installed dependencies. Replace this import with a Node built-in whose source starts with node:.",
+            },
+          ],
+        },
+      ],
+    },
+  },
+  {
+    files: ["e2e/**"],
+    rules: {
+      // End-to-end tests exercise the running services, not mocked responses.
+      "no-restricted-imports": [
+        SEVERITY_LEVELS.Error,
+        {
+          paths: restrictedImports,
+          patterns: [
+            ...restrictedImportPatterns,
+            {
+              group: ["msw", "msw/**"],
+              message:
+                "MSW replaces real service responses in an end-to-end test. Remove the msw import and run the test against the real frontend and backend services.",
+            },
+          ],
+        },
+      ],
+    },
+  },
+);
