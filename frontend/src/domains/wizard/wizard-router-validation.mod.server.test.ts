@@ -146,9 +146,9 @@ test("dryRun rejects an invalid storage key before fetch", async () => {
 });
 
 test("the scrub input schema rejects a missing ETag", () => {
-  const result = scrubFileInputSchema.safeParse({ storageKey: STORAGE_KEY });
+  const isValid = scrubFileInputSchema.validate({ storageKey: STORAGE_KEY });
 
-  expect(result.success).toBe(false);
+  expect(isValid).toBe(false);
 });
 
 test("refreshDownloadGrant rejects an invalid ETag before fetch", async () => {
