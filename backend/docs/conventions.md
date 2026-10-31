@@ -160,25 +160,15 @@ return errors.Join(bodyErr, fmt.Errorf("release PDF metadata stream cache: %w", 
 
 - Test endpoint responses through the real handler. Write each endpoint and its payload type in the test. Do not select them with an enum or boolean. Helper-only tests do not cover endpoint wiring.
 - Pass a short timeout and time goroutines with channels. Use deadlines to detect a stuck test, not to prove that work finishes at a particular speed. Machine load must not decide correctness.
-- Use `require.Contains` for required log records and `require.NotContains` for false-success records. Do not compare the full ordered log list. Extra records or a different order need not change the contract.
+- Compare the full ordered list of log records with `require.Equal`. An exact list keeps log output deterministic and also rejects an extra false-success record. Capture each record into a test struct that has only the fields the test checks. The capture handler skips other attributes, as `z.object` drops unknown keys.
 
-For an inspection failure, require the failed record and reject a success record:
+For a rejected non-PDF upload, require the exact ordered record list:
 
 ```go
-require.Contains(t, records, pipelineLogRecord{
-	Message:          "dry-run",
-	Level:            slog.LevelError,
-	StorageKeyDigest: storageKeyDigestOne,
-	Outcome:          "failed",
-	DurationRecorded: true,
-})
-require.NotContains(t, records, pipelineLogRecord{
-	Message:          "dry-run",
-	Level:            slog.LevelInfo,
-	StorageKeyDigest: storageKeyDigestOne,
-	Outcome:          "success",
-	DurationRecorded: true,
-})
+require.Equal(t, []pipelineLogRecord{
+	{Message: "sniffed", Level: slog.LevelInfo, StorageKeyDigest: storageKeyDigestOne, Outcome: "rejected", DurationRecorded: true},
+	{Message: "dry-run", Level: slog.LevelInfo, StorageKeyDigest: storageKeyDigestOne, Outcome: "not-pdf", DurationRecorded: true},
+}, records)
 ```
 
 - Test one invalid input at a time and assert public results and effects. Do not assert struct field counts or names. Validation order and struct layout are not public contracts.
