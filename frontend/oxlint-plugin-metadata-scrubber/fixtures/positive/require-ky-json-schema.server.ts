@@ -7,8 +7,6 @@ export function load(signal: AbortSignal, schema: import("zod").ZodType) {
   client.get("/api/health", { signal }).json(schema);
   request("/api/health").json(schema);
   request.post("/api/uploads").json(schema);
-  const alias = request;
-  alias.get("/api/health").json(schema);
 }
 export function unrelated(
   request: KyInstance,
