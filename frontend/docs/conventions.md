@@ -236,15 +236,6 @@ const Message = () => {
 };
 ```
 
-Do not import `trpcContext` in a route file.
-
-```tsx
-import { trpcContext } from "#/shared/libs/trpc/client/client-runtime.mod";
-
-const Message = () => {
-  const trpc = trpcContext.useTRPC();
-```
-
 When a component lives in its own file, import `trpcContext` and `useQueryClient`.
 These hooks read the same clients and cache.
 
