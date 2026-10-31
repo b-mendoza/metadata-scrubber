@@ -16,7 +16,7 @@ const SHARED_MIDDLEWARE_PATH_PATTERN =
   /(?:^|\/)src\/shared\/middlewares\/.*\.tsx?$/v;
 const TEST_FILE_PATH_PATTERN = /\.test\.[cm]?[jt]sx?$/v;
 
-const isTransparentExpression = (node: ESTree.Node) =>
+export const isTransparentExpression = (node: ESTree.Node) =>
   node.type === "TSAsExpression" ||
   node.type === "TSSatisfiesExpression" ||
   node.type === "TSNonNullExpression" ||

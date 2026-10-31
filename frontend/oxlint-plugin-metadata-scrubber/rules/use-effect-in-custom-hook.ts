@@ -4,40 +4,15 @@ import { defineRule } from "@oxlint/plugins";
 import {
   getConstDeclaratorInitializer,
   getReferencedVariable,
+  getRuntimeImportDeclaration,
   getStaticPropertyName,
   isFunction,
+  isTransparentExpression,
+  unwrapExpression,
 } from "../utilities.ts";
 
 const HOOK_NAME_PATTERN = /^use[A-Z0-9]/v;
 const NO_TEMPLATE_EXPRESSIONS = 0;
-
-const isTransparentExpression = (
-  node: ESTree.Node,
-): node is
-  | ESTree.TSAsExpression
-  | ESTree.TSSatisfiesExpression
-  | ESTree.TSNonNullExpression
-  | ESTree.TSTypeAssertion
-  | ESTree.TSInstantiationExpression
-  | ESTree.ParenthesizedExpression
-  | ESTree.ChainExpression =>
-  [
-    "TSAsExpression",
-    "TSSatisfiesExpression",
-    "TSNonNullExpression",
-    "TSTypeAssertion",
-    "TSInstantiationExpression",
-    "ParenthesizedExpression",
-    "ChainExpression",
-  ].includes(node.type);
-
-const unwrapExpression = (node: ESTree.Node): ESTree.Node => {
-  let expression = node;
-  while (isTransparentExpression(expression)) {
-    ({ expression } = expression);
-  }
-  return expression;
-};
 
 const getOutermostExpression = (node: ESTree.Node): ESTree.Node => {
   let expression = node;
@@ -77,19 +52,12 @@ const getImportedName = (specifier: ESTree.ImportSpecifier): string => {
 };
 
 const isReactEffectImport = (definition: Definition): boolean =>
-  definition.type === "ImportBinding" &&
+  getRuntimeImportDeclaration(definition)?.source.value === "react" &&
   definition.node.type === "ImportSpecifier" &&
-  definition.node.importKind !== "type" &&
-  definition.parent?.type === "ImportDeclaration" &&
-  definition.parent.importKind !== "type" &&
-  definition.parent.source.value === "react" &&
   getImportedName(definition.node) === "useEffect";
 
 const isReactNamespaceImport = (definition: Definition): boolean =>
-  definition.type === "ImportBinding" &&
-  definition.parent?.type === "ImportDeclaration" &&
-  definition.parent.importKind !== "type" &&
-  definition.parent.source.value === "react" &&
+  getRuntimeImportDeclaration(definition)?.source.value === "react" &&
   (definition.node.type === "ImportDefaultSpecifier" ||
     definition.node.type === "ImportNamespaceSpecifier");
 
