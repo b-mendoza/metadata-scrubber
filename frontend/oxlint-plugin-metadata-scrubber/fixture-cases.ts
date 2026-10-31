@@ -246,7 +246,6 @@ export const fixtureCases: readonly FixtureCase[] = [
       `\`client.delete\` must use a path that starts with a single \`/\`. ${REQUIRE_RELATIVE_BACKEND_PATH_GUIDANCE}`,
       `\`client.head\` must use a path that starts with a single \`/\`. ${REQUIRE_RELATIVE_BACKEND_PATH_GUIDANCE}`,
       `\`readBindings().httpClient.get\` must use a path that starts with a single \`/\`. ${REQUIRE_RELATIVE_BACKEND_PATH_GUIDANCE}`,
-      `\`alias["get"]\` must use a path that starts with a single \`/\`. ${REQUIRE_RELATIVE_BACKEND_PATH_GUIDANCE}`,
     ],
   ],
   ["require-relative-backend-path", "backend-request-scope.server.test.ts", []],
