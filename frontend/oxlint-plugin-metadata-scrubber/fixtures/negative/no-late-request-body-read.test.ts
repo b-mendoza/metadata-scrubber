@@ -21,10 +21,6 @@ const fetchMock = vitest.vi.fn<typeof fetch>();
 const [[input] = []] = fetchMock.mock.calls;
 expect.assert(input instanceof Request);
 void input.json();
-function check(handler: { mock: { calls: [{ request: Request }][] } }) {
-  void handler.mock.calls[0]?.[0].request.json();
-}
-void check;
 
 export function readAt(index: number) {
   return handler.mock.calls[index]?.[0].request.json();
