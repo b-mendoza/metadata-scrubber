@@ -403,13 +403,6 @@ expect.assert(fileInput instanceof HTMLInputElement);
 return fileInput;
 ```
 
-Do not use a Boolean matcher when you need TypeScript narrowing on the same value.
-
-```ts
-expect(failure instanceof TRPCError).toBe(true);
-expect(failure.code).toBe("BAD_GATEWAY");
-```
-
 Run end-to-end tests against the real frontend and backend services. Start both services before the suite. The suite starts no services and uses no mocks.
 
 ```ts
