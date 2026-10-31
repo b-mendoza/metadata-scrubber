@@ -390,18 +390,11 @@ const getQueryVariableKind = (
   sourceCode: SourceCode,
   seen: Set<Variable>,
 ): QueryBindingKind | null => {
-  const { node, parent } = definition;
-  if (
-    node.type !== "VariableDeclarator" ||
-    parent?.type !== "VariableDeclaration" ||
-    parent.kind !== "const" ||
-    node.init == null
-  ) {
-    return null;
-  }
-  const path = getPatternPath(definition.name, node.id);
+  const declaration = getConstInitializedDeclarator(definition);
+  if (declaration == null) return null;
+  const path = getPatternPath(definition.name, declaration.node.id);
   if (path == null) return null;
-  let kind = getQueryBindingKind(node.init, sourceCode, seen);
+  let kind = getQueryBindingKind(declaration.initializer, sourceCode, seen);
   for (const key of path) {
     kind = getQueryMemberKind(kind, key);
   }
