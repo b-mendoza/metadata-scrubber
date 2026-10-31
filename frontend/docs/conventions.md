@@ -220,18 +220,6 @@ const Message = () => {
 Read parent `Suspense` and error boundaries, including parents in other files, before you add a loader. Import rules cannot check those relationships.
 
 Do not mark route data as required. The operator decides that.
-An agent may await a first fetch only when a later fetch needs that result. Keep the later fetches optional. `firstQueryOptions` and `laterQueryOptions` are placeholders. This app has no such queries today.
-
-```ts
-async loader({ context }) {
-  const { queryClient } = context;
-  const required = await queryClient.ensureQueryData(firstQueryOptions);
-
-  void queryClient
-    .query(laterQueryOptions(required))
-    .catch(() => null);
-}
-```
 
 Read `trpc` and `queryClient` from loader context in a `loader`.
 In a route file, the route component and any regular component in that file read both clients from `Route.useRouteContext()`.
