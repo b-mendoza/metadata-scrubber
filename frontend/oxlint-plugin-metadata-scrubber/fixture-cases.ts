@@ -29,6 +29,8 @@ const NO_LATE_REQUEST_BODY_READ_GUIDANCE =
   "Read or clone it inside the MSW handler and store the value: `const bodies: unknown[] = []; const handler = vi.fn<HttpResponseResolver>(async ({ request }) => { bodies.push(await request.json()); return HttpResponse.json(response); });`. Import `vi` from `vitest` and `HttpResponseResolver` and `HttpResponse` from `msw`.";
 const NO_MODULE_SCOPE_HTTP_CLIENT_GUIDANCE =
   "Create clients in `appBindingsMiddleware` for each request and read them with `getAppBindings()`.";
+const NO_TEST_LOCAL_OBJECT_TYPE_GUIDANCE =
+  "Export a schema-derived type beside its schema, such as `export type X = z.output<typeof xSchema>`, and import it into this test. Do not keep a parallel test-only object type.";
 
 export const fixtureCases: readonly FixtureCase[] = [
   [
@@ -179,10 +181,10 @@ export const fixtureCases: readonly FixtureCase[] = [
     "no-test-local-object-type",
     "no-test-local-object-type.test.ts",
     [
-      "`Upload` declares a test-local object type. Export a schema-derived type beside its schema, such as `export type X = z.output<typeof xSchema>`, and import it into this test. Do not keep a parallel test-only object type.",
-      "`ResponseBody` declares a test-local object type. Export a schema-derived type beside its schema, such as `export type X = z.output<typeof xSchema>`, and import it into this test. Do not keep a parallel test-only object type.",
-      "`Inputs` declares a test-local object type. Export a schema-derived type beside its schema, such as `export type X = z.output<typeof xSchema>`, and import it into this test. Do not keep a parallel test-only object type.",
-      "`LocalBody` declares a test-local object type. Export a schema-derived type beside its schema, such as `export type X = z.output<typeof xSchema>`, and import it into this test. Do not keep a parallel test-only object type.",
+      `\`Upload\` declares a test-local object type. ${NO_TEST_LOCAL_OBJECT_TYPE_GUIDANCE}`,
+      `\`ResponseBody\` declares a test-local object type. ${NO_TEST_LOCAL_OBJECT_TYPE_GUIDANCE}`,
+      `\`Inputs\` declares a test-local object type. ${NO_TEST_LOCAL_OBJECT_TYPE_GUIDANCE}`,
+      `\`LocalBody\` declares a test-local object type. ${NO_TEST_LOCAL_OBJECT_TYPE_GUIDANCE}`,
     ],
   ],
   [
