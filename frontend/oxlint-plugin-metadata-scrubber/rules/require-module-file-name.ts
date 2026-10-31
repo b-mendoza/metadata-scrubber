@@ -2,8 +2,6 @@ import { defineRule } from "@oxlint/plugins";
 
 import { toProjectPath } from "../utilities.ts";
 
-const TSX_EXTENSION_LAST_CHARACTER = -1;
-const STRING_START = 0;
 const TYPESCRIPT_EXTENSION_PATTERN = /\.(?:[cm]?ts|tsx)$/v;
 const MODULE_SUFFIX_PATTERN = /(?:\.(?:mod|server|test|d))+$/v;
 const MODULE_FILE_NAME_PATTERN =
@@ -69,9 +67,9 @@ export default defineRule({
             messageId: "noJsx",
             data: {
               filename,
-              replacement: filename.slice(
-                STRING_START,
-                TSX_EXTENSION_LAST_CHARACTER,
+              replacement: filename.replace(
+                TYPESCRIPT_EXTENSION_PATTERN,
+                ".ts",
               ),
             },
           });
