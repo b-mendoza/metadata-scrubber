@@ -134,52 +134,7 @@ z.url({ protocol: /^https?$/v });
 
 ## Errors and asynchronous code
 
-Keep `neverthrow` in non-test `.server` modules under `src/` and in `scripts/`.
-Use `async`/`await` in other source files and in tests.
-This keeps `neverthrow` out of browser code.
-
-```ts
-import { ResultAsync } from "neverthrow";
-
-const backendHealthStatusResult = await ResultAsync.fromPromise(
-  httpClient
-    .get("/api/health", { signal: signal ?? null })
-    .json(messageResponseSchema),
-  (cause: unknown) =>
-    new TRPCError({
-      cause,
-      code: "BAD_GATEWAY",
-      message: BACKEND_HEALTH_CHECK_FAILURE_MESSAGE,
-    }),
-);
-```
-
-```tsx
-const messageQuery = useSuspenseQuery(trpc.products.getMessage.queryOptions());
-```
-
-Do not import `neverthrow` in a route, component, or test.
-
-```tsx
-import { ResultAsync } from "neverthrow";
-
-const messageQuery = useSuspenseQuery(trpc.products.getMessage.queryOptions());
-```
-
-`scripts/hard-clean.ts` and `scripts/soft-clean.ts` must run without installed dependencies. Use Node built-ins only.
-
-```ts
-import { rm } from "node:fs/promises";
-
-await Promise.all(
-  PATHS.map(async (path) =>
-    rm(path, {
-      force: true,
-      recursive: true,
-    }),
-  ),
-);
-```
+Use `async`/`await` in each file where the import rules block `neverthrow`.
 
 Map one dependency failure with `ResultAsync.fromPromise`. Await the result, check `isErr()`, and throw at the tRPC boundary.
 
