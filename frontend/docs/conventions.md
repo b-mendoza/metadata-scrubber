@@ -465,20 +465,9 @@ void queryClient
 
 ## File names
 
-Name source modules `*.mod.ts`, or `*.mod.tsx` when they contain JSX. This distinguishes modules from route entry points.
 Name server-only modules `*.mod.server.ts`. The server suffix keeps them out of browser bundles.
 Name tests `*.test.ts` or `*.test.tsx`. Use `*.server.test.ts` for server tests so Vitest runs them in Node instead of a DOM environment.
 Put each test beside its module. Keep `src/tests/` for setup and shared helpers. This keeps behavior tests beside the code they check.
-
-```
-src/domains/products/products-router.mod.server.ts
-src/domains/products/products-router.mod.server.test.ts
-src/domains/wizard/components/file-uploader/file-uploader.mod.tsx
-src/domains/wizard/components/file-uploader/file-uploader.mod.test.tsx
-src/routes/index.tsx
-src/tests/setup-test-environment.ts
-src/tests/utils/file-input/file-input.mod.ts
-```
 
 Regenerate `src/routeTree.gen.ts` after route changes. Do not edit that file.
 
