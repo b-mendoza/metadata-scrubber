@@ -2,13 +2,15 @@ import { setupServer as createServer } from "msw/node";
 import { afterAll, afterEach as reset } from "vitest";
 
 const missing = createServer();
+reset(() => missing.resetHandlers());
+afterAll(() => missing.close());
 const warning = createServer();
 warning.listen({ onUnhandledFrame: "warn" });
 reset(() => warning.resetHandlers());
 afterAll(() => warning.close());
 const outside = createServer();
 outside.listen({ onUnhandledFrame: "error" });
-outside.resetHandlers();
+reset(() => outside.resetHandlers());
 outside.close();
 const shadowed = createServer();
 shadowed.listen({ onUnhandledFrame: "error" });
