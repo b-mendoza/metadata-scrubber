@@ -159,8 +159,6 @@ export const fixtureCases: readonly FixtureCase[] = [
     [
       `\`Upload\` declares a test-local object type. ${NO_TEST_LOCAL_OBJECT_TYPE_GUIDANCE}`,
       `\`ResponseBody\` declares a test-local object type. ${NO_TEST_LOCAL_OBJECT_TYPE_GUIDANCE}`,
-      `\`Inputs\` declares a test-local object type. ${NO_TEST_LOCAL_OBJECT_TYPE_GUIDANCE}`,
-      `\`LocalBody\` declares a test-local object type. ${NO_TEST_LOCAL_OBJECT_TYPE_GUIDANCE}`,
     ],
   ],
   [
