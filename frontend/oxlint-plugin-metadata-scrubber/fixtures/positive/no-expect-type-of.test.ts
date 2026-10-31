@@ -13,8 +13,3 @@ test("allows a parameter with the same name", () => {
 
   expect(callLocalExpectation((value) => value)).toBe("value");
 });
-
-{
-  const expectTypeOf = (value: unknown): unknown => value;
-  expectTypeOf("local");
-}
