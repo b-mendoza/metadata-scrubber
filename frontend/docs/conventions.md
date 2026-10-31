@@ -171,26 +171,9 @@ if (
 }
 ```
 
-Leave schema checks with tRPC `.input()` and Ky `.json()` when those APIs handle the call.
+Leave schema checks with tRPC `.input()` when that API handles the call.
 
-```ts
-publicProcedure.input(contracts.uploadInputSchema).mutation(async ({ input, signal }) => {
-  const responseResult = await ResultAsync.fromPromise(
-    workflowHttpClient
-      .post("/api/uploads", { json: input, signal: signal ?? null })
-      .json(contracts.uploadResponseSchema),
-    mapWorkflowRequestFailure(CREATE_UPLOAD_FAILURE_MESSAGE),
-  );
-```
-
-Do not parse the same success body again after Ky returns:
-
-```ts
-const raw = await workflowHttpClient
-  .post("/api/uploads", { json: input })
-  .json();
-return contracts.uploadResponseSchema.parse(raw);
-```
+Do not parse the same success body again after Ky returns.
 
 Let a direct `.parse()` at a boundary throw unless the handler maps that failure.
 Handle every `Result` and awaited `ResultAsync`. Thenable lint checks do not prove that the code reads the inner result.
