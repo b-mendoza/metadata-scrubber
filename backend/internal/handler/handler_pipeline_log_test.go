@@ -168,10 +168,9 @@ func TestPipelineLogsRecordFailureCacheHitAndShortCircuitFacts(t *testing.T) {
 		bindings.Inject(bindings.Bindings{Storage: fake})(http.HandlerFunc(handler.Scrub)).ServeHTTP(recorder, request)
 
 		require.Equal(t, http.StatusOK, recorder.Code)
-		records := logs.records
-		require.Contains(t, records, pipelineLogRecord{Message: "presigned", Level: slog.LevelInfo, StorageKeyDigest: storageKeyDigestOne, Outcome: "cache-hit", DurationRecorded: true})
-		require.NotContains(t, records, pipelineLogRecord{Message: "scrubbed", Level: slog.LevelInfo, StorageKeyDigest: storageKeyDigestOne, Outcome: "success", DurationRecorded: true})
-		require.NotContains(t, records, pipelineLogRecord{Message: "sniffed", Level: slog.LevelInfo, StorageKeyDigest: storageKeyDigestOne, Outcome: "accepted", DurationRecorded: true})
+		require.Equal(t, []pipelineLogRecord{
+			{Message: "presigned", Level: slog.LevelInfo, StorageKeyDigest: storageKeyDigestOne, Outcome: "cache-hit", DurationRecorded: true},
+		}, logs.records)
 	})
 }
 
