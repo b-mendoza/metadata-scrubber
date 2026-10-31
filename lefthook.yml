@@ -15,7 +15,7 @@ pre-commit:
     - name: frontend-oxlint
       root: frontend/
       glob: "**/*.{js,mjs,cjs,ts,tsx,mts,cts}"
-      run: pnpm exec oxlint --fix --deny-warnings {staged_files}
+      run: pnpm exec oxlint --fix --deny-warnings --no-error-on-unmatched-pattern {staged_files}
       stage_fixed: true
 
     - name: frontend-eslint
