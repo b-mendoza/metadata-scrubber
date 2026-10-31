@@ -67,12 +67,6 @@ export const appBindingsMiddleware = createMiddleware({
 });
 ```
 
-Do not store a client in a module-level `const`. That client can share state between requests.
-
-```ts
-const workflowHttpClient = createWorkflowHttpClient(backendUrl);
-```
-
 Wrap server-only functions exported from modules without the `.server` suffix with `createServerOnlyFn`.
 This prevents a browser from executing the server implementation.
 
