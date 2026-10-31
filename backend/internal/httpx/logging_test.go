@@ -39,30 +39,13 @@ func TestRequestLoggerLogsRequestLifecycle(t *testing.T) {
 	require.Equal(t, "true", recorder.Header().Get("X-Scrubbed"))
 
 	records := readJSONLogRecords(t, logs.Bytes())
-	require.Len(t, records, 2)
-	for _, record := range records {
-		require.Equal(t, http.MethodPost, record.Method)
-		require.Equal(t, "/api/scrub", record.Path)
-
-		require.NotContains(t, record.rawJSON, "query-secret")
-		require.NotContains(t, record.rawJSON, "request-body-secret")
-		require.NotContains(t, record.rawJSON, responseBody)
-	}
-
-	started := records[0]
-	completed := records[1]
-
-	require.Equal(t, "request started", started.Msg)
-	require.Equal(t, request.RemoteAddr, started.RemoteAddr)
-	require.Equal(t, "metadata-scrubber-test", started.UserAgent)
-
-	require.Equal(t, "request completed", completed.Msg)
-	require.NotNil(t, completed.Status, "missing status log field")
-	require.Equal(t, http.StatusCreated, *completed.Status)
-	require.NotNil(t, completed.Bytes, "missing bytes log field")
-	require.Equal(t, len(responseBody), *completed.Bytes)
-	require.NotNil(t, completed.DurationMilliseconds)
-	require.GreaterOrEqual(t, *completed.DurationMilliseconds, int64(0))
+	require.Equal(t, []logRecord{
+		{Msg: "request started", Level: "INFO", Method: http.MethodPost, Path: "/api/scrub", RemoteAddr: request.RemoteAddr, UserAgent: "metadata-scrubber-test"},
+		{Msg: "request completed", Level: "INFO", Method: http.MethodPost, Path: "/api/scrub", Status: new(http.StatusCreated), Bytes: new(len(responseBody)), DurationRecorded: true},
+	}, records)
+	require.NotContains(t, logs.String(), "query-secret")
+	require.NotContains(t, logs.String(), "request-body-secret")
+	require.NotContains(t, logs.String(), responseBody)
 }
 
 func TestRequestLoggerDefaultsStatusToOKWhenHandlerOnlyWritesBody(t *testing.T) {
@@ -95,21 +78,17 @@ func TestRequestLoggerLogsPanickedRequests(t *testing.T) {
 		panic("panic-value-sensitive-marker")
 	}))
 
+	request := httptest.NewRequest(http.MethodGet, "/api/health", http.NoBody)
 	require.PanicsWithValue(t, "panic-value-sensitive-marker", func() {
-		handler.ServeHTTP(httptest.NewRecorder(), httptest.NewRequest(http.MethodGet, "/api/health", http.NoBody))
+		handler.ServeHTTP(httptest.NewRecorder(), request)
 	})
 
 	records := readJSONLogRecords(t, logs.Bytes())
-	require.Len(t, records, 2)
-	completed := records[1]
-	require.Equal(t, "request completed", completed.Msg)
-	require.Equal(t, "ERROR", completed.Level)
-	require.NotNil(t, completed.Status, "missing status log field")
-	require.Equal(t, http.StatusInternalServerError, *completed.Status)
-	require.NotNil(t, completed.Panicked, "missing panicked log field")
-	require.True(t, *completed.Panicked)
-	require.Nil(t, completed.Panic, "panic value must not be logged")
-	require.NotContains(t, completed.rawJSON, "panic-value-sensitive-marker")
+	require.Equal(t, []logRecord{
+		{Msg: "request started", Level: "INFO", Method: http.MethodGet, Path: "/api/health", RemoteAddr: request.RemoteAddr},
+		{Msg: "request completed", Level: "ERROR", Method: http.MethodGet, Path: "/api/health", Status: new(http.StatusInternalServerError), Bytes: new(0), DurationRecorded: true, Panicked: new(true)},
+	}, records)
+	require.NotContains(t, logs.String(), "panic-value-sensitive-marker")
 }
 
 func TestRequestLoggerLogsPanickedRequestsAfterWritingHeader(t *testing.T) {
@@ -122,40 +101,31 @@ func TestRequestLoggerLogsPanickedRequestsAfterWritingHeader(t *testing.T) {
 		panic("panic-value-sensitive-marker")
 	}))
 
+	request := httptest.NewRequest(http.MethodGet, "/api/health", http.NoBody)
 	require.PanicsWithValue(t, "panic-value-sensitive-marker", func() {
-		handler.ServeHTTP(httptest.NewRecorder(), httptest.NewRequest(http.MethodGet, "/api/health", http.NoBody))
+		handler.ServeHTTP(httptest.NewRecorder(), request)
 	})
 
 	records := readJSONLogRecords(t, logs.Bytes())
-	require.Len(t, records, 2)
-	for _, record := range records {
-		require.NotContains(t, record.rawJSON, "panic-value-sensitive-marker")
-	}
-
-	completed := records[1]
-	require.Equal(t, "request completed", completed.Msg)
-	require.Equal(t, "ERROR", completed.Level)
-	require.NotNil(t, completed.Status, "missing status log field")
-	require.Equal(t, http.StatusCreated, *completed.Status)
-	require.NotNil(t, completed.Panicked, "missing panicked log field")
-	require.True(t, *completed.Panicked)
-	require.Nil(t, completed.Panic, "panic value must not be logged")
+	require.Equal(t, []logRecord{
+		{Msg: "request started", Level: "INFO", Method: http.MethodGet, Path: "/api/health", RemoteAddr: request.RemoteAddr},
+		{Msg: "request completed", Level: "ERROR", Method: http.MethodGet, Path: "/api/health", Status: new(http.StatusCreated), Bytes: new(0), DurationRecorded: true, Panicked: new(true)},
+	}, records)
+	require.NotContains(t, logs.String(), "panic-value-sensitive-marker")
 }
 
 type logRecord struct {
-	rawJSON string
-
-	Msg                  string  `json:"msg"`
-	Level                string  `json:"level"`
-	Method               string  `json:"method"`
-	Path                 string  `json:"path"`
-	RemoteAddr           string  `json:"remote_addr"`
-	UserAgent            string  `json:"user_agent"`
-	Status               *int    `json:"status"`
-	Bytes                *int    `json:"bytes"`
-	DurationMilliseconds *int64  `json:"duration_ms"`
-	Panicked             *bool   `json:"panicked"`
-	Panic                *string `json:"panic"`
+	Msg              string  `json:"msg"`
+	Level            string  `json:"level"`
+	Method           string  `json:"method"`
+	Path             string  `json:"path"`
+	RemoteAddr       string  `json:"remote_addr"`
+	UserAgent        string  `json:"user_agent"`
+	Status           *int    `json:"status"`
+	Bytes            *int    `json:"bytes"`
+	DurationRecorded bool    `json:"-"`
+	Panicked         *bool   `json:"panicked"`
+	Panic            *string `json:"panic"`
 }
 
 func readJSONLogRecords(t *testing.T, data []byte) []logRecord {
@@ -164,10 +134,13 @@ func readJSONLogRecords(t *testing.T, data []byte) []logRecord {
 	var records []logRecord
 	scanner := bufio.NewScanner(bytes.NewReader(data))
 	for scanner.Scan() {
-		rawJSON := scanner.Text()
-		record := logRecord{rawJSON: rawJSON}
-		require.NoError(t, json.Unmarshal([]byte(rawJSON), &record))
-		records = append(records, record)
+		var record struct {
+			logRecord
+			DurationMilliseconds *int64 `json:"duration_ms"`
+		}
+		require.NoError(t, json.Unmarshal(scanner.Bytes(), &record))
+		record.DurationRecorded = record.DurationMilliseconds != nil && *record.DurationMilliseconds >= 0
+		records = append(records, record.logRecord)
 	}
 	require.NoError(t, scanner.Err())
 
