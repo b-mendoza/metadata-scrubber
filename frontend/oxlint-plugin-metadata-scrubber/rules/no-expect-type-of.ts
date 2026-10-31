@@ -1,7 +1,7 @@
 import type { Definition, ESTree, Scope, SourceCode } from "@oxlint/plugins";
 import { defineRule } from "@oxlint/plugins";
 
-import { isTestFile } from "../utilities.ts";
+import { getRuntimeImportDeclaration, isTestFile } from "../utilities.ts";
 
 const NO_DEFINITIONS = 0;
 
@@ -14,12 +14,8 @@ const getImportedName = (specifier: ESTree.ImportSpecifier): string | null => {
 const isVitestExpectTypeOfImportDefinition = (
   definition: Definition,
 ): boolean =>
-  definition.type === "ImportBinding" &&
+  getRuntimeImportDeclaration(definition)?.source.value === "vitest" &&
   definition.node.type === "ImportSpecifier" &&
-  definition.node.importKind !== "type" &&
-  definition.parent?.type === "ImportDeclaration" &&
-  definition.parent.importKind !== "type" &&
-  definition.parent.source.value === "vitest" &&
   getImportedName(definition.node) === "expectTypeOf";
 
 const isVitestExpectTypeOfReference = (
