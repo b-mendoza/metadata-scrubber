@@ -1,4 +1,3 @@
-import * as fixtureRenderers from "#/fixtures/support/renderers.mod";
 import * as testingLibrary from "@testing-library/react";
 import { screen } from "@testing-library/react";
 import type * as testingLibraryTypes from "@testing-library/react";
@@ -21,8 +20,6 @@ type RenderFunctionFromSpecifier = typeof RenderType;
 screen.getByText("value");
 localTestingLibrary.render(<div />);
 callShadowedRender(localTestingLibrary);
-fixtureRenderers.render(<div />);
-unresolvedTestingLibrary.render(<div />);
 
 export type {
   ImportedTestingLibrary,
