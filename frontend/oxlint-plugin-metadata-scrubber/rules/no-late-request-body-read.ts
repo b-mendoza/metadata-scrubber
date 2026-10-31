@@ -63,57 +63,31 @@ const getPropertyKey = (
   return null;
 };
 
-const getArrayPatternKind = (
-  pattern: ESTree.ArrayPattern,
-  target: ESTree.Node,
-  kind: RecordKind | null,
-): RecordKind | null => {
-  for (const [index, element] of pattern.elements.entries()) {
-    if (element == null || element.type === "RestElement") continue;
-    const found = getPatternKind(
-      element,
-      target,
-      getMemberKind(kind, String(index)),
-    );
-    if (found != null) return found;
-  }
-  return null;
-};
-
-const getObjectPatternKind = (
-  pattern: ESTree.ObjectPattern,
-  target: ESTree.Node,
-  kind: RecordKind | null,
-): RecordKind | null => {
-  for (const property of pattern.properties) {
-    if (property.type !== "Property") continue;
-    const key = getPropertyKey(property.key, property.computed);
-    const found = getPatternKind(
-      property.value,
-      target,
-      getMemberKind(kind, key),
-    );
-    if (found != null) return found;
-  }
-  return null;
-};
-
 const getPatternKind = (
   pattern: ESTree.BindingPattern,
   target: ESTree.Node,
   kind: RecordKind | null,
 ): RecordKind | null => {
   if (pattern === target) return kind;
-  if (pattern.type === "AssignmentPattern") {
-    return getPatternKind(pattern.left, target, kind);
+  const { parent } = target;
+  if (parent == null) return null;
+  if (parent.type === "AssignmentPattern") {
+    return parent.left === target
+      ? getPatternKind(pattern, parent, kind)
+      : null;
   }
-  if (pattern.type === "ArrayPattern") {
-    return getArrayPatternKind(pattern, target, kind);
+  if (parent.type === "ArrayPattern") {
+    const elements: ReadonlyArray<ESTree.Node | null> = parent.elements;
+    return getMemberKind(
+      getPatternKind(pattern, parent, kind),
+      String(elements.indexOf(target)),
+    );
   }
-  if (pattern.type === "ObjectPattern") {
-    return getObjectPatternKind(pattern, target, kind);
-  }
-  return null;
+  if (parent.type !== "Property" || parent.value !== target) return null;
+  return getMemberKind(
+    getPatternKind(pattern, parent.parent, kind),
+    getPropertyKey(parent.key, parent.computed),
+  );
 };
 
 const getImportKind = (definition: Definition): RecordKind | null => {
