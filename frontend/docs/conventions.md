@@ -455,15 +455,7 @@ const useUppyDashboard = (props: FileUploaderProps) => {
 };
 ```
 
-Call a named function instead of an immediately invoked function. Keep anonymous callbacks inline when you pass or store them.
-
-```ts
-const loadInitialMessage = () => {
-  void queryClient.query(trpc.products.getMessage.queryOptions());
-};
-
-loadInitialMessage();
-```
+Keep anonymous callbacks inline when you pass or store them.
 
 ```ts
 void queryClient
