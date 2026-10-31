@@ -129,6 +129,14 @@ return "https://" + c.R2AccountID + ".r2.cloudflarestorage.com"
 switch value := object.(type) {
 case types.Dict:
 	return walker.walkDictionary(value, nested)
+case types.StreamDict:
+	return walker.walkDictionary(value.Dict, nested)
+case types.ObjectStreamDict:
+	return walker.walkDictionary(value.Dict, nested)
+case types.XRefStreamDict:
+	return walker.walkDictionary(value.Dict, nested)
+case types.Array:
+	return walker.walkArray(value)
 default:
 	return nil
 }
