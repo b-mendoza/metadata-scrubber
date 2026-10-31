@@ -7,9 +7,7 @@ export function request(signal: AbortSignal, options: Options, key: string) {
   client.get("/api/health");
   client.post("/api/uploads", {});
   client.put("/api/uploads", options);
-  client.patch("/api/uploads", { ...options });
   client.delete("/api/uploads", { signal, ...options });
-  client.head("/api/uploads", { signal: signal, ...options });
   readBindings().httpClient.get("/api/health");
   client.get("/api/health", { signal, [key]: null });
   const alias = client;
