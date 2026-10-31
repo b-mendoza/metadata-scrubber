@@ -383,8 +383,6 @@ const fetchMock = vi.fn<typeof fetch>().mockRejectedValue(transportFailure);
 vi.stubGlobal("fetch", fetchMock);
 ```
 
-Do not use MSW to replace a running service in end-to-end tests.
-
 Capture a rejected error, then narrow it once with `expect.assert` before assertions that always run. Apply this in test helpers too.
 
 ```ts
