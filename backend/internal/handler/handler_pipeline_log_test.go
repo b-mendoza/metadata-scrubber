@@ -79,10 +79,10 @@ func TestPipelineLogsRecordFailureCacheHitAndShortCircuitFacts(t *testing.T) {
 		bindings.Inject(bindings.Bindings{Storage: fake})(http.HandlerFunc(handler.DryRun)).ServeHTTP(recorder, request)
 
 		require.Equal(t, http.StatusUnsupportedMediaType, recorder.Code)
-		records := logs.records
-		require.Contains(t, records, pipelineLogRecord{Message: "sniffed", Level: slog.LevelInfo, StorageKeyDigest: storageKeyDigestOne, Outcome: "rejected", DurationRecorded: true})
-		require.Contains(t, records, pipelineLogRecord{Message: "dry-run", Level: slog.LevelInfo, StorageKeyDigest: storageKeyDigestOne, Outcome: "not-pdf", DurationRecorded: true})
-		require.NotContains(t, records, pipelineLogRecord{Message: "dry-run", Level: slog.LevelInfo, StorageKeyDigest: storageKeyDigestOne, Outcome: "success", DurationRecorded: true})
+		require.Equal(t, []pipelineLogRecord{
+			{Message: "sniffed", Level: slog.LevelInfo, StorageKeyDigest: storageKeyDigestOne, Outcome: "rejected", DurationRecorded: true},
+			{Message: "dry-run", Level: slog.LevelInfo, StorageKeyDigest: storageKeyDigestOne, Outcome: "not-pdf", DurationRecorded: true},
+		}, logs.records)
 	})
 
 	t.Run("inspection failure records error and omits success", func(t *testing.T) {
