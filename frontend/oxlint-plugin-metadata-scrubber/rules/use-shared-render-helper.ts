@@ -1,7 +1,11 @@
 import type { ESTree, Scope, SourceCode, Variable } from "@oxlint/plugins";
 import { defineRule } from "@oxlint/plugins";
 
-import { getStaticPropertyName, isTestFile } from "../utilities.ts";
+import {
+  getRuntimeImportDeclaration,
+  getStaticPropertyName,
+  isTestFile,
+} from "../utilities.ts";
 
 const TESTING_LIBRARY_SOURCES = new Set([
   "@testing-library/react",
@@ -17,15 +21,14 @@ const getTestingLibraryNamespaceImportSource = (
   variable: Variable,
 ): string | null => {
   for (const definition of variable.defs) {
+    const declaration = getRuntimeImportDeclaration(definition);
     if (
-      definition.type !== "ImportBinding" ||
-      definition.node.type !== "ImportNamespaceSpecifier" ||
-      definition.parent?.type !== "ImportDeclaration" ||
-      definition.parent.importKind === "type"
+      declaration == null ||
+      definition.node.type !== "ImportNamespaceSpecifier"
     ) {
       continue;
     }
-    const source = definition.parent.source.value;
+    const source = declaration.source.value;
     if (TESTING_LIBRARY_SOURCES.has(source)) return source;
   }
   return null;
