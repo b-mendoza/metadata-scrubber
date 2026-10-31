@@ -84,12 +84,6 @@ Pass the request `AbortSignal` to each backend HTTP call.
 httpClient.get("/api/health", { signal: signal ?? null });
 ```
 
-Do not rebuild the backend origin in the procedure:
-
-```ts
-httpClient.get(`${backendUrl}/api/health`, { signal });
-```
-
 Change timeout or retry policy only for the use case that needs it. Set the change on that request.
 
 ```ts
