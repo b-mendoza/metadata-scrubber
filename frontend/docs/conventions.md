@@ -256,20 +256,6 @@ const Example = () => {
 };
 ```
 
-Pass `trpc` and `queryClient` as props only during `TRPCProvider` setup.
-
-```tsx
-<trpcContext.TRPCProvider trpcClient={trpcClient} queryClient={queryClient}>
-  {children}
-</trpcContext.TRPCProvider>
-```
-
-Do not pass these clients to child components.
-
-```tsx
-<Message trpc={trpc} queryClient={queryClient} />
-```
-
 ## Contracts
 
 Use Zod for validation in application code and tools.
