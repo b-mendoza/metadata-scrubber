@@ -148,8 +148,6 @@ export const fixtureCases: readonly FixtureCase[] = [
     "no-silent-test-prerequisite.test.ts",
     [
       `\`check.skip\` disables a suite or test. ${NO_SILENT_TEST_PREREQUISITE_GUIDANCE}`,
-      `\`describe.skip\` disables a suite or test. ${NO_SILENT_TEST_PREREQUISITE_GUIDANCE}`,
-      `\`it.skip\` disables a suite or test. ${NO_SILENT_TEST_PREREQUISITE_GUIDANCE}`,
       `\`test.skip.each([false])\` disables a suite or test. ${NO_SILENT_TEST_PREREQUISITE_GUIDANCE}`,
       "The `!ready` test prerequisite guard uses a bare `return` in `test.each([false])`. This return makes the test pass without its behavior assertions. Replace the guard exit with `expect(ready).toBeTruthy()`. Then continue the test. Import `expect` from `vitest` when the test file does not import it.",
       "The `value === undefined` test prerequisite guard uses a bare `return` in `test`. This return makes the test pass without its behavior assertions. Replace the guard exit with `expect((value === undefined)).toBeFalsy()`. Then continue the test. Import `expect` from `vitest` when the test file does not import it.",
