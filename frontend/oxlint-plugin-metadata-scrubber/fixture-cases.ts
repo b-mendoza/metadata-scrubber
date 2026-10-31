@@ -37,6 +37,8 @@ const REQUIRE_BACKEND_REQUEST_SIGNAL_GUIDANCE =
   "Pass the request AbortSignal as `{ signal: signal ?? null }` so request cancellation stops the backend call.";
 const REQUIRE_KY_JSON_SCHEMA_GUIDANCE =
   "Pass the Zod response schema with `.json(schema)`. Ky validates the body; do not parse it again later.";
+const REQUIRE_RELATIVE_BACKEND_PATH_GUIDANCE =
+  'App bindings set the base URL; pass a relative path such as `"/api/health"` as the first argument.';
 
 export const fixtureCases: readonly FixtureCase[] = [
   [
@@ -287,14 +289,14 @@ export const fixtureCases: readonly FixtureCase[] = [
     "require-relative-backend-path",
     "require-relative-backend-path.server.ts",
     [
-      '`client.get` must use a path that starts with a single `/`. App bindings set the base URL; pass a relative path such as `"/api/health"` as the first argument.',
-      '`client.post` must use a path that starts with a single `/`. App bindings set the base URL; pass a relative path such as `"/api/health"` as the first argument.',
-      '`client.put` must use a path that starts with a single `/`. App bindings set the base URL; pass a relative path such as `"/api/health"` as the first argument.',
-      '`client.patch` must use a path that starts with a single `/`. App bindings set the base URL; pass a relative path such as `"/api/health"` as the first argument.',
-      '`client.delete` must use a path that starts with a single `/`. App bindings set the base URL; pass a relative path such as `"/api/health"` as the first argument.',
-      '`client.head` must use a path that starts with a single `/`. App bindings set the base URL; pass a relative path such as `"/api/health"` as the first argument.',
-      '`readBindings().httpClient.get` must use a path that starts with a single `/`. App bindings set the base URL; pass a relative path such as `"/api/health"` as the first argument.',
-      '`alias["get"]` must use a path that starts with a single `/`. App bindings set the base URL; pass a relative path such as `"/api/health"` as the first argument.',
+      `\`client.get\` must use a path that starts with a single \`/\`. ${REQUIRE_RELATIVE_BACKEND_PATH_GUIDANCE}`,
+      `\`client.post\` must use a path that starts with a single \`/\`. ${REQUIRE_RELATIVE_BACKEND_PATH_GUIDANCE}`,
+      `\`client.put\` must use a path that starts with a single \`/\`. ${REQUIRE_RELATIVE_BACKEND_PATH_GUIDANCE}`,
+      `\`client.patch\` must use a path that starts with a single \`/\`. ${REQUIRE_RELATIVE_BACKEND_PATH_GUIDANCE}`,
+      `\`client.delete\` must use a path that starts with a single \`/\`. ${REQUIRE_RELATIVE_BACKEND_PATH_GUIDANCE}`,
+      `\`client.head\` must use a path that starts with a single \`/\`. ${REQUIRE_RELATIVE_BACKEND_PATH_GUIDANCE}`,
+      `\`readBindings().httpClient.get\` must use a path that starts with a single \`/\`. ${REQUIRE_RELATIVE_BACKEND_PATH_GUIDANCE}`,
+      `\`alias["get"]\` must use a path that starts with a single \`/\`. ${REQUIRE_RELATIVE_BACKEND_PATH_GUIDANCE}`,
     ],
   ],
   ["require-relative-backend-path", "backend-request-scope.server.test.ts", []],
