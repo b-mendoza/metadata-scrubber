@@ -1,7 +1,6 @@
 import {
   QueryClient,
   QueryClientProvider as CacheProvider,
-  useQueryClient,
 } from "@tanstack/react-query";
 import type { PropsWithChildren } from "react";
 
@@ -22,21 +21,6 @@ export function Providers({ children }: PropsWithChildren) {
         </rpc.TRPCProvider>
       </AppProvider>
     </CacheProvider>
-  );
-}
-
-export function View() {
-  const queryClient = useQueryClient();
-  const trpc = rpc.useTRPC();
-  return (
-    <button
-      onClick={() => {
-        void queryClient.invalidateQueries();
-        console.log(trpc);
-      }}
-    >
-      Invalidate
-    </button>
   );
 }
 
