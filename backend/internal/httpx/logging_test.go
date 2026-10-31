@@ -58,15 +58,14 @@ func TestRequestLoggerDefaultsStatusToOKWhenHandlerOnlyWritesBody(t *testing.T) 
 		assert.NoError(t, err)
 	}))
 
-	handler.ServeHTTP(httptest.NewRecorder(), httptest.NewRequest(http.MethodGet, "/api/health", http.NoBody))
+	request := httptest.NewRequest(http.MethodGet, "/api/health", http.NoBody)
+	handler.ServeHTTP(httptest.NewRecorder(), request)
 
 	records := readJSONLogRecords(t, logs.Bytes())
-	require.Len(t, records, 2)
-	completed := records[1]
-	require.NotNil(t, completed.Status, "missing status log field")
-	require.Equal(t, http.StatusOK, *completed.Status)
-	require.NotNil(t, completed.Bytes, "missing bytes log field")
-	require.Equal(t, len("ok"), *completed.Bytes)
+	require.Equal(t, []logRecord{
+		{Msg: "request started", Level: "INFO", Method: http.MethodGet, Path: "/api/health", RemoteAddr: request.RemoteAddr},
+		{Msg: "request completed", Level: "INFO", Method: http.MethodGet, Path: "/api/health", Status: new(http.StatusOK), Bytes: new(len("ok")), DurationRecorded: true},
+	}, records)
 }
 
 func TestRequestLoggerLogsPanickedRequests(t *testing.T) {
