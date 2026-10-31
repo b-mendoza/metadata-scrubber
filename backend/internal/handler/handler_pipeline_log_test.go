@@ -102,10 +102,10 @@ func TestPipelineLogsRecordFailureCacheHitAndShortCircuitFacts(t *testing.T) {
 		bindings.Inject(bindings.Bindings{Storage: fake})(http.HandlerFunc(handler.DryRun)).ServeHTTP(recorder, request)
 
 		require.Equal(t, http.StatusInternalServerError, recorder.Code)
-		records := logs.records
-		require.Contains(t, records, pipelineLogRecord{Message: "sniffed", Level: slog.LevelInfo, StorageKeyDigest: storageKeyDigestOne, Outcome: "accepted", DurationRecorded: true})
-		require.Contains(t, records, pipelineLogRecord{Message: "dry-run", Level: slog.LevelError, StorageKeyDigest: storageKeyDigestOne, Outcome: "failed", DurationRecorded: true})
-		require.NotContains(t, records, pipelineLogRecord{Message: "dry-run", Level: slog.LevelInfo, StorageKeyDigest: storageKeyDigestOne, Outcome: "success", DurationRecorded: true})
+		require.Equal(t, []pipelineLogRecord{
+			{Message: "sniffed", Level: slog.LevelInfo, StorageKeyDigest: storageKeyDigestOne, Outcome: "accepted", DurationRecorded: true},
+			{Message: "dry-run", Level: slog.LevelError, StorageKeyDigest: storageKeyDigestOne, Outcome: "failed", DurationRecorded: true},
+		}, logs.records)
 	})
 
 	t.Run("clean failure records error and omits presign success", func(t *testing.T) {
