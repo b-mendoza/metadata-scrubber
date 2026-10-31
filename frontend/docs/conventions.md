@@ -356,23 +356,6 @@ await caller.query("wizard.getWorkflowConfig");
 ```
 
 Use MSW at network boundaries in unit tests. Keep request construction and response handling in the test.
-Set `onUnhandledFrame` to `"error"` and reset handlers after each test.
-
-```ts
-const server = setupServer();
-
-beforeAll(() => {
-  server.listen({ onUnhandledFrame: "error" });
-});
-
-afterEach(() => {
-  server.resetHandlers();
-});
-
-afterAll(() => {
-  server.close();
-});
-```
 
 Read or clone the request body inside the MSW handler. Ky can consume the body before a later assertion reads it.
 
