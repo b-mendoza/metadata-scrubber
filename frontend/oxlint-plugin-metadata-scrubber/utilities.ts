@@ -174,6 +174,15 @@ export const getRuntimeImportDeclaration = (
   return declaration;
 };
 
+export const getImportName = (definition: Definition, source: string) => {
+  const declaration = getRuntimeImportDeclaration(definition);
+  if (declaration?.source.value !== source) return null;
+  if (definition.node.type === "ImportNamespaceSpecifier") return "*";
+  if (definition.node.type !== "ImportSpecifier") return null;
+  const { imported } = definition.node;
+  return imported.type === "Identifier" ? imported.name : imported.value;
+};
+
 const getHttpImportKind = (definition: Definition): HttpBindingKind | null => {
   const declaration = getRuntimeImportDeclaration(definition);
   if (declaration == null) return null;

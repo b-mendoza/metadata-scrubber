@@ -1,28 +1,14 @@
-import type { Definition, ESTree, SourceCode, Variable } from "@oxlint/plugins";
+import type { ESTree, SourceCode, Variable } from "@oxlint/plugins";
 import { defineRule } from "@oxlint/plugins";
 
 import {
   getConstDeclaratorInitializer,
+  getImportName,
   getReferencedVariable,
-  getRuntimeImportDeclaration,
   getStaticPropertyName,
   isFunction,
   isTestFile,
 } from "../utilities.ts";
-
-const getImportName = (
-  definition: Definition,
-  source: string,
-): string | null => {
-  const declaration = getRuntimeImportDeclaration(definition);
-  if (declaration?.source.value !== source) return null;
-  if (definition.node.type === "ImportNamespaceSpecifier") return "*";
-  if (definition.node.type !== "ImportSpecifier") {
-    return null;
-  }
-  const { imported } = definition.node;
-  return imported.type === "Identifier" ? imported.name : imported.value;
-};
 
 const getImportedApi = (
   node: ESTree.Node,
