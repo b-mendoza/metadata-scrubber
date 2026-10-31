@@ -78,7 +78,7 @@ export const getAppBindings = createServerOnlyFn(() => {
 });
 ```
 
-Pass the request `AbortSignal` to each backend HTTP call. Use a relative path after app bindings set the base URL.
+Pass the request `AbortSignal` to each backend HTTP call.
 
 ```ts
 httpClient.get("/api/health", { signal: signal ?? null });
