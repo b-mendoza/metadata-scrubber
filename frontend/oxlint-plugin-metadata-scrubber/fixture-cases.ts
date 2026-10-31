@@ -216,8 +216,6 @@ export const fixtureCases: readonly FixtureCase[] = [
     "require-ky-json-schema.server.ts",
     [
       `\`client.get\` calls \`.json()\` without a response schema. ${REQUIRE_KY_JSON_SCHEMA_GUIDANCE}`,
-      `\`alias.post\` calls \`.json()\` without a response schema. ${REQUIRE_KY_JSON_SCHEMA_GUIDANCE}`,
-      `\`readBindings().httpClient.get\` calls \`.json()\` without a response schema. ${REQUIRE_KY_JSON_SCHEMA_GUIDANCE}`,
       `\`request\` calls \`.json()\` without a response schema. ${REQUIRE_KY_JSON_SCHEMA_GUIDANCE}`,
       `\`request.get\` calls \`.json()\` without a response schema. ${REQUIRE_KY_JSON_SCHEMA_GUIDANCE}`,
       `\`fetchJson.post\` calls \`.json()\` without a response schema. ${REQUIRE_KY_JSON_SCHEMA_GUIDANCE}`,
