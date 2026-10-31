@@ -188,27 +188,7 @@ return responseResult.value;
 
 ## Route data
 
-Treat every piece of route data as optional. Optional data can prefetch in the `loader`. The route can render before the query finishes. TanStack Query calls this prefetching: fill the cache ahead of time and do not wait for the result. See [Prefetching & Router Integration](https://tanstack.com/query/latest/docs/framework/react/guides/prefetching).
-Start each query in the `loader` without waiting. Do not return that promise. The `.catch` stops a promise error that no other code handles.
-
-```ts
-export const Route = createFileRoute("/")({
-  component: IndexRoute,
-  loader({ context }) {
-    const { queryClient, trpc } = context;
-
-    void queryClient
-      .query(trpc.products.getMessage.queryOptions())
-      .catch(() => null);
-  },
-});
-```
-
-Do not `await` the query in the `loader`. The user cannot move to another route until every waiting request finishes.
-
-```ts
-await queryClient.query(trpc.products.getMessage.queryOptions());
-```
+Treat every piece of route data as optional. Optional data can prefetch in the `loader`. The route can render before the query finishes.
 
 Read query data with `useSuspenseQuery` only.
 Put the fetch in a child component. Wrap that child in a `Suspense` boundary. Put the loading UI in the `fallback`.
