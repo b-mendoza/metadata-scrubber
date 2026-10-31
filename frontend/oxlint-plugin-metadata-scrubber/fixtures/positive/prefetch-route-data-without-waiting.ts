@@ -8,12 +8,7 @@ export const Route = rootWithContext<{ queryClient: QueryClient }>()({
   async loader({ context }) {
     const { queryClient: cache } = context;
     void cache.query(options).catch(() => null);
-    void context.queryClient.prefetchQuery(options).catch(() => null);
     await Promise.resolve("unrelated");
-    const nested = async (cache: QueryClient) => {
-      await cache.query(options);
-    };
-    await nested(cache);
     return "shell";
   },
   async beforeLoad({ context }) {
