@@ -463,14 +463,6 @@ void queryClient
   .catch(() => null);
 ```
 
-Do not wrap a one-off call in an immediately invoked function.
-
-```ts
-(() => {
-  void queryClient.query(trpc.products.getMessage.queryOptions());
-})();
-```
-
 ## File names
 
 Name source modules `*.mod.ts`, or `*.mod.tsx` when they contain JSX. This distinguishes modules from route entry points.
