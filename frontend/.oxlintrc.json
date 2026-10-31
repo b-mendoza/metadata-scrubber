@@ -765,6 +765,7 @@
       }
     ],
     "no-undefined": "error",
+    "sonarjs/no-commented-code": "error",
     "no-restricted-imports": [
       "error",
       {
@@ -800,7 +801,6 @@
         ]
       }
     ],
-    "sonarjs/no-commented-code": "error",
     "class-methods-use-this": [
       "error",
       {
