@@ -51,7 +51,7 @@ const mapWorkflowRequestFailure =
     let code: TRPC_ERROR_CODE_KEY = "BAD_GATEWAY";
     if (
       cause instanceof HTTPError &&
-      contracts.backendErrorResponseSchema.safeParse(cause.data).success
+      contracts.backendErrorResponseSchema.validate(cause.data)
     ) {
       code = backendStatusCodes[cause.response.status] ?? "BAD_GATEWAY";
     } else if (cause instanceof TimeoutError) {
