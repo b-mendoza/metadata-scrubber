@@ -32,6 +32,7 @@ export const Chained = rootWithContext<{ queryClient: QueryClient }>()({
   async loader({ context }) {
     const { queryClient } = context;
     void queryClient.query(options).catch();
+    void queryClient.query(options).catch(null);
     void queryClient.query(options).catch(undefined);
     return await queryClient["fetchQuery"](options);
   },

@@ -171,6 +171,7 @@ export const fixtureCases: readonly FixtureCase[] = [
       `\`context.queryClient.query(options)\` waits for route query data. Start it without waiting: \`void context.queryClient.query(options).catch(() => null)\`. ${PREFETCH_ROUTE_DATA_WITHOUT_WAITING_GUIDANCE}`,
       "`queryClient.query(options)` drops a route query promise without an error handler. Use `void queryClient.query(options).catch(() => null)`.",
       "`queryClient.query(options)` drops a route query promise without an error handler. Use `void queryClient.query(options).catch(() => null)`.",
+      "`queryClient.query(options)` drops a route query promise without an error handler. Use `void queryClient.query(options).catch(() => null)`.",
       `\`queryClient["fetchQuery"](options)\` waits for route query data. Start it without waiting: \`void queryClient["fetchQuery"](options).catch(() => null)\`. ${PREFETCH_ROUTE_DATA_WITHOUT_WAITING_GUIDANCE}`,
       `\`cache.query(laterOptions(required))\` waits for route query data. Start it without waiting: \`void cache.query(laterOptions(required)).catch(() => null)\`. ${PREFETCH_ROUTE_DATA_WITHOUT_WAITING_GUIDANCE}`,
       `\`cache.ensureQueryData(options)\` waits for route query data. Start it without waiting: \`void cache.ensureQueryData(options).catch(() => null)\`. ${PREFETCH_ROUTE_DATA_WITHOUT_WAITING_GUIDANCE}`,
