@@ -24,9 +24,6 @@
     "noUncheckedSideEffectImports": true,
     "noUnusedLocals": true,
     "noUnusedParameters": true,
-    "paths": {
-      "#/fixtures/*": ["./oxlint-plugin-metadata-scrubber/fixtures/*"]
-    },
     "skipLibCheck": true,
     "strict": true,
     "target": "es2024",
