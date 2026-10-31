@@ -455,14 +455,6 @@ const useUppyDashboard = (props: FileUploaderProps) => {
 };
 ```
 
-Do not name the hook for mount timing.
-
-```ts
-const useMount = (callback: () => void) => {
-  useEffect(callback, []);
-};
-```
-
 Call a named function instead of an immediately invoked function. Keep anonymous callbacks inline when you pass or store them.
 
 ```ts
