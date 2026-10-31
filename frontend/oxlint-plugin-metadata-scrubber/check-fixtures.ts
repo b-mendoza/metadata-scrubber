@@ -74,6 +74,12 @@ const getDiagnosticMessages = (
   }
   const parsedValue: unknown = JSON.parse(stdout);
   const parsed = oxlintJsonOutputSchema.parse(parsedValue);
+  const toolError = parsed.diagnostics.find((message) => message.code == null);
+  if (toolError != null) {
+    throw new Error(
+      `Oxlint reported a parser or tool error for ${fixturePath}: ${toolError.message}`,
+    );
+  }
   return parsed.diagnostics
     .filter((message) => message.code === `metadata-scrubber(${ruleId})`)
     .toSorted((left, right) =>
