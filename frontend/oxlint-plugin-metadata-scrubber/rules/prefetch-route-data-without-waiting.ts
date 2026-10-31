@@ -30,16 +30,6 @@ interface ContextPathOptions {
 }
 const EMPTY_DEFINITION_COUNT = 0;
 
-const getLoader = (
-  node: ESTree.Node,
-  sourceCode: SourceCode,
-): Loader | null => {
-  let owner: ESTree.Node | null = node.parent;
-  while (owner != null && !isFunction(owner)) owner = owner.parent;
-  if (owner == null) return null;
-  return getRouteLoader(owner, sourceCode);
-};
-
 const getQueryLoader = (
   node: ESTree.CallExpression,
   sourceCode: SourceCode,
@@ -51,15 +41,23 @@ const getQueryLoader = (
   ) {
     return null;
   }
-  const loader = getLoader(node, sourceCode);
-  return loader != null &&
-    getContextPath(callee.object, {
-      loader,
-      sourceCode,
-      seen: new Set<Variable>(),
-    }) === "input.context.queryClient"
-    ? loader
-    : null;
+  for (
+    let owner: ESTree.Node | null = node.parent;
+    owner != null;
+    owner = owner.parent
+  ) {
+    if (!isFunction(owner)) continue;
+    const loader = getRouteLoader(owner, sourceCode);
+    return loader != null &&
+      getContextPath(callee.object, {
+        loader,
+        sourceCode,
+        seen: new Set<Variable>(),
+      }) === "input.context.queryClient"
+      ? loader
+      : null;
+  }
+  return null;
 };
 
 const getRouteLoader = (
