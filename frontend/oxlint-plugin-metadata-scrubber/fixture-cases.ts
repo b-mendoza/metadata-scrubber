@@ -206,7 +206,7 @@ export const fixtureCases: readonly FixtureCase[] = [
     [
       "`src/a-orphan.mod.test.ts` has no matching source module. Move it beside the module it tests and rename it to start with that module's stem, such as `src/<module>/<module>.mod.test.ts`.",
       "`src/b-wrong-place/c-widget-extra.mod.test.tsx` is not beside `src/c-widget/c-widget.mod.tsx`. Move it to `src/c-widget/c-widget-extra.mod.test.tsx` and update its imports.",
-      "`src/d-server/api-split.mod.test.ts` tests server module `src/d-server/api.mod.server.ts`. Rename it to `src/d-server/api-split.mod.server.test.ts` so Vitest uses the node environment.",
+      "`src/d-server/api-split.mod.test.ts` tests server module `src/d-server/api-split.mod.server.ts`. Rename it to `src/d-server/api-split.mod.server.test.ts` so Vitest uses the node environment.",
       "`src/e-server-tsx/service.mod.server.test.tsx` tests server module `src/e-server-tsx/service.mod.server.ts`. Rename it to `src/e-server-tsx/service.mod.server.test.ts` so Vitest uses the node environment.",
       "`src/routes/-missing.test.tsx` has no matching source module. Move it beside the module it tests and rename it to start with that module's stem, such as `src/routes/-<route>.test.tsx`.",
     ],
