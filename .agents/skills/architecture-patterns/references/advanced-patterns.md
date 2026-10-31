@@ -342,7 +342,13 @@ class PostgresOutboxPublisher:
 #   async def save(self, order: Order, conn) -> None
 # so the order row and the outbox rows commit in the same transaction.
 class PlaceOrderUseCase:
-    def __init__(self, order_repo: OrderRepository, event_publisher: PostgresOutboxPublisher):
+    def __init__(
+        self,
+        db: Database,
+        order_repo: OrderRepository,
+        event_publisher: PostgresOutboxPublisher,
+    ):
+        self.db = db
         self.orders = order_repo
         self.publisher = event_publisher
 
