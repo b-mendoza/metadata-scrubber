@@ -13,6 +13,7 @@ import (
 	"github.com/posthog/posthog-go"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	otellog "go.opentelemetry.io/otel/log"
 	sdklog "go.opentelemetry.io/otel/sdk/log"
 
 	"metadata-scrubber/internal/bindings"
@@ -184,12 +185,20 @@ func (client *captureClient) Enqueue(message posthog.Message) error {
 	return client.err
 }
 
+type exportedLogRecord struct {
+	Body     string
+	Severity otellog.Severity
+}
+
 type recordExporter struct {
-	records []sdklog.Record
+	records []exportedLogRecord
 }
 
 func (exporter *recordExporter) Export(_ context.Context, records []sdklog.Record) error {
-	exporter.records = append(exporter.records, records...)
+	for index := range records {
+		record := &records[index]
+		exporter.records = append(exporter.records, exportedLogRecord{Body: record.Body().AsString(), Severity: record.Severity()})
+	}
 	return nil
 }
 
