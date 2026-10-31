@@ -162,14 +162,22 @@ return errors.Join(bodyErr, fmt.Errorf("release PDF metadata stream cache: %w", 
 - Pass a short timeout and time goroutines with channels. Use deadlines to detect a stuck test, not to prove that work finishes at a particular speed. Machine load must not decide correctness.
 - Use `require.Contains` for required log records and `require.NotContains` for false-success records. Do not compare the full ordered log list. Extra records or a different order need not change the contract.
 
+For an inspection failure, require the failed record and reject a success record:
+
 ```go
 require.Contains(t, records, pipelineLogRecord{
-	Message: "dry-run",
-	Outcome: "success",
+	Message:          "dry-run",
+	Level:            slog.LevelError,
+	StorageKeyDigest: storageKeyDigestOne,
+	Outcome:          "failed",
+	DurationRecorded: true,
 })
 require.NotContains(t, records, pipelineLogRecord{
-	Message: "dry-run",
-	Outcome: "failed",
+	Message:          "dry-run",
+	Level:            slog.LevelInfo,
+	StorageKeyDigest: storageKeyDigestOne,
+	Outcome:          "success",
+	DurationRecorded: true,
 })
 ```
 
