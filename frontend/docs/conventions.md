@@ -186,12 +186,6 @@ if (responseResult.isErr()) {
 return responseResult.value;
 ```
 
-Do not ignore the inner result:
-
-```ts
-await ResultAsync.fromPromise(/* ... */);
-```
-
 ## Route data
 
 Treat every piece of route data as optional. Optional data can prefetch in the `loader`. The route can render before the query finishes. TanStack Query calls this prefetching: fill the cache ahead of time and do not wait for the result. See [Prefetching & Router Integration](https://tanstack.com/query/latest/docs/framework/react/guides/prefetching).
