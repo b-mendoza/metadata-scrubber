@@ -696,10 +696,22 @@
     "sonarjs/vitest-mock-at-module-scope": "error",
     "sonarjs/prefer-native-axios-alternative": "error",
     "metadata-scrubber/no-classes": "error",
+    "metadata-scrubber/no-discarded-result": "error",
     "metadata-scrubber/no-expect-type-of": "error",
+    "metadata-scrubber/no-late-request-body-read": "error",
+    "metadata-scrubber/no-lifecycle-hook-names": "error",
+    "metadata-scrubber/no-module-scope-http-client": "error",
     "metadata-scrubber/no-mutable-module-state-in-server-code": "error",
+    "metadata-scrubber/no-query-client-props": "error",
     "metadata-scrubber/no-silent-test-prerequisite": "error",
+    "metadata-scrubber/no-test-local-object-type": "error",
+    "metadata-scrubber/prefetch-route-data-without-waiting": "error",
+    "metadata-scrubber/require-backend-request-signal": "error",
     "metadata-scrubber/require-colocated-test": "error",
+    "metadata-scrubber/require-ky-json-schema": "error",
+    "metadata-scrubber/require-module-file-name": "error",
+    "metadata-scrubber/require-relative-backend-path": "error",
+    "metadata-scrubber/require-strict-msw-server": "error",
     "metadata-scrubber/separate-type-imports": "error",
     "metadata-scrubber/use-effect-in-custom-hook": "error",
     "metadata-scrubber/use-shared-render-helper": "error",
@@ -761,11 +773,27 @@
             "importNames": ["useQuery"],
             "allowTypeImports": true,
             "message": "Runtime useQuery does not suspend for pending data. Use named useSuspenseQuery imports with an ancestor Suspense boundary and suitable error handling. Replace namespace imports and wildcard exports with explicit allowed APIs."
+          },
+          {
+            "name": "@tanstack/react-query",
+            "importNames": ["useQueries"],
+            "allowTypeImports": true,
+            "message": "Runtime useQueries does not suspend for pending data. Replace it with named useSuspenseQueries imports, an ancestor Suspense boundary, and suitable error handling. Replace namespace imports and wildcard exports with explicit allowed APIs."
+          },
+          {
+            "name": "@tanstack/react-query",
+            "importNames": ["useInfiniteQuery"],
+            "allowTypeImports": true,
+            "message": "Runtime useInfiniteQuery does not suspend for pending data. Replace it with named useSuspenseInfiniteQuery imports, an ancestor Suspense boundary, and suitable error handling. Replace namespace imports and wildcard exports with explicit allowed APIs."
+          },
+          {
+            "name": "neverthrow",
+            "message": "neverthrow is not allowed outside non-test src/**/*.server.ts files and scripts. Use async/await in this file. Keep ResultAsync.fromPromise in a non-test server module for dependency failures."
           }
         ],
         "patterns": [
           {
-            "group": ["zod/**"],
+            "regex": "^zod/.+$",
             "message": "Import Zod from the `zod` package root. Use `import * as z from \"zod\"` for runtime code or `import type * as z from \"zod\"` for type-only code. Replace every `zod/*` source with `zod`. The package root is the only supported project entry point."
           }
         ]
@@ -2426,21 +2454,6 @@
       "jsPlugins": ["eslint-plugin-zod"]
     },
     {
-      "files": ["src/**/*.ts", "src/**/*.tsx"],
-      "rules": {
-        "zod/no-conflicting-checks": "error",
-        "zod/no-transform-in-record-key": "error",
-        "zod/no-unnecessary-readonly": "error",
-        "zod/prefer-validate": "error",
-        "react/capitalized-calls": "error"
-      },
-      "jsPlugins": ["eslint-plugin-zod"],
-      "env": {
-        "browser": true,
-        "node": true
-      }
-    },
-    {
       "files": ["src/**/*.tsx"],
       "rules": {
         "jsx-a11y/anchor-ambiguous-text": "error",
@@ -2475,6 +2488,21 @@
         "jsx-a11y/lang": "error",
         "jsx-a11y/no-aria-hidden-on-focusable": "error",
         "jsx-a11y/prefer-tag-over-role": "error"
+      }
+    },
+    {
+      "files": ["src/**/*.ts", "src/**/*.tsx"],
+      "rules": {
+        "zod/no-conflicting-checks": "error",
+        "zod/no-transform-in-record-key": "error",
+        "zod/no-unnecessary-readonly": "error",
+        "zod/prefer-validate": "error",
+        "react/capitalized-calls": "error"
+      },
+      "jsPlugins": ["eslint-plugin-zod"],
+      "env": {
+        "browser": true,
+        "node": true
       }
     },
     {
@@ -2524,7 +2552,17 @@
         "testing-library/prefer-screen-queries": "error",
         "testing-library/render-result-naming-convention": "error",
         "testing-library/prefer-user-event": "error",
-        "testing-library/prefer-user-event-setup": "error",
+        "testing-library/prefer-user-event-setup": "error"
+      },
+      "jsPlugins": ["eslint-plugin-testing-library"]
+    },
+    {
+      "files": [
+        "src/**/*.test.ts",
+        "src/**/*.test.tsx",
+        "eslint-config/**/*.test.ts"
+      ],
+      "rules": {
         "vitest/expect-expect": "off",
         "vitest/no-commented-out-tests": "error",
         "vitest/no-conditional-expect": "error",
@@ -2569,8 +2607,272 @@
         "sonarjs/async-test-assertions": "off",
         "sonarjs/prefer-specific-assertions": "off"
       },
-      "jsPlugins": ["eslint-plugin-testing-library", "eslint-plugin-sonarjs"],
+      "jsPlugins": ["eslint-plugin-sonarjs"],
       "plugins": ["vitest"]
+    },
+    {
+      "files": ["src/**/*.ts", "src/**/*.tsx"],
+      "rules": {
+        "no-restricted-imports": [
+          "error",
+          {
+            "paths": [
+              {
+                "name": "@tanstack/react-query",
+                "importNames": ["useQuery"],
+                "allowTypeImports": true,
+                "message": "Runtime useQuery does not suspend for pending data. Use named useSuspenseQuery imports with an ancestor Suspense boundary and suitable error handling. Replace namespace imports and wildcard exports with explicit allowed APIs."
+              },
+              {
+                "name": "@tanstack/react-query",
+                "importNames": ["useQueries"],
+                "allowTypeImports": true,
+                "message": "Runtime useQueries does not suspend for pending data. Replace it with named useSuspenseQueries imports, an ancestor Suspense boundary, and suitable error handling. Replace namespace imports and wildcard exports with explicit allowed APIs."
+              },
+              {
+                "name": "@tanstack/react-query",
+                "importNames": ["useInfiniteQuery"],
+                "allowTypeImports": true,
+                "message": "Runtime useInfiniteQuery does not suspend for pending data. Replace it with named useSuspenseInfiniteQuery imports, an ancestor Suspense boundary, and suitable error handling. Replace namespace imports and wildcard exports with explicit allowed APIs."
+              },
+              {
+                "name": "neverthrow",
+                "message": "neverthrow is not allowed outside non-test src/**/*.server.ts files and scripts. Use async/await in this file. Keep ResultAsync.fromPromise in a non-test server module for dependency failures."
+              }
+            ],
+            "patterns": [
+              {
+                "regex": "^zod/.+$",
+                "message": "Import Zod from the `zod` package root. Use `import * as z from \"zod\"` for runtime code or `import type * as z from \"zod\"` for type-only code. Replace every `zod/*` source with `zod`. The package root is the only supported project entry point."
+              },
+              {
+                "regex": "^\\.{1,2}/",
+                "message": "Relative source imports depend on the caller's directory. Replace ./ or ../ with the #/ alias and the path from src/."
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "files": ["src/**/*.server.ts"],
+      "rules": {
+        "no-restricted-imports": [
+          "error",
+          {
+            "paths": [
+              {
+                "name": "@tanstack/react-query",
+                "importNames": ["useQuery"],
+                "allowTypeImports": true,
+                "message": "Runtime useQuery does not suspend for pending data. Use named useSuspenseQuery imports with an ancestor Suspense boundary and suitable error handling. Replace namespace imports and wildcard exports with explicit allowed APIs."
+              },
+              {
+                "name": "@tanstack/react-query",
+                "importNames": ["useQueries"],
+                "allowTypeImports": true,
+                "message": "Runtime useQueries does not suspend for pending data. Replace it with named useSuspenseQueries imports, an ancestor Suspense boundary, and suitable error handling. Replace namespace imports and wildcard exports with explicit allowed APIs."
+              },
+              {
+                "name": "@tanstack/react-query",
+                "importNames": ["useInfiniteQuery"],
+                "allowTypeImports": true,
+                "message": "Runtime useInfiniteQuery does not suspend for pending data. Replace it with named useSuspenseInfiniteQuery imports, an ancestor Suspense boundary, and suitable error handling. Replace namespace imports and wildcard exports with explicit allowed APIs."
+              }
+            ],
+            "patterns": [
+              {
+                "regex": "^zod/.+$",
+                "message": "Import Zod from the `zod` package root. Use `import * as z from \"zod\"` for runtime code or `import type * as z from \"zod\"` for type-only code. Replace every `zod/*` source with `zod`. The package root is the only supported project entry point."
+              },
+              {
+                "regex": "^\\.{1,2}/",
+                "message": "Relative source imports depend on the caller's directory. Replace ./ or ../ with the #/ alias and the path from src/."
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "files": ["src/routes/**/*.ts", "src/routes/**/*.tsx"],
+      "rules": {
+        "no-restricted-imports": [
+          "error",
+          {
+            "paths": [
+              {
+                "name": "@tanstack/react-query",
+                "importNames": ["useQuery"],
+                "allowTypeImports": true,
+                "message": "Runtime useQuery does not suspend for pending data. Use named useSuspenseQuery imports with an ancestor Suspense boundary and suitable error handling. Replace namespace imports and wildcard exports with explicit allowed APIs."
+              },
+              {
+                "name": "@tanstack/react-query",
+                "importNames": ["useQueries"],
+                "allowTypeImports": true,
+                "message": "Runtime useQueries does not suspend for pending data. Replace it with named useSuspenseQueries imports, an ancestor Suspense boundary, and suitable error handling. Replace namespace imports and wildcard exports with explicit allowed APIs."
+              },
+              {
+                "name": "@tanstack/react-query",
+                "importNames": ["useInfiniteQuery"],
+                "allowTypeImports": true,
+                "message": "Runtime useInfiniteQuery does not suspend for pending data. Replace it with named useSuspenseInfiniteQuery imports, an ancestor Suspense boundary, and suitable error handling. Replace namespace imports and wildcard exports with explicit allowed APIs."
+              },
+              {
+                "name": "neverthrow",
+                "message": "neverthrow is not allowed outside non-test src/**/*.server.ts files and scripts. Use async/await in this file. Keep ResultAsync.fromPromise in a non-test server module for dependency failures."
+              },
+              {
+                "name": "#/shared/libs/trpc/client/client-runtime.mod",
+                "importNames": ["trpcContext"],
+                "allowTypeImports": true,
+                "message": "trpcContext bypasses route context in a route file. Read trpc from loader context in a loader, or from Route.useRouteContext() in a component. Keep TRPCProvider setup outside route files."
+              },
+              {
+                "name": "@tanstack/react-query",
+                "importNames": ["useQueryClient"],
+                "allowTypeImports": true,
+                "message": "useQueryClient bypasses route context in a route file. Read queryClient from loader context in a loader, or from Route.useRouteContext() in a component."
+              }
+            ],
+            "patterns": [
+              {
+                "regex": "^zod/.+$",
+                "message": "Import Zod from the `zod` package root. Use `import * as z from \"zod\"` for runtime code or `import type * as z from \"zod\"` for type-only code. Replace every `zod/*` source with `zod`. The package root is the only supported project entry point."
+              },
+              {
+                "regex": "^\\.{1,2}/",
+                "message": "Relative source imports depend on the caller's directory. Replace ./ or ../ with the #/ alias and the path from src/."
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "files": ["scripts/**"],
+      "rules": {
+        "no-restricted-imports": [
+          "error",
+          {
+            "paths": [
+              {
+                "name": "@tanstack/react-query",
+                "importNames": ["useQuery"],
+                "allowTypeImports": true,
+                "message": "Runtime useQuery does not suspend for pending data. Use named useSuspenseQuery imports with an ancestor Suspense boundary and suitable error handling. Replace namespace imports and wildcard exports with explicit allowed APIs."
+              },
+              {
+                "name": "@tanstack/react-query",
+                "importNames": ["useQueries"],
+                "allowTypeImports": true,
+                "message": "Runtime useQueries does not suspend for pending data. Replace it with named useSuspenseQueries imports, an ancestor Suspense boundary, and suitable error handling. Replace namespace imports and wildcard exports with explicit allowed APIs."
+              },
+              {
+                "name": "@tanstack/react-query",
+                "importNames": ["useInfiniteQuery"],
+                "allowTypeImports": true,
+                "message": "Runtime useInfiniteQuery does not suspend for pending data. Replace it with named useSuspenseInfiniteQuery imports, an ancestor Suspense boundary, and suitable error handling. Replace namespace imports and wildcard exports with explicit allowed APIs."
+              }
+            ],
+            "patterns": [
+              {
+                "regex": "^zod/.+$",
+                "message": "Import Zod from the `zod` package root. Use `import * as z from \"zod\"` for runtime code or `import type * as z from \"zod\"` for type-only code. Replace every `zod/*` source with `zod`. The package root is the only supported project entry point."
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "files": ["scripts/hard-clean.ts", "scripts/soft-clean.ts"],
+      "rules": {
+        "no-restricted-imports": [
+          "error",
+          {
+            "paths": [
+              {
+                "name": "@tanstack/react-query",
+                "importNames": ["useQuery"],
+                "allowTypeImports": true,
+                "message": "Runtime useQuery does not suspend for pending data. Use named useSuspenseQuery imports with an ancestor Suspense boundary and suitable error handling. Replace namespace imports and wildcard exports with explicit allowed APIs."
+              },
+              {
+                "name": "@tanstack/react-query",
+                "importNames": ["useQueries"],
+                "allowTypeImports": true,
+                "message": "Runtime useQueries does not suspend for pending data. Replace it with named useSuspenseQueries imports, an ancestor Suspense boundary, and suitable error handling. Replace namespace imports and wildcard exports with explicit allowed APIs."
+              },
+              {
+                "name": "@tanstack/react-query",
+                "importNames": ["useInfiniteQuery"],
+                "allowTypeImports": true,
+                "message": "Runtime useInfiniteQuery does not suspend for pending data. Replace it with named useSuspenseInfiniteQuery imports, an ancestor Suspense boundary, and suitable error handling. Replace namespace imports and wildcard exports with explicit allowed APIs."
+              },
+              {
+                "name": "neverthrow",
+                "message": "neverthrow is not allowed outside non-test src/**/*.server.ts files and scripts. Use async/await in this file. Keep ResultAsync.fromPromise in a non-test server module for dependency failures."
+              }
+            ],
+            "patterns": [
+              {
+                "regex": "^zod/.+$",
+                "message": "Import Zod from the `zod` package root. Use `import * as z from \"zod\"` for runtime code or `import type * as z from \"zod\"` for type-only code. Replace every `zod/*` source with `zod`. The package root is the only supported project entry point."
+              },
+              {
+                "group": ["**", "!node:*", "!node:*/**"],
+                "message": "This clean script must run without installed dependencies. Replace this import with a Node built-in whose source starts with node:."
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "files": ["e2e/**"],
+      "rules": {
+        "no-restricted-imports": [
+          "error",
+          {
+            "paths": [
+              {
+                "name": "@tanstack/react-query",
+                "importNames": ["useQuery"],
+                "allowTypeImports": true,
+                "message": "Runtime useQuery does not suspend for pending data. Use named useSuspenseQuery imports with an ancestor Suspense boundary and suitable error handling. Replace namespace imports and wildcard exports with explicit allowed APIs."
+              },
+              {
+                "name": "@tanstack/react-query",
+                "importNames": ["useQueries"],
+                "allowTypeImports": true,
+                "message": "Runtime useQueries does not suspend for pending data. Replace it with named useSuspenseQueries imports, an ancestor Suspense boundary, and suitable error handling. Replace namespace imports and wildcard exports with explicit allowed APIs."
+              },
+              {
+                "name": "@tanstack/react-query",
+                "importNames": ["useInfiniteQuery"],
+                "allowTypeImports": true,
+                "message": "Runtime useInfiniteQuery does not suspend for pending data. Replace it with named useSuspenseInfiniteQuery imports, an ancestor Suspense boundary, and suitable error handling. Replace namespace imports and wildcard exports with explicit allowed APIs."
+              },
+              {
+                "name": "neverthrow",
+                "message": "neverthrow is not allowed outside non-test src/**/*.server.ts files and scripts. Use async/await in this file. Keep ResultAsync.fromPromise in a non-test server module for dependency failures."
+              }
+            ],
+            "patterns": [
+              {
+                "regex": "^zod/.+$",
+                "message": "Import Zod from the `zod` package root. Use `import * as z from \"zod\"` for runtime code or `import type * as z from \"zod\"` for type-only code. Replace every `zod/*` source with `zod`. The package root is the only supported project entry point."
+              },
+              {
+                "group": ["msw", "msw/**"],
+                "message": "MSW replaces real service responses in an end-to-end test. Remove the msw import and run the test against the real frontend and backend services."
+              }
+            ]
+          }
+        ]
+      }
     }
   ]
 }

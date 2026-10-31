@@ -37,11 +37,7 @@ export const restrictedImports = [
   },
 ];
 
-/**
- * The zod package root is the only supported entry point.
- * In .oxlintrc.json, the user replaces this regex with a zod/** group by
- * hand. That manual change keeps the same policy.
- */
+// The zod package root is the only supported entry point.
 export const restrictedImportPatterns = [
   {
     regex: "^zod/.+$",
