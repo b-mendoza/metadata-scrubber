@@ -160,24 +160,6 @@ if (backendHealthStatusResult.isErr()) {
 return backendHealthStatusResult.value;
 ```
 
-Do not wrap the whole handler in `try`/`catch`. That map would also catch programming errors.
-
-```ts
-try {
-  return await httpClient
-    .get("/api/health", {
-      signal: signal ?? null,
-    })
-    .json(messageResponseSchema);
-} catch (cause) {
-  throw new TRPCError({
-    cause,
-    code: "BAD_GATEWAY",
-    message: BACKEND_HEALTH_CHECK_FAILURE_MESSAGE,
-  });
-}
-```
-
 Use `safeParse` when you check a value without throwing. Then branch on `success`.
 
 ```ts
