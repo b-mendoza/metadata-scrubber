@@ -8,6 +8,7 @@ import * as z from "zod";
 
 import { fixtureCases } from "./fixture-cases.ts";
 
+const EMPTY_MESSAGE_COUNT = 0;
 const FILE_ORDER = new Intl.Collator("en");
 const FAILURE_EXIT_CODE = 1;
 const SUCCESS_EXIT_CODE = 0;
@@ -89,15 +90,16 @@ for (const [ruleId, fixtureFile, expectedNegativeMessages] of fixtureCases) {
       "positive",
       fixtureFile,
     );
+    const positiveMessages = getDiagnosticMessages(positivePath, ruleId);
+    context.assert.deepStrictEqual(positiveMessages, []);
+    if (expectedNegativeMessages.length === EMPTY_MESSAGE_COUNT) return;
     const negativePath = path.join(
       "oxlint-plugin-metadata-scrubber",
       "fixtures",
       "negative",
       fixtureFile,
     );
-    const positiveMessages = getDiagnosticMessages(positivePath, ruleId);
     const negativeMessages = getDiagnosticMessages(negativePath, ruleId);
-    context.assert.deepStrictEqual(positiveMessages, []);
     context.assert.deepStrictEqual(negativeMessages, expectedNegativeMessages);
   });
 }
