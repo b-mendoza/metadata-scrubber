@@ -54,13 +54,14 @@ func TestPipelineLogsRecordRequiredSuccessFacts(t *testing.T) {
 	bindings.Inject(bindings.Bindings{Storage: fake})(http.HandlerFunc(handler.Scrub)).ServeHTTP(scrubRecorder, scrubRequest)
 	require.Equal(t, http.StatusOK, scrubRecorder.Code, scrubRecorder.Body.String())
 
-	records := logs.records
-	require.Contains(t, records, pipelineLogRecord{Message: "upload-created", Level: slog.LevelInfo, StorageKeyDigest: storageKeyDigest(grantedUpload.StorageKey), Outcome: "success", DurationRecorded: true})
-	require.Contains(t, records, pipelineLogRecord{Message: "sniffed", Level: slog.LevelInfo, StorageKeyDigest: storageKeyDigestOne, Outcome: "accepted", DurationRecorded: true})
-	require.Contains(t, records, pipelineLogRecord{Message: "dry-run", Level: slog.LevelInfo, StorageKeyDigest: storageKeyDigestOne, Outcome: "success", DurationRecorded: true})
-	require.Contains(t, records, pipelineLogRecord{Message: "sniffed", Level: slog.LevelInfo, StorageKeyDigest: storageKeyDigestTwo, Outcome: "accepted", DurationRecorded: true})
-	require.Contains(t, records, pipelineLogRecord{Message: "scrubbed", Level: slog.LevelInfo, StorageKeyDigest: storageKeyDigestTwo, Outcome: "success", DurationRecorded: true})
-	require.Contains(t, records, pipelineLogRecord{Message: "presigned", Level: slog.LevelInfo, StorageKeyDigest: storageKeyDigestTwo, Outcome: "success", DurationRecorded: true})
+	require.Equal(t, []pipelineLogRecord{
+		{Message: "upload-created", Level: slog.LevelInfo, StorageKeyDigest: storageKeyDigest(grantedUpload.StorageKey), Outcome: "success", DurationRecorded: true},
+		{Message: "sniffed", Level: slog.LevelInfo, StorageKeyDigest: storageKeyDigestOne, Outcome: "accepted", DurationRecorded: true},
+		{Message: "dry-run", Level: slog.LevelInfo, StorageKeyDigest: storageKeyDigestOne, Outcome: "success", DurationRecorded: true},
+		{Message: "sniffed", Level: slog.LevelInfo, StorageKeyDigest: storageKeyDigestTwo, Outcome: "accepted", DurationRecorded: true},
+		{Message: "scrubbed", Level: slog.LevelInfo, StorageKeyDigest: storageKeyDigestTwo, Outcome: "success", DurationRecorded: true},
+		{Message: "presigned", Level: slog.LevelInfo, StorageKeyDigest: storageKeyDigestTwo, Outcome: "success", DurationRecorded: true},
+	}, logs.records)
 }
 
 func TestPipelineLogsRecordFailureCacheHitAndShortCircuitFacts(t *testing.T) {
