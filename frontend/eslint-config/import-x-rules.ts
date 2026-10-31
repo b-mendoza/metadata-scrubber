@@ -28,6 +28,7 @@ export const importXRules = defineConfig(
       ],
     },
     rules: {
+      [`${PLUGIN_NAMES.ImportX}/newline-after-import`]: SEVERITY_LEVELS.Error,
       // Stable module boundaries prevent cycles and shared mutable exports.
       [`${PLUGIN_NAMES.ImportX}/no-mutable-exports`]: SEVERITY_LEVELS.Error,
       [`${PLUGIN_NAMES.ImportX}/no-self-import`]: SEVERITY_LEVELS.Error,

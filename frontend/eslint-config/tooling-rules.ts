@@ -2,11 +2,6 @@ import { defineConfig } from "eslint/config";
 import globals from "globals";
 
 import { PLUGIN_NAMES, SEVERITY_LEVELS } from "./constants.ts";
-import {
-  restrictedImportPatterns,
-  restrictedImports,
-  restrictedQueryImports,
-} from "./import-restriction-rules.ts";
 import { restrictedSyntax } from "./syntax-rules.ts";
 
 export const toolingRules = defineConfig(
@@ -100,60 +95,6 @@ export const toolingRules = defineConfig(
             "Property:matches([key.name='webServer'], [key.value='webServer'])",
           message:
             "A webServer property makes Playwright start services. Remove webServer from defineConfig and start the frontend and backend before running the suite.",
-        },
-      ],
-    },
-  },
-);
-
-export const toolingImportRestrictionRules = defineConfig(
-  {
-    files: ["scripts/**"],
-    ignores: ["**/*.test.ts", "**/*.test.tsx"],
-    rules: {
-      // Scripts can use ResultAsync without adding it to browser or test code.
-      "no-restricted-imports": [
-        SEVERITY_LEVELS.Error,
-        { paths: restrictedQueryImports, patterns: restrictedImportPatterns },
-      ],
-    },
-  },
-  {
-    files: ["scripts/hard-clean.ts", "scripts/soft-clean.ts"],
-    rules: {
-      // Clean scripts must run after node_modules has been removed.
-      "no-restricted-imports": [
-        SEVERITY_LEVELS.Error,
-        {
-          paths: restrictedImports,
-          patterns: [
-            ...restrictedImportPatterns,
-            {
-              group: ["**", "!node:*", "!node:*/**"],
-              message:
-                "This clean script must run without installed dependencies. Replace this import with a Node built-in whose source starts with node:.",
-            },
-          ],
-        },
-      ],
-    },
-  },
-  {
-    files: ["e2e/**"],
-    rules: {
-      // End-to-end tests exercise the running services, not mocked responses.
-      "no-restricted-imports": [
-        SEVERITY_LEVELS.Error,
-        {
-          paths: restrictedImports,
-          patterns: [
-            ...restrictedImportPatterns,
-            {
-              group: ["msw", "msw/**"],
-              message:
-                "MSW replaces real service responses in an end-to-end test. Remove the msw import and run the test against the real frontend and backend services.",
-            },
-          ],
         },
       ],
     },

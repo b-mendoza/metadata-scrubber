@@ -42,17 +42,11 @@ import { reactRules } from "./eslint-config/react-rules.ts";
 import { regexpRules } from "./eslint-config/regexp-rules.ts";
 import { duplicateAndConflictRules } from "./eslint-config/rule-exceptions.ts";
 import { simpleImportSortRules } from "./eslint-config/simple-import-sort-rules.ts";
-import {
-  sourceImportRestrictionRules,
-  sourceRules,
-} from "./eslint-config/source-rules.ts";
+import { sourceRules } from "./eslint-config/source-rules.ts";
 import { syntaxRules } from "./eslint-config/syntax-rules.ts";
 import { tailwindcssRules } from "./eslint-config/tailwindcss-rules.ts";
 import { testRules } from "./eslint-config/test-rules.ts";
-import {
-  toolingImportRestrictionRules,
-  toolingRules,
-} from "./eslint-config/tooling-rules.ts";
+import { toolingRules } from "./eslint-config/tooling-rules.ts";
 import { typescriptRules } from "./eslint-config/typescript-rules.ts";
 import { unicornRules } from "./eslint-config/unicorn-rules.ts";
 
@@ -160,7 +154,6 @@ export default defineConfig(
 
       ...typescriptRules,
       "arrow-body-style": SEVERITY_LEVELS.Off,
-      ...importRestrictionRules,
       ...syntaxRules,
       "react-hooks/exhaustive-deps": SEVERITY_LEVELS.Error,
       [`${PLUGIN_NAMES.SonarJS}/cognitive-complexity`]: [
@@ -201,7 +194,6 @@ export default defineConfig(
     // Keep this block after the bridge, even when .oxlintrc.json enables these rules.
     // ESLint must keep the full policy where native oxlint checks miss cases.
     rules: {
-      "no-restricted-imports": importRestrictionRules["no-restricted-imports"],
       [`${PLUGIN_NAMES.Promise}/prefer-catch`]: [SEVERITY_LEVELS.Error],
       [`${PLUGIN_NAMES.Unicorn}/prefer-string-raw`]: [SEVERITY_LEVELS.Error],
       [`${PLUGIN_NAMES.Unicorn}/no-array-callback-reference`]: [
@@ -220,8 +212,7 @@ export default defineConfig(
     },
   },
   // Native Oxlint lacks the full import policy. Extend the base after the bridge.
-  ...sourceImportRestrictionRules,
-  ...toolingImportRestrictionRules,
+  ...importRestrictionRules,
   globalIgnores([
     ".output/",
     "coverage/",
