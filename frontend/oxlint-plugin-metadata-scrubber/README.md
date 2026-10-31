@@ -46,29 +46,24 @@ These restrictions do not check actual Suspense or error-boundary ancestry. They
 ## Known limitations
 
 - ESLint's cache can keep a stale result for `require-colocated-test` after sibling files change. The uncached Oxlint pass in `pnpm lint` runs the same check on every run.
-- The colocated-test rule matches file names, not imports or test behavior. If no sibling matches, it searches the source tree to suggest a move. When no module matches anywhere, it gives a naming example instead of inventing a target path. Directory read failures produce a diagnostic.
+- The colocated-test rule matches file names, not imports or test behavior. If no sibling matches, it searches the source tree to suggest a move. When no module matches anywhere, it gives a naming example instead of inventing a target path.
 - The file-name rule detects JSX syntax, not whether a file renders a component. It does not prove server-only execution.
 
-- The prefetch rule checks inline loaders in inline route options. It does not follow stored promises, aggregate waits such as `Promise.all`, named loader functions, or calls inside nested functions. It does not prove that a `.catch` callback handles every failure.
+- The prefetch rule checks inline loaders in inline route options. It does not follow stored promises. It does not prove that a `.catch` callback handles every failure.
 - Only the operator can mark route data as required. The prefetch rule allows an awaited query when the `await` directly initializes a plain `const` binding. A later tracked query in the same loader must read that binding in its arguments. The rule still checks the later query for waits and missing error handlers. It does not follow result aliases or prove that the later query needs the result.
 - The client-prop rule follows static members and local `const` aliases. It does not inspect prop spreads, mutable assignments, custom hooks, or cross-file re-exports. Provider exceptions resolve the known import bindings, not component names alone.
 
-- The strict MSW rule checks calls in one file. It accepts direct hook callbacks, not named callbacks or cross-file setup. It does not prove execution order or whether conditional setup runs. It does not follow aliases of imported APIs, mutable server aliases, or destructured server methods.
+- The strict MSW rule checks calls in one file. It accepts direct hook callbacks. It does not prove execution order or whether conditional setup runs.
 - The late-body rule follows local `const` aliases from imported Vitest `vi.fn`, `vi.spyOn`, and `vi.mocked`. It checks the first call argument and its `request` property. It does not prove that a first argument is a Fetch `Request`. It does not follow mutable aliases, returned values, or cross-file helpers.
-- The object-type rule checks syntax, not schema equivalence. It allows function types, nested object types, arrays, unions, intersections, and schema-derived aliases. It does not prove that a type needs a schema or that an imported type is schema-derived.
+- The object-type rule checks syntax, not schema equivalence. It does not prove that a type needs a schema or that an imported type is schema-derived.
 
-- The discarded-result rule follows direct `neverthrow` imports and known result-producing methods. It does not follow stored results, local aliases, re-exports, or dynamic member keys. Results returned from user functions need type information. Assigning a result passes this rule; the rule does not prove that later code handles it.
+- The discarded-result rule follows direct `neverthrow` imports and known result-producing methods. It does not follow stored results. Results returned from user functions need type information. Assigning a result passes this rule; the rule does not prove that later code handles it.
 - The lifecycle-name rule checks a fixed list of timing names at word boundaries. It does not check object methods, wrapped function initializers, or other timing words. It cannot prove that an allowed name describes the external system.
 
-- The HTTP rules follow resolved imports, direct binding reads, object destructuring, and local `const` aliases. They do not follow mutable aliases, re-exports, dynamic member names, or cross-file data flow.
+- The HTTP rules follow resolved imports, direct binding reads, object destructuring, and local `const` aliases. They do not follow cross-file data flow.
 - The signal rule checks the options syntax, not the signal value or its source. The path rule checks the static prefix, not interpolated values.
 - The JSON rule checks immediate chains only. It does not prove that an argument is a Zod schema or inspect a response saved for a later `.json()` call.
-- The Effect rule tracks static member names and immutable namespace aliases. It does not evaluate dynamic keys, follow mutable namespace aliases, or prove arbitrary runtime data flow.
+- The Effect rule tracks static member names and immutable namespace aliases. It does not prove arbitrary runtime data flow.
 - The Effect rule checks the nearest function owner. It cannot prove that external synchronization is necessary or that the hook name describes its purpose.
 - The type-import rule does not establish whether module initialization is required.
-- The module-state rule checks only `let` and `var`. The HTTP client rule also checks known client factories at module scope, including `const` initializers. It does not follow local factory wrappers or calls made inside immediately invoked functions.
-- Namespace Vitest calls such as `vitest.expectTypeOf(...)` and `vitest.test.skip(...)` are not resolved.
-- Disabled Vitest calls through `test.todo(...)` and `test.skipIf(true)(...)` are not reported.
-- Suggested guard assertions do not preserve TypeScript control-flow narrowing.
-- A destructured Testing Library `render` reference is not reported after a namespace import.
-- An unresolved non-Vitest global can be reported when it uses the Vitest name `expectTypeOf`, `describe`, `it`, or `test`.
+- The module-state rule checks only `let` and `var`. The HTTP client rule also checks known client factories at module scope, including `const` initializers. It does not follow local factory wrappers.
