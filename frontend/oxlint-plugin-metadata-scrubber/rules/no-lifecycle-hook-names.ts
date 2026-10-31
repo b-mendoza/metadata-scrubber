@@ -5,7 +5,7 @@ import { isFunction } from "../utilities.ts";
 
 // A new word excludes state names such as useMountedState and useInitialValue.
 const LIFECYCLE_HOOK_NAME_PATTERN =
-  /^use(?:Mount|OnMount|Unmount|OnUnmount|DidMount|WillUnmount|MountEffect|EffectOnce|Once|Init|Initialize|FirstRender)(?:[A-Z0-9_]|$)/v;
+  /^use(?:Mount|OnMount|Unmount|OnUnmount|DidMount|WillUnmount|EffectOnce|Once|Init|Initialize|FirstRender)(?:[A-Z0-9_]|$)/v;
 
 export default defineRule({
   meta: {
