@@ -16,6 +16,21 @@ const SHARED_MIDDLEWARE_PATH_PATTERN =
   /(?:^|\/)src\/shared\/middlewares\/.*\.tsx?$/v;
 const TEST_FILE_PATH_PATTERN = /\.test\.[cm]?[jt]sx?$/v;
 
+const isTransparentExpression = (node: ESTree.Node) =>
+  node.type === "TSAsExpression" ||
+  node.type === "TSSatisfiesExpression" ||
+  node.type === "TSNonNullExpression" ||
+  node.type === "TSTypeAssertion" ||
+  node.type === "TSInstantiationExpression" ||
+  node.type === "ParenthesizedExpression" ||
+  node.type === "ChainExpression";
+
+export const unwrapExpression = (node: ESTree.Node): ESTree.Node => {
+  let expression = node;
+  while (isTransparentExpression(expression)) ({ expression } = expression);
+  return expression;
+};
+
 export const getReferencedVariable = (
   node: Extract<ESTree.Node, { type: "Identifier" | "JSXIdentifier" }>,
   sourceCode: SourceCode,
