@@ -337,12 +337,6 @@ const response: BackendErrorResponse = {
 };
 ```
 
-Do not write a parallel test-only type:
-
-```ts
-type BackendErrorResponse = { error: string };
-```
-
 Call tRPC procedures through `createCallerFactory` with the real router type.
 
 ```ts
