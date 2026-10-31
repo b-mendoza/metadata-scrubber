@@ -1,10 +1,11 @@
-import type { Definition, ESTree, SourceCode } from "@oxlint/plugins";
+import type { ESTree, SourceCode } from "@oxlint/plugins";
 import { defineRule } from "@oxlint/plugins";
 
 import {
+  getImportName,
   getReferencedVariable,
-  getRuntimeImportDeclaration,
   getStaticPropertyName,
+  unwrapExpression,
 } from "../utilities.ts";
 
 const RESULT_FACTORIES = new Set([
@@ -31,47 +32,6 @@ const RESULT_METHODS = new Set([
   "orTee",
 ]);
 
-const isTransparentExpression = (
-  node: ESTree.Node,
-): node is
-  | ESTree.TSAsExpression
-  | ESTree.TSSatisfiesExpression
-  | ESTree.TSNonNullExpression
-  | ESTree.TSTypeAssertion
-  | ESTree.TSInstantiationExpression
-  | ESTree.ParenthesizedExpression
-  | ESTree.ChainExpression =>
-  [
-    "TSAsExpression",
-    "TSSatisfiesExpression",
-    "TSNonNullExpression",
-    "TSTypeAssertion",
-    "TSInstantiationExpression",
-    "ParenthesizedExpression",
-    "ChainExpression",
-  ].includes(node.type);
-
-const unwrapExpression = (node: ESTree.Node): ESTree.Node => {
-  let expression = node;
-  while (isTransparentExpression(expression)) {
-    ({ expression } = expression);
-  }
-  return expression;
-};
-
-const getImportApi = (definition: Definition): string | null => {
-  const declaration = getRuntimeImportDeclaration(definition);
-  if (declaration?.source.value !== "neverthrow") {
-    return null;
-  }
-  if (definition.node.type === "ImportNamespaceSpecifier") return "*";
-  if (definition.node.type !== "ImportSpecifier") {
-    return null;
-  }
-  const { imported } = definition.node;
-  return imported.type === "Identifier" ? imported.name : imported.value;
-};
-
 const getNeverthrowReference = (
   node: Extract<ESTree.Node, { type: "Identifier" }>,
   sourceCode: SourceCode,
@@ -79,7 +39,7 @@ const getNeverthrowReference = (
   const binding = getReferencedVariable(node, sourceCode);
   return (
     (binding?.defs ?? [])
-      .map((definition) => getImportApi(definition))
+      .map((definition) => getImportName(definition, "neverthrow"))
       .find((api) => api != null) ?? null
   );
 };
