@@ -1,18 +1,13 @@
-import type {
-  Definition,
-  ESTree,
-  Scope,
-  SourceCode,
-  Variable,
-} from "@oxlint/plugins";
+import type { ESTree, Scope, SourceCode, Variable } from "@oxlint/plugins";
 import { defineRule } from "@oxlint/plugins";
 
-import { getStaticPropertyName, isFunction, isTestFile } from "../utilities.ts";
+import {
+  getRuntimeImportDeclaration,
+  getStaticPropertyName,
+  isFunction,
+  isTestFile,
+} from "../utilities.ts";
 
-type RuntimeVitestImportDefinition = Definition & {
-  readonly node: ESTree.ImportSpecifier;
-  readonly parent: ESTree.ImportDeclaration;
-};
 type TestApi = "describe" | "it" | "test";
 type TestCallback = ESTree.ArrowFunctionExpression | ESTree.Function;
 
@@ -32,19 +27,14 @@ const getImportedName = (specifier: ESTree.ImportSpecifier): string => {
 const isTestApiName = (name: string): name is TestApi =>
   ["describe", "it", "test"].includes(name);
 
-const isRuntimeVitestImportDefinition = (
-  definition: Definition,
-): definition is RuntimeVitestImportDefinition =>
-  definition.type === "ImportBinding" &&
-  definition.node.type === "ImportSpecifier" &&
-  definition.node.importKind !== "type" &&
-  definition.parent?.type === "ImportDeclaration" &&
-  definition.parent.importKind !== "type" &&
-  definition.parent.source.value === "vitest";
-
 const getVitestTestApiImport = (variable: Variable): TestApi | null => {
   for (const definition of variable.defs) {
-    if (!isRuntimeVitestImportDefinition(definition)) continue;
+    if (
+      getRuntimeImportDeclaration(definition)?.source.value !== "vitest" ||
+      definition.node.type !== "ImportSpecifier"
+    ) {
+      continue;
+    }
     const importedName = getImportedName(definition.node);
     if (isTestApiName(importedName)) return importedName;
   }
