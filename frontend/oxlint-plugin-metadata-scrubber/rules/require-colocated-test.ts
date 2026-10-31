@@ -5,6 +5,7 @@ import { defineRule } from "@oxlint/plugins";
 
 import { isTestFile, toProjectPath } from "../utilities.ts";
 
+const EQUAL_ORDER = 0;
 const FILE_ORDER = new Intl.Collator("en");
 const TYPESCRIPT_EXTENSION_PATTERN = /\.tsx?$/v;
 const MODULE_SUFFIX_PATTERN = /(?:\.mod)?(?:\.server)?\.tsx?$/v;
@@ -26,7 +27,6 @@ const findModule = (
   isServerTest: boolean,
 ): string | undefined => {
   const [module] = filenames
-    .toSorted(FILE_ORDER.compare)
     .filter(
       (filename) =>
         TYPESCRIPT_EXTENSION_PATTERN.test(filename) &&
@@ -34,15 +34,15 @@ const findModule = (
         testStem.startsWith(getModuleStem(filename)),
     )
     .toSorted((left, right) => {
-      const leftStemLength = getModuleStem(left).length;
-      const rightStemLength = getModuleStem(right).length;
-      if (leftStemLength !== rightStemLength) {
-        return rightStemLength - leftStemLength;
-      }
-      return (
+      const stemOrder =
+        getModuleStem(right).length - getModuleStem(left).length;
+      if (stemOrder !== EQUAL_ORDER) return stemOrder;
+      const serverOrder =
         Number(SERVER_MODULE_PATTERN.test(left) !== isServerTest) -
-        Number(SERVER_MODULE_PATTERN.test(right) !== isServerTest)
-      );
+        Number(SERVER_MODULE_PATTERN.test(right) !== isServerTest);
+      return serverOrder === EQUAL_ORDER
+        ? FILE_ORDER.compare(left, right)
+        : serverOrder;
     });
   return module;
 };
