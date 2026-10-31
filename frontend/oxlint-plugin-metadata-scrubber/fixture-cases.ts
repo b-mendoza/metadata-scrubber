@@ -35,6 +35,8 @@ const PREFETCH_ROUTE_DATA_WITHOUT_WAITING_GUIDANCE =
   "Do not return the query promise. Await a route query only when a later optional route query needs its result: assign the result to a `const` and pass it to that later query.";
 const REQUIRE_BACKEND_REQUEST_SIGNAL_GUIDANCE =
   "Pass the request AbortSignal as `{ signal: signal ?? null }` so request cancellation stops the backend call.";
+const REQUIRE_KY_JSON_SCHEMA_GUIDANCE =
+  "Pass the Zod response schema with `.json(schema)`. Ky validates the body; do not parse it again later.";
 
 export const fixtureCases: readonly FixtureCase[] = [
   [
@@ -256,13 +258,13 @@ export const fixtureCases: readonly FixtureCase[] = [
     "require-ky-json-schema",
     "require-ky-json-schema.server.ts",
     [
-      "`client.get` calls `.json()` without a response schema. Pass the Zod response schema with `.json(schema)`. Ky validates the body; do not parse it again later.",
-      "`alias.post` calls `.json()` without a response schema. Pass the Zod response schema with `.json(schema)`. Ky validates the body; do not parse it again later.",
-      "`readBindings().httpClient.get` calls `.json()` without a response schema. Pass the Zod response schema with `.json(schema)`. Ky validates the body; do not parse it again later.",
-      "`request` calls `.json()` without a response schema. Pass the Zod response schema with `.json(schema)`. Ky validates the body; do not parse it again later.",
-      "`request.get` calls `.json()` without a response schema. Pass the Zod response schema with `.json(schema)`. Ky validates the body; do not parse it again later.",
-      "`fetchJson.post` calls `.json()` without a response schema. Pass the Zod response schema with `.json(schema)`. Ky validates the body; do not parse it again later.",
-      "`kyModule.default` calls `.json()` without a response schema. Pass the Zod response schema with `.json(schema)`. Ky validates the body; do not parse it again later.",
+      `\`client.get\` calls \`.json()\` without a response schema. ${REQUIRE_KY_JSON_SCHEMA_GUIDANCE}`,
+      `\`alias.post\` calls \`.json()\` without a response schema. ${REQUIRE_KY_JSON_SCHEMA_GUIDANCE}`,
+      `\`readBindings().httpClient.get\` calls \`.json()\` without a response schema. ${REQUIRE_KY_JSON_SCHEMA_GUIDANCE}`,
+      `\`request\` calls \`.json()\` without a response schema. ${REQUIRE_KY_JSON_SCHEMA_GUIDANCE}`,
+      `\`request.get\` calls \`.json()\` without a response schema. ${REQUIRE_KY_JSON_SCHEMA_GUIDANCE}`,
+      `\`fetchJson.post\` calls \`.json()\` without a response schema. ${REQUIRE_KY_JSON_SCHEMA_GUIDANCE}`,
+      `\`kyModule.default\` calls \`.json()\` without a response schema. ${REQUIRE_KY_JSON_SCHEMA_GUIDANCE}`,
     ],
   ],
   [
