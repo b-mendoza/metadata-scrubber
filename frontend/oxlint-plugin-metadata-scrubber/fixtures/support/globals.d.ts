@@ -1,14 +1,3 @@
-declare const describe: {
-  readonly skip: (name: string, callback: () => void) => void;
-};
-declare const expectTypeOf: typeof import("vitest").expectTypeOf;
-declare const it: {
-  readonly skip: (name: string, callback: () => void) => void;
-};
-declare const unresolvedTestingLibrary: {
-  readonly render: (value: unknown) => unknown;
-};
-
 declare module "#/shared/middlewares/app-bindings/app-bindings.mod" {
   export function getAppBindings(): {
     httpClient: import("ky").KyInstance;
