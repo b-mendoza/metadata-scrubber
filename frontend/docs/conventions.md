@@ -375,8 +375,6 @@ expect(handler).toHaveBeenCalledOnce();
 expect(backendBodies[0]).toEqual(input);
 ```
 
-Do not read `handlerInfo.request.json()` after Ky has already consumed the body.
-
 Keep a direct fetch fake only when MSW cannot keep the behavior, such as an exact injected error or a timeout that stays the same.
 
 ```ts
