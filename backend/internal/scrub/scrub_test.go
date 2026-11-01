@@ -415,6 +415,15 @@ func newSinglePagePDFContext(t *testing.T) *model.Context {
 	return pdfContext
 }
 
+func newMetadataStreamReference(t *testing.T, pdfContext *model.Context, content string) types.IndirectRef {
+	t.Helper()
+	stream := types.StreamDict{Dict: types.Dict{"Type": types.Name("Metadata"), "Subtype": types.Name("XML")}, Content: []byte(content)}
+	require.NoError(t, stream.Encode())
+	reference, err := pdfContext.IndRefForNewObject(stream)
+	require.NoError(t, err)
+	return *reference
+}
+
 func buildDeepMetadataPDFFixture(t *testing.T) []byte {
 	t.Helper()
 
@@ -433,20 +442,13 @@ func buildDeepMetadataPDFFixture(t *testing.T) []byte {
 	require.NoError(t, err)
 	pdfContext.Info = infoReference
 
-	metadataReference := func(content string) types.IndirectRef {
-		stream := types.StreamDict{Dict: types.Dict{"Type": types.Name("Metadata"), "Subtype": types.Name("XML")}, Content: []byte(content)}
-		require.NoError(t, stream.Encode())
-		reference, referenceErr := pdfContext.IndRefForNewObject(stream)
-		require.NoError(t, referenceErr)
-		return *reference
-	}
 	catalog, err := pdfContext.Catalog()
 	require.NoError(t, err)
-	catalog.Insert("Metadata", metadataReference(metadataFixtureValues.catalogXMP))
-	catalog.Insert("Synthetic", types.Dict{"Metadata": metadataReference(metadataFixtureValues.nestedXMP)})
+	catalog.Insert("Metadata", newMetadataStreamReference(t, pdfContext, metadataFixtureValues.catalogXMP))
+	catalog.Insert("Synthetic", types.Dict{"Metadata": newMetadataStreamReference(t, pdfContext, metadataFixtureValues.nestedXMP)})
 	page, _, _, err := pdfContext.PageDict(t.Context(), 1, false)
 	require.NoError(t, err)
-	pageMetadataReference := metadataReference(metadataFixtureValues.pageXMP)
+	pageMetadataReference := newMetadataStreamReference(t, pdfContext, metadataFixtureValues.pageXMP)
 	page.Insert("Metadata", pageMetadataReference)
 
 	pagesReference, err := pdfContext.Pages()

@@ -203,6 +203,17 @@ func TestSignatureTypeInspectionReturnsMalformedValuesAsErrors(t *testing.T) {
 	}
 }
 
+func buildSignedTimestampPDFFixture(t *testing.T) []byte {
+	t.Helper()
+	signedContext := newSinglePagePDFContext(t)
+	timestampReference, err := signedContext.IndRefForNewObject(types.Dict{"Type": types.Name("DocTimeStamp")})
+	require.NoError(t, err)
+	catalog, err := signedContext.Catalog()
+	require.NoError(t, err)
+	catalog.Insert("SyntheticTimestamp", *timestampReference)
+	return writeTypedPDFFixture(t, signedContext)
+}
+
 type concurrentPDFResult struct {
 	fields     []Field
 	inspectErr error
@@ -215,13 +226,7 @@ func TestPDFByteAPIsKeepConcurrentRequestsIsolated(t *testing.T) {
 	cleanInput := writeTypedPDFFixture(t, cleanContext)
 	metadataInput := buildDeepMetadataPDFFixture(t)
 
-	signedContext := newSinglePagePDFContext(t)
-	timestampReference, err := signedContext.IndRefForNewObject(types.Dict{"Type": types.Name("DocTimeStamp")})
-	require.NoError(t, err)
-	catalog, err := signedContext.Catalog()
-	require.NoError(t, err)
-	catalog.Insert("SyntheticTimestamp", *timestampReference)
-	signedInput := writeTypedPDFFixture(t, signedContext)
+	signedInput := buildSignedTimestampPDFFixture(t)
 
 	inputs := [][]byte{cleanInput, metadataInput, signedInput}
 	results := make([]concurrentPDFResult, len(inputs))
@@ -247,12 +252,10 @@ func TestPDFByteAPIsKeepConcurrentRequestsIsolated(t *testing.T) {
 	require.Equal(t, cleanInput, results[0].output)
 	require.NoError(t, verifyScrubbedPDF(t.Context(), results[0].output))
 
+	isolatedFields, err := InspectPDF(t.Context(), metadataInput)
+	require.NoError(t, err)
 	require.NoError(t, results[1].inspectErr)
-	require.Len(t, results[1].fields, 13)
-	require.Contains(t, results[1].fields, Field{
-		Name: "info.title", Label: "Title", Preview: metadataFixtureValues.title,
-		OriginalByteSize: len(metadataFixtureValues.title), Action: ActionRemove,
-	})
+	require.Equal(t, isolatedFields, results[1].fields)
 	require.NoError(t, results[1].cleanErr)
 	require.NotEqual(t, metadataInput, results[1].output)
 	require.NoError(t, verifyScrubbedPDF(t.Context(), results[1].output))
