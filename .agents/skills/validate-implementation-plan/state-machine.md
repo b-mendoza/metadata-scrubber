@@ -31,10 +31,10 @@ Finite-state execution model for this skill. Mermaid SoT: [`flow-diagram.md`](./
 | `DispatchAnnotator`    | active   | Dispatch `plan-annotator`                                               |
 | `RetryReport`          | active   | Report-branch retry (≤3)                                                |
 | `MapFinalStatus`       | active   | Map structured results to final `AUDIT:*`                               |
-| `TerminalPass`         | terminal | `AUDIT: PASS` + compact handoff                                         |
-| `TerminalFail`         | terminal | `AUDIT: FAIL` + compact handoff                                         |
-| `TerminalBlocked`      | terminal | `AUDIT: BLOCKED` + compact handoff                                      |
-| `TerminalError`        | terminal | `AUDIT: ERROR` + compact handoff                                        |
+| `TerminalPass`         | terminal | `AUDIT: PASS` internally; compact prose reply                                         |
+| `TerminalFail`         | terminal | `AUDIT: FAIL` internally; compact prose reply                                         |
+| `TerminalBlocked`      | terminal | `AUDIT: BLOCKED` internally; compact prose reply                                      |
+| `TerminalError`        | terminal | `AUDIT: ERROR` internally; compact prose reply                                        |
 
 ## Transitions
 
@@ -113,7 +113,7 @@ Defined in [`references/audit-protocol.md`](./references/audit-protocol.md):
 
 ## Terminal decisions
 
-Exactly one of: `AUDIT: PASS`, `AUDIT: FAIL`, `AUDIT: BLOCKED`, `AUDIT: ERROR`.
+Select exactly one internal outcome from `AUDIT: PASS`, `AUDIT: FAIL`, `AUDIT: BLOCKED`, `AUDIT: ERROR`. Deliver its meaning as the compact prose handoff, without a public status line.
 
 ## Reachability and dead-state checks
 

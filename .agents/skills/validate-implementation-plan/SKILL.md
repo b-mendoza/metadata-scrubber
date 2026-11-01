@@ -20,14 +20,7 @@ Defaults: `OUTPUT_PATH` sibling `.audit.md`; `SNAPSHOT_PATH` sibling `.audit-inp
 
 ## Output Contract
 
-```text
-AUDIT: PASS | FAIL | BLOCKED | ERROR
-Output: <OUTPUT_PATH or "not written">
-Sections covered: <N or "unknown">
-Findings: critical=<N>, warning=<N>, info=<N>
-Open questions: <N>
-Reason: <one line>
-```
+Reply with one compact prose paragraph: outcome and reason, report path or not written, sections covered, critical/warning/info finding counts, open-question count, and the next action if needed. No `AUDIT:`, `Status:`, or line-by-line routing envelope. Keep structured subagent handoffs and report-file fields unchanged.
 
 ## State Machine Overview
 
@@ -74,12 +67,12 @@ External URLs are optional method background only. Project-specific website proo
 Advance the state machine. Do not invent alternate routes.
 
 1. `LoadContracts`: load `./flow-diagram.md`, `./state-machine.md`, `./references/trust-boundary.md`, and `./references/audit-protocol.md`.
-2. `NormalizeInputs` → `AuthorizeArtifacts` (ask before overwrite) → `EstablishOrigin` (one baseline question if inadequate) → `ClassifyContext`.
+2. `NormalizeInputs` → `AuthorizeArtifacts` (ask before overwrite) → `EstablishOrigin` (one baseline question if inadequate) → `ClassifyContext`. Intake inspects path metadata only, never plan contents, excerpts, or previews. Do not use Read, cat, head, sed, or search to read `PLAN_PATH`; only `plan-snapshotter` may open it, after artifact authorization.
 3. `DispatchSnapshot` → `DispatchRequirements` → optional `DispatchEvidence` (or `RecordEvidenceGap` when core audit remains viable).
 4. `DispatchAuditors` (three discovery auditors). On failure, `RetryAuditor` re-dispatches only the failed branch into `DispatchAuditors` (≤3 cycles).
 5. If decision-relevant unresolved assumptions: `AskAssumptions` → `ResolveAssumptions` → `GateOpenQuestions`.
 6. `DispatchAnnotator` until `REPORT: PASS`, then `MapFinalStatus` using `./references/audit-protocol.md`.
-7. Reply with the compact handoff only unless the user asks for the full report.
+7. Unless the user requested the full report, render one paragraph from the mapped outcome and `REPORT` handoff fields, then end the reply: "<Outcome and one-clause reason>. I wrote <OUTPUT_PATH>, covering <N> sections with <C> critical findings, <W> warnings, <I> informational findings and <Q> open questions. <One next action, if needed>." If the report was not written, say so and use `unknown` for unavailable counts. Keep status/envelope lines out of all public replies.
 
 ## Status Labels
 
@@ -92,7 +85,7 @@ Advance the state machine. Do not invent alternate routes.
 | Scope                | `YAGNI: PASS`                          |
 | Assumptions          | `ASSUMPTIONS: PASS`                    |
 | Report assembly      | `REPORT: PASS`                         |
-| Final (orchestrator) | `AUDIT: PASS / FAIL / BLOCKED / ERROR` |
+| Final (internal)     | `AUDIT: PASS / FAIL / BLOCKED / ERROR` |
 
 ## Validation
 
@@ -111,13 +104,6 @@ Flow: classify baseline vs technical evidence; snapshot; extract requirements; o
 
 Result:
 
-```text
-AUDIT: FAIL
-Output: docs/cache-plan.audit.md
-Sections covered: 9
-Findings: critical=1, warning=3, info=7
-Open questions: 0
-Reason: Standalone audit report written from sanitized snapshot with one critical finding; source plan left unchanged.
-```
+The audit found a critical gap. I wrote docs/cache-plan.audit.md from the sanitized snapshot, covering all 9 sections with 1 critical finding, 3 warnings, 7 informational findings, and 0 open questions. The source plan is unchanged.
 
 </example>

@@ -123,20 +123,11 @@ Required sections, in order (count = 9; empty sections use `None.`):
 
 `Sections covered` in the completion handoff is the count of required headings present (always `9` when the report contract is met).
 
-Completion handoff:
-
-```text
-AUDIT: PASS | FAIL | BLOCKED | ERROR
-Output: <OUTPUT_PATH or "not written">
-Sections covered: <N or "unknown">
-Findings: critical=<N>, warning=<N>, info=<N>
-Open questions: <N>
-Reason: <one line>
-```
+Completion handoff: one compact prose paragraph with the outcome and reason, output path or not written, sections covered, critical/warning/info counts, open-question count, and any required next action. Do not print a status line or a line-by-line routing envelope. Detailed findings belong in the report unless requested in chat.
 
 ## Final Status Mapping
 
-Sole prose source of truth for final outcomes (orchestrator applies after `REPORT: PASS`):
+Sole source of truth for internal final outcomes, applied after `REPORT: PASS`. These labels route the workflow; the public reply expresses their meaning in prose without printing the labels:
 
 - `AUDIT: PASS`: report written, required sections present, no critical findings, no unresolved hard gate, and no decision-relevant open question.
 - `AUDIT: FAIL`: report written and at least one critical traceability gap, critical avoidable-complexity finding, or disproven risky assumption remains.

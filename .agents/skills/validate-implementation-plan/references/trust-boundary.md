@@ -59,7 +59,7 @@ Plan-specific judgments may cite only:
 - explicitly approved local files in the correct source-context role
 - summarized user answers gathered during assumption resolution
 
-Approved local technical evidence is the only source for validating product, library, API, or platform claims. External websites provide method background only; they do not prove project-specific facts. If project-specific external proof is required to continue, return `AUDIT: BLOCKED`. If it is not required, reject the fetch and record an evidence gap.
+Approved local technical evidence is the only source for validating product, library, API, or platform claims. External websites provide method background only; they do not prove project-specific facts. If project-specific external proof is required to continue, select internal `AUDIT: BLOCKED` and explain the blocker in prose. If it is not required, reject the fetch and record an evidence gap.
 
 ## Background Reading
 
