@@ -17,7 +17,7 @@
       "source": "b-mendoza/agent-skills",
       "sourceType": "github",
       "skillPath": "skills/clarifying-assumptions/SKILL.md",
-      "computedHash": "4c4ed1dcdf58bedcc0e9b0cb7ee4c833f3d64eae89fbc9719630f4e9764f6c08"
+      "computedHash": "8173697e07b7e111acd5261d7ff8e1d3307a7fab9a9138faead2a507c2180782"
     },
     "clean-code": {
       "source": "sickn33/antigravity-awesome-skills",

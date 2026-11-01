@@ -13,14 +13,17 @@ This package is standalone. Bundled files are authoritative for execution; publi
 
 ## Inputs
 
-| Input         | Required                     | Example                     |
-| ------------- | ---------------------------- | --------------------------- |
-| `TICKET_KEY`  | Yes                          | `JNS-6065` or `acme-app-42` |
-| `MODE`        | Yes                          | `upfront` or `critique`     |
-| `TASK_NUMBER` | Required for `MODE=critique` | `3`                         |
-| `ITERATION`   | No                           | `1`, `2`, or `3`            |
+| Input           | Required                     | Example                       |
+| --------------- | ---------------------------- | ----------------------------- |
+| `TICKET_KEY`    | Yes                          | `JNS-6065` or `acme-app-42`   |
+| `MODE`          | Yes                          | `upfront` or `critique`       |
+| `TASK_NUMBER`   | Required for `MODE=critique` | `3`                           |
+| `ITERATION`     | No                           | `1`, `2`, or `3`              |
+| `RESULT_FORMAT` | No                           | `user` (default) or `handoff` |
 
 `<KEY>` in path examples is the same value as `TICKET_KEY`. If `ITERATION` is omitted, treat it as `1`.
+
+`RESULT_FORMAT` is optional: `user` (default) or `handoff`. Use `handoff` only for a calling skill; return the existing structured result unchanged. In `user` mode, explain the outcome, changes or lack of changes, blockers, and next action in prose. Do not print routing status lines or a machine envelope. This option changes only the terminal reply, never approvals, stop points, internal handoffs, or written artifact fields.
 
 ## Progressive Loading Map
 
@@ -52,7 +55,7 @@ Use the same stages for Jira tickets, GitHub issue slugs, and other workflow key
 
 At run entry, set `RE_PLAN_NEEDED=false` and `BLOCKERS_PRESENT=false`. Both flags carry a defined value on every path from this point forward; the Flag Transitions table in the Output Contract is the only source for how they change.
 
-Before Stage 1, validate that `MODE` is `upfront` or `critique` and that `TASK_NUMBER` is present for `MODE=critique`. On invalid inputs, skip subagent dispatch and emit the blocked summary in the canonical order with `Critique artifact: -`, `Files updated: -`, `Blocking verdict: INPUT: BLOCKED`, and `Reason:`.
+Before Stage 1, validate that `MODE` is `upfront` or `critique` and that `TASK_NUMBER` is present for `MODE=critique`. On invalid inputs, skip subagent dispatch, set the blocking flags, and stop. In `user` mode, ask for the missing input in prose and say no files changed. Only in `handoff` mode emit the canonical blocked summary with `Critique artifact: -`, `Files updated: -`, `Blocking verdict: INPUT: BLOCKED`, and `Reason:`.
 
 | Stage | Action            | Routing                                                                                                       |
 | ----- | ----------------- | ------------------------------------------------------------------------------------------------------------- |
@@ -109,7 +112,9 @@ Rerun only the failed stage after a targeted fix. Stop after three failed fix cy
 
 ## Output Contract
 
-Every run ends with this stable minimum summary:
+For `RESULT_FORMAT=user` or no option, end with a prose summary naming the critique artifact and files updated, accepted decisions or the decisions file, unresolved blockers, any required re-planning, and next action. Do not print `RE_PLAN_NEEDED`, `BLOCKERS_PRESENT`, or a blocking-verdict envelope. Approval previews and one-question turns still show their required content and stop as before.
+
+Only `RESULT_FORMAT=handoff` returns this stable minimum summary to the calling skill:
 
 ```text
 - Critique artifact: <path>
@@ -138,7 +143,7 @@ A blocked run that never reached the developer therefore reports `RE_PLAN_NEEDED
 
 ### Blocked Summary Order
 
-If clarification stops early because top-level inputs are invalid or a subagent returned `BLOCKED`, `FAIL`, or `ERROR`, emit the same four fields in the same order with `Files updated: -`, then the blocking pair, then the mode-specific field when a value is available:
+In `handoff` mode, if clarification stops early because top-level inputs are invalid or a subagent returned `BLOCKED`, `FAIL`, or `ERROR`, emit the same four fields in the same order with `Files updated: -`, then the blocking pair, then the mode-specific field when a value is available:
 
 ```text
 - Critique artifact: <path or ->

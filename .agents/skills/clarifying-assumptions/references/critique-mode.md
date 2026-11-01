@@ -65,4 +65,4 @@ Read `../subagents/decision-recorder.md`, then dispatch `decision-recorder` with
 | `DEFERRED_QUESTIONS`     | new future-task questions created during discussion, if any |
 | `IMPLEMENTATION_UPDATES` | implementation-note edits caused by revised decisions       |
 
-In critique mode, `decision-recorder` creates or updates `docs/<TICKET_KEY>-task-<TASK_NUMBER>-decisions.md` and updates the main task plan. After it returns, use `./conversation-protocol.md` to present the final summary, including the `Decisions file:` retained by the parent orchestrator.
+In critique mode, `decision-recorder` creates or updates `docs/<TICKET_KEY>-task-<TASK_NUMBER>-decisions.md` and updates the main task plan. After it returns, use `./conversation-protocol.md` to present the final summary, in prose by default; include the `Decisions file:` field only in the `RESULT_FORMAT=handoff` result for the parent orchestrator.

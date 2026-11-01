@@ -59,4 +59,4 @@ Read `../subagents/decision-recorder.md`, then dispatch `decision-recorder` with
 | `DEFERRED_QUESTIONS`     | all deferred questions from the manifest and discussion |
 | `IMPLEMENTATION_UPDATES` | implementation-note edits caused by revised decisions   |
 
-`decision-recorder` owns file writes and validation. After it returns, use `./conversation-protocol.md` to present the final summary, including the `Accepted decisions summary:` retained by the parent orchestrator.
+`decision-recorder` owns file writes and validation. After it returns, use `./conversation-protocol.md` to present the final summary, in prose by default; include the `Accepted decisions summary:` field only in the `RESULT_FORMAT=handoff` result for the parent orchestrator.

@@ -101,7 +101,9 @@ The recorder owns file writes and validation. The conversation layer owns only t
 
 ## Final Summary
 
-Start every final summary with these four fields in this order:
+In `RESULT_FORMAT=user` (the default), summarize the outcome in prose: critique artifact, files changed or unchanged, accepted decisions or decisions-file path, unresolved blockers, required re-planning, and next action. Do not print routing flags or blocking-verdict lines. Keep every readiness preview, approval request, and one-question stop unchanged.
+
+Only in `RESULT_FORMAT=handoff`, start the result for the calling skill with these four fields in this order:
 
 ```text
 - Critique artifact: <path>
@@ -117,7 +119,7 @@ Then add the parent-retained mode field:
 - Decisions file: docs/<KEY>-task-<N>-decisions.md | -
 ```
 
-Use only the line for the active mode. If the run stops early because inputs are invalid or a subagent returns `BLOCKED`, `FAIL`, or `ERROR`, keep the first four fields in order with `Files updated: -`, then the blocking pair, then the mode field when a value is available:
+In `handoff` mode, use only the line for the active mode. If the run stops early because inputs are invalid or a subagent returns `BLOCKED`, `FAIL`, or `ERROR`, keep the first four fields in order with `Files updated: -`, then the blocking pair, then the mode field when a value is available:
 
 ```text
 - Critique artifact: <path or ->

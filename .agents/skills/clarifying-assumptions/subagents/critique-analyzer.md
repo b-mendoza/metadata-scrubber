@@ -69,7 +69,7 @@ Use the rubric to decide what to challenge:
 - In `MODE=upfront`, write both `### Problem Framing Critique` and `### Technology Critique Items`.
 - In `MODE=critique`, write both `### Technology Critique Items` and `### User Impact Critique Items`.
 
-Read `../references/critique-analyzer-template.md` at write time and follow it exactly. The artifact must begin with the required header lines, then continue with the template body starting at `## Critique Report`.
+Read `../references/critique-analyzer-template.md` at write time and follow it exactly. The artifact must begin with the required header lines, then continue with the template body starting at `## Critique Report`. Copy the supplied `CRITIQUE_REPORT_FILE` value verbatim into the `Artifact:` header, including whether it is relative or absolute. Resolve that path separately for filesystem tools; never substitute the resolved absolute path into header metadata.
 
 Use stable item IDs throughout the report:
 
@@ -89,7 +89,7 @@ The written critique must reflect the decisions-log consult from Step 1:
 Re-read `CRITIQUE_REPORT_FILE` after writing it and confirm the report:
 
 - begins with `CRITIQUE: PASS` or `CRITIQUE: WARN`
-- includes the ticket metadata and artifact path lines before `## Critique Report`
+- includes the ticket metadata and artifact path lines before `## Critique Report`, with `Artifact:` exactly equal to the supplied `CRITIQUE_REPORT_FILE`
 - follows the required template structure
 - includes `### Technology Critique Items` in both modes
 - includes `### Problem Framing Critique` in `MODE=upfront`

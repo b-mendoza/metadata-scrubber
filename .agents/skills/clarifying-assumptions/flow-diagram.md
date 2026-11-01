@@ -1,6 +1,8 @@
 # Clarifying Assumptions Flow
 
-The `clarifying-assumptions` skill is a shared, platform-agnostic conversation-layer coordinator for workflow clarification in Jira/GitHub orchestration. It may validate top-level inputs, load active local references, dispatch bundled subagents, ask one manifest item at a time, track warning summaries, and emit a parseable final summary. It does not mutate Jira/GitHub, implement changes, read or write raw artifacts inline, duplicate decision records on reruns, or let external evidence override bundled contracts.
+The `clarifying-assumptions` skill is a shared, platform-agnostic conversation-layer coordinator for workflow clarification in Jira/GitHub orchestration. It may validate top-level inputs, load active local references, dispatch bundled subagents, ask one manifest item at a time, track warning summaries, and assemble internal flags and render the final result according to `RESULT_FORMAT`. It does not mutate Jira/GitHub, implement changes, read or write raw artifacts inline, duplicate decision records on reruns, or let external evidence override bundled contracts.
+
+Terminal status and flag labels below are internal routing state. `RESULT_FORMAT=user` is the default: explain the result in prose without status lines or an envelope. Only `RESULT_FORMAT=handoff` returns the existing structured result to a calling skill. Approval previews and stop points do not change.
 
 ```mermaid
 flowchart TD
@@ -60,11 +62,11 @@ flowchart TD
   MANIFEST_STOP --> FAILURE_SUMMARY
   RECORD_STOP --> FAILURE_SUMMARY
 
-  FAILURE_SUMMARY["Present failed or blocked parseable summary:<br/>Critique artifact path or -<br/>Files updated<br/>RE_PLAN_NEEDED<br/>BLOCKERS_PRESENT<br/>Blocking verdict<br/>Reason<br/>Mode-specific field last when available"] --> FAILURE_KIND{"Failure kind?"}
+  FAILURE_SUMMARY["Assemble blocked handoff; render prose by default:<br/>Critique artifact path or -<br/>Files updated<br/>RE_PLAN_NEEDED<br/>BLOCKERS_PRESENT<br/>Blocking verdict<br/>Reason<br/>Mode-specific field last when available"] --> FAILURE_KIND{"Failure kind?"}
   FAILURE_KIND -->|input or subagent error| FAILED_DONE([Failed due to input or subagent error])
   FAILURE_KIND -->|blocked before parent advancement| BLOCKED_DONE
 
-  FINAL_SUMMARY["Present stable final summary:<br/>Critique artifact<br/>Files updated<br/>RE_PLAN_NEEDED<br/>BLOCKERS_PRESENT<br/>Upfront accepted decisions summary for upfront mode<br/>Critique decisions file path for critique mode<br/>Optional counts, warning summaries, and recorder warnings"] --> FLAGS{"Final flags?"}
+  FINAL_SUMMARY["Assemble handoff; render prose by default:<br/>Critique artifact<br/>Files updated<br/>RE_PLAN_NEEDED<br/>BLOCKERS_PRESENT<br/>Upfront accepted decisions summary for upfront mode<br/>Critique decisions file path for critique mode<br/>Optional counts, warning summaries, and recorder warnings"] --> FLAGS{"Final flags?"}
   FLAGS -->|BLOCKERS_PRESENT=true| BLOCKED_DONE([Blocked before parent advancement<br/>Parent workflow stops and escalates])
   FLAGS -->|RE_PLAN_NEEDED=true| REPLAN_DONE([Complete with replan required<br/>Parent re-runs relevant planning phase])
   FLAGS -->|both false| DONE([Complete with no replan])
@@ -87,6 +89,6 @@ flowchart TD
   class INPUT_BLOCKED,CRITIQUE_STOP,MANIFEST_STOP,RECORD_STOP,BLOCKED_DONE,FAILED_DONE stop;
 ```
 
-Readiness rule: parent advancement is allowed only when `BLOCKERS_PRESENT=false`. If `RE_PLAN_NEEDED=true`, the parent workflow must re-run the relevant planning phase before execution. Every terminal path must emit the four required fields in order: `Critique artifact`, `Files updated`, `RE_PLAN_NEEDED`, and `BLOCKERS_PRESENT`. Upfront runs also retain the accepted decisions summary; critique runs also retain the decisions file path.
+Readiness rule: parent advancement is allowed only when `BLOCKERS_PRESENT=false`. If `RE_PLAN_NEEDED=true`, the parent workflow must re-run the relevant planning phase before execution. Every terminal path assembles the flags. Only `RESULT_FORMAT=handoff` emits the four required fields in order: `Critique artifact`, `Files updated`, `RE_PLAN_NEEDED`, and `BLOCKERS_PRESENT`. Upfront runs also retain the accepted decisions summary; critique runs also retain the decisions file path.
 
-Both flags start `false` at run entry and only the transitions shown above change them. `SKILL.md` holds the authoritative Flag Transitions table. On blocked or failed runs the fields continue with `Blocking verdict`, then `Reason`, then the mode-specific field last.
+Both flags start `false` at run entry and only the transitions shown above change them. `SKILL.md` holds the authoritative Flag Transitions table. In `handoff` mode, on blocked or failed runs the fields continue with `Blocking verdict`, then `Reason`, then the mode-specific field last.

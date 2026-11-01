@@ -38,7 +38,7 @@ Questions now: 3 | Deferred: 2 | Irrelevant: 1
 
 6. Read `./conversation-protocol.md`, walk the 3 questions one at a time, then dispatch `decision-recorder` with the resolved decisions and deferred items.
 7. Receive `RECORDING: PASS` plus the file update counts.
-8. Present the final summary:
+8. With the default `RESULT_FORMAT=user`, say: "I wrote `docs/JNS-6065-upfront-critique.md` and updated `docs/JNS-6065-tasks.md`. We revised the end-user framing and kept the current technology with a constraint. No blockers remain, but the plan must be reworked before execution." With `RESULT_FORMAT=handoff`, return:
 
 ```text
 - Critique artifact: docs/JNS-6065-upfront-critique.md
@@ -70,7 +70,7 @@ MANIFEST: BLOCKED
 Reason: docs/acme-app-42-task-3-test-spec.md is missing
 ```
 
-6. Stop clarification and present:
+6. Stop clarification. In default `user` mode, say: "The critique is in `docs/acme-app-42-task-3-critique.md`, but `docs/acme-app-42-task-3-test-spec.md` is missing. No files were updated and no decisions were recorded. Restore the test specification before resuming clarification or execution." Only with `RESULT_FORMAT=handoff`, return:
 
 ```text
 - Critique artifact: docs/acme-app-42-task-3-critique.md
