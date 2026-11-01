@@ -1,11 +1,11 @@
 # Final Handoff Template
 
-Use this template once exactly one terminal status has been selected.
+Use this template once exactly one internal terminal decision has been selected. The user-facing handoff starts with a prose outcome, never a status line or routing envelope. Preserve all applicable sections; at an early stop state `none` or `not run` for unavailable results, and always include the full blocked Resume Packet.
 
 ```text
 # Improving Test Suites Handoff
 
-Status: <CHANGED_PASS | COMPLETE_NO_SAFE_CHANGE | COMPLETE_PRODUCTION_BUG_EXPOSED | VALIDATION_FAILED_AFTER_REPAIR | COMPLETE_ERROR | COMPLETE_BLOCKED>
+<Plain-language outcome: what happened, what changed or stayed untouched, and the next user action if blocked.>
 
 ## Target
 
