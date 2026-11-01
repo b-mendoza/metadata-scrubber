@@ -7,6 +7,6 @@ func boundLiterals() {
 	var declared = func() {}                        // want "write this function literal inline at its call or struct field, or declare a named function"
 	var assigned func()
 	assigned = func() {} // want "write this function literal inline at its call or struct field, or declare a named function"
-	first, second := func() {}, 2 // want "write this function literal inline at its call or struct field, or declare a named function"
+	first, second := (func() {}), 2 // want "write this function literal inline at its call or struct field, or declare a named function"
 	_, _, _, _, _ = defined, declared, assigned, first, second
 }
