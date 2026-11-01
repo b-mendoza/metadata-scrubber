@@ -3,10 +3,13 @@ package handler
 import (
 	"log/slog"
 	"net/http"
+	"strings"
 	"time"
+	"unicode"
+	"unicode/utf8"
 	"uuid"
 
-	"metadata-scrubber/internal/httpx"
+	"metadata-scrubber/internal/bindings"
 	"metadata-scrubber/internal/logkey"
 	"metadata-scrubber/internal/storage"
 )
@@ -14,20 +17,22 @@ import (
 // Upload creates a private direct-upload grant for one generated logical file ID.
 func (handler *Handler) Upload(w http.ResponseWriter, request *http.Request) {
 	startedAt := time.Now()
-	input, ok := decodeJSONRequest[uploadRequest](handler.logger, w, request)
+	input, ok := decodeJSONRequest[uploadRequest](handler, w, request)
 	if !ok {
 		return
 	}
-	if !handler.validateUploadRequest(w, request, input) {
+	if !validFileName(input.FileName) || input.FileSizeBytes <= 0 {
+		handler.writeError(w, request, http.StatusBadRequest, "invalid upload request")
+		return
+	}
+	if input.FileSizeBytes > storage.MaxSourceObjectBytes {
+		handler.writeError(w, request, http.StatusRequestEntityTooLarge, "source file exceeds 10 MiB limit")
 		return
 	}
 
 	fileID := uuid.NewV4().String()
 	key := storageKey(storageKeyPrefix + fileID)
-	requestBindings, ok := handler.bindingsFromRequest(w, request)
-	if !ok {
-		return
-	}
+	requestBindings, _ := bindings.FromContext(request.Context())
 
 	grant, err := requestBindings.Storage.PresignSourceUpload(
 		request.Context(),
@@ -48,18 +53,10 @@ func (handler *Handler) Upload(w http.ResponseWriter, request *http.Request) {
 	requestBindings.Events(request.Context(), "upload grant created")
 }
 
-func (handler *Handler) validateUploadRequest(w http.ResponseWriter, request *http.Request, input uploadRequest) bool {
-	if !validFileName(input.FileName) || input.FileSizeBytes <= 0 {
-		if err := httpx.WriteError(w, http.StatusBadRequest, "invalid upload request"); err != nil {
-			handler.logger.ErrorContext(request.Context(), "could not write JSON response", slog.Any(logkey.Error, err))
-		}
-		return false
-	}
-	if input.FileSizeBytes > storage.MaxSourceObjectBytes {
-		if err := httpx.WriteError(w, http.StatusRequestEntityTooLarge, "source file exceeds 10 MiB limit"); err != nil {
-			handler.logger.ErrorContext(request.Context(), "could not write JSON response", slog.Any(logkey.Error, err))
-		}
-		return false
-	}
-	return true
+func validFileName(fileName string) bool {
+	return len(fileName) <= maxFileNameBytes &&
+		!strings.ContainsRune(fileName, utf8.RuneError) &&
+		strings.TrimSpace(fileName) != "" &&
+		!strings.ContainsAny(fileName, `/\`) &&
+		!strings.ContainsFunc(fileName, unicode.IsControl)
 }
