@@ -74,7 +74,14 @@ func run(ctx context.Context, logger *slog.Logger) error {
 
 func runHTTPServer(ctx context.Context, server *http.Server, logger *slog.Logger) error {
 	serverErr := make(chan error, 1)
-	go serveHTTPServer(ctx, server, logger, serverErr)
+	go func() {
+		logger.InfoContext(ctx, "metadata-scrubber listening", slog.String(logkey.Addr, server.Addr))
+		err := server.ListenAndServe()
+		if errors.Is(err, http.ErrServerClosed) {
+			err = nil
+		}
+		serverErr <- err
+	}()
 
 	select {
 	case err := <-serverErr:
@@ -87,15 +94,6 @@ func runHTTPServer(ctx context.Context, server *http.Server, logger *slog.Logger
 		}
 		return <-serverErr
 	}
-}
-
-func serveHTTPServer(ctx context.Context, server *http.Server, logger *slog.Logger, serverErr chan error) {
-	logger.InfoContext(ctx, "metadata-scrubber listening", slog.String(logkey.Addr, server.Addr))
-	err := server.ListenAndServe()
-	if errors.Is(err, http.ErrServerClosed) {
-		err = nil
-	}
-	serverErr <- err
 }
 
 func newServer(cfg config.Config, objectStorage storage.Storage, logger *slog.Logger, events func(ctx context.Context, event string)) *http.Server {
