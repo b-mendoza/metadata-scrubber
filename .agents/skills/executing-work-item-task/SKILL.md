@@ -26,13 +26,16 @@ If the signal is missing or ambiguous, ask one targeted clarification question b
 | ------------------------------------------------ | -------------------------------------------------------------- | --------------------------------- |
 | `TICKET_KEY`                                     | Yes after platform normalization                               | `JNS-6065` or `acme-app-42`       |
 | `TASK_NUMBER`                                    | Yes                                                            | `3`                               |
+| `RESULT_FORMAT`                                  | No                                                             | `user` (default) or `handoff`     |
 | Platform locator inputs from the active playbook | When needed to detect the platform or perform a tracker action | `JIRA_URL=...` or `ISSUE_URL=...` |
 
 Exactly one task is in scope per invocation. Do not select or start another task on any terminal path.
 
 ## Output Contract
 
-Every run returns exactly one `FINAL_TASK_REPORT` using [`./references/template-final-report.md`](./references/template-final-report.md). Allowed statuses are `COMPLETE`, `BLOCKED`, `STOPPED_FOR_USER_INPUT`, and `ESCALATED`.
+Every run assembles exactly one `FINAL_TASK_REPORT` using [`./references/template-final-report.md`](./references/template-final-report.md). Allowed internal statuses are `COMPLETE`, `BLOCKED`, `STOPPED_FOR_USER_INPUT`, and `ESCALATED`.
+
+`RESULT_FORMAT` is optional: `user` (default) or `handoff`. Use `handoff` only for a calling skill; return the existing structured result unchanged. In `user` mode, explain the outcome, changes or lack of changes, blockers, and next action in prose. Do not print routing status lines or a machine envelope. This option changes only the terminal reply, never approvals, stop points, internal handoffs, or written artifact fields. In `user` mode, use the template's user rendering: keep its task, evidence, counters, artifacts, tracker, blockers, and next-action sections, but omit `### Status` and the machine status value. Explain the outcome in the Summary instead.
 
 A complete report includes the selected `<KEY>` and task number, evidence from every phase that ran, the four independent gate retry counters, Category B implementation paths, Category A tracking paths, playbook-defined tracker reference/action results, unresolved items, and the next required action.
 
@@ -119,12 +122,12 @@ Also pass only the artifact paths and structured prior reports declared in [`./r
 ## Execution
 
 1. Detect the platform, load the matching playbook, normalize `<KEY>` under `TICKET_KEY`, and read `./references/contracts.md`.
-2. Validate all Phase 1-6 artifacts, task readiness, branch consistency, Category A/B boundaries, and the playbook's tracker-capability policy.
+2. Load `./references/template-final-report.md` before checking readiness. Validate all Phase 1-6 artifacts, task readiness, branch consistency, Category A/B boundaries, and the playbook's tracker-capability policy. Every early readiness stop, including missing approval or a missing decisions file, goes directly to step 7 with the template filled. Do not replace it with an informal readiness note or a code block naming `FINAL_TASK_REPORT`.
 3. Initialize or restore independent counters for requirements, clean-code, architecture, and security fixes. Preserve all passed phase results and counter values across recovery.
 4. Read `./references/pipeline.md` and dispatch only the next specialist.
 5. Route every returned status using `./references/retry-and-escalation.md`. Retry only with new context, a targeted fix brief, an explicit user decision, or restored capability.
 6. Do not enter `FINALIZE_TRACKER` until requirements verification and all three quality gates have returned non-blocking verdicts.
-7. On any terminal path, load the final report template, include preserved results and counters, return one `FINAL_TASK_REPORT`, and stop after the requested `TASK_NUMBER`.
+7. On any terminal path, load the final report template, include preserved results and counters, render one result according to `RESULT_FORMAT` (never a public status line in `user` mode), and stop after the requested `TASK_NUMBER`.
 
 ## Critical Gates
 
@@ -140,4 +143,4 @@ Also pass only the artifact paths and structured prior reports declared in [`./r
 
 Input: `TICKET_KEY=acme-app-42`, `TASK_NUMBER=3`
 
-Detect `github`, load `../references/github-playbook.md` for each subagent, validate `docs/acme-app-42*`, dispatch kickoff, execution, documentation, requirements, clean-code, architecture, security, and finalization in order, then return only Task 3's `FINAL_TASK_REPORT`. Do not select Task 4.
+Detect `github`, load `../references/github-playbook.md` for each subagent, validate `docs/acme-app-42*`, dispatch kickoff, execution, documentation, requirements, clean-code, architecture, security, and finalization in order, then render only Task 3's result, prose without a Status section by default or the unchanged `FINAL_TASK_REPORT` with `RESULT_FORMAT=handoff`. Do not select Task 4.

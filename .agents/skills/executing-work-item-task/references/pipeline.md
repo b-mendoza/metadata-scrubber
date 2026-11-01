@@ -79,9 +79,9 @@ For every stage: announce the stage, validate its preconditions, dispatch one su
     - `COMPLETE` advances to reporting. `BLOCKED` or `ERROR` enters recovery.
 
 11. **Report and stop.**
-    - Load `./template-final-report.md` only now.
+    - Load and fill `./template-final-report.md` on every terminal path, including readiness stops before dispatch.
     - Include all preserved results, independent counters, changed files, Category A paths, playbook-defined tracker actions/skips, blockers, and next action.
-    - Return one terminal status and stop after the requested `TASK_NUMBER`.
+    - Render one result according to `RESULT_FORMAT`: the unchanged status-bearing report for `handoff`, or the report without its Status section and with a prose outcome for default `user`. Stop after the requested `TASK_NUMBER`.
 
 ## Requirements Fix Cycle
 

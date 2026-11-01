@@ -1,5 +1,7 @@
 # Execution Examples
 
+The `FINAL_TASK_REPORT` outcomes below describe internal routing. Return that status-bearing report only with `RESULT_FORMAT=handoff`. Default `user` replies use the final-report template without its Status section and explain the outcome in prose.
+
 > Load only for a dispatch round trip or targeted-fix example. The active playbook supplies all platform-specific values and actions.
 
 ## Happy Path

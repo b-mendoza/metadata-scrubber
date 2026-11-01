@@ -122,4 +122,6 @@ Partial progress does not satisfy completion.
 | `STOPPED_FOR_USER_INPUT` | The next safe step requires a user or upstream planning decision                                                              | Pause without completion            |
 | `ESCALATED`              | A retry budget is exhausted or the recovery path is unsafe                                                                    | Present accumulated findings        |
 
+Always assemble the internal report status. Only `RESULT_FORMAT=handoff` returns the complete status-bearing report to a calling skill. The default `user` rendering omits the Status section and explains the same outcome in prose; it never changes completion predicates or retry counters. Every early readiness stop loads and fills the final-report template before returning.
+
 The report includes evidence checked, independent retry counts for requirements, clean-code, architecture, and security, Category B paths, Category A paths, playbook-defined tracker references and actions, blockers, and next action.

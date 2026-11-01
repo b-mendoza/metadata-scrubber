@@ -1,6 +1,10 @@
-# Final User Report Template
+# Final Task Report Template
 
-Read only when the pipeline has stopped or completed. The outer schema is platform-neutral. Fill tracker reference and action values from the active playbook.
+Read before readiness and reuse when the pipeline stops or completes. The outer schema is platform-neutral. Fill tracker reference and action values from the active playbook.
+
+Always load and fill this template, including on an early readiness stop before any specialist is dispatched. For unattempted stages, say `Not attempted`; keep all four counters at their actual values, including zero.
+
+With `RESULT_FORMAT=handoff`, return the complete template below unchanged to the calling skill, including `### Status` and its enum. With `RESULT_FORMAT=user` or no option, omit only that Status section and machine value. Keep every other section and state the outcome in prose under Summary, what did or did not run, and the next safe action. Describe phase and tracker outcomes in plain language rather than copying specialist verdict headers. Do not print a `FINAL_TASK_REPORT` status line or any other routing envelope.
 
 ## Template
 

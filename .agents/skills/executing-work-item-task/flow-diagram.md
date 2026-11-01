@@ -2,6 +2,8 @@
 
 Platform-neutral Phase 7 state machine for exactly one planned work-item task. The active playbook supplies identifier derivation, tracker transport, relationship vocabulary, startup and completion actions, reference values, and report labels. `references/pipeline.md` and `references/retry-and-escalation.md` are authoritative when this illustrative diagram is ambiguous.
 
+Terminal status and flag labels below are internal routing state. `RESULT_FORMAT=user` is the default: explain the result in prose without status lines or an envelope. Only `RESULT_FORMAT=handoff` returns the existing structured result to a calling skill. Approval previews and stop points do not change.
+
 ```mermaid
 flowchart TD
   START([Start executing-work-item-task]) --> INPUTS["Read TICKET_KEY alias and TASK_NUMBER"]
