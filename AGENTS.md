@@ -40,9 +40,7 @@ Review the user's instructions before you act. Treat them as a starting point fo
 - Tests can set environment values to test the schema boundary.
 - Trust the validated values. Do not add later checks, defaults, or fallbacks.
 - Send a value to the browser only through server data, such as route loader data, and only when it is safe to expose.
-  The root loader may `await loadPostHogBrowserConfig()` for safe browser config.
-  That value is not a TanStack Query.
-  Follow [Route data](frontend/docs/conventions.md#route-data) for loader waits.
+  Follow [Route data](frontend/docs/conventions.md#route-data) for loader waits and the root browser-config exception.
 - Vite build flags, such as `import.meta.env.DEV` and `import.meta.env.SSR`, are build constants, not environment variables. You can use them.
 
 ## Required workflow
