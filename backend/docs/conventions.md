@@ -57,71 +57,23 @@ return fmt.Errorf("%w: %w", ErrMalformedPDF, err)
 
 ```go
 if writeErr := httpx.WriteError(w, failure.status, failure.message); writeErr != nil {
-	handler.logger.ErrorContext(
-		request.Context(),
-		"could not write JSON response",
-		"error",
-		writeErr,
-	)
+	handler.logger.ErrorContext(request.Context(), "could not write JSON response", slog.Any(logkey.Error, writeErr))
 }
 ```
 
 ## Private data in responses and logs
 
-- Return fixed public error messages instead of parser or provider error text. Those errors can contain private URLs and storage keys.
-
-```go
-if writeErr := httpx.WriteError(w, http.StatusNotFound, "source file not found"); writeErr != nil {
-	handler.logger.ErrorContext(request.Context(), "could not write JSON response", "error", writeErr)
-}
-```
-
-Do not send provider text:
-
-```go
-http.Error(w, err.Error(), http.StatusNotFound)
-```
-
-- Use `storageKeyDigest` instead of a raw storage key in logs. Test that raw keys stay out of logs. This lets you follow a flow without exposing the key.
-
-```go
-func storageKeyDigest(storageKey string) string {
-	digest := sha256.Sum256([]byte(storageKey))
-	return hex.EncodeToString(digest[:storageKeyDigestBytes])
-}
-```
-
-Do not log the raw key:
-
-```go
-slog.Info("upload-created", "storage_key", storageKey)
-```
-
-- Keep panic values out of application logs. Record whether a panic occurred instead. A panic value can contain private data.
+- Hold each storage key in the `storageKey` type, not in a `string`. The type lets lint find a raw key in a log call. A plain `string` hides the key from that check.
 
 ## Storage and resource limits
 
 - Check every listed key against the code-constructed prefix before a bulk delete. Return `ErrDependency` for a foreign key and send no bulk-delete request for that page. A provider listing does not grant permission to delete another file's objects.
-- Give storage HTTP requests an overall timeout that does not use caller cancellation. A stalled response must end even if the client stays connected.
 - Set `ContentLength` to the declared upload byte size before signing an upload grant. The signature must bind the grant to that size.
 - Get an admission permit before downloading source bytes for PDF processing. Limit active work that holds large buffers. Permits do not bound the waiting queue or total memory.
 - Reject work when its admission wait runs out. A bounded wait avoids keeping a request blocked until processing capacity becomes free.
 - Keep parser limits in `internal/scrub/read.go`. Change them only with measured evidence. Compressed input can expand beyond its uploaded size.
 
 ## Construction
-
-- Build variable URLs with `url.URL` instead of joining URL text. `url.URL` keeps input inside its intended URL part.
-
-```go
-endpoint := url.URL{Scheme: "https", Host: c.R2AccountID + ".r2.cloudflarestorage.com"}
-return endpoint.String()
-```
-
-Do not join URL text:
-
-```go
-return "https://" + c.R2AccountID + ".r2.cloudflarestorage.com"
-```
 
 - Use a type switch for PDF object dispatch instead of a function map keyed by formatted type names. Display text is not type identity.
 
@@ -143,13 +95,9 @@ default:
 ```
 
 - Construct code-owned operation functions directly. Do not add nil guards, defensive panics, or nil-rejection tests for those functions. Their constructors supply them; they are not external input.
-- Pass test operations as arguments or set function fields on the test instance. Do not replace package variables. Tests must not change another request's dependencies.
-- Keep anonymous callbacks inline at their call or struct field. This keeps captured values next to their use.
-- Require the caller's logger. Do not replace a nil logger with a global logger. A fallback would hide a missing dependency.
 
 ## Cleanup
 
-- Use named functions for deferred cleanup. This keeps cleanup logic separate from the operation.
 - When cleanup can fail, call the operation body from an outer function, then run cleanup. Use `errors.Join` to keep both errors if cleanup fails. A cleanup failure must not hide the body failure.
 
 ```go
@@ -166,8 +114,8 @@ For a rejected non-PDF upload, require the exact ordered record list:
 
 ```go
 require.Equal(t, []pipelineLogRecord{
-	{Message: "sniffed", Level: slog.LevelInfo, StorageKeyDigest: storageKeyDigestOne, Outcome: "rejected", DurationRecorded: true},
-	{Message: "dry-run", Level: slog.LevelInfo, StorageKeyDigest: storageKeyDigestOne, Outcome: "not-pdf", DurationRecorded: true},
+	{Message: "pipeline stage", Level: slog.LevelInfo, Stage: "sniffed", StorageKeyDigest: storageKeyDigestOne, Outcome: "rejected", DurationRecorded: true},
+	{Message: "pipeline stage", Level: slog.LevelInfo, Stage: "dry-run", StorageKeyDigest: storageKeyDigestOne, Outcome: "not-pdf", DurationRecorded: true},
 }, records)
 ```
 
