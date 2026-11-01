@@ -114,7 +114,7 @@ Finite-state execution model for this skill. Mermaid source of truth: [`flow-dia
 
 ## Terminal decisions
 
-Exactly one of: `READY`, `NEEDS_INPUT`, `BLOCKED`, `ERROR`.
+Select exactly one internal decision: `READY`, `NEEDS_INPUT`, `BLOCKED`, `ERROR`. User-facing summaries and stopping explanations use prose, not a status line or routing envelope. Preserve the required fenced resume packet on `NEEDS_INPUT`.
 
 ## Reachability and dead-state checks
 
