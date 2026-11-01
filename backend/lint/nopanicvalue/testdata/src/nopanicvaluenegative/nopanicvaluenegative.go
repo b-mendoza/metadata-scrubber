@@ -7,7 +7,7 @@ func recordPanic(logger *slog.Logger) {
 	if recovered != nil {
 		logger.Error("panic", slog.Bool("panicked", true))
 	}
-	if nil == recovered {
+	if nil == (recovered) {
 		return
 	}
 	panic(recovered)
