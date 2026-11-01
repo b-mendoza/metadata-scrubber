@@ -5,7 +5,7 @@ description: "Reviews one GitHub pull request and prepares a verified local revi
 
 # Review pull request
 
-Review one PR of any size through independent dimension review, one canonical review package, and independent verification. Save a standalone Markdown draft before offering posting. Keep raw evidence with the inspecting role; the orchestrator keeps statuses, paths, pins, counters, user choices and receipts. End every run with the terminal block below.
+Review one PR of any size through independent dimension review, one canonical review package, and independent verification. Save a standalone Markdown draft before offering posting. Keep raw evidence with the inspecting role; the orchestrator keeps statuses, paths, pins, counters, user choices and receipts. End every run with the prose handoff below, not a machine-readable status line.
 
 ## Inputs
 
@@ -111,30 +111,12 @@ Both poster modes refuse collected state other than `open`, history other than `
 
 Every terminal audits baseline and run-file cleanup without deleting unrelated paths. Compute counts from accepted author findings and placements, never model-authored totals. Notes state observed checks, omissions, degraded isolation, artifact warnings and actual effects/URLs. Do not claim rollback or test execution without evidence.
 
-Success set: `VERIFIED_DRAFT_SAVED | VERIFIED_DRAFT_SAVED_POSTING_CANCELLED | VERIFIED_REVIEW_POSTED`.
+Internal success outcomes: `VERIFIED_DRAFT_SAVED | VERIFIED_DRAFT_SAVED_POSTING_CANCELLED | VERIFIED_REVIEW_POSTED`. Internal stop outcomes: `NEEDS_CONTEXT | TOOLS_MISSING | REVIEW_ERROR | VERIFY_FAIL | WRITE_ERROR | POST_ERROR | BLOCKED`.
 
-```text
-Review file: <OUTPUT_FILE>
-Findings: <count>
-New comments: <inline count>
-Follow-up replies: <reply count>
-Review decision: <COMMENT | REQUEST_CHANGES | APPROVE>
-Posting: <skipped | posted | cancelled>
-Notes: <observed checks, limitations, actual URLs or none>
-PR_REVIEW: <success value>
-```
+Reply in plain prose with the review path or that no file was written, the actual posting outcome, observed checks and limitations, and any artifact warnings or effects/URLs. On success, include finding, inline-comment and follow-up counts plus the review decision. On a stop, explain the cause and one safe next action. Never print `PR_REVIEW` status lines or a routing envelope. Status fields inside the saved review remain unchanged.
 
-Failure set: `NEEDS_CONTEXT | TOOLS_MISSING | REVIEW_ERROR | VERIFY_FAIL | WRITE_ERROR | POST_ERROR | BLOCKED`.
-
-```text
-Review file: <OUTPUT_FILE or none>
-Posting: <skipped | posted | cancelled | failed | partial | uncertain>
-Notes: <observed checks, omissions, actual effects/URLs, artifact warning or none>
-PR_REVIEW: <failure value>
-Reason: <one-line cause>
-Next step: <one safe action>
-```
+At a missing-approval stop, keep the exact dry-run preview and approval hash visible, ask for `APPROVED`, `REVISE` or `ABORT`, say the draft is saved and nothing was posted, and end the turn. At an output collision, say the existing file was preserved, nothing was posted, and ask for an unused output path.
 
 ## Example
 
-`PR_URL=https://github.com/org/repo/pull/1020`, draft-only: context proposes correctness and tests; both chunks pass, one with empty findings; author confirms one defect and drafts exact text; verifier passes; renderer exclusively creates `pr-1020-review.md`. Finish `PR_REVIEW: VERIFIED_DRAFT_SAVED`, noting observed checks and that no tests were executed by this review.
+`PR_URL=https://github.com/org/repo/pull/1020`, draft-only: context proposes correctness and tests; both chunks pass, one with empty findings; author confirms one defect and drafts exact text; verifier passes; renderer exclusively creates `pr-1020-review.md`. Say the verified draft was saved, give its path, and note observed checks, that nothing was posted, and that no tests were executed by this review.
