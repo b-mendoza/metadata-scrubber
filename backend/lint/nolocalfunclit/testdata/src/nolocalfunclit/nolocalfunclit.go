@@ -4,9 +4,9 @@ var packageCallback = func() {} // want "write this function literal inline at i
 
 func boundLiterals() {
 	defined := func(value int) int { return value } // want "write this function literal inline at its call or struct field, or declare a named function"
-	declared := func() {}                           // want "write this function literal inline at its call or struct field, or declare a named function"
+	var declared = func() {}                        // want "write this function literal inline at its call or struct field, or declare a named function"
 	var assigned func()
-	assigned = func() {}          // want "write this function literal inline at its call or struct field, or declare a named function"
+	assigned = func() {} // want "write this function literal inline at its call or struct field, or declare a named function"
 	first, second := func() {}, 2 // want "write this function literal inline at its call or struct field, or declare a named function"
 	_, _, _, _, _ = defined, declared, assigned, first, second
 }
