@@ -17,7 +17,7 @@ func formatPanicValue() string {
 }
 
 func storePanicValue(values []any) {
-	recovered := recover()
+	var recovered = recover()
 	values[0] = recovered // want "compare the recovered panic value only with nil, or pass it to panic"
 }
 
