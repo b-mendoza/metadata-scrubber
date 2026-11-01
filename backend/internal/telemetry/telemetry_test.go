@@ -17,6 +17,7 @@ import (
 	sdklog "go.opentelemetry.io/otel/sdk/log"
 
 	"metadata-scrubber/internal/bindings"
+	"metadata-scrubber/internal/logkey"
 )
 
 func TestRecorderUsesValidatedAnonymousIdentity(t *testing.T) {
@@ -107,7 +108,7 @@ func TestLogFanoutPreservesStdoutAndCapturesOnlyErrorExceptions(t *testing.T) {
 		logger.DebugContext(request.Context(), "debug record")
 		logger.InfoContext(request.Context(), "info record")
 		logger.WarnContext(request.Context(), "warning record")
-		logger.ErrorContext(request.Context(), "error record", "error", errors.New("safe error"))
+		logger.ErrorContext(request.Context(), "error record", slog.Any(logkey.Error, errors.New("safe error")))
 	}))
 
 	bound.ServeHTTP(httptest.NewRecorder(), request)

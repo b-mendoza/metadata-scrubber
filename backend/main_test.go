@@ -189,14 +189,15 @@ func TestNewServerSharesOneCapacityTwoGateAcrossDryRunAndScrubMisses(t *testing.
 	scrubHTTPRequest.Header.Set(header.ContentType, mediatype.JSON)
 	server.Handler.ServeHTTP(scrubResponse, scrubHTTPRequest)
 	require.Equal(t, http.StatusRequestTimeout, scrubResponse.Code, scrubResponse.Body.String())
+	sourceKey, err := storage.SourceObjectKey(thirdFileID)
+	require.NoError(t, err)
 	sanitizedKey, err := storage.SanitizedObjectKey(thirdFileID, reviewedETag)
 	require.NoError(t, err)
-	require.Contains(t, fake.Calls(), storage.FakeCall{
-		Operation:  storage.FakeSanitizedExists,
-		FileID:     thirdFileID,
-		SourceETag: reviewedETag,
-		ObjectKey:  sanitizedKey,
-	})
+	// The observer holds both dry-run downloads before the fake records them.
+	require.Equal(t, []storage.FakeCall{
+		{Operation: storage.FakeSourceExists, FileID: thirdFileID, ObjectKey: sourceKey},
+		{Operation: storage.FakeSanitizedExists, FileID: thirdFileID, SourceETag: reviewedETag, ObjectKey: sanitizedKey},
+	}, fake.Calls())
 	select {
 	case fileID := <-observer.started:
 		require.FailNow(t, "scrub miss entered a separate gate", "unexpected download for %s", fileID)

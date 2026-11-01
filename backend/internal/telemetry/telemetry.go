@@ -17,6 +17,7 @@ import (
 	"go.opentelemetry.io/otel/sdk/resource"
 
 	"metadata-scrubber/internal/bindings"
+	"metadata-scrubber/internal/logkey"
 )
 
 const (
@@ -109,7 +110,7 @@ func NewRecorder(client posthog.EnqueueClient, local *slog.Logger) func(ctx cont
 			Properties: properties,
 		}); err != nil {
 			// SDK failures use the local logger so they cannot create more remote telemetry.
-			local.Warn("could not enqueue PostHog event", "error", err)
+			local.WarnContext(ctx, "could not enqueue PostHog event", slog.Any(logkey.Error, err))
 		}
 	}
 }
