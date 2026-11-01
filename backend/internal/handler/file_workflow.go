@@ -3,11 +3,13 @@ package handler
 import (
 	"errors"
 	"fmt"
+	"log/slog"
 	"net/http"
 	"time"
 
 	"metadata-scrubber/internal/bindings"
 	"metadata-scrubber/internal/httpx"
+	"metadata-scrubber/internal/logkey"
 	"metadata-scrubber/internal/sniff"
 	"metadata-scrubber/internal/storage"
 )
@@ -23,8 +25,8 @@ func (handler *Handler) Scrub(w http.ResponseWriter, request *http.Request) {
 	if !ok {
 		return
 	}
-	requestBindings := handler.bindingsFromRequest(w, request)
-	if requestBindings.Storage == nil {
+	requestBindings, ok := handler.bindingsFromRequest(w, request)
+	if !ok {
 		return
 	}
 	scrubWorkflow := scrubWorkflowRequest{
@@ -61,7 +63,7 @@ func (handler *Handler) scrubSourceAvailable(w http.ResponseWriter, request *htt
 		return true
 	}
 	if writeErr := httpx.WriteError(w, http.StatusNotFound, "source file not found"); writeErr != nil {
-		handler.logger.ErrorContext(request.Context(), "could not write JSON response", "error", writeErr)
+		handler.logger.ErrorContext(request.Context(), "could not write JSON response", slog.Any(logkey.Error, writeErr))
 	}
 	return false
 }
@@ -70,7 +72,7 @@ func (handler *Handler) scrubFileID(w http.ResponseWriter, request *http.Request
 	fileID, ok := parseStorageKey(input.StorageKey)
 	if !ok {
 		if err := httpx.WriteError(w, http.StatusBadRequest, "invalid storage key"); err != nil {
-			handler.logger.ErrorContext(request.Context(), "could not write JSON response", "error", err)
+			handler.logger.ErrorContext(request.Context(), "could not write JSON response", slog.Any(logkey.Error, err))
 		}
 		return "", false
 	}
@@ -78,7 +80,7 @@ func (handler *Handler) scrubFileID(w http.ResponseWriter, request *http.Request
 		return fileID, true
 	}
 	if err := httpx.WriteError(w, http.StatusBadRequest, "invalid ETag"); err != nil {
-		handler.logger.ErrorContext(request.Context(), "could not write JSON response", "error", err)
+		handler.logger.ErrorContext(request.Context(), "could not write JSON response", slog.Any(logkey.Error, err))
 	}
 	return "", false
 }
@@ -101,7 +103,7 @@ func (handler *Handler) materializeScrubbed(w http.ResponseWriter, scrubWorkflow
 		failure := classifyPipelineFailure(err, "could not scrub PDF")
 		handler.logStage(pipelineLogEvent{ctx: scrubWorkflow.request.Context(), stage: pipelineStageScrubbed, storageKey: scrubWorkflow.input.StorageKey, outcome: failure.outcome, startedAt: scrubWorkflow.startedAt})
 		if writeErr := httpx.WriteError(w, failure.status, failure.message); writeErr != nil {
-			handler.logger.ErrorContext(scrubWorkflow.request.Context(), "could not write JSON response", "error", writeErr)
+			handler.logger.ErrorContext(scrubWorkflow.request.Context(), "could not write JSON response", slog.Any(logkey.Error, writeErr))
 		}
 		return false
 	}
@@ -151,7 +153,7 @@ func (handler *Handler) presignScrubbed(w http.ResponseWriter, scrubWorkflow scr
 		Status: "done",
 		Result: scrubResponseResult{DownloadURL: grant.URL},
 	}); err != nil {
-		handler.logger.ErrorContext(scrubWorkflow.request.Context(), "could not write JSON response", "error", err)
+		handler.logger.ErrorContext(scrubWorkflow.request.Context(), "could not write JSON response", slog.Any(logkey.Error, err))
 		return
 	}
 	scrubWorkflow.requestBindings.Events(scrubWorkflow.request.Context(), "file scrubbed")

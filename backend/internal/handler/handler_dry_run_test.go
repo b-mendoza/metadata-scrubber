@@ -5,7 +5,6 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
-	"io"
 	"log/slog"
 	"maps"
 	"net/http"
@@ -108,7 +107,7 @@ func TestConstructedDryRunRejectsStructurallySignedPDFFixtureWithoutMutation(t *
 	require.NoError(t, err)
 	fake := storage.NewFake()
 	require.NoError(t, fake.SetSource(fileIDOne, storage.SourceObject{PDFBytes: pdfBytes, ETag: canonicalETagOne}))
-	workflow := New(slog.New(slog.NewTextHandler(io.Discard, nil)))
+	workflow := New(slog.New(slog.DiscardHandler))
 	body, err := json.Marshal(dryRunRequest{StorageKey: storageKeyPrefix + fileIDOne})
 	require.NoError(t, err)
 	request := httptest.NewRequest(http.MethodPost, "/api/files/dry-run", bytes.NewReader(body))

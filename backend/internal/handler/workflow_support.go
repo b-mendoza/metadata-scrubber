@@ -17,6 +17,7 @@ import (
 	"metadata-scrubber/internal/bindings"
 	"metadata-scrubber/internal/httpx"
 	"metadata-scrubber/internal/httpx/header"
+	"metadata-scrubber/internal/logkey"
 	"metadata-scrubber/internal/scrub"
 	"metadata-scrubber/internal/storage"
 )
@@ -31,13 +32,18 @@ func validFileName(fileName string) bool {
 
 const storageKeyDigestBytes = 6
 
-func storageKeyDigest(storageKey string) string {
-	digest := sha256.Sum256([]byte(storageKey))
-	return hex.EncodeToString(digest[:storageKeyDigestBytes])
+// storageKey is the public file reference. It can identify a stored object, so
+// logs must record its digest and not its value.
+type storageKey string
+
+// digest returns a short hash that lets logs follow one file without exposing its key.
+func (key storageKey) digest() string {
+	sum := sha256.Sum256([]byte(key))
+	return hex.EncodeToString(sum[:storageKeyDigestBytes])
 }
 
-func parseStorageKey(storageKey string) (string, bool) {
-	matches := storageKeyPattern.FindStringSubmatch(storageKey)
+func parseStorageKey(key storageKey) (string, bool) {
+	matches := storageKeyPattern.FindStringSubmatch(string(key))
 	if len(matches) != 2 {
 		return "", false
 	}
@@ -67,15 +73,17 @@ func convertPublicFields(inspectedFields []scrub.Field) ([]publicField, error) {
 	return fields, nil
 }
 
-func (handler *Handler) bindingsFromRequest(w http.ResponseWriter, request *http.Request) bindings.Bindings {
+// bindingsFromRequest writes a server failure and returns false when the
+// bindings middleware did not run.
+func (handler *Handler) bindingsFromRequest(w http.ResponseWriter, request *http.Request) (bindings.Bindings, bool) {
 	requestBindings, ok := bindings.FromContext(request.Context())
-	if !ok || requestBindings.Storage == nil {
+	if !ok {
 		if err := httpx.WriteError(w, http.StatusInternalServerError, "service unavailable"); err != nil {
-			handler.logger.ErrorContext(request.Context(), "could not write JSON response", "error", err)
+			handler.logger.ErrorContext(request.Context(), "could not write JSON response", slog.Any(logkey.Error, err))
 		}
-		return bindings.Bindings{}
+		return bindings.Bindings{}, false
 	}
-	return requestBindings
+	return requestBindings, true
 }
 
 func (handler *Handler) acquirePermit(ctx context.Context) (func(), error) {
@@ -100,26 +108,26 @@ func (handler *Handler) writeAdmissionFailure(w http.ResponseWriter, request *ht
 	if errors.Is(err, errAdmissionTimeout) {
 		w.Header().Set(header.RetryAfter, strconv.Itoa(admissionRetryBaseSeconds+handler.admissionJitter()))
 		if writeErr := httpx.WriteError(w, http.StatusServiceUnavailable, admissionTimeoutMessage); writeErr != nil {
-			handler.logger.ErrorContext(request.Context(), "could not write JSON response", "error", writeErr)
+			handler.logger.ErrorContext(request.Context(), "could not write JSON response", slog.Any(logkey.Error, writeErr))
 		}
 		return
 	}
 	if writeErr := httpx.WriteError(w, http.StatusRequestTimeout, cancellationMessage); writeErr != nil {
-		handler.logger.ErrorContext(request.Context(), "could not write JSON response", "error", writeErr)
+		handler.logger.ErrorContext(request.Context(), "could not write JSON response", slog.Any(logkey.Error, writeErr))
 	}
 }
 
 func (handler *Handler) writeUnexpectedFailure(w http.ResponseWriter, request *http.Request, err error, internalMessage string) {
 	if errors.Is(err, context.Canceled) || errors.Is(err, context.DeadlineExceeded) {
 		if writeErr := httpx.WriteError(w, http.StatusRequestTimeout, cancellationMessage); writeErr != nil {
-			handler.logger.ErrorContext(request.Context(), "could not write JSON response", "error", writeErr)
+			handler.logger.ErrorContext(request.Context(), "could not write JSON response", slog.Any(logkey.Error, writeErr))
 		}
 		return
 	}
 	// Provider error text can contain private object URLs and storage keys.
-	handler.logger.ErrorContext(request.Context(), internalMessage)
+	handler.logger.ErrorContext(request.Context(), "request failed", slog.String(logkey.Failure, internalMessage))
 	if writeErr := httpx.WriteError(w, http.StatusInternalServerError, internalMessage); writeErr != nil {
-		handler.logger.ErrorContext(request.Context(), "could not write JSON response", "error", writeErr)
+		handler.logger.ErrorContext(request.Context(), "could not write JSON response", slog.Any(logkey.Error, writeErr))
 	}
 }
 
@@ -193,7 +201,7 @@ func classifyPipelineFailure(err error, internalMessage string) pipelineFailure 
 type pipelineLogEvent struct {
 	ctx        context.Context
 	stage      pipelineStage
-	storageKey string
+	storageKey storageKey
 	outcome    pipelineOutcome
 	startedAt  time.Time
 }
@@ -204,12 +212,13 @@ func (handler *Handler) logStage(event pipelineLogEvent) {
 	if event.outcome == pipelineOutcomeFailed {
 		level = slog.LevelError
 	}
-	handler.logger.Log(
+	handler.logger.LogAttrs(
 		event.ctx,
 		level,
-		string(event.stage),
-		"storage_key_digest", storageKeyDigest(event.storageKey),
-		"outcome", string(event.outcome),
-		"duration_ms", time.Since(event.startedAt).Milliseconds(),
+		"pipeline stage",
+		slog.String(logkey.Stage, string(event.stage)),
+		slog.String(logkey.StorageKeyDigest, event.storageKey.digest()),
+		slog.String(logkey.Outcome, string(event.outcome)),
+		slog.Int64(logkey.DurationMS, time.Since(event.startedAt).Milliseconds()),
 	)
 }

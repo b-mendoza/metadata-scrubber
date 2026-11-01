@@ -1,11 +1,13 @@
 package handler
 
 import (
+	"log/slog"
 	"net/http"
 	"time"
 	"uuid"
 
 	"metadata-scrubber/internal/httpx"
+	"metadata-scrubber/internal/logkey"
 	"metadata-scrubber/internal/storage"
 )
 
@@ -21,9 +23,9 @@ func (handler *Handler) Upload(w http.ResponseWriter, request *http.Request) {
 	}
 
 	fileID := uuid.NewV4().String()
-	storageKey := storageKeyPrefix + fileID
-	requestBindings := handler.bindingsFromRequest(w, request)
-	if requestBindings.Storage == nil {
+	key := storageKey(storageKeyPrefix + fileID)
+	requestBindings, ok := handler.bindingsFromRequest(w, request)
+	if !ok {
 		return
 	}
 
@@ -38,9 +40,9 @@ func (handler *Handler) Upload(w http.ResponseWriter, request *http.Request) {
 		return
 	}
 
-	handler.logStage(pipelineLogEvent{ctx: request.Context(), stage: pipelineStageUploadCreated, storageKey: storageKey, outcome: pipelineOutcomeSuccess, startedAt: startedAt})
-	if err := writeJSON(w, http.StatusOK, uploadResponse{StorageKey: storageKey, UploadURL: grant.URL}); err != nil {
-		handler.logger.ErrorContext(request.Context(), "could not write JSON response", "error", err)
+	handler.logStage(pipelineLogEvent{ctx: request.Context(), stage: pipelineStageUploadCreated, storageKey: key, outcome: pipelineOutcomeSuccess, startedAt: startedAt})
+	if err := writeJSON(w, http.StatusOK, uploadResponse{StorageKey: key, UploadURL: grant.URL}); err != nil {
+		handler.logger.ErrorContext(request.Context(), "could not write JSON response", slog.Any(logkey.Error, err))
 		return
 	}
 	requestBindings.Events(request.Context(), "upload grant created")
@@ -49,13 +51,13 @@ func (handler *Handler) Upload(w http.ResponseWriter, request *http.Request) {
 func (handler *Handler) validateUploadRequest(w http.ResponseWriter, request *http.Request, input uploadRequest) bool {
 	if !validFileName(input.FileName) || input.FileSizeBytes <= 0 {
 		if err := httpx.WriteError(w, http.StatusBadRequest, "invalid upload request"); err != nil {
-			handler.logger.ErrorContext(request.Context(), "could not write JSON response", "error", err)
+			handler.logger.ErrorContext(request.Context(), "could not write JSON response", slog.Any(logkey.Error, err))
 		}
 		return false
 	}
 	if input.FileSizeBytes > storage.MaxSourceObjectBytes {
 		if err := httpx.WriteError(w, http.StatusRequestEntityTooLarge, "source file exceeds 10 MiB limit"); err != nil {
-			handler.logger.ErrorContext(request.Context(), "could not write JSON response", "error", err)
+			handler.logger.ErrorContext(request.Context(), "could not write JSON response", slog.Any(logkey.Error, err))
 		}
 		return false
 	}
