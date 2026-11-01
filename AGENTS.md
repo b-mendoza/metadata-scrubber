@@ -28,7 +28,7 @@ Review the user's instructions before you act. Treat them as a starting point fo
 
 ## Code and test design
 
-- Write separate and explicit application code for each use case. Do not replace use-case code with one general function for many use cases. Delete an application helper that does nothing except remove duplication. Keep duplication at each application call site. In a test file, you can keep one local setup helper that builds the code under test. Call the code under test explicitly in each test.
+- Write separate and explicit application code for each use case. Do not replace use-case code with one general function for many use cases. Keep use-case logic at each call site. A shared application helper must own one decision that every caller shares, such as how to report a failed response write. Delete a helper that only shortens use-case code. In a test file, you can keep one local setup helper that builds the code under test. Call the code under test explicitly in each test.
 - Make each custom lint rule message descriptive, actionable, and educational. Identify the problem and explain the required fix. Do not explain how to silence or bypass the rule.
 - Fix the cause of each failed check. If one place needs an exception, keep the exception as narrow as the tool allows and state the reason. Do not add a broad exception that covers a whole file or scope.
 - In tests, build request and response payloads from concrete typed contracts at each call site. Serialize each payload at that call site. Check each error. Use raw wire literals in dedicated wire-contract tests and nowhere else.
