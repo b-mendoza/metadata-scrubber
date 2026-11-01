@@ -66,17 +66,15 @@ Decision: approve, adjust, or decline.
    ran (command matched no tests).
 8. Reviewer verifies both verdicts and the warning; returns
    REFACTOR_REVIEW: PASS with the warning noted.
-9. Orchestrator returns PASS_WITH_WARNINGS, not PASS, and deletes the
+9. Orchestrator explains that the refactor completed but validation did not run, and deletes the
    .handoffs/refactoring-code/ artifacts.
 ```
 
 ## PASS_WITH_WARNINGS Handoff Skeleton
 
 ```text
-Status: PASS_WITH_WARNINGS
-
-Warning: validation command exited 0 but matched zero tests, so validation is
-recorded as not run.
+The refactor is complete, but validation did not run: the command exited 0
+but matched zero tests.
 
 1. Current behavior summary: <summary>
 2. Diagnosis: <chunk findings that drove the plan>
