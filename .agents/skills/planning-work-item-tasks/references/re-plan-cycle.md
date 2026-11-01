@@ -13,7 +13,7 @@ Read this file only when Phase 3 re-dispatches Phase 2 with `RE_PLAN=true`, or w
 | `RE_PLAN`       | Yes      | Must be `true`                                |
 | `DECISIONS`     | Yes      | Phase 3 decisions that require plan changes   |
 
-If `DECISIONS` is missing, stop with `PLANNING: FAIL` and `Failure category: PREFLIGHT`. Critique prose alone is not a revision instruction.
+If `DECISIONS` is missing, stop and explain the missing preflight input in prose. Critique prose alone is not a revision instruction.
 
 ## Earliest Affected Stage
 
@@ -39,7 +39,7 @@ Local validator repair budget:
 | ------------------------- | ------------------------ | -------------------------------------------------- |
 | Targeted validator repair | 3 failed cycles per gate | Repeated `STAGE_VALIDATION: FAIL` at the same gate |
 
-At the cap, stop with `PLANNING: FAIL`, the gate's failure category, and the preserved artifact paths.
+At the cap, stop and explain the failed gate and preserved artifact paths in prose.
 
 ## Error Handling
 

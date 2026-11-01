@@ -77,21 +77,8 @@ Use the active playbook's detection cue and exact platform wording. In this mode
 - the plan stays execution-oriented and does not recommend child items of the child item; and
 - fewer than two tasks is valid only with the documented single-task justification in `## Assumptions and Constraints` or `## Notes`.
 
-## Return Handoff
+## Completion summary
 
-Render `<IDENTITY_LINE>` from the active playbook (`ISSUE_SLUG: <KEY>` for GitHub; `TICKET_KEY: <KEY>` for Jira):
+Reply in plain prose, without a `PLANNING:` status line or a key/value routing envelope. Identify the work item and the final tasks file, or say that it was not written. Include the task count, unique branch count, cross-cutting question count, validation warning count, and every preserved artifact path. A short artifact list is fine.
 
-```text
-PLANNING: PASS | FAIL
-<IDENTITY_LINE>
-File: <final file path or "not written">
-Tasks: <N>
-Branches: <N unique branch names>
-Cross-cutting questions: <N>
-Validation warnings: <N>
-Failure category: PREFLIGHT | STAGE_1 | STAGE_2 | STAGE_3 | POSTPIPELINE | NONE
-Reason: <one line>
-Artifacts preserved: <comma-separated paths>
-```
-
-Use `PLANNING: PASS` only after every required producer verdict and independent stage gate passes. On `PLANNING: FAIL`, retain the same ten-line schema and use the gate that stopped progress as the failure category.
+Report successful planning only after every required producer verdict and independent gate passes. If planning stopped, name the failed gate, explain why, give the recovery action, and list any preserved partial artifacts. When no artifacts were written, say so. Do not claim that implementation or tracker changes occurred.

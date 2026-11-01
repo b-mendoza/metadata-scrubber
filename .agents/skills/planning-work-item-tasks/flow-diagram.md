@@ -97,6 +97,6 @@ flowchart TD
   class FAIL_PREFLIGHT,FAIL_S1,FAIL_S2,FAIL_S3,FAIL_POST,STOP stop;
 ```
 
-Readiness rule: `PLANNING: PASS` requires the active platform's preflight when needed, every selected producer, every independent stage gate, and postpipeline validation to pass. Re-plan begins at the earliest affected stage, reuses unchanged branches, and still finishes at postpipeline.
+Readiness rule: Reporting successful planning requires the active platform's preflight when needed, every selected producer, every independent stage gate, and postpipeline validation to pass. Re-plan begins at the earliest affected stage, reuses unchanged branches, and still finishes at postpipeline.
 
 Retry rule: each validator gate owns a separate counter and allows at most three failed targeted repair cycles. Producer non-PASS statuses, validator errors, preflight failures, malformed statuses, and exhausted counters are terminal for the current run.

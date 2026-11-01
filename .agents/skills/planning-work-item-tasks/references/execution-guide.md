@@ -22,7 +22,7 @@ Run these gates in order:
 
 | Gate           | Dispatch                                         | Required output                                                                   | On failure                                                                                          |
 | -------------- | ------------------------------------------------ | --------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------- |
-| `preflight`    | `stage-validator`                                | Snapshot exists and matches the active playbook's exact heading list              | Stop with `Failure category: PREFLIGHT`                                                             |
+| `preflight`    | `stage-validator`                                | Snapshot exists and matches the active playbook's exact heading list              | Stop and explain the preflight failure in the completion summary                                                             |
 | Stage 1        | `task-planner`, then `stage-validator`           | `PLAN: PASS`; Stage 1 gate passes                                                 | Retry only the Stage 1 producer on validator `FAIL`; stop on producer non-PASS or validator `ERROR` |
 | Stage 2        | `dependency-prioritizer`, then `stage-validator` | `PRIORITIZATION: PASS`; Stage 2 gate passes                                       | Retry only the Stage 2 producer on validator `FAIL`; stop on producer non-PASS or validator `ERROR` |
 | Stage 3        | `task-validator`, then `stage-validator`         | `TASK_VALIDATION: PASS`; Stage 3 gate passes                                      | Retry only the Stage 3 producer on validator `FAIL`; stop on producer non-PASS or validator `ERROR` |
@@ -42,6 +42,8 @@ or
 PLAYBOOK_PATH=../references/jira-playbook.md
 ```
 
+Pass `DEPENDENCY_GUIDE_PATH=../references/dependency-and-branch-guide.md` to every validator, including Stage 3 and postpipeline; do not guess a shortened dependency-guide filename.
+
 Bundled package paths under `references/` or `subagents/` are relative to the file that consumes them. Workflow artifact paths under `docs/` are relative to the repository root. Every payload also includes the exact `MUTATION_LIMITS` block from `SKILL.md`.
 
 ```text
@@ -58,7 +60,7 @@ EXTERNAL_SOURCES_PATH=../references/external-sources.md
 
 ### Preflight
 
-Dispatch `stage-validator` with:
+When a subagent tool is available, dispatch `stage-validator` even when the coordinator notices an obvious missing heading. Await its independent verdict before stopping; the coordinator's own glance never replaces this gate. If no subagent tool exists, run `stage-validator`'s full instructions inline and report degraded isolation. Use this payload:
 
 ```text
 TICKET_KEY=<KEY>
@@ -66,6 +68,7 @@ PLAYBOOK_PATH=../references/<platform>-playbook.md
 VALIDATION_CHECKS_PATH=../references/validation-checks.md
 OUTPUT_CONTRACT_PATH=../references/output-contract.md
 EXTERNAL_SOURCES_PATH=../references/external-sources.md
+DEPENDENCY_GUIDE_PATH=../references/dependency-and-branch-guide.md
 STAGE=preflight
 FILE_PATH=docs/<KEY>.md
 ```
@@ -118,6 +121,7 @@ PLAYBOOK_PATH=../references/<platform>-playbook.md
 VALIDATION_CHECKS_PATH=../references/validation-checks.md
 OUTPUT_CONTRACT_PATH=../references/output-contract.md
 EXTERNAL_SOURCES_PATH=../references/external-sources.md
+DEPENDENCY_GUIDE_PATH=../references/dependency-and-branch-guide.md
 SNAPSHOT_PATH=docs/<KEY>.md
 PLAN_PATH=docs/<KEY>-stage-2-prioritized.md
 OUTPUT_PATH=docs/<KEY>-tasks.md
@@ -149,7 +153,7 @@ The loop applies only to `STAGE_VALIDATION: FAIL` for Stage 1, Stage 2, Stage 3,
 
 1. Store only the validator's issue list.
 2. Increment the failure counter for that exact gate.
-3. If the counter is 3, stop with `PLANNING: FAIL`; do not start another repair.
+3. If the counter is 3, stop and explain the failed gate in prose; do not start another repair.
 4. Otherwise redispatch only the producer of the failing artifact with original inputs and `VALIDATION_ISSUES`.
 5. Re-run only the failing independent gate.
 6. For `postpipeline`, redispatch Stage 3, then rerun both Stage 3 and postpipeline validation.

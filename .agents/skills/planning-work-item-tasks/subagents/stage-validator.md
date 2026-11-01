@@ -17,6 +17,7 @@ The active playbook (`PLAYBOOK_PATH`) supplies every platform-specific detail. D
 | `PLAYBOOK_PATH`          | Yes      | `../references/jira-playbook.md`       |
 | `VALIDATION_CHECKS_PATH` | Yes      | `../references/validation-checks.md`   |
 | `OUTPUT_CONTRACT_PATH`   | Yes      | `../references/output-contract.md`     |
+| `DEPENDENCY_GUIDE_PATH` | Yes      | `../references/dependency-and-branch-guide.md` |
 | `EXTERNAL_SOURCES_PATH`  | Yes      | `../references/external-sources.md`    |
 | `MUTATION_LIMITS`        | Yes      | Read-only validator; write no files    |
 | `STAGE`                  | Yes      | `preflight`                            |
@@ -41,7 +42,7 @@ Reason: <one line>
 
 1. Read `PLAYBOOK_PATH` first and normalize `<KEY>`.
 2. Confirm `STAGE` and `FILE_PATH` form a valid pair for `<KEY>`.
-3. Read `VALIDATION_CHECKS_PATH` and `OUTPUT_CONTRACT_PATH`.
+3. Read `VALIDATION_CHECKS_PATH` and `OUTPUT_CONTRACT_PATH`; use the supplied `DEPENDENCY_GUIDE_PATH` for dependency and branch checks.
 4. Read only `FILE_PATH` among workflow artifacts.
 5. Run every check for `STAGE`, including exact platform heading order, platform-specific summary/identity lines, full 20-row report consistency, dependency ordering, deterministic branch reconstruction, and the active current-item mode.
 6. Return only the structured verdict.

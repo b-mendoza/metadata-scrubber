@@ -50,7 +50,7 @@ docs/<KEY>-tasks.md
 
 Preserve written artifacts on success or failure and leave them unstaged. Stage files are A1 resume/re-plan state; the final task plan is a Class B durable workflow deliverable. Classification never authorizes staging, commit, push, or platform mutation.
 
-The active playbook supplies the exact Phase 1 snapshot headings, final summary heading, child-coverage source, terminology, identity fields, and current-item wording. [`./references/output-contract.md`](./references/output-contract.md) owns the shared final structure and ten-line handoff.
+The active playbook supplies the exact Phase 1 snapshot headings, final summary heading, child-coverage source, terminology, identity fields, and current-item wording. [`./references/output-contract.md`](./references/output-contract.md) owns the shared final structure and prose completion summary.
 
 ## Mutation Limits
 
@@ -65,7 +65,7 @@ skill or other package definitions, repository configuration, or version-control
 state; do not call a Jira or GitHub write path.
 ```
 
-A repair cycle tightens scope to the failing artifact and `VALIDATION_ISSUES`. Any requested expansion outside these limits stops with `PLANNING: FAIL` and the current gate's failure category.
+A repair cycle tightens scope to the failing artifact and `VALIDATION_ISSUES`. Any requested expansion outside these limits stops and explains the failure at the current gate in prose.
 
 ## Subagent Registry
 
@@ -106,7 +106,7 @@ Read one subagent file only when dispatching it. Skill-local `subagents/` files 
 | `G_STAGE_3`      | Final plan contains a consistent 20-row validation report and producer status                        | `stage-validator`, `STAGE=3`            |
 | `G_POSTPIPELINE` | Full downstream structure, ordering, branches, dependencies, and current-item mode pass              | `stage-validator`, `STAGE=postpipeline` |
 
-`PLANNING: PASS` requires all gates selected by the normal or re-plan route to pass, including `G_POSTPIPELINE`.
+Reporting successful planning requires all gates selected by the normal or re-plan route to pass, including `G_POSTPIPELINE`.
 
 ## Dispatch Contract
 
@@ -139,11 +139,11 @@ Each validator gate owns a counter initialized to 0. Increment after each `STAGE
 
 ## Return Format
 
-Return only the ten-line handoff from `output-contract.md`, with the active playbook's exact identity line. Report `Failure category: NONE` only on PASS. Always include every artifact path that exists, including partial intermediates preserved after failure.
+Return the prose summary described in `output-contract.md`, not a status line or key/value routing envelope. Preserve the workflow key, final task file path, counts, warnings, and every artifact path that exists, including partial intermediates after failure. Internal producer and validator returns remain structured and unchanged.
 
 ## Example
 
 <example>
 Input: `TICKET_KEY=acme-app-42`
 
-Detect GitHub from the slug shape, load `./references/github-playbook.md`, preserve `TICKET_KEY=acme-app-42`, and dispatch preflight with `PLAYBOOK_PATH=../references/github-playbook.md`. The playbook requires `## Child Issues` and `## Issue Summary`; Jira-only `## Subtasks` and `## Ticket Summary` are not required. Run all stages and return `PLANNING: PASS` only after postpipeline validation. </example>
+Detect GitHub from the slug shape, load `./references/github-playbook.md`, preserve `TICKET_KEY=acme-app-42`, and dispatch preflight with `PLAYBOOK_PATH=../references/github-playbook.md`. The playbook requires `## Child Issues` and `## Issue Summary`; Jira-only `## Subtasks` and `## Ticket Summary` are not required. Run all stages and report successful planning in prose only after postpipeline validation. </example>
