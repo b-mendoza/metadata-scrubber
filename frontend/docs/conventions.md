@@ -219,7 +219,7 @@ const Message = () => {
 
 Read parent `Suspense` and error boundaries, including parents in other files, before you add a loader. Import rules cannot check those relationships.
 
-Do not mark route data as required. The operator decides that.
+Do not mark route query data as required. The operator decides that.
 
 Read `trpc` and `queryClient` from loader context in a `loader`.
 In a route file, the route component and any regular component in that file read both clients from `Route.useRouteContext()`.
