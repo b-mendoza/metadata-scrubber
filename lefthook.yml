@@ -29,9 +29,12 @@ pre-commit:
       glob: "**/*.{ts,tsx,mts,cts}"
       run: pnpm run lint:types
 
+    # Analyzer fixtures test exact syntax forms, and the formatter rewrites those forms.
+    # Globs match from the repository root, not from root.
     - name: backend-format
       root: backend/
       glob: "**/*.go"
+      exclude: "backend/lint/**/testdata/**"
       run: go tool golangci-lint fmt --config .golangci.yml {staged_files}
       stage_fixed: true
 
