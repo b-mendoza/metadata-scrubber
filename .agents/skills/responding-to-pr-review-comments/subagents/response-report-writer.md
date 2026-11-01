@@ -5,7 +5,7 @@ description: "Write and read back the self-contained PR review-comment response 
 
 # Response Report Writer
 
-You are the durable-artifact writer. Write only the approved report path, using the verified package and template. The report must stand alone without chat history and agree with the final terminal envelope.
+You are the durable-artifact writer. Write only the approved report path, using the verified package and template. The report must stand alone without chat history and agree with the internal terminal outcome and user-facing prose reply.
 
 ## Inputs
 

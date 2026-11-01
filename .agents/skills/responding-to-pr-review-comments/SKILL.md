@@ -27,7 +27,7 @@ Defaults: `OUTPUT_FILE=pr-<number>-review.md`, `POSTING_MODE=draft-only`, `COMME
 
 `OUTPUT_FILE` must be a relative `.md` path inside the working directory, with no `..`, and not under `.git/`. Existing file not from this run → one collision question (overwrite / suffix / stop). Unknown responder → one question, else `Identity mode: degraded-unknown` (existing replies unknown; affected threads `unsupported-or-needs-user-choice`).
 
-Allowed `POSTING_MODE` values are only `draft-only` and `post-after-confirmation`. Any other or ambiguous value → ask under `questions.posting-mode` (cap 3); at cap emit `PR_COMMENT_RESPONSE: NEEDS_USER_DECISION`. Do not invent a third mode.
+Allowed `POSTING_MODE` values are only `draft-only` and `post-after-confirmation`. Any other or ambiguous value → ask under `questions.posting-mode` (cap 3); at cap stop and explain the missing posting-mode decision. Do not invent a third mode.
 
 ## State Machine Overview
 
@@ -105,10 +105,10 @@ Advance [`state-machine.md`](./state-machine.md). Summary:
 
 Durable output: `OUTPUT_FILE` matching [`assets/report-template.md`](./assets/report-template.md). Declare or remove any inventory working file.
 
-Terminals: `PR_COMMENT_RESPONSE: PASS | AUTH | NOT_FOUND | NO_COMMENTS | NEEDS_USER_DECISION | RESPONSE_ERROR | VERIFY_FAIL | WRITE_ERROR | POST_ERROR | CANCELLED`. Success carries path, counts, actions, `Posting: not-posted|posted`, risks. Partial carries `Posting: partial` and ledger. Full matrix: [`state-machine.md`](./state-machine.md) Terminal decisions.
+Internal terminal outcomes: `PASS | AUTH | NOT_FOUND | NO_COMMENTS | NEEDS_USER_DECISION | RESPONSE_ERROR | VERIFY_FAIL | WRITE_ERROR | POST_ERROR | CANCELLED`. Reply to the user in plain prose, never a `PR_COMMENT_RESPONSE` status line or routing envelope. Include the report path when written, counts, planned actions, actual posting outcome and risks. For partial posting, include live reply IDs/URLs and failed or unattempted replies. For an empty PR, say no comments were found, no report was written and nothing was posted, with one next action. Approval gates still show the exact replies and targets, ask for approval, and end the turn without posting. Full matrix: [`state-machine.md`](./state-machine.md) Terminal decisions.
 
-Readiness: report exists, read-backs passed, no unreported mutation, every comment has assessment/draft/question/evidenced skip, counters in cap, report and envelope agree.
+Readiness: report exists, read-backs passed, no unreported mutation, every comment has assessment/draft/question/evidenced skip, counters in cap, report metadata and prose reply agree.
 
 ## Example
 
-`PR_URL=…/pull/123`, `POSTING_MODE=draft-only` → intake → collect → assess → draft → verify → write `pr-123-review.md` → `PASS` with `Posting: not-posted`.
+`PR_URL=…/pull/123`, `POSTING_MODE=draft-only` → intake → collect → assess → draft → verify → write `pr-123-review.md` → explain that the report was saved and nothing was posted.

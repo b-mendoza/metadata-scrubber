@@ -102,13 +102,4 @@ Next step: Sync the report with Posting: partial and the live-reply ledger.
 
 ## Zero In-Scope Report Outcome
 
-```text
-PR_COMMENT_RESPONSE: PASS
-Report: pr-42-review.md
-Comments assessed: 0
-Actions: 0 implement, 0 clarify, 0 push back, 0 ask user
-Posting: not-posted
-Ledger: none
-Working inventory file: none
-Notes: COMMENT_SCOPE matched no collected comments; this is not NO_COMMENTS because the PR had comments outside scope.
-```
+Saved `pr-42-review.md` with zero in-scope assessments and no planned actions. Nothing was posted and no inventory file remains. The PR has comments, but none matched `COMMENT_SCOPE`; re-run with a broader scope to assess them.

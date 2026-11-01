@@ -1,6 +1,6 @@
 # Status Contracts
 
-Read this file when producing or checking a phase status, terminal envelope, or posting ledger. Keep blocks compact: include evidence references, URLs, dates, IDs, and paths, not raw payloads, full diffs, long logs, or long documentation excerpts.
+Read this file when producing or checking a phase status, terminal reply, or posting ledger. Keep blocks compact: include evidence references, URLs, dates, IDs, and paths, not raw payloads, full diffs, long logs, or long documentation excerpts.
 
 ## Shared Values
 
@@ -11,7 +11,7 @@ Read this file when producing or checking a phase status, terminal envelope, or 
 - Posting states: `not-posted`, `pending-confirmation`, `posted`, `partial`, `cancelled`, `failed`.
 - Collection completeness: `complete`, `limited`, or `incomplete`. `PASS` may use only `complete` or `limited`.
 - Counter fields: `questions.pr-url`, `questions.output-path`, `questions.posting-mode`, `questions.product`, `questions.target`, `questions.wording`, `preview-decision`, `preview-repair`, `contract-repair`, `verify.context.<item>`, `verify.fix.<item>`.
-- `POSTING_MODE` allowed values: `draft-only`, `post-after-confirmation` only. Unknown or ambiguous values use `questions.posting-mode` (cap 3), then `PR_COMMENT_RESPONSE: NEEDS_USER_DECISION`.
+- `POSTING_MODE` allowed values: `draft-only`, `post-after-confirmation` only. Unknown or ambiguous values use `questions.posting-mode` (cap 3), then stop and explain the missing posting-mode decision.
 
 ## Collector Output
 
@@ -137,7 +137,7 @@ Actions: <implement count> implement, <clarify count> clarify, <pushback count> 
 Skipped/report-only: <count>
 Posting status: <not-posted | pending-confirmation | posted | partial | cancelled | failed>
 Posting outcome: <none | pending-confirmation | posted ledger | partial ledger | cancelled by user | auth failure | preview-failed | post-error>
-Final envelope intent: <PR_COMMENT_RESPONSE value and Posting value, or none>
+Final envelope intent: <internal terminal outcome and Posting value, or none>
 Read-back verified: <yes | no, with reason>
 Fix target: none | verifier:<item>
 Reason: none | <why status is ERROR>
@@ -167,28 +167,12 @@ Reason: none | <why status is not PASS>
 Next step: none | <smallest recovery action>
 ```
 
-`POST: PARTIAL` means at least one reply is live on GitHub and later approved replies failed or were not attempted. The orchestrator must sync the report and emit `PR_COMMENT_RESPONSE: POST_ERROR` with `Posting: partial`.
+`POST: PARTIAL` means at least one reply is live on GitHub and later approved replies failed or were not attempted. The orchestrator must sync the report and explain the partial posting, including live reply IDs/URLs and remaining failed or unattempted replies.
 
-## Orchestrator Failure Envelope
+## Orchestrator stop reply
 
-```text
-PR_COMMENT_RESPONSE: AUTH | NOT_FOUND | NO_COMMENTS | NEEDS_USER_DECISION | RESPONSE_ERROR | VERIFY_FAIL | WRITE_ERROR | POST_ERROR | CANCELLED
-Report: <OUTPUT_FILE or none>
-Posting: <none | not-posted | partial | cancelled | failed>
-Reason: <one line>
-Ledger: <required for partial or post-error after any live side effect>
-Next step: <one clear action>
-```
+Explain the cause, report path or that no report was written, actual posting outcome, and one safe next action in prose. Include the ledger after any live side effect, especially partial or failed posting. Never print `PR_COMMENT_RESPONSE` status lines or a key/value routing envelope. On `NO_COMMENTS`, say the PR has no comments, no report was written and nothing was posted; suggest re-running when feedback arrives or checking the PR URL.
 
-## Final Orchestrator Success
+## Final orchestrator success
 
-```text
-PR_COMMENT_RESPONSE: PASS
-Report: <OUTPUT_FILE>
-Comments assessed: <number>
-Actions: <implement count> implement, <clarify count> clarify, <pushback count> push back, <ask-user count> ask user
-Posting: <not-posted | posted>
-Ledger: <posted ledger when Posting: posted, otherwise none>
-Working inventory file: <none | declared path | removed>
-Notes: <residual risk or none>
-```
+Say the report was saved and give its path, assessed comment count, planned actions, actual posting outcome, live reply URLs when posted, inventory file disposition, and residual risks. Keep internal statuses private. The report's legacy `Final envelope intent` field still records the internal terminal outcome and posting value; it does not prescribe a public envelope.

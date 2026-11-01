@@ -34,7 +34,7 @@ Six specialists stay separate: each owns a distinct status prefix (`COLLECT`, `A
 | `GatePreviewApproval`       | active   | Approve, decline, or wording change                  |
 | `RecordApproval`            | active   | Store `APPROVAL_RECORD` (timestamp + exact text)     |
 | `Post`                      | active   | Dispatch `thread-reply-poster`                       |
-| `SyncReport`                | active   | Redispatch writer to sync ledger + envelope          |
+| `SyncReport`                | active   | Redispatch writer to sync ledger + outcome metadata          |
 | `TerminalPassNotPosted`     | terminal | `PASS` + `Posting: not-posted`                       |
 | `TerminalPassPosted`        | terminal | `PASS` + `Posting: posted`                           |
 | `TerminalAuth`              | terminal | `AUTH`                                               |
@@ -123,7 +123,7 @@ Six specialists stay separate: each owns a distinct status prefix (`COLLECT`, `A
 | `SyncReport`          | `TerminalCancelled`         | sync ok; cancelled                                          |
 | `SyncReport`          | `TerminalAuth`              | sync ok; auth                                               |
 | `SyncReport`          | `TerminalWriteError`        | sync write/read-back fails                                  |
-| each terminal         | `[*]`                       | emit `PR_COMMENT_RESPONSE: …` envelope                      |
+| each terminal         | `[*]`                       | explain outcome and next action in prose                      |
 
 ## Cycle ledgers
 
