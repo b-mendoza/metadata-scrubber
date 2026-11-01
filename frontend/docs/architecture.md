@@ -6,7 +6,7 @@
 
 Developers build the frontend with [TanStack Start](https://tanstack.com/start) through `@tanstack/react-start`. They keep file-based routes under `src/routes/`. They mount tRPC at `src/routes/api/trpc.$.ts`.
 
-The index route starts `products.getMessage` in its `loader` without waiting. `IndexRoute` wraps `Message` in `Suspense`. `Message` reads `trpc` from `Route.useRouteContext()` and the query with `useSuspenseQuery`.
+The index route starts `products.getMessage` in its `loader` without waiting. `IndexRoute` wraps `Message` in `Suspense`. `Message` reads `trpc` from `Route.useRouteContext()`. It reads the query with `useSuspenseQuery`.
 
 ## Browser analytics
 
