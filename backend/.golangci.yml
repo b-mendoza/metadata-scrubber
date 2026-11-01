@@ -48,8 +48,7 @@ linters:
     - reassign
     - recvcheck
     - revive
-    # Staged rule: sloglint reports 38 existing logging-policy findings.
-    # - sloglint
+    - sloglint
     - staticcheck
     - testifylint
     # Staged rule: thelper reports 22 existing helper findings.
@@ -86,6 +85,20 @@ linters:
           msg: Use the injected log/slog logger instead of the global log package.
         - pattern: '^slog\.(Debug|Info|Warn|Error|Log|LogAttrs)(Context)?$'
           msg: Use the injected *slog.Logger instead of the global slog functions.
+        - pattern: '^slog\.Default$'
+          msg: >-
+            Require the caller's *slog.Logger as a parameter. A global logger
+            fallback hides a missing dependency and sends records past the
+            configured handlers.
+        - pattern: '^http\.Error$'
+          msg: >-
+            Write error responses with httpx.WriteError and a fixed public
+            message. http.Error writes plain text, and callers often pass
+            err.Error(), which can expose private URLs and storage keys.
+        - pattern: '^http\.DefaultClient$'
+          msg: >-
+            Construct an *http.Client with a Timeout. http.DefaultClient has no
+            overall timeout, so a stalled response keeps the request open.
     funlen:
       lines: -1
     gochecksumtype:
@@ -216,16 +229,15 @@ linters:
         - name: useless-break
         - name: var-naming
         - name: waitgroup-by-value
-    # Staged rule settings for the logging policy above.
-    # sloglint:
-    #   no-global: all
-    #   context: scope
-    #   static-msg: true
-    #   msg-style: lowercased
-    #   no-mixed-args: true
-    #   attr-only: true
-    #   no-raw-keys: true
-    #   key-naming-case: snake
+    sloglint:
+      no-global: all
+      context: scope
+      static-msg: true
+      msg-style: lowercased
+      no-mixed-args: true
+      attr-only: true
+      no-raw-keys: true
+      key-naming-case: snake
     staticcheck:
       checks:
         - all
