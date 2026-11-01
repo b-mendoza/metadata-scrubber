@@ -160,7 +160,7 @@ return errors.Join(bodyErr, fmt.Errorf("release PDF metadata stream cache: %w", 
 
 - Test endpoint responses through the real handler. Write each endpoint and its payload type in the test. Do not select them with an enum or boolean. Helper-only tests do not cover endpoint wiring.
 - Pass a short timeout and time goroutines with channels. Use deadlines to detect a stuck test, not to prove that work finishes at a particular speed. Machine load must not decide correctness.
-- Compare the full ordered list of log records with `require.Equal`. An exact list keeps log output deterministic and also rejects an extra false-success record. Capture each record into a test struct that has only the fields the test checks. The capture handler skips other attributes, as `z.object` drops unknown keys.
+- Compare the full ordered list of log records with `require.Equal`. An exact list keeps log output deterministic and also rejects an extra false-success record. Capture each record into a test struct that has only the fields the test checks. The capture handler skips all other attributes.
 
 For a rejected non-PDF upload, require the exact ordered record list:
 
