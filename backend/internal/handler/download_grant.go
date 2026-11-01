@@ -5,25 +5,27 @@ import (
 	"net/http"
 	"time"
 
-	"metadata-scrubber/internal/httpx"
+	"metadata-scrubber/internal/bindings"
 	"metadata-scrubber/internal/logkey"
 	"metadata-scrubber/internal/storage"
 )
 
 // DownloadGrant creates a fresh grant for one exact sanitized source revision.
 func (handler *Handler) DownloadGrant(w http.ResponseWriter, request *http.Request) {
-	input, ok := decodeJSONRequest[downloadGrantRequest](handler.logger, w, request)
+	input, ok := decodeJSONRequest[downloadGrantRequest](handler, w, request)
 	if !ok {
 		return
 	}
-	fileID, ok := handler.downloadGrantFileID(w, request, input)
+	fileID, ok := parseStorageKey(input.StorageKey)
 	if !ok {
+		handler.writeError(w, request, http.StatusBadRequest, "invalid storage key")
 		return
 	}
-	requestBindings, ok := handler.bindingsFromRequest(w, request)
-	if !ok {
+	if _, err := storage.SanitizedObjectKey(fileID, input.ETag); err != nil {
+		handler.writeError(w, request, http.StatusBadRequest, "invalid ETag")
 		return
 	}
+	requestBindings, _ := bindings.FromContext(request.Context())
 
 	exists, err := requestBindings.Storage.SanitizedExists(request.Context(), fileID, input.ETag)
 	if err != nil {
@@ -31,7 +33,7 @@ func (handler *Handler) DownloadGrant(w http.ResponseWriter, request *http.Reque
 		return
 	}
 	if !exists {
-		handler.writeDownloadGrantNotFound(w, request)
+		handler.writeError(w, request, http.StatusNotFound, "scrubbed file not found")
 		return
 	}
 
@@ -55,31 +57,4 @@ func (handler *Handler) DownloadGrant(w http.ResponseWriter, request *http.Reque
 		return
 	}
 	requestBindings.Events(request.Context(), "download grant refreshed")
-}
-
-func (handler *Handler) writeDownloadGrantNotFound(w http.ResponseWriter, request *http.Request) {
-	if writeErr := httpx.WriteError(w, http.StatusNotFound, "scrubbed file not found"); writeErr != nil {
-		handler.logger.ErrorContext(request.Context(), "could not write JSON response", slog.Any(logkey.Error, writeErr))
-	}
-}
-
-func (handler *Handler) downloadGrantFileID(
-	w http.ResponseWriter,
-	request *http.Request,
-	input downloadGrantRequest,
-) (string, bool) {
-	fileID, ok := parseStorageKey(input.StorageKey)
-	if !ok {
-		if err := httpx.WriteError(w, http.StatusBadRequest, "invalid storage key"); err != nil {
-			handler.logger.ErrorContext(request.Context(), "could not write JSON response", slog.Any(logkey.Error, err))
-		}
-		return "", false
-	}
-	if _, err := storage.SanitizedObjectKey(fileID, input.ETag); err == nil {
-		return fileID, true
-	}
-	if err := httpx.WriteError(w, http.StatusBadRequest, "invalid ETag"); err != nil {
-		handler.logger.ErrorContext(request.Context(), "could not write JSON response", slog.Any(logkey.Error, err))
-	}
-	return "", false
 }
