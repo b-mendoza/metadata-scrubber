@@ -188,7 +188,14 @@ return responseResult.value;
 
 ## Route data
 
-Treat every piece of route data as optional. Optional data can prefetch in the `loader`. The route can render before the query finishes.
+Treat route query data as optional. Optional data can prefetch in the `loader`. The route can render before the query finishes.
+
+Load browser config through the root `loader` as an exception to optional query data.
+The async `loader` returns the `loadPostHogBrowserConfig()` server-function promise.
+`RootComponent` reads `{ apiKey, options }` from `Route.useLoaderData()` before it creates `PostHogProvider`.
+The provider needs this server config before it renders.
+This config is not optional TanStack Query data.
+Keep `staleTime: Infinity` because the config stays fixed for each deployment.
 
 Read query data with `useSuspenseQuery` only.
 Put the fetch in a child component. Wrap that child in a `Suspense` boundary. Put the loading UI in the `fallback`.
