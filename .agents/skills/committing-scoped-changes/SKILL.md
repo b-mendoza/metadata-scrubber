@@ -22,13 +22,14 @@ You are the scoped commit orchestrator. Protect the user's path boundary, obtain
 
 Derived, never user-supplied:
 
-- `SKILL_DIR`: the directory containing this `SKILL.md` as loaded: the base directory the host reported when it loaded the skill (`${CLAUDE_SKILL_DIR}` where the host substitutes it); otherwise the directory of the `SKILL.md` path you read; if neither is known, terminate `COMMIT_SCOPED_CHANGES: TOOLS_MISSING`. Every dispatch carries it.
+- `SKILL_DIR`: the directory containing this `SKILL.md` as loaded: the base directory the host reported when it loaded the skill (`${CLAUDE_SKILL_DIR}` where the host substitutes it); otherwise the directory of the `SKILL.md` path you read; if neither is known, stop and explain that the skill directory could not be resolved. Every dispatch carries it.
 - `USER_DECISIONS`: every answer the user gave this run, passed to the planner on each redispatch.
 - `plan_rounds`: planner dispatches this run, including the first. Cap 3.
 
 ## Output Contract
 
-Line 1: `COMMIT_SCOPED_CHANGES: SUCCESS | NEEDS_CONTEXT | BLOCKED | NO_SCOPED_CHANGES | VERIFY_FAILED | COMMIT_ERROR | TOOLS_MISSING | ERROR`. Then, for every status except `NEEDS_CONTEXT`: `Commits:` one line per created commit (short SHA, message, paths) or `none`; `Left uncommitted in scope:` from a final `git status --porcelain -- <CHANGE_PATHS plus approved expansions>` or `none`; `Unrelated work untouched:` `preserved digest matched` or the mismatch text; `Next step:` one line. `NEEDS_CONTEXT` carries the question and the plan preview instead. Never include raw diffs, full logs, or copied context text.
+Answer in plain prose, without `COMMIT_SCOPED_CHANGES` status lines or internal handoff envelopes. State what happened, which commits were created with short SHAs, messages and paths, or that none were made; what remains uncommitted in scope from a final `git status --porcelain -- <CHANGE_PATHS plus approved expansions>` when inspected; whether unrelated work was preserved and the observed digest result when available; and one next action. Do not imply checks ran when intake stopped before inspection. For missing input, ask the focused question; at the plan gate show the readable preview below. Never include raw diffs, full logs, or copied context text.
+
 
 ## Subagent Registry
 
@@ -57,7 +58,7 @@ Portable target: Claude Code and OpenCode. Required capabilities: read repositor
 ## Execution
 
 Emit `Phase N/4 - Name` only on a real transition. Route on the tables; evaluate rows top to bottom, first match wins; never infer a status.
-Every question (paths, planner decision, or `G_PLAN_APPROVAL`) emits `COMMIT_SCOPED_CHANGES: NEEDS_CONTEXT`. When every approved group has committed with `Preserved` equal, emit `COMMIT_SCOPED_CHANGES: SUCCESS`.
+Every question names the missing input in prose and ends the turn. When every approved group has committed with `Preserved` equal, report the created commits and preservation evidence in prose.
 
 1. `Phase 1/4 - Intake` (inline). Require the verbatim request, else `BLOCKED`. Check path grammar; each path must exist in the worktree or in `HEAD`; missing or ambiguous (file and directory collide, glob-like) → ask one question. Resolve `SKILL_DIR`; run `sh "$SKILL_DIR/scripts/validate-output.sh" plan` on the plan envelope in Example A and require exit 0, else `TOOLS_MISSING`. `git rev-parse --is-inside-work-tree` must print `true`, else `BLOCKED`. Any of `MERGE_HEAD`, `CHERRY_PICK_HEAD`, `REVERT_HEAD`, `rebase-merge/`, `rebase-apply/`, `BISECT_LOG` under `git rev-parse --git-dir` → `BLOCKED`. `git symbolic-ref -q HEAD` non-zero → `DETACHED_HEAD=true` (warning, not a block). `git status --porcelain -- <CHANGE_PATHS>` empty → `NO_SCOPED_CHANGES`.
 2. `Phase 2/4 - Plan`. Dispatch the planner with `CHANGE_PATHS`, `COMMIT_STYLE`, `CONTEXT_QUERY`, `CONTEXT_LOCATION`, `VERIFICATION_HINT`, `DETACHED_HEAD`, `SKILL_DIR`, and `USER_DECISIONS` in the evidence block. `plan_rounds += 1`. Validate through `G_PLAN_ENVELOPE`.
@@ -91,11 +92,11 @@ Every question (paths, planner decision, or `G_PLAN_APPROVAL`) emits `COMMIT_SCO
 | `G_PLAN_ENVELOPE`    | every planner output  | `sh "$SKILL_DIR/scripts/validate-output.sh" plan < payload`    |
 | `G_EXECUTE_ENVELOPE` | every executor output | `sh "$SKILL_DIR/scripts/validate-output.sh" execute < payload` |
 
-Predicate: exit 0. On non-zero, redispatch once with the printed findings; a second non-zero → `COMMIT_SCOPED_CHANGES: ERROR` naming the phase. Route only after exit 0.
+Predicate: exit 0. On non-zero, redispatch once with the printed findings; a second non-zero → stop with an error explanation naming the phase. Route only after exit 0.
 
 ## G_PLAN_APPROVAL
 
-Print the plan envelope verbatim. Warnings must name detached HEAD when set and every group path in `MM` state, because `git commit --only` commits the worktree version and discards the staged version of that path. Ask one question: `approve`, `revise: <what to change>`, or `stop`. Emit `COMMIT_SCOPED_CHANGES: NEEDS_CONTEXT` and end the turn.
+Keep `COMMIT_PLAN` internal. Show each planned group in order with its exact message, paths, expansions, verification command, omissions, and warnings in readable Markdown. Retain the original envelope and digests internally for execution; do not print status or digest routing fields. Warnings must name detached HEAD when set and every group path in `MM` state, because `git commit --only` commits the worktree version and discards the staged version of that path. Ask one question: `approve`, `revise: <what to change>`, or `stop`. State that no commits have been made and end the turn.
 
 | Answer           | Route                                                                                                   |
 | ---------------- | ------------------------------------------------------------------------------------------------------- |
@@ -142,8 +143,8 @@ Paths: src/checkout/retry.ts tests/checkout/retry.test.ts
 Preserved: 6d7d52f41e39331257648bf83ebed2047c9e327d=6d7d52f41e39331257648bf83ebed2047c9e327d
 ```
 
-Final: `COMMIT_SCOPED_CHANGES: SUCCESS`, `Commits: 53eb984 ...`, `Left uncommitted in scope: none`, `Unrelated work untouched: preserved digest matched`, `Next step: push when ready; this skill never pushes.`
+Final: Created `53eb984` with the approved message and paths. Nothing remains uncommitted in scope, and the unrelated-work digest matched. Push when ready; this skill never pushes.
 
-**B. Gate wait.** Plan lists two groups and `Warnings: src/checkout/config.ts is MM; the worktree version will be committed`. Output: the plan verbatim, then "Reply `approve` to commit these 2 groups in order, `revise: <what to change>`, or `stop`.", then `COMMIT_SCOPED_CHANGES: NEEDS_CONTEXT`. End the turn.
+**B. Gate wait.** Plan lists two groups and `Warnings: src/checkout/config.ts is MM; the worktree version will be committed`. Output: the readable plan with exact messages, paths, and warnings, then "Reply `approve` to commit these 2 groups in order, `revise: <what to change>`, or `stop`.". State that no commits have been made and end the turn.
 
-**C. Hook mutation.** Executor returns `COMMIT_EXECUTE: HOOK_MUTATION`, `Reason: pre-commit rewrote src/checkout/retry.ts; tree OID differs from the pre-commit blob`, `Commit: 9a1c2d3 fix(checkout): retry failed payment authorizations`. Final: `COMMIT_SCOPED_CHANGES: BLOCKED`, `Commits: 9a1c2d3 ... (hook-modified)`, `Left uncommitted in scope: tests/checkout/retry.test.ts`, `Unrelated work untouched: preserved digest matched`, `Next step: review 9a1c2d3; create a follow-up commit if the hook's changes are wanted, never amend.`
+**C. Hook mutation.** Executor returns `COMMIT_EXECUTE: HOOK_MUTATION`, `Reason: pre-commit rewrote src/checkout/retry.ts; tree OID differs from the pre-commit blob`, `Commit: 9a1c2d3 fix(checkout): retry failed payment authorizations`. Final: Stopped because the hook modified commit `9a1c2d3`. `tests/checkout/retry.test.ts` remains uncommitted, and the unrelated-work digest matched. Review `9a1c2d3`; if the hook's changes are wanted, create a follow-up commit, never amend.
