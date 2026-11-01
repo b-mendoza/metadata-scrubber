@@ -38,7 +38,7 @@ Execution is a finite-state machine. Mermaid: [`flow-diagram.md`](./flow-diagram
 | `SuggestMetadata` → reviewer/label gates         | Reviewers and labels                                |
 | `ShowPreview` → `GatePreview` → `FreezeApproval` | Frozen fields + preview `APPROVAL_RECORD`           |
 | `SubmitPr` → `VerifySubmit`                      | Created or found PR/MR, field-verified              |
-| Terminals                                        | Success URL or failure envelope codes below         |
+| Terminals                                        | Verified URL or plain-language stop explanation         |
 
 Six specialists stay separate on purpose: each owns a distinct status prefix and failure mode. Do not collapse them into the orchestrator.
 
@@ -66,7 +66,7 @@ Fork-aware, idempotent, approval-bound. Trusted compare range after preflight: `
 | Phase routing, gates, status taxonomy                                   | This file                                               |
 | States, transitions, guards, terminals                                  | `./state-machine.md`                                    |
 | Mermaid state diagram                                                   | `./flow-diagram.md`                                     |
-| Failure envelope, preview, body template, approval record, cycle ledger | `./references/execution-contracts.md`                   |
+| Stop outcome, preview, body template, approval record, cycle ledger | `./references/execution-contracts.md`                   |
 | Non-GitHub / state capability                                           | `./references/platform-adaptation.md`                   |
 | CLI/API syntax or writing guidance                                      | `./references/external-resources.md`, then fetch ≤1 URL |
 | Specialist execution                                                    | Selected `./subagents/*.md`                             |
@@ -80,7 +80,7 @@ Advance states in [`state-machine.md`](./state-machine.md). Summary:
 2. `InspectRepo` (`repo-state-inspector`). Route topology, target, platform, and state-fallback gates per the transition table.
 3. Load `./references/platform-adaptation.md` only in `AdaptPlatform` / related gates. Draft-without-equivalent → ask ready-or-stop before preview.
 4. `RunPreflight`. `PUSH_REQUIRED` → `GatePush` (plain push only) then redispatch with push `APPROVAL_RECORD`. `PR_EXISTS` → `TerminalPrExists`.
-5. `AnalyzeDiff` only after `PREFLIGHT: PASS`. Echo pinned SHAs. Large/mixed → `GateScope` then redispatch with approval.
+5. `AnalyzeDiff` only after `PREFLIGHT: PASS`. Never defer authentication, hosting resolution, or the existing-PR lookup until creation; unresolved preflight stops before drafting or preview. Echo pinned SHAs. Large/mixed → `GateScope` then redispatch with approval.
 6. `DraftPr` then `SuggestMetadata` with exact changed-file paths. Type/scope, reviewer, and label gates redispatch only the affected specialist. `REVIEWERS=none` satisfies reviewer resolution.
 7. `ShowPreview` / `GatePreview`: load `./references/execution-contracts.md`, show exact preview (head SHA, effective state). Edits invalidate approval and return to the earliest affected state. Decline without edits → `TerminalCancelled`.
 8. `FreezeApproval` then `SubmitPr`. `HEAD_MOVED` → explain and return to `AnalyzeDiff` (preview-edit cycle). On `PASS`, `VerifySubmit` compares every echoed field and both body digests before `TerminalSuccess`.
@@ -88,7 +88,7 @@ Advance states in [`state-machine.md`](./state-machine.md). Summary:
 
 ## Status Routing
 
-| Source            | Continue | User gate or retry                 | Failure envelope                                                              |
+| Source            | Continue | User gate or retry                 | Stop outcome                                                              |
 | ----------------- | -------- | ---------------------------------- | ----------------------------------------------------------------------------- |
 | `REPO_STATE`      | `PASS`   | topology; target branch            | `BLOCKED`/`ERROR` → `BLOCKED`                                                 |
 | `PREFLIGHT`       | `PASS`   | `PUSH_REQUIRED`; `PUSH_REJECTED`   | `PR_EXISTS`, `AUTH`, `BASE_BRANCH_MISSING`, `HEAD_BRANCH_UNPUSHED`, `BLOCKED` |
@@ -97,7 +97,7 @@ Advance states in [`state-machine.md`](./state-machine.md). Summary:
 | `REVIEW_METADATA` | `PASS`   | `NEEDS_REVIEWER`; `INVALID_LABELS` | `AUTH`; `ERROR` → `BLOCKED`                                                   |
 | `PR_SUBMIT`       | `PASS`   | `HEAD_MOVED` → `AnalyzeDiff`       | `CREATE_UNCERTAIN`, `CREATE_ERROR`, `AUTH`, `BLOCKED`                         |
 
-Envelope codes: `AUTH`, `BASE_BRANCH_MISSING`, `HEAD_BRANCH_UNPUSHED`, `EMPTY_DIFF`, `PR_EXISTS`, `BLOCKED`, `AWAITING_USER`, `CANCELLED`, `CREATE_ERROR`, `CREATE_UNCERTAIN`, `ESCALATED`. `AWAITING_USER` is non-terminal; do not use `BLOCKED` for a pending question.
+Internal outcome codes: `AUTH`, `BASE_BRANCH_MISSING`, `HEAD_BRANCH_UNPUSHED`, `EMPTY_DIFF`, `PR_EXISTS`, `BLOCKED`, `AWAITING_USER`, `CANCELLED`, `CREATE_ERROR`, `CREATE_UNCERTAIN`, `ESCALATED`. `AWAITING_USER` is non-terminal; do not use `BLOCKED` for a pending question.
 
 ## Core Rules
 
@@ -110,10 +110,10 @@ Envelope codes: `AUTH`, `BASE_BRANCH_MISSING`, `HEAD_BRANCH_UNPUSHED`, `EMPTY_DI
 
 ## Output Contract
 
-Success uses the final block in `./references/execution-contracts.md` (mode + platform-verified fields). Failed or suspended output uses that file's failure envelope with `Evidence` and one next step.
+Use the prose replies in `./references/execution-contracts.md` for every outcome. Keep specialist statuses and approval records internal; never print a `PR_CREATE` status line or routing envelope. Approval gates still show the exact preview and end the turn without creating anything.
 
 ## Examples
 
 Happy path: `TARGET_BRANCH=main`, `PR_STATE=draft`, `REVIEWERS=none` → `InspectRepo` PASS (same-remote) → `RunPreflight` PASS with pinned SHAs → diff/draft/metadata PASS → exact preview → `SubmitPr` PASS with matching digests → `VerifySubmit` → PR URL.
 
-Failure path: `RunPreflight` returns `PR_EXISTS` → stop at `TerminalPrExists` with the existing URL; do not update that PR/MR (out of scope). Envelope shape: `./references/execution-contracts.md`.
+Failure path: `RunPreflight` returns `PR_EXISTS` → stop at `TerminalPrExists` with the existing URL; do not update that PR/MR (out of scope). Reply requirements: `./references/execution-contracts.md`.

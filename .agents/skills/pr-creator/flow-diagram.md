@@ -148,5 +148,5 @@ stateDiagram-v2
 
 - `SubmitPr` runs only after safe platform path, `PREFLIGHT: PASS`, `DIFF_ANALYSIS: PASS`, `PR_DRAFT: PASS`, `REVIEW_METADATA: PASS`, exact preview approval, and a matching approval record.
 - Push, scope, type/scope, reviewer, label, and preview-edit gates each have an independent three-cycle counter. Submission has only the bounded retry inside `pr-submitter`.
-- Every terminal failure uses the shared envelope with status, stopped-at, evidence, reason, and one next step.
+- Every terminal failure explains the stop, evidence, actual effects, and one next action in prose, without status lines.
 - Pushes are plain `git push <head_remote> <branch>`; force variants never run.

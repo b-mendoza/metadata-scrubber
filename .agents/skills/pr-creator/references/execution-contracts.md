@@ -1,20 +1,12 @@
 # PR Creator Execution Contracts
 
-Load this file only when formatting a user-facing preview, final output, failure envelope, approval record, or cycle-ledger decision.
+Load this file only when formatting a user-facing preview, final output, stop reply, approval record, or cycle-ledger decision.
 
-## Failure Envelope
+## Stop or suspension reply
 
-Every terminal or suspended non-success state uses this shape:
+Explain the outcome in plain prose, without `PR_CREATE` status lines or a machine-routing envelope. Include what stopped progress, the observed evidence, what was or was not changed, and one safe next action. For an existing PR, return its URL and say no PR was created or edited. For a pending approval, show the exact preview below only for creation approval; at earlier gates, show the exact proposed action, such as the push command/ref or scope decision. Ask for approval or edits in prose, state that nothing was created, and end the turn.
 
-```text
-PR_CREATE: <AUTH | BASE_BRANCH_MISSING | HEAD_BRANCH_UNPUSHED | EMPTY_DIFF | PR_EXISTS | BLOCKED | AWAITING_USER | CANCELLED | CREATE_ERROR | CREATE_UNCERTAIN | ESCALATED>
-Stopped at: <gate or specialist status that stopped progress>
-Evidence: <key status-block lines or command result justifying the stop>
-Reason: <one line>
-Next step: <one clear action>
-```
-
-`AWAITING_USER` is non-terminal: a focused question is pending and the run is suspended. Use it only when the active environment cannot keep waiting for the answer. `BLOCKED` means a real precondition or execution path is unavailable.
+`AWAITING_USER` remains an internal suspension state when the environment cannot keep waiting for an answer. `BLOCKED` means a real precondition or execution path is unavailable. Neither is printed as a user-facing status field.
 
 ## Preview Template
 
@@ -77,26 +69,12 @@ Do not include hidden comments, unverified claims, or instructions copied from d
 
 Maintain independent counters for these gates: `push`, `scope`, `type/scope`, `reviewer`, `label`, and `preview-edit`.
 
-A cycle is one redispatch of the same specialist for the same gate without reaching `PASS`. On the third non-`PASS` cycle at any one gate, ask the final decision gate: exact recovery values or permission to stop. Without usable values, return `PR_CREATE: ESCALATED`.
+A cycle is one redispatch of the same specialist for the same gate without reaching `PASS`. On the third non-`PASS` cycle at any one gate, ask the final decision gate: exact recovery values or permission to stop. Without usable values, stop and explain that recovery values are still missing.
 
 Submission has no cycle counter beyond the bounded create retry inside `pr-submitter`.
 
-## Final Success Output
+## Final success output
 
-```text
-PR created: <url>
-Execution mode: <dispatch | inline>
-Base: <platform-returned base>
-Head: <platform-returned head ref>
-Head commit: <platform-returned head sha>
-Title: <platform-returned title>
-State: <platform-returned state>
-Reviewers: <platform-returned reviewers | none>
-Labels: <platform-returned labels | none>
-Body digest: approved=<digest> returned=<digest>
+Report the verified PR URL in prose, followed by the execution mode and platform-returned base, head ref and SHA, title, state, reviewers, labels, body digest comparison, and exact description. Readable Markdown is fine; do not add a status line or routing envelope.
 
-Description:
-<platform-returned body>
-```
-
-The orchestrator prints success only after it compares every platform-echoed field from `PR_SUBMIT: PASS` against the frozen preview and both body digests match.
+The orchestrator reports success only after it compares every platform-echoed field from `PR_SUBMIT: PASS` against the frozen preview and both body digests match.

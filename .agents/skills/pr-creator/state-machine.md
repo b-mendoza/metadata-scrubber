@@ -132,18 +132,18 @@ Six specialists stay separate: each owns a distinct status prefix and failure mo
 | `FinalDecision`           | `DraftPr`                 | exact recovery targets draft                                       |
 | `FinalDecision`           | `SuggestMetadata`         | exact recovery targets metadata                                    |
 | `FinalDecision`           | `TerminalEscalated`       | stop or unusable recovery                                          |
-| `TerminalSuccess`         | `[*]`                     | emit success block                                                 |
+| `TerminalSuccess`         | `[*]`                     | report verified PR and details in prose                                                 |
 | `TerminalAwaitingUser`    | `[*]`                     | suspend; resume on answer                                          |
-| `TerminalPrExists`        | `[*]`                     | emit failure envelope                                              |
-| `TerminalAuth`            | `[*]`                     | emit failure envelope                                              |
-| `TerminalBaseMissing`     | `[*]`                     | emit failure envelope                                              |
-| `TerminalHeadUnpushed`    | `[*]`                     | emit failure envelope                                              |
-| `TerminalEmptyDiff`       | `[*]`                     | emit failure envelope                                              |
-| `TerminalBlocked`         | `[*]`                     | emit failure envelope                                              |
-| `TerminalCancelled`       | `[*]`                     | emit failure envelope                                              |
-| `TerminalCreateError`     | `[*]`                     | emit failure envelope                                              |
-| `TerminalCreateUncertain` | `[*]`                     | emit failure envelope                                              |
-| `TerminalEscalated`       | `[*]`                     | emit failure envelope                                              |
+| `TerminalPrExists`        | `[*]`                     | explain stop and next action in prose                                              |
+| `TerminalAuth`            | `[*]`                     | explain stop and next action in prose                                              |
+| `TerminalBaseMissing`     | `[*]`                     | explain stop and next action in prose                                              |
+| `TerminalHeadUnpushed`    | `[*]`                     | explain stop and next action in prose                                              |
+| `TerminalEmptyDiff`       | `[*]`                     | explain stop and next action in prose                                              |
+| `TerminalBlocked`         | `[*]`                     | explain stop and next action in prose                                              |
+| `TerminalCancelled`       | `[*]`                     | explain stop and next action in prose                                              |
+| `TerminalCreateError`     | `[*]`                     | explain stop and next action in prose                                              |
+| `TerminalCreateUncertain` | `[*]`                     | explain stop and next action in prose                                              |
+| `TerminalEscalated`       | `[*]`                     | explain stop and next action in prose                                              |
 
 ## Cycle ledgers
 
@@ -151,7 +151,7 @@ Independent counters (max 3 non-`PASS` redispatches per gate, then `FinalDecisio
 
 ## Terminal decisions
 
-Success: verified PR/MR URL. Failure/suspend envelopes: `AUTH`, `BASE_BRANCH_MISSING`, `HEAD_BRANCH_UNPUSHED`, `EMPTY_DIFF`, `PR_EXISTS`, `BLOCKED`, `AWAITING_USER`, `CANCELLED`, `CREATE_ERROR`, `CREATE_UNCERTAIN`, `ESCALATED`.
+Success: verified PR/MR URL. Internal failure/suspension outcomes: `AUTH`, `BASE_BRANCH_MISSING`, `HEAD_BRANCH_UNPUSHED`, `EMPTY_DIFF`, `PR_EXISTS`, `BLOCKED`, `AWAITING_USER`, `CANCELLED`, `CREATE_ERROR`, `CREATE_UNCERTAIN`, `ESCALATED`.
 
 ## Reachability and dead-state checks
 
