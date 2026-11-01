@@ -25,7 +25,7 @@ Missing `TARGET_CODE` or unclear language → one focused question before dispat
 
 Handoff order: (1) original behavior, (2) weaknesses, (3) typing vs validation decisions, (4) files/code, (5) validation results, (6) references used or unavailable, (7) assumptions/risks, (8) gate evidence for `G_STRICT_STRATEGY_APPROVAL`, `G_MUTATION_SCOPE`, `G_IMPLEMENTATION_VALIDATION`, `G_STRICT_REVIEW_PASS`, `G_FINAL_HANDOFF_EVIDENCE`.
 
-Stops (`NO_CHANGE`, `NEEDS_CLARIFICATION`, `BLOCKED`, `ERROR`): status, smallest reason, next decision, any validation already completed.
+For all user-facing handoffs, explain the outcome in prose without a status line, standalone status token, or routing envelope. Internal terminal decisions and subagent handoffs keep their existing markers. Stops (`NO_CHANGE`, `NEEDS_CLARIFICATION`, `BLOCKED`, `ERROR`) include the smallest reason, next decision, and any validation already completed. Missing-target stops request the file or pasted code; behavior-conflict stops show the conflicting behavior and ask which requirement to preserve. State that nothing was changed only if the stop occurred before any edit; otherwise list the edits made and the validation state.
 
 ## State Machine Overview
 

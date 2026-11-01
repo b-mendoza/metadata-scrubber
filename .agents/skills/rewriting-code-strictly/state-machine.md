@@ -98,7 +98,7 @@ Finite-state execution model for this skill. Mermaid SoT: [`flow-diagram.md`](./
 
 ## Terminal decisions
 
-Exactly one of: `PASS`, `NO_CHANGE`, `NEEDS_CLARIFICATION`, `BLOCKED`, `ERROR`.
+Select exactly one internal decision: `PASS`, `NO_CHANGE`, `NEEDS_CLARIFICATION`, `BLOCKED`, `ERROR`. Render the user-facing handoff in prose without a status line or standalone decision token; preserve the required handoff content and internal subagent markers.
 
 ## Reachability and dead-state checks
 

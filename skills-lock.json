@@ -155,7 +155,7 @@
       "source": "b-mendoza/agent-skills",
       "sourceType": "github",
       "skillPath": "skills/rewriting-code-strictly/SKILL.md",
-      "computedHash": "b6a7de6b56c81d7c35c4a180a60da63ddc51428271857cedc9bc919bca56c6eb"
+      "computedHash": "3862199e9d6832c0007c2f3c2c4bc7688033643c014bf439a8e50c4339ec1453"
     },
     "stop-slop": {
       "source": "hardikpandya/stop-slop",
