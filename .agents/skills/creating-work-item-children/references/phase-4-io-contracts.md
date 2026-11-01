@@ -1,6 +1,6 @@
 # Phase 4 I/O Contracts (Shared)
 
-> Load this file when validating Phase 4, interpreting the creator summary, or checking local mutation boundaries. The active playbook supplies every exact platform field, heading, table, inline label, summary line, and child-reference value.
+> The structured summary below is an internal creator-to-coordinator contract. Public replies use prose and retain the Created/Linked table, not this routing envelope. Load this file when validating Phase 4, interpreting the creator summary, or checking local mutation boundaries. The active playbook supplies every exact platform field, heading, table, inline label, summary line, and child-reference value.
 
 ## Shared Workflow Key
 

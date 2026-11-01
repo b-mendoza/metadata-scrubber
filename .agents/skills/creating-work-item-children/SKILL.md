@@ -5,7 +5,7 @@ description: "Creates or reconciles GitHub child task issues or Jira subtasks fr
 
 # Creating Work Item Children
 
-You are the Phase 4 child-work-item coordinator. Detect the platform, derive the workflow key per the active playbook, enforce the mutation-approval boundary, dispatch `child-work-item-creator`, and relay only its structured summary.
+You are the Phase 4 child-work-item coordinator. Detect the platform, derive the workflow key per the active playbook, enforce the mutation-approval boundary, dispatch `child-work-item-creator`, route on its structured summary, and explain the outcome in prose.
 
 This skill mutates a real remote tracker and one local workflow plan. The creator owns plan parsing, platform reads and writes, idempotent reconciliation, plan-file edits, and validation. Keep raw platform payloads, full plan contents, and command output out of coordinator context.
 
@@ -29,7 +29,7 @@ The shared workflow key is `<KEY>`. Pass it under the established alias `TICKET_
 | Canonical parent URL named by the active playbook | Yes                                                                  | `ISSUE_URL=https://github.com/acme/app/issues/42` or `JIRA_URL=https://workspace.atlassian.net/browse/PROJ-123` |
 | `APPROVED_MUTATION_SCOPE`                         | Normal orchestrated runs; may be collected once on direct invocation | `Create missing child work items for Tasks 1-3 and update docs/<KEY>-tasks.md`                                  |
 
-The approval must cover the active playbook's exact remote write model and the single local file `docs/<KEY>-tasks.md`. If direct invocation has unclear approval, ask once. If approval is absent or declined, return the active playbook's full blocked summary with `Validation: NOT_RUN`; create or edit nothing.
+The approval must cover the active playbook's exact remote write model and the single local file `docs/<KEY>-tasks.md`. If direct invocation has unclear approval, ask once. If approval is absent or declined, create or edit nothing and explain the approval boundary in prose, without the internal blocked-summary envelope.
 
 ## Mutation Boundaries
 
@@ -46,7 +46,7 @@ Treat the updated plan as persistent workflow state: leave it on disk and unstag
 
 ## Output Contract
 
-The creator returns the active playbook's preserved structured summary schema. The status prefix remains platform-specific (`TASK_ISSUES:` for GitHub, `SUBTASKS:` for Jira), and `Validation:` remains `PASS | FAIL | NOT_RUN`. The active playbook owns all identifier lines, platform-only fields, table headings, terminology, and accepted child-reference values.
+The creator returns the active playbook's preserved structured summary to this coordinator only. Its platform-specific status prefix (`TASK_ISSUES:` or `SUBTASKS:`), `Validation: PASS | FAIL | NOT_RUN`, and identifier fields remain internal routing data. The public reply explains the outcome in prose, without those status lines or a key/value routing envelope. Preserve the parent, plan path, counts, write model and capability where applicable, Created/Linked table rows, warnings, failures, and next action. The active playbook owns table columns, terminology, and accepted child-reference values.
 
 On successful or partial reconciliation, `docs/<KEY>-tasks.md` contains exactly one playbook-defined workflow-level child table and exactly one matching inline child reference in every numbered task section. Accepted concrete, unresolved, and degraded values come only from the active playbook's **Child-Reference Values and Downstream Readiness** section.
 
@@ -85,10 +85,10 @@ These paths are relative to `./subagents/child-work-item-creator.md`, the file t
 ## Workflow
 
 1. Detect the platform, load its playbook, validate the canonical parent URL, and derive `<KEY>` per the playbook.
-2. Confirm `APPROVED_MUTATION_SCOPE`. On direct invocation, ask once if unclear; absent or declined approval returns the playbook's blocked summary with `Validation: NOT_RUN` and no mutations.
+2. Confirm `APPROVED_MUTATION_SCOPE`. On direct invocation, ask once if unclear; absent or declined approval stops without mutations. Explain the missing approval and unchanged state in prose; do not expose internal blocked-summary fields.
 3. Dispatch `child-work-item-creator` using the pattern above.
 4. Route on the playbook-defined status prefix together with `Validation:`.
-5. Return the structured summary plus a concise rollup of parent, plan path, counts, warnings, failures, and the fact that implementation has not begun.
+5. Render the creator result as a concise prose rollup and the Created/Linked table. Include the parent, plan path, counts, warnings, failures, and the fact that implementation has not begun. Never echo the internal routing envelope. An approval gate still shows the exact proposed actions and asks for approval before ending the turn.
 
 ## Routing Rules
 

@@ -149,7 +149,7 @@ The inline value must equal that row's `Subtask Key`. Use `Not Created` in both 
 
 ## Structured Summary
 
-Return exactly:
+The creator returns this exact schema to the coordinator, not to the user. The coordinator renders prose and preserves the Created/Linked table rows, without the status or validation lines:
 
 ```text
 SUBTASKS: PASS | WARN | FAIL | BLOCKED | ERROR
@@ -176,6 +176,8 @@ Failures:
 ```
 
 `TICKET_KEY:` is required on every exit. Do not add GitHub `Write model:` or `Capability:` lines. When no safe task rows exist, use a header-only table.
+
+Keep `Plan file` value-only: the exact path or `not updated`. Put verification notes such as unchanged-file explanations in `Reason` or the coordinator's prose, never inside the path value.
 
 ### Blocked Placeholders
 
