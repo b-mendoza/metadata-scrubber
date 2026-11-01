@@ -9,6 +9,7 @@ import (
 	"golang.org/x/tools/go/analysis"
 	"golang.org/x/tools/go/analysis/passes/inspect"
 	"golang.org/x/tools/go/ast/inspector"
+	"golang.org/x/tools/go/types/typeutil"
 )
 
 const diagnosticMessage = "compare the recovered panic value only with nil, or pass it to panic; " +
@@ -104,10 +105,6 @@ func isBuiltinCall(typeInfo *types.Info, node ast.Node, name string) bool {
 	if !isCall {
 		return false
 	}
-	identifier, isIdentifier := ast.Unparen(call.Fun).(*ast.Ident)
-	if !isIdentifier {
-		return false
-	}
-	builtin, isBuiltin := typeInfo.Uses[identifier].(*types.Builtin)
+	builtin, isBuiltin := typeutil.Callee(typeInfo, call).(*types.Builtin)
 	return isBuiltin && builtin.Name() == name
 }

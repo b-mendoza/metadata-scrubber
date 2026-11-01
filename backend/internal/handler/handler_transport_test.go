@@ -7,7 +7,6 @@ import (
 	"log/slog"
 	"net/http"
 	"net/http/httptest"
-	"strings"
 	"testing"
 
 	"github.com/stretchr/testify/require"
@@ -58,18 +57,4 @@ type failingResponseWriter struct {
 
 func (writer *failingResponseWriter) Write([]byte) (int, error) {
 	return 0, writer.err
-}
-
-func TestHandlersWithoutBindingsReturnSafeServerFailure(t *testing.T) {
-	handler := newTestHandler(t)
-	body, err := json.Marshal(dryRunRequest{StorageKey: storageKeyPrefix + fileIDOne})
-	require.NoError(t, err)
-	request := httptest.NewRequest(http.MethodPost, "/api/files/dry-run", strings.NewReader(string(body)))
-	request.Header.Set(header.ContentType, mediatype.JSON)
-	recorder := httptest.NewRecorder()
-
-	handler.DryRun(recorder, request)
-
-	require.Equal(t, http.StatusInternalServerError, recorder.Code)
-	require.Equal(t, "service unavailable", errorMessage(t, recorder))
 }

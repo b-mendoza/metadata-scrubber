@@ -1,17 +1,16 @@
 package handler
 
 import (
+	"crypto/sha256"
+	"encoding/hex"
 	"encoding/json"
 	"errors"
 	"io"
-	"log/slog"
 	"mime"
 	"net/http"
 
-	"metadata-scrubber/internal/httpx"
 	"metadata-scrubber/internal/httpx/header"
 	"metadata-scrubber/internal/httpx/mediatype"
-	"metadata-scrubber/internal/logkey"
 )
 
 type reachabilityResponse struct {
@@ -92,12 +91,12 @@ func writeJSON[T reachabilityResponse | workflowConfigResponse | uploadResponse 
 }
 
 func decodeJSONRequest[T uploadRequest | dryRunRequest | scrubRequest | downloadGrantRequest | deleteRequest](
-	logger *slog.Logger,
+	handler *Handler,
 	w http.ResponseWriter,
 	request *http.Request,
 ) (T, bool) {
 	var zero T
-	if !requestHasJSONMediaType(logger, w, request) {
+	if !handler.requestHasJSONMediaType(w, request) {
 		return zero, false
 	}
 
@@ -105,28 +104,42 @@ func decodeJSONRequest[T uploadRequest | dryRunRequest | scrubRequest | download
 	decoder := json.NewDecoder(request.Body)
 	decoder.DisallowUnknownFields()
 	var input T
-	if err := decoder.Decode(&input); err != nil {
-		if writeErr := httpx.WriteError(w, http.StatusBadRequest, "invalid JSON request"); writeErr != nil {
-			logger.ErrorContext(request.Context(), "could not write JSON response", slog.Any(logkey.Error, writeErr))
+	err := decoder.Decode(&input)
+	if err == nil {
+		err = decoder.Decode(&struct{}{})
+		if errors.Is(err, io.EOF) {
+			return input, true
 		}
-		return zero, false
 	}
-	if err := decoder.Decode(&struct{}{}); !errors.Is(err, io.EOF) {
-		if writeErr := httpx.WriteError(w, http.StatusBadRequest, "invalid JSON request"); writeErr != nil {
-			logger.ErrorContext(request.Context(), "could not write JSON response", slog.Any(logkey.Error, writeErr))
-		}
-		return zero, false
-	}
-	return input, true
+	handler.writeError(w, request, http.StatusBadRequest, "invalid JSON request")
+	return zero, false
 }
 
-func requestHasJSONMediaType(logger *slog.Logger, w http.ResponseWriter, request *http.Request) bool {
+func (handler *Handler) requestHasJSONMediaType(w http.ResponseWriter, request *http.Request) bool {
 	contentType, _, err := mime.ParseMediaType(request.Header.Get(header.ContentType))
 	if err == nil && contentType == mediatype.JSON {
 		return true
 	}
-	if writeErr := httpx.WriteError(w, http.StatusUnsupportedMediaType, "Content-Type must be application/json"); writeErr != nil {
-		logger.ErrorContext(request.Context(), "could not write JSON response", slog.Any(logkey.Error, writeErr))
-	}
+	handler.writeError(w, request, http.StatusUnsupportedMediaType, "Content-Type must be application/json")
 	return false
+}
+
+const storageKeyDigestBytes = 6
+
+// storageKey is the public file reference. It can identify a stored object, so
+// logs must record its digest and not its value.
+type storageKey string
+
+// digest returns a short hash that lets logs follow one file without exposing its key.
+func (key storageKey) digest() string {
+	sum := sha256.Sum256([]byte(key))
+	return hex.EncodeToString(sum[:storageKeyDigestBytes])
+}
+
+func parseStorageKey(key storageKey) (string, bool) {
+	matches := storageKeyPattern.FindStringSubmatch(string(key))
+	if len(matches) != 2 {
+		return "", false
+	}
+	return matches[1], true
 }
