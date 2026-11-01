@@ -5,6 +5,8 @@ import (
 	"log/slog"
 	"net/http"
 	"time"
+
+	"metadata-scrubber/internal/logkey"
 )
 
 // RequestLogger logs the start and completion of every HTTP request without
@@ -18,10 +20,10 @@ func RequestLogger(logger *slog.Logger) func(http.Handler) http.Handler {
 				r.Context(),
 				slog.LevelInfo,
 				"request started",
-				slog.String("method", r.Method),
-				slog.String("path", path),
-				slog.String("remote_addr", r.RemoteAddr),
-				slog.String("user_agent", r.UserAgent()),
+				slog.String(logkey.Method, r.Method),
+				slog.String(logkey.Path, path),
+				slog.String(logkey.RemoteAddr, r.RemoteAddr),
+				slog.String(logkey.UserAgent, r.UserAgent()),
 			)
 
 			recorder := &loggingResponseWriter{ResponseWriter: w, status: http.StatusOK}
@@ -48,14 +50,14 @@ func logRequestCompletion(logger *slog.Logger, request requestLogRequest, record
 	}
 
 	attrs := []slog.Attr{
-		slog.String("method", request.method),
-		slog.String("path", request.path),
-		slog.Int("status", recorder.status),
-		slog.Int("bytes", recorder.bytesWritten),
-		slog.Int64("duration_ms", time.Since(startedAt).Milliseconds()),
+		slog.String(logkey.Method, request.method),
+		slog.String(logkey.Path, request.path),
+		slog.Int(logkey.Status, recorder.status),
+		slog.Int(logkey.Bytes, recorder.bytesWritten),
+		slog.Int64(logkey.DurationMS, time.Since(startedAt).Milliseconds()),
 	}
 	if recovered != nil {
-		attrs = append(attrs, slog.Bool("panicked", true))
+		attrs = append(attrs, slog.Bool(logkey.Panicked, true))
 	}
 	logger.LogAttrs(request.context, level, "request completed", attrs...)
 	if recovered != nil {

@@ -18,6 +18,7 @@ import (
 	"metadata-scrubber/internal/config"
 	"metadata-scrubber/internal/handler"
 	"metadata-scrubber/internal/httpx"
+	"metadata-scrubber/internal/logkey"
 	"metadata-scrubber/internal/storage"
 	"metadata-scrubber/internal/telemetry"
 )
@@ -43,34 +44,37 @@ func main() {
 func run(ctx context.Context, logger *slog.Logger) error {
 	cfg, err := config.Load()
 	if err != nil {
-		logger.Error("metadata-scrubber stopped", "error", err)
+		logger.ErrorContext(ctx, "metadata-scrubber stopped", slog.Any(logkey.Error, err))
 		return err
 	}
 
 	// Export failures stay local so a failed export cannot create another exported log.
 	otel.SetErrorHandler(otel.ErrorHandlerFunc(func(err error) {
-		logger.Warn("could not export PostHog logs", "error", err)
+		logger.WarnContext(ctx, "could not export PostHog logs", slog.Any(logkey.Error, err))
 	}))
 	runtime, err := telemetry.New(ctx, cfg.PostHogProjectToken, logger)
 	if err != nil {
-		logger.Error("metadata-scrubber stopped", "error", err)
+		logger.ErrorContext(ctx, "metadata-scrubber stopped", slog.Any(logkey.Error, err))
 		return err
 	}
 	server := newServer(cfg, storage.NewR2(cfg), runtime.Logger, runtime.Events)
 	err = runHTTPServer(ctx, server, runtime.Logger)
+	// A shutdown signal cancels ctx. Keep its values but not its cancellation,
+	// so the exported log handlers still record the final records.
+	stoppedCtx := context.WithoutCancel(ctx)
 	if err != nil {
-		runtime.Logger.Error("metadata-scrubber stopped", "error", err)
+		runtime.Logger.ErrorContext(stoppedCtx, "metadata-scrubber stopped", slog.Any(logkey.Error, err))
 	}
 	shutdownErr := runtime.Shutdown()
 	if shutdownErr != nil {
-		logger.Error("could not close PostHog telemetry", "error", shutdownErr)
+		logger.ErrorContext(stoppedCtx, "could not close PostHog telemetry", slog.Any(logkey.Error, shutdownErr))
 	}
 	return errors.Join(err, shutdownErr)
 }
 
 func runHTTPServer(ctx context.Context, server *http.Server, logger *slog.Logger) error {
 	serverErr := make(chan error, 1)
-	go serveHTTPServer(server, logger, serverErr)
+	go serveHTTPServer(ctx, server, logger, serverErr)
 
 	select {
 	case err := <-serverErr:
@@ -85,8 +89,8 @@ func runHTTPServer(ctx context.Context, server *http.Server, logger *slog.Logger
 	}
 }
 
-func serveHTTPServer(server *http.Server, logger *slog.Logger, serverErr chan error) {
-	logger.Info("metadata-scrubber listening", "addr", server.Addr)
+func serveHTTPServer(ctx context.Context, server *http.Server, logger *slog.Logger, serverErr chan error) {
+	logger.InfoContext(ctx, "metadata-scrubber listening", slog.String(logkey.Addr, server.Addr))
 	err := server.ListenAndServe()
 	if errors.Is(err, http.ErrServerClosed) {
 		err = nil
