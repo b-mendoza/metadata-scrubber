@@ -136,7 +136,7 @@ On critique-driven reruns, begin at the earliest invalidated stage and rerun onl
 
 ## Completion Handoff
 
-Return a concise summary containing:
+Return a concise prose summary, without a machine-readable status line or the internal subagent routing envelope. On an early stop, explain the unmet prerequisite, what was not written, and what the user must resolve. On completion, include:
 
 - Selected task number and parsed title
 - The four artifact paths
@@ -144,7 +144,7 @@ Return a concise summary containing:
 - The test coverage shape
 - The refactoring verdict
 - Exact `References fetched` URLs, or `none`
-- Completion state
+- Whether planning completed, stated in prose
 
 After this handoff, stop. Phase 6 critique or Phase 7 execution belongs to the calling workflow; this skill never selects or starts another task.
 
