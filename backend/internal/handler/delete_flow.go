@@ -2,9 +2,11 @@ package handler
 
 import (
 	"errors"
+	"log/slog"
 	"net/http"
 
 	"metadata-scrubber/internal/httpx"
+	"metadata-scrubber/internal/logkey"
 	"metadata-scrubber/internal/storage"
 )
 
@@ -17,12 +19,12 @@ func (handler *Handler) DeleteFlow(w http.ResponseWriter, request *http.Request)
 	fileID, ok := parseStorageKey(input.StorageKey)
 	if !ok {
 		if err := httpx.WriteError(w, http.StatusBadRequest, "invalid storage key"); err != nil {
-			handler.logger.ErrorContext(request.Context(), "could not write JSON response", "error", err)
+			handler.logger.ErrorContext(request.Context(), "could not write JSON response", slog.Any(logkey.Error, err))
 		}
 		return
 	}
-	requestBindings := handler.bindingsFromRequest(w, request)
-	if requestBindings.Storage == nil {
+	requestBindings, ok := handler.bindingsFromRequest(w, request)
+	if !ok {
 		return
 	}
 
@@ -30,7 +32,7 @@ func (handler *Handler) DeleteFlow(w http.ResponseWriter, request *http.Request)
 		return
 	}
 	if err := writeJSON(w, http.StatusOK, deleteResponse{Status: "deleted"}); err != nil {
-		handler.logger.ErrorContext(request.Context(), "could not write JSON response", "error", err)
+		handler.logger.ErrorContext(request.Context(), "could not write JSON response", slog.Any(logkey.Error, err))
 		return
 	}
 	requestBindings.Events(request.Context(), "file deleted")
@@ -45,7 +47,7 @@ func (handler *Handler) deleteStoredFlow(
 	err := objectStorage.DeleteFlow(request.Context(), fileID)
 	if errors.Is(err, storage.ErrFlowObjectsRemain) {
 		if writeErr := httpx.WriteError(w, http.StatusConflict, "file deletion could not be confirmed"); writeErr != nil {
-			handler.logger.ErrorContext(request.Context(), "could not write JSON response", "error", writeErr)
+			handler.logger.ErrorContext(request.Context(), "could not write JSON response", slog.Any(logkey.Error, writeErr))
 		}
 		return false
 	}

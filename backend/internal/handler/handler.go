@@ -10,6 +10,7 @@ import (
 	"regexp"
 	"time"
 
+	"metadata-scrubber/internal/logkey"
 	"metadata-scrubber/internal/scrub"
 )
 
@@ -110,6 +111,6 @@ func randomAdmissionJitter() int {
 // Reachability gives callers a cheap way to verify the backend HTTP API is reachable.
 func (handler *Handler) Reachability(w http.ResponseWriter, request *http.Request) {
 	if err := writeJSON(w, http.StatusOK, reachabilityResponse{Status: "reachable"}); err != nil {
-		handler.logger.ErrorContext(request.Context(), "could not write JSON response", "error", err)
+		handler.logger.ErrorContext(request.Context(), "could not write JSON response", slog.Any(logkey.Error, err))
 	}
 }

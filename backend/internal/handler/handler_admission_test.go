@@ -40,7 +40,7 @@ func TestSaturatedAdmissionReturnsRetryable503WithoutDownloadingWaitingSource(t 
 
 	holderResponses := make(chan *httptest.ResponseRecorder, 2)
 	for _, fileID := range []string{fileIDOne, fileIDTwo} {
-		body, err := json.Marshal(dryRunRequest{StorageKey: storageKeyPrefix + fileID})
+		body, err := json.Marshal(dryRunRequest{StorageKey: storageKey(storageKeyPrefix + fileID)})
 		require.NoError(t, err)
 		go serveAdmissionDryRun(body, handler, observer, holderResponses)
 	}
@@ -195,7 +195,7 @@ func TestScrubReleasesPermitBeforeUploadingSanitizedBytes(t *testing.T) {
 
 	holderResponses := make(chan *httptest.ResponseRecorder, 2)
 	for _, fileID := range []string{fileIDTwo, fileIDThree} {
-		body, err := json.Marshal(dryRunRequest{StorageKey: storageKeyPrefix + fileID})
+		body, err := json.Marshal(dryRunRequest{StorageKey: storageKey(storageKeyPrefix + fileID)})
 		require.NoError(t, err)
 		go serveAdmissionDryRun(body, handler, observer, holderResponses)
 	}

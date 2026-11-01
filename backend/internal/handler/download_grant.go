@@ -1,10 +1,12 @@
 package handler
 
 import (
+	"log/slog"
 	"net/http"
 	"time"
 
 	"metadata-scrubber/internal/httpx"
+	"metadata-scrubber/internal/logkey"
 	"metadata-scrubber/internal/storage"
 )
 
@@ -18,8 +20,8 @@ func (handler *Handler) DownloadGrant(w http.ResponseWriter, request *http.Reque
 	if !ok {
 		return
 	}
-	requestBindings := handler.bindingsFromRequest(w, request)
-	if requestBindings.Storage == nil {
+	requestBindings, ok := handler.bindingsFromRequest(w, request)
+	if !ok {
 		return
 	}
 
@@ -49,7 +51,7 @@ func (handler *Handler) DownloadGrant(w http.ResponseWriter, request *http.Reque
 		DownloadURL: grant.URL,
 		ExpiresAt:   operationTime.Add(downloadGrantExpiry).Format(time.RFC3339),
 	}); err != nil {
-		handler.logger.ErrorContext(request.Context(), "could not write JSON response", "error", err)
+		handler.logger.ErrorContext(request.Context(), "could not write JSON response", slog.Any(logkey.Error, err))
 		return
 	}
 	requestBindings.Events(request.Context(), "download grant refreshed")
@@ -57,7 +59,7 @@ func (handler *Handler) DownloadGrant(w http.ResponseWriter, request *http.Reque
 
 func (handler *Handler) writeDownloadGrantNotFound(w http.ResponseWriter, request *http.Request) {
 	if writeErr := httpx.WriteError(w, http.StatusNotFound, "scrubbed file not found"); writeErr != nil {
-		handler.logger.ErrorContext(request.Context(), "could not write JSON response", "error", writeErr)
+		handler.logger.ErrorContext(request.Context(), "could not write JSON response", slog.Any(logkey.Error, writeErr))
 	}
 }
 
@@ -69,7 +71,7 @@ func (handler *Handler) downloadGrantFileID(
 	fileID, ok := parseStorageKey(input.StorageKey)
 	if !ok {
 		if err := httpx.WriteError(w, http.StatusBadRequest, "invalid storage key"); err != nil {
-			handler.logger.ErrorContext(request.Context(), "could not write JSON response", "error", err)
+			handler.logger.ErrorContext(request.Context(), "could not write JSON response", slog.Any(logkey.Error, err))
 		}
 		return "", false
 	}
@@ -77,7 +79,7 @@ func (handler *Handler) downloadGrantFileID(
 		return fileID, true
 	}
 	if err := httpx.WriteError(w, http.StatusBadRequest, "invalid ETag"); err != nil {
-		handler.logger.ErrorContext(request.Context(), "could not write JSON response", "error", err)
+		handler.logger.ErrorContext(request.Context(), "could not write JSON response", slog.Any(logkey.Error, err))
 	}
 	return "", false
 }

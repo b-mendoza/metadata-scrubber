@@ -11,6 +11,7 @@ import (
 	"metadata-scrubber/internal/httpx"
 	"metadata-scrubber/internal/httpx/header"
 	"metadata-scrubber/internal/httpx/mediatype"
+	"metadata-scrubber/internal/logkey"
 )
 
 type reachabilityResponse struct {
@@ -27,12 +28,12 @@ type uploadRequest struct {
 }
 
 type uploadResponse struct {
-	StorageKey string `json:"storageKey"`
-	UploadURL  string `json:"uploadUrl"`
+	StorageKey storageKey `json:"storageKey"`
+	UploadURL  string     `json:"uploadUrl"`
 }
 
 type dryRunRequest struct {
-	StorageKey string `json:"storageKey"`
+	StorageKey storageKey `json:"storageKey"`
 }
 
 type publicField struct {
@@ -49,8 +50,8 @@ type dryRunResponse struct {
 }
 
 type scrubRequest struct {
-	StorageKey string `json:"storageKey"`
-	ETag       string `json:"etag"`
+	StorageKey storageKey `json:"storageKey"`
+	ETag       string     `json:"etag"`
 }
 
 type scrubResponse struct {
@@ -63,8 +64,8 @@ type scrubResponseResult struct {
 }
 
 type downloadGrantRequest struct {
-	StorageKey string `json:"storageKey"`
-	ETag       string `json:"etag"`
+	StorageKey storageKey `json:"storageKey"`
+	ETag       string     `json:"etag"`
 }
 
 type downloadGrantResponse struct {
@@ -73,7 +74,7 @@ type downloadGrantResponse struct {
 }
 
 type deleteRequest struct {
-	StorageKey string `json:"storageKey"`
+	StorageKey storageKey `json:"storageKey"`
 }
 
 type deleteResponse struct {
@@ -106,13 +107,13 @@ func decodeJSONRequest[T uploadRequest | dryRunRequest | scrubRequest | download
 	var input T
 	if err := decoder.Decode(&input); err != nil {
 		if writeErr := httpx.WriteError(w, http.StatusBadRequest, "invalid JSON request"); writeErr != nil {
-			logger.ErrorContext(request.Context(), "could not write JSON response", "error", writeErr)
+			logger.ErrorContext(request.Context(), "could not write JSON response", slog.Any(logkey.Error, writeErr))
 		}
 		return zero, false
 	}
 	if err := decoder.Decode(&struct{}{}); !errors.Is(err, io.EOF) {
 		if writeErr := httpx.WriteError(w, http.StatusBadRequest, "invalid JSON request"); writeErr != nil {
-			logger.ErrorContext(request.Context(), "could not write JSON response", "error", writeErr)
+			logger.ErrorContext(request.Context(), "could not write JSON response", slog.Any(logkey.Error, writeErr))
 		}
 		return zero, false
 	}
@@ -125,7 +126,7 @@ func requestHasJSONMediaType(logger *slog.Logger, w http.ResponseWriter, request
 		return true
 	}
 	if writeErr := httpx.WriteError(w, http.StatusUnsupportedMediaType, "Content-Type must be application/json"); writeErr != nil {
-		logger.ErrorContext(request.Context(), "could not write JSON response", "error", writeErr)
+		logger.ErrorContext(request.Context(), "could not write JSON response", slog.Any(logkey.Error, writeErr))
 	}
 	return false
 }

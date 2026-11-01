@@ -3,10 +3,12 @@ package handler
 import (
 	"errors"
 	"fmt"
+	"log/slog"
 	"net/http"
 	"time"
 
 	"metadata-scrubber/internal/httpx"
+	"metadata-scrubber/internal/logkey"
 	"metadata-scrubber/internal/scrub"
 	"metadata-scrubber/internal/sniff"
 	"metadata-scrubber/internal/storage"
@@ -23,8 +25,8 @@ func (handler *Handler) DryRun(w http.ResponseWriter, request *http.Request) {
 	if !ok {
 		return
 	}
-	requestBindings := handler.bindingsFromRequest(w, request)
-	if requestBindings.Storage == nil {
+	requestBindings, ok := handler.bindingsFromRequest(w, request)
+	if !ok {
 		return
 	}
 
@@ -48,7 +50,7 @@ func (handler *Handler) DryRun(w http.ResponseWriter, request *http.Request) {
 
 	handler.logStage(pipelineLogEvent{ctx: request.Context(), stage: pipelineStageDryRun, storageKey: input.StorageKey, outcome: pipelineOutcomeSuccess, startedAt: startedAt})
 	if err := writeJSON(w, http.StatusOK, dryRunResponse{ETag: etag, Fields: fields}); err != nil {
-		handler.logger.ErrorContext(request.Context(), "could not write JSON response", "error", err)
+		handler.logger.ErrorContext(request.Context(), "could not write JSON response", slog.Any(logkey.Error, err))
 		return
 	}
 	requestBindings.Events(request.Context(), "dry run completed")
@@ -60,7 +62,7 @@ func (handler *Handler) dryRunFileID(w http.ResponseWriter, request *http.Reques
 		return fileID, true
 	}
 	if err := httpx.WriteError(w, http.StatusBadRequest, "invalid storage key"); err != nil {
-		handler.logger.ErrorContext(request.Context(), "could not write JSON response", "error", err)
+		handler.logger.ErrorContext(request.Context(), "could not write JSON response", slog.Any(logkey.Error, err))
 	}
 	return "", false
 }
@@ -69,7 +71,7 @@ func (handler *Handler) writeDryRunFailure(w http.ResponseWriter, inspectWorkflo
 	failure := classifyPipelineFailure(err, "could not inspect PDF")
 	handler.logStage(pipelineLogEvent{ctx: inspectWorkflow.request.Context(), stage: pipelineStageDryRun, storageKey: inspectWorkflow.storageKey, outcome: failure.outcome, startedAt: inspectWorkflow.startedAt})
 	if writeErr := httpx.WriteError(w, failure.status, failure.message); writeErr != nil {
-		handler.logger.ErrorContext(inspectWorkflow.request.Context(), "could not write JSON response", "error", writeErr)
+		handler.logger.ErrorContext(inspectWorkflow.request.Context(), "could not write JSON response", slog.Any(logkey.Error, writeErr))
 	}
 }
 
@@ -77,7 +79,7 @@ type inspectWorkflowRequest struct {
 	request       *http.Request
 	objectStorage storage.Storage
 	fileID        string
-	storageKey    string
+	storageKey    storageKey
 	startedAt     time.Time
 }
 

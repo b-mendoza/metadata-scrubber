@@ -25,7 +25,7 @@ func TestPublicStorageKeysAndETagsAreValidatedBeforeStorage(t *testing.T) {
 		t.Run("key "+invalidKey, func(t *testing.T) {
 			fake := storage.NewFake()
 			handler := newTestHandler(t)
-			body, err := json.Marshal(dryRunRequest{StorageKey: invalidKey})
+			body, err := json.Marshal(dryRunRequest{StorageKey: storageKey(invalidKey)})
 			require.NoError(t, err)
 			request := httptest.NewRequest(http.MethodPost, "/api/files/dry-run", bytes.NewReader(body))
 			request.Header.Set(header.ContentType, mediatype.JSON)

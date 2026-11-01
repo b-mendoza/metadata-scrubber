@@ -55,12 +55,12 @@ func TestPipelineLogsRecordRequiredSuccessFacts(t *testing.T) {
 	require.Equal(t, http.StatusOK, scrubRecorder.Code, scrubRecorder.Body.String())
 
 	require.Equal(t, []pipelineLogRecord{
-		{Message: "upload-created", Level: slog.LevelInfo, StorageKeyDigest: storageKeyDigest(grantedUpload.StorageKey), Outcome: "success", DurationRecorded: true},
-		{Message: "sniffed", Level: slog.LevelInfo, StorageKeyDigest: storageKeyDigestOne, Outcome: "accepted", DurationRecorded: true},
-		{Message: "dry-run", Level: slog.LevelInfo, StorageKeyDigest: storageKeyDigestOne, Outcome: "success", DurationRecorded: true},
-		{Message: "sniffed", Level: slog.LevelInfo, StorageKeyDigest: storageKeyDigestTwo, Outcome: "accepted", DurationRecorded: true},
-		{Message: "scrubbed", Level: slog.LevelInfo, StorageKeyDigest: storageKeyDigestTwo, Outcome: "success", DurationRecorded: true},
-		{Message: "presigned", Level: slog.LevelInfo, StorageKeyDigest: storageKeyDigestTwo, Outcome: "success", DurationRecorded: true},
+		{Message: "pipeline stage", Stage: "upload-created", Level: slog.LevelInfo, StorageKeyDigest: grantedUpload.StorageKey.digest(), Outcome: "success", DurationRecorded: true},
+		{Message: "pipeline stage", Stage: "sniffed", Level: slog.LevelInfo, StorageKeyDigest: storageKeyDigestOne, Outcome: "accepted", DurationRecorded: true},
+		{Message: "pipeline stage", Stage: "dry-run", Level: slog.LevelInfo, StorageKeyDigest: storageKeyDigestOne, Outcome: "success", DurationRecorded: true},
+		{Message: "pipeline stage", Stage: "sniffed", Level: slog.LevelInfo, StorageKeyDigest: storageKeyDigestTwo, Outcome: "accepted", DurationRecorded: true},
+		{Message: "pipeline stage", Stage: "scrubbed", Level: slog.LevelInfo, StorageKeyDigest: storageKeyDigestTwo, Outcome: "success", DurationRecorded: true},
+		{Message: "pipeline stage", Stage: "presigned", Level: slog.LevelInfo, StorageKeyDigest: storageKeyDigestTwo, Outcome: "success", DurationRecorded: true},
 	}, logs.records)
 }
 
@@ -80,8 +80,8 @@ func TestPipelineLogsRecordFailureCacheHitAndShortCircuitFacts(t *testing.T) {
 
 		require.Equal(t, http.StatusUnsupportedMediaType, recorder.Code)
 		require.Equal(t, []pipelineLogRecord{
-			{Message: "sniffed", Level: slog.LevelInfo, StorageKeyDigest: storageKeyDigestOne, Outcome: "rejected", DurationRecorded: true},
-			{Message: "dry-run", Level: slog.LevelInfo, StorageKeyDigest: storageKeyDigestOne, Outcome: "not-pdf", DurationRecorded: true},
+			{Message: "pipeline stage", Stage: "sniffed", Level: slog.LevelInfo, StorageKeyDigest: storageKeyDigestOne, Outcome: "rejected", DurationRecorded: true},
+			{Message: "pipeline stage", Stage: "dry-run", Level: slog.LevelInfo, StorageKeyDigest: storageKeyDigestOne, Outcome: "not-pdf", DurationRecorded: true},
 		}, logs.records)
 	})
 
@@ -103,8 +103,8 @@ func TestPipelineLogsRecordFailureCacheHitAndShortCircuitFacts(t *testing.T) {
 
 		require.Equal(t, http.StatusInternalServerError, recorder.Code)
 		require.Equal(t, []pipelineLogRecord{
-			{Message: "sniffed", Level: slog.LevelInfo, StorageKeyDigest: storageKeyDigestOne, Outcome: "accepted", DurationRecorded: true},
-			{Message: "dry-run", Level: slog.LevelError, StorageKeyDigest: storageKeyDigestOne, Outcome: "failed", DurationRecorded: true},
+			{Message: "pipeline stage", Stage: "sniffed", Level: slog.LevelInfo, StorageKeyDigest: storageKeyDigestOne, Outcome: "accepted", DurationRecorded: true},
+			{Message: "pipeline stage", Stage: "dry-run", Level: slog.LevelError, StorageKeyDigest: storageKeyDigestOne, Outcome: "failed", DurationRecorded: true},
 		}, logs.records)
 	})
 
@@ -126,8 +126,8 @@ func TestPipelineLogsRecordFailureCacheHitAndShortCircuitFacts(t *testing.T) {
 
 		require.Equal(t, http.StatusInternalServerError, recorder.Code)
 		require.Equal(t, []pipelineLogRecord{
-			{Message: "sniffed", Level: slog.LevelInfo, StorageKeyDigest: storageKeyDigestOne, Outcome: "accepted", DurationRecorded: true},
-			{Message: "scrubbed", Level: slog.LevelError, StorageKeyDigest: storageKeyDigestOne, Outcome: "failed", DurationRecorded: true},
+			{Message: "pipeline stage", Stage: "sniffed", Level: slog.LevelInfo, StorageKeyDigest: storageKeyDigestOne, Outcome: "accepted", DurationRecorded: true},
+			{Message: "pipeline stage", Stage: "scrubbed", Level: slog.LevelError, StorageKeyDigest: storageKeyDigestOne, Outcome: "failed", DurationRecorded: true},
 		}, logs.records)
 	})
 
@@ -147,9 +147,9 @@ func TestPipelineLogsRecordFailureCacheHitAndShortCircuitFacts(t *testing.T) {
 
 		require.Equal(t, http.StatusInternalServerError, recorder.Code)
 		require.Equal(t, []pipelineLogRecord{
-			{Message: "sniffed", Level: slog.LevelInfo, StorageKeyDigest: storageKeyDigestOne, Outcome: "accepted", DurationRecorded: true},
-			{Message: "scrubbed", Level: slog.LevelInfo, StorageKeyDigest: storageKeyDigestOne, Outcome: "success", DurationRecorded: true},
-			{Message: "could not create download", Level: slog.LevelError},
+			{Message: "pipeline stage", Stage: "sniffed", Level: slog.LevelInfo, StorageKeyDigest: storageKeyDigestOne, Outcome: "accepted", DurationRecorded: true},
+			{Message: "pipeline stage", Stage: "scrubbed", Level: slog.LevelInfo, StorageKeyDigest: storageKeyDigestOne, Outcome: "success", DurationRecorded: true},
+			{Message: "request failed", Level: slog.LevelError, Failure: "could not create download"},
 		}, logs.records)
 	})
 
@@ -169,7 +169,7 @@ func TestPipelineLogsRecordFailureCacheHitAndShortCircuitFacts(t *testing.T) {
 
 		require.Equal(t, http.StatusOK, recorder.Code)
 		require.Equal(t, []pipelineLogRecord{
-			{Message: "presigned", Level: slog.LevelInfo, StorageKeyDigest: storageKeyDigestOne, Outcome: "cache-hit", DurationRecorded: true},
+			{Message: "pipeline stage", Stage: "presigned", Level: slog.LevelInfo, StorageKeyDigest: storageKeyDigestOne, Outcome: "cache-hit", DurationRecorded: true},
 		}, logs.records)
 	})
 }
@@ -209,7 +209,7 @@ func TestPipelineLogsExcludeSeededSensitiveValues(t *testing.T) {
 		rawLogs := logs.String()
 		require.Contains(t, rawLogs, `"storage_key_digest":"`+storageKeyDigestOne+`"`)
 		for _, secret := range []string{
-			grantedUpload.StorageKey,
+			string(grantedUpload.StorageKey),
 			storageKeyPrefix + fileIDOne,
 			"source-bytes-secret",
 			"private-object-marker",
@@ -258,8 +258,8 @@ func TestPipelineLogsExcludeSeededSensitiveValues(t *testing.T) {
 		bindings.Inject(bindings.Bindings{Storage: fake})(http.HandlerFunc(handler.Upload)).ServeHTTP(response, request)
 
 		require.Equal(t, http.StatusInternalServerError, response.Code)
-		require.Equal(t, []pipelineLogRecord{{Level: slog.LevelError, Message: "could not create upload"}}, logs.records)
-		require.NotContains(t, rawLogs.String(), `"msg":"upload-created"`)
+		require.Equal(t, []pipelineLogRecord{{Message: "request failed", Level: slog.LevelError, Failure: "could not create upload"}}, logs.records)
+		require.NotContains(t, rawLogs.String(), `"stage":"upload-created"`)
 		require.NotContains(t, rawLogs.String(), "sensitive-provider-url-object-key-marker")
 		require.NotContains(t, rawLogs.String(), "request-name-secret")
 		require.NotContains(t, rawLogs.String(), `"error":`)
@@ -269,6 +269,8 @@ func TestPipelineLogsExcludeSeededSensitiveValues(t *testing.T) {
 type pipelineLogRecord struct {
 	Message          string
 	Level            slog.Level
+	Stage            string
+	Failure          string
 	StorageKeyDigest string
 	Outcome          string
 	DurationRecorded bool
@@ -285,6 +287,10 @@ func (logs *pipelineLogHandler) Handle(_ context.Context, record slog.Record) er
 	entry := pipelineLogRecord{Message: record.Message, Level: record.Level}
 	record.Attrs(func(attr slog.Attr) bool {
 		switch attr.Key {
+		case "stage":
+			entry.Stage = attr.Value.String()
+		case "failure":
+			entry.Failure = attr.Value.String()
 		case "storage_key_digest":
 			entry.StorageKeyDigest = attr.Value.String()
 		case "outcome":
