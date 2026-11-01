@@ -15,6 +15,8 @@ The active playbook's `Phase Skill Map` section is the source of truth for per-p
 | Jira     | [`./jira-playbook.md`](./jira-playbook.md)     |
 | GitHub   | [`./github-playbook.md`](./github-playbook.md) |
 
+Pass `RESULT_FORMAT=handoff` to `fetching-work-item`, `clarifying-assumptions`, and `executing-work-item-task` so their existing structured outputs remain available for routing. Do not echo these envelopes in user replies. Default prose replies are not substitutes for required routing fields.
+
 Phases 3 and 6 always dispatch `clarifying-assumptions` regardless of platform; it accepts `TICKET_KEY` as the workflow-key alias for either identifier.
 
 ## Preflight Contract
@@ -40,6 +42,7 @@ Inputs:
   TICKET_KEY: JNS-6065
   MODE: upfront
   ITERATION: 1
+  RESULT_FORMAT: handoff
 Retain: RE_PLAN_NEEDED, BLOCKERS_PRESENT, accepted decisions summary
 ```
 
@@ -55,6 +58,7 @@ Inputs:
   MODE: critique
   TASK_NUMBER: 2
   ITERATION: 1
+  RESULT_FORMAT: handoff
 Retain: RE_PLAN_NEEDED, BLOCKERS_PRESENT, decisions file path
 ```
 

@@ -2,6 +2,8 @@
 
 The top-level work-item workflow orchestrator detects the platform from input, loads the matching playbook, and routes execution-heavy work to downstream skills and co-located utility subagents. It may derive the workflow key per the active playbook's identifier-derivation rule, read progress through `progress-tracker`, choose resume points, preflight phases, invoke downstream skills named in the active playbook's Phase Skill Map, dispatch utility subagents, surface phase summaries, ask gates, and update progress. It retains only decision-relevant summaries, current workflow state, user confirmations, and failure reports, while treating downstream phase skills and the active playbook as authoritative for per-platform contract. All file, platform, git, code, CI, web, and transport mutations are delegated, and platform writes or task execution happen only through downstream skills after the required human gates.
 
+Fetch, clarification, and task-execution skill calls pass `RESULT_FORMAT=handoff`. Their status and flag fields stay internal; user summaries and approval requests use prose without status envelopes.
+
 ```mermaid
 flowchart TD
   START([Start]) --> INPUTS["Receive platform input (JIRA_URL or ISSUE_URL/OWNER+REPO+ISSUE_NUMBER)"]

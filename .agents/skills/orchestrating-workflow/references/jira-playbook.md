@@ -17,15 +17,17 @@ Jira reads and writes use the Jira MCP server. Treat MCP unresponsiveness as tra
 
 ## Phase Skill Map
 
-| Phase | Runtime skill                 | Inputs                                                      | Retain                                                          |
-| ----- | ----------------------------- | ----------------------------------------------------------- | --------------------------------------------------------------- |
-| 1     | `fetching-work-item`          | `JIRA_URL`                                                  | 12-line summary, `TICKET_KEY`, file path                        |
-| 2     | `planning-work-item-tasks`    | `TICKET_KEY` (+ `RE_PLAN`, `DECISIONS`)                     | summary, tasks file path, warnings                              |
-| 3     | `clarifying-assumptions`      | `TICKET_KEY`, `MODE=upfront`, `ITERATION`                   | `RE_PLAN_NEEDED`, `BLOCKERS_PRESENT`, decisions                 |
-| 4     | `creating-work-item-children` | `JIRA_URL`                                                  | created/linked subtask rows, warnings, failures                 |
-| 5     | `planning-task-execution`     | `TICKET_KEY`, `TASK_NUMBER` (+ `RE_PLAN`, `DECISIONS_FILE`) | four artifact paths, approach, test shape, refactoring verdict  |
-| 6     | `clarifying-assumptions`      | `TICKET_KEY`, `MODE=critique`, `TASK_NUMBER`, `ITERATION`   | `RE_PLAN_NEEDED`, `BLOCKERS_PRESENT`, decisions file            |
-| 7     | `executing-work-item-task`    | `TICKET_KEY`, `TASK_NUMBER`                                 | `FINAL_TASK_REPORT` status, verdict, gate summary, retry counts |
+| Phase | Runtime skill                 | Inputs                                                                             | Retain                                                          |
+| ----- | ----------------------------- | ---------------------------------------------------------------------------------- | --------------------------------------------------------------- |
+| 1     | `fetching-work-item`          | `JIRA_URL`, `RESULT_FORMAT=handoff`                                                | 12-line summary, `TICKET_KEY`, file path                        |
+| 2     | `planning-work-item-tasks`    | `TICKET_KEY` (+ `RE_PLAN`, `DECISIONS`)                                            | summary, tasks file path, warnings                              |
+| 3     | `clarifying-assumptions`      | `TICKET_KEY`, `MODE=upfront`, `ITERATION`, `RESULT_FORMAT=handoff`                 | `RE_PLAN_NEEDED`, `BLOCKERS_PRESENT`, decisions                 |
+| 4     | `creating-work-item-children` | `JIRA_URL`                                                                         | created/linked subtask rows, warnings, failures                 |
+| 5     | `planning-task-execution`     | `TICKET_KEY`, `TASK_NUMBER` (+ `RE_PLAN`, `DECISIONS_FILE`)                        | four artifact paths, approach, test shape, refactoring verdict  |
+| 6     | `clarifying-assumptions`      | `TICKET_KEY`, `MODE=critique`, `TASK_NUMBER`, `ITERATION`, `RESULT_FORMAT=handoff` | `RE_PLAN_NEEDED`, `BLOCKERS_PRESENT`, decisions file            |
+| 7     | `executing-work-item-task`    | `TICKET_KEY`, `TASK_NUMBER`, `RESULT_FORMAT=handoff`                               | `FINAL_TASK_REPORT` status, verdict, gate summary, retry counts |
+
+Rows with `RESULT_FORMAT=handoff` return internal routing fields; do not show their status envelopes to the user. Other rows return prose summaries and artifacts, not public status lines.
 
 ## Phase 1 Snapshot Sections
 

@@ -50,7 +50,9 @@ When a phase has a targeted fix or re-plan loop, re-run only the failing phase a
 | 6 → 7         | User gate | Proceed only when validation passes, `BLOCKERS_PRESENT=false`, and the user confirms the critiqued task plan is ready for real execution |
 | 7 → next task | User gate | User chooses the next task or stops                                                                                                      |
 
-For Phases 3 and 6, gate decisions use both the validator verdict and the `clarifying-assumptions` final summary. `BLOCKERS_PRESENT=true` is a hard stop. `RE_PLAN_NEEDED=true` reopens the relevant planning phase before the gate can advance.
+Invoke `fetching-work-item`, `clarifying-assumptions`, and `executing-work-item-task` with `RESULT_FORMAT=handoff`. This is an internal result for routing, not text to echo to the user. Other children return prose summaries and artifacts; do not require public status lines. Keep user-facing gates and final replies in prose, preserving every exact approval artifact.
+
+For Phases 3 and 6, gate decisions use both the validator verdict and the `clarifying-assumptions` handoff. `BLOCKERS_PRESENT=true` is a hard stop. `RE_PLAN_NEEDED=true` reopens the relevant planning phase before the gate can advance.
 
 ## Resume Mapping
 
@@ -71,7 +73,7 @@ Confirm with the user before resuming past Phase 1, then load the matching playb
 
 ## Clarification Flags
 
-Treat `RE_PLAN_NEEDED` and `BLOCKERS_PRESENT` as phase-boundary inputs even though they are not validator artifacts.
+Treat `RE_PLAN_NEEDED` and `BLOCKERS_PRESENT` from the `RESULT_FORMAT=handoff` result as phase-boundary inputs even though they are not validator artifacts. Missing or invalid flags are a contract error, never false by default.
 
 - `RE_PLAN_NEEDED=true` in Phase 3: re-run Phase 2 with accepted decisions, then re-run Phase 2 postcondition and Phase 3.
 - `RE_PLAN_NEEDED=true` in Phase 6: if the critique iteration is below 3, re-run Phase 5 with the task decisions file, increment the critique iteration, then re-run Phase 6. If the critique iteration is already 3, stop and surface the unresolved critique items.
@@ -81,7 +83,7 @@ Treat `RE_PLAN_NEEDED` and `BLOCKERS_PRESENT` as phase-boundary inputs even thou
 
 Once the normal Phase 5 + Phase 6 handoff validates, the playbook's Phase 7 execution skill owns the execution-side readiness contract. It decides which kickoff artifacts are required, whether platform state should be updated, and how quality-gate fix cycles run.
 
-If the execution skill returns `BLOCKED` from kickoff, task execution, documentation, requirements verification, or a quality reviewer, treat it as a resume point. Record the task as stopped at Phase 7, surface the blocker, and resume from that Phase 7 step after the blocker is resolved.
+Read the `FINAL_TASK_REPORT` returned with `RESULT_FORMAT=handoff`; never infer completion from prose. If the execution skill returns `BLOCKED` from kickoff, task execution, documentation, requirements verification, or a quality reviewer, treat it as a resume point. Record the task as stopped at Phase 7, surface the blocker, and resume from that Phase 7 step after the blocker is resolved.
 
 ## Escalation Summary
 

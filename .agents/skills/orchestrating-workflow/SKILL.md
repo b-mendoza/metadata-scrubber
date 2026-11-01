@@ -83,6 +83,8 @@ Each numbered phase is owned by a named runtime skill listed in the active playb
 
 ## Output Contract
 
+Keep status-bearing child handoffs private. Pass `RESULT_FORMAT=handoff` to fetching, clarification, and task execution as the phase playbooks specify; route on their existing fields, never on prose.
+
 After each phase or gate, return only:
 
 - A concise phase summary for the user
@@ -136,7 +138,7 @@ Input: `JIRA_URL=https://workspace.atlassian.net/browse/PROJ-123`
 3. Dispatch `progress-tracker` with `TICKET_KEY=PROJ-123`, `ACTION=read`.
 4. No progress found, so dispatch `preflight-checker` with `TICKET_KEY=PROJ-123`, `PLAYBOOK_PATH=<resolved-skill-directory>/references/jira-playbook.md`, `PHASES=1-7`.
 5. Read `./references/phases-1-4.md` and enter Phase 1.
-6. Invoke the playbook's Phase 1 downstream skill (`fetching-work-item`).
+6. Invoke the playbook's Phase 1 downstream skill (`fetching-work-item`) with `RESULT_FORMAT=handoff`.
 7. Dispatch `artifact-validator` with `TICKET_KEY=PROJ-123`, `PLAYBOOK_PATH=<resolved-skill-directory>/references/jira-playbook.md`, `PHASE=1`, `DIRECTION=postcondition`.
 8. Dispatch `progress-tracker` with `TICKET_KEY=PROJ-123`, `PLAYBOOK_PATH=<resolved-skill-directory>/references/jira-playbook.md`, `ACTION=update`, `PHASE=1`, `STATUS=complete`, `SUMMARY="Work item fetched"`.
 9. Tell the user: `Work item fetched. Moving to task planning.`

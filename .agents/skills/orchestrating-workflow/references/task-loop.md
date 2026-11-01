@@ -34,7 +34,7 @@ Do not initialize task progress during selection. Initialize it only after the P
 2. Dispatch `artifact-validator` with the workflow key under `TICKET_KEY`, `PLAYBOOK_PATH=<active playbook path>`, `PHASE=5`, `DIRECTION=precondition`, `TASK_NUMBER=<N>`.
 3. If the precondition passes and the task progress file does not exist, dispatch `progress-tracker` with the workflow key under `TICKET_KEY`, `PLAYBOOK_PATH=<active playbook path>`, `ACTION=initialize_task`, `TASK_NUMBER=<N>`, and `TASK_TITLE=<title>`.
 4. Invoke the downstream skill with the inputs named in the playbook's Phase Skill Map row for Phase 5.
-5. Retain only the downstream completion summary: four artifact paths, approach summary, test coverage shape, and refactoring verdict.
+5. Retain only the downstream completion summary: four artifact paths, approach summary, test coverage shape, and refactoring verdict. Accept a prose completion summary; do not require a status line.
 6. Dispatch `artifact-validator` with the workflow key under `TICKET_KEY`, `PLAYBOOK_PATH=<active playbook path>`, `PHASE=5`, `DIRECTION=postcondition`, `TASK_NUMBER=<N>`.
 7. Dispatch `progress-tracker` with the workflow key under `TICKET_KEY`, `ACTION=update_task`, `TASK_NUMBER=<N>`, `PHASE=5`, `STATUS=complete`, and a one-line planning summary.
 
@@ -46,9 +46,9 @@ Do not initialize task progress during selection. Initialize it only after the P
 
 1. Announce Phase 6 for Task `<N>` and critique iteration `<I>` (`1` on the first Phase 6 pass for that task).
 2. Dispatch `artifact-validator` with the workflow key under `TICKET_KEY`, `PLAYBOOK_PATH=<active playbook path>`, `PHASE=6`, `DIRECTION=precondition`, `TASK_NUMBER=<N>`.
-3. Invoke `clarifying-assumptions` with `MODE=critique`, `TICKET_KEY=<KEY>`, `TASK_NUMBER=<N>`, and `ITERATION=<I>`.
+3. Invoke `clarifying-assumptions` with `MODE=critique`, `TICKET_KEY=<KEY>`, `TASK_NUMBER=<N>`, `ITERATION=<I>`, and `RESULT_FORMAT=handoff`.
 4. Let the downstream skill critique the Phase 5 planning artifacts and walk the user through critique items.
-5. If `RE_PLAN_NEEDED=true` and `<I>` is below 3, re-dispatch Phase 5 with the workflow key, `TASK_NUMBER=<N>`, `RE_PLAN=true`, and `DECISIONS_FILE=docs/<KEY>-task-<N>-decisions.md`, then increment `<I>` and run Phase 6 again. If `<I>` is already 3, stop and surface the unresolved critique items. Maximum: 3 critique iterations per task.
+5. Read the returned handoff flags; if either is missing or invalid, stop as a contract error. If `BLOCKERS_PRESENT=true`, stop before execution and surface blockers. If `RE_PLAN_NEEDED=true` and `<I>` is below 3, re-dispatch Phase 5 with the workflow key, `TASK_NUMBER=<N>`, `RE_PLAN=true`, and `DECISIONS_FILE=docs/<KEY>-task-<N>-decisions.md`, then increment `<I>` and run Phase 6 again. If `<I>` is already 3, stop and surface the unresolved critique items. Maximum: 3 critique iterations per task.
 6. After `RE_PLAN_NEEDED=false`, dispatch `artifact-validator` with the workflow key under `TICKET_KEY`, `PLAYBOOK_PATH=<active playbook path>`, `PHASE=6`, `DIRECTION=postcondition`, `TASK_NUMBER=<N>`.
 7. Dispatch `progress-tracker` with the workflow key under `TICKET_KEY`, `ACTION=update_task`, `TASK_NUMBER=<N>`, `PHASE=6`, `STATUS=complete`, and a one-line critique summary.
 
@@ -69,9 +69,9 @@ Phase 6 is critique-only: no implementation, kickoff, platform state mutation, o
 
 1. Announce Phase 7 for Task `<N>`.
 2. Dispatch `artifact-validator` with the workflow key under `TICKET_KEY`, `PLAYBOOK_PATH=<active playbook path>`, `PHASE=7`, `DIRECTION=precondition`, `TASK_NUMBER=<N>`.
-3. Invoke the downstream skill with the inputs named in the playbook's Phase Skill Map row for Phase 7. Pass pre-task utility summaries only if the downstream skill explicitly accepts them.
+3. Invoke the downstream skill with the inputs named in the playbook's Phase Skill Map row for Phase 7, including `RESULT_FORMAT=handoff`. Pass pre-task utility summaries only if the downstream skill explicitly accepts them.
 4. Let the Phase 7 execution skill own kickoff, implementation, documentation, requirements verification, quality gates, and its internal fix cycles.
-5. Interpret the returned `FINAL_TASK_REPORT` status:
+5. Interpret the internal returned `FINAL_TASK_REPORT` status, never a prose user reply. If the status is missing or outside the declared set, stop as a contract error without marking completion:
    - `COMPLETE`: Phase 7 succeeded for the selected task.
    - `BLOCKED`: stop the task, surface the blocker, and record a Phase 7 resume point.
    - `STOPPED_FOR_USER_INPUT`: pause Phase 7, surface the exact decision needed, and do not mark the task complete.

@@ -71,11 +71,11 @@ TASK_NUMBER: <N>                  (task-specific boundaries only)
 
 Reply formats are declared in artifact-validator.md under Output Format and Escalation.
 
-For Phases 3 and 6, validation covers only the artifact boundary. The clarification skill's final summary still carries `RE_PLAN_NEEDED` and `BLOCKERS_PRESENT`, and the orchestrator must honor those flags separately at the gate step.
+For Phases 3 and 6, validation covers only the artifact boundary. The clarification skill's internal `RESULT_FORMAT=handoff` result still carries `RE_PLAN_NEEDED` and `BLOCKERS_PRESENT`, and the orchestrator must honor those flags separately at the gate step.
 
 ### Phase 1 Fetch Summary (12-line contract)
 
-The Phase 1 downstream skill returns this locked 12-line summary. The active playbook's `Phase 1 Fetch Summary Fields` section supplies the identifier-bearing lines (lines 5-9 vary per platform). Branch on the structured fields, not on a single status line.
+Invoke the Phase 1 downstream skill with `RESULT_FORMAT=handoff` to receive this locked 12-line summary. Its default prose user reply is not a routing input; never infer the pair from prose or echo the envelope to the user. The active playbook's `Phase 1 Fetch Summary Fields` section supplies the identifier-bearing lines (lines 5-9 vary per platform). Branch on the structured fields, not on a single status line.
 
 ```text
 FETCH: <PASS | PARTIAL | FAIL | ERROR>

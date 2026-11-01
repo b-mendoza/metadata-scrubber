@@ -18,17 +18,19 @@ GitHub reads and writes use the `gh` CLI (`gh api` for REST or GraphQL). Treat m
 
 ## Phase Skill Map
 
-| Phase | Runtime skill                 | Inputs                                                                   | Retain                                                          |
-| ----- | ----------------------------- | ------------------------------------------------------------------------ | --------------------------------------------------------------- |
-| 1     | `fetching-work-item`          | `ISSUE_URL` or `OWNER`+`REPO`+`ISSUE_NUMBER`                             | 12-line summary, `TICKET_KEY=<ISSUE_SLUG>`, file path           |
-| 2     | `planning-work-item-tasks`    | `TICKET_KEY=<ISSUE_SLUG>` (+ `RE_PLAN`, `DECISIONS`)                     | summary, tasks file path, warnings                              |
-| 3     | `clarifying-assumptions`      | `TICKET_KEY=<ISSUE_SLUG>`, `MODE=upfront`, `ITERATION`                   | `RE_PLAN_NEEDED`, `BLOCKERS_PRESENT`, decisions                 |
-| 4     | `creating-work-item-children` | `ISSUE_URL`                                                              | write model, created/linked task-issue rows, warnings           |
-| 5     | `planning-task-execution`     | `TICKET_KEY=<ISSUE_SLUG>`, `TASK_NUMBER` (+ `RE_PLAN`, `DECISIONS_FILE`) | four artifact paths, approach, test shape, refactoring verdict  |
-| 6     | `clarifying-assumptions`      | `TICKET_KEY=<ISSUE_SLUG>`, `MODE=critique`, `TASK_NUMBER`, `ITERATION`   | `RE_PLAN_NEEDED`, `BLOCKERS_PRESENT`, decisions file            |
-| 7     | `executing-work-item-task`    | `TICKET_KEY=<ISSUE_SLUG>`, `TASK_NUMBER`                                 | `FINAL_TASK_REPORT` status, verdict, gate summary, retry counts |
+| Phase | Runtime skill                 | Inputs                                                                                          | Retain                                                          |
+| ----- | ----------------------------- | ----------------------------------------------------------------------------------------------- | --------------------------------------------------------------- |
+| 1     | `fetching-work-item`          | `ISSUE_URL` or `OWNER`+`REPO`+`ISSUE_NUMBER`, `RESULT_FORMAT=handoff`                           | 12-line summary, `TICKET_KEY=<ISSUE_SLUG>`, file path           |
+| 2     | `planning-work-item-tasks`    | `TICKET_KEY=<ISSUE_SLUG>` (+ `RE_PLAN`, `DECISIONS`)                                            | summary, tasks file path, warnings                              |
+| 3     | `clarifying-assumptions`      | `TICKET_KEY=<ISSUE_SLUG>`, `MODE=upfront`, `ITERATION`, `RESULT_FORMAT=handoff`                 | `RE_PLAN_NEEDED`, `BLOCKERS_PRESENT`, decisions                 |
+| 4     | `creating-work-item-children` | `ISSUE_URL`                                                                                     | write model, created/linked task-issue rows, warnings           |
+| 5     | `planning-task-execution`     | `TICKET_KEY=<ISSUE_SLUG>`, `TASK_NUMBER` (+ `RE_PLAN`, `DECISIONS_FILE`)                        | four artifact paths, approach, test shape, refactoring verdict  |
+| 6     | `clarifying-assumptions`      | `TICKET_KEY=<ISSUE_SLUG>`, `MODE=critique`, `TASK_NUMBER`, `ITERATION`, `RESULT_FORMAT=handoff` | `RE_PLAN_NEEDED`, `BLOCKERS_PRESENT`, decisions file            |
+| 7     | `executing-work-item-task`    | `TICKET_KEY=<ISSUE_SLUG>`, `TASK_NUMBER`, `RESULT_FORMAT=handoff`                               | `FINAL_TASK_REPORT` status, verdict, gate summary, retry counts |
 
 `clarifying-assumptions` accepts `TICKET_KEY` as the workflow-key alias; pass the `ISSUE_SLUG` value under that name.
+
+Rows with `RESULT_FORMAT=handoff` return internal routing fields; do not show their status envelopes to the user. Other rows return prose summaries and artifacts, not public status lines.
 
 ## Phase 1 Snapshot Sections
 

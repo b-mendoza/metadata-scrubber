@@ -89,7 +89,7 @@
       "source": "b-mendoza/agent-skills",
       "sourceType": "github",
       "skillPath": "skills/orchestrating-workflow/SKILL.md",
-      "computedHash": "9600bd3f90b16fe1d86fab7116bffd165b7c2680b42d4f7576f308c18e3e7433"
+      "computedHash": "a24614a62961c327a105f81eb909c02234f0ba5ad57cb88c56609b7319ad5223"
     },
     "planning-codebase-restructuring": {
       "source": "b-mendoza/agent-skills",
