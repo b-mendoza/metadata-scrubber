@@ -87,11 +87,13 @@ Finite-state execution model for this skill. This table and the `SKILL.md` Execu
 | `Deliver`             | `TermNeedsValidation` | Report status `needs-validation`                                                                                                                                                      |
 | `Deliver`             | `TermEscalated`       | Report status `escalated`                                                                                                                                                             |
 | `TermReady`           | `[*]`                 | Deliver RCA report                                                                                                                                                                    |
-| `TermBlocked`         | `[*]`                 | Deliver RCA report with status `blocked`                                                                                                                                              |
+| `TermBlocked`         | `[*]`                 | Deliver RCA report explaining the blocker                                                                                                                                              |
 | `TermNeedsValidation` | `[*]`                 | Deliver RCA report                                                                                                                                                                    |
 | `TermEscalated`       | `[*]`                 | Deliver RCA report (unsupported or Tier C handoff)                                                                                                                                    |
-| `TermNeedsInput`      | `[*]`                 | Early-stop payload: status, structured information request, resume guidance, and any accumulated `possible-injection-content` flags (no RCA report)                                   |
-| `TermError`           | `[*]`                 | Early-stop payload: status, failure detail, recovery guidance, and any accumulated `possible-injection-content` flags (no RCA report)                                                 |
+| `TermNeedsInput`      | `[*]`                 | Early-stop payload: prose stop explanation, structured information request, resume guidance, and any accumulated `possible-injection-content` flags (no RCA report)                                   |
+| `TermError`           | `[*]`                 | Early-stop payload: prose stop explanation, failure detail, recovery guidance, and any accumulated `possible-injection-content` flags (no RCA report)                                                 |
+
+All user-facing terminal deliveries use prose instead of a status line. Preserve required RCA fields and internal draft/subagent status fields.
 
 ## Reachability
 

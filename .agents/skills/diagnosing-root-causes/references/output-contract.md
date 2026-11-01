@@ -1,6 +1,6 @@
 # Output Contract
 
-Use this reference when drafting or delivering an RCA report. Status names are lowercase and hyphenated everywhere.
+Use this reference when drafting or delivering an RCA report. Internal status names are lowercase and hyphenated. Public delivery uses prose, without a status line or routing envelope; all required RCA content remains mandatory.
 
 ## Terminal Status Taxonomy
 
@@ -11,7 +11,7 @@ Use this reference when drafting or delivering an RCA report. Status names are l
 | `needs-validation` | Material was obtained but is too weak, stale, or contradictory; confidence is `low`; a declined approval left a validation gap; or the review repair cap was reached.                                                                          |
 | `escalated`        | No supported root cause remains after exhausting plausible hypotheses and refinement budget, or an approved Tier C action was handed off for external execution (with or without returned output that did not complete a supported diagnosis). |
 
-Orchestration-only early stops are `needs-input` and `error`; they do not deliver an RCA report. Each early stop delivers a minimal payload instead: the stop status, the reason (structured information request for `needs-input`; failure detail for `error`), recovery or resume guidance, and any accumulated `possible-injection-content` flags with source and excerpt. Flags recorded before an early stop are never dropped.
+Orchestration-only early stops are `needs-input` and `error`; they do not deliver an RCA report. Each early stop delivers a minimal payload instead: a prose explanation of the stop, the reason (structured information request for `needs-input`; failure detail for `error`), recovery or resume guidance, and any accumulated `possible-injection-content` flags with source and excerpt. Flags recorded before an early stop are never dropped.
 
 ## Confidence Rubric
 
@@ -24,6 +24,8 @@ Orchestration-only early stops are `needs-input` and `error`; they do not delive
 `ready` requires `high` or `medium`. A reviewable low-confidence draft routes to `needs-validation`; `escalated` is reached only through orchestrator branches (unsupported-budget exhaustion or Tier C handoff), never as a low-confidence draft recommendation.
 
 ## RCA Report Template
+
+The template below is the internal draft shape. Keep its status field for subagent review and routing. For user delivery, replace only that status line with a prose outcome; retain the title and every content field, including explicit `none` / `not required` entries.
 
 ```text
 RCA Report
@@ -51,8 +53,8 @@ Human approvals required:
 
 ## Delivery Rules
 
-- Deliver exactly one terminal status.
-- Do not end with a terminal status plus a pending question.
+- Select exactly one internal terminal decision; explain it to the user in prose without exposing the draft status line.
+- A delivered RCA report does not end with a pending question; early input stops request the missing evidence and give resume guidance.
 - Include load-bearing excerpts, not just source names.
 - Separate facts, assumptions, hypotheses, and unresolved gaps.
 - Report compound causes only when each cause is supported and their interaction is explained.
