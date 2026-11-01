@@ -1,7 +1,6 @@
 package httpx
 
 import (
-	"context"
 	"log/slog"
 	"net/http"
 	"time"
@@ -27,19 +26,13 @@ func RequestLogger(logger *slog.Logger) func(http.Handler) http.Handler {
 			)
 
 			recorder := &loggingResponseWriter{ResponseWriter: w, status: http.StatusOK}
-			defer logRequestCompletion(logger, requestLogRequest{method: r.Method, path: path, context: r.Context()}, recorder, startedAt)
+			defer logRequestCompletion(logger, r, recorder, startedAt)
 			next.ServeHTTP(recorder, r)
 		})
 	}
 }
 
-type requestLogRequest struct {
-	method  string
-	path    string
-	context context.Context
-}
-
-func logRequestCompletion(logger *slog.Logger, request requestLogRequest, recorder *loggingResponseWriter, startedAt time.Time) {
+func logRequestCompletion(logger *slog.Logger, request *http.Request, recorder *loggingResponseWriter, startedAt time.Time) {
 	recovered := recover()
 	level := slog.LevelInfo
 	if recovered != nil {
@@ -50,8 +43,8 @@ func logRequestCompletion(logger *slog.Logger, request requestLogRequest, record
 	}
 
 	attrs := []slog.Attr{
-		slog.String(logkey.Method, request.method),
-		slog.String(logkey.Path, request.path),
+		slog.String(logkey.Method, request.Method),
+		slog.String(logkey.Path, request.URL.Path),
 		slog.Int(logkey.Status, recorder.status),
 		slog.Int(logkey.Bytes, recorder.bytesWritten),
 		slog.Int64(logkey.DurationMS, time.Since(startedAt).Milliseconds()),
@@ -59,7 +52,7 @@ func logRequestCompletion(logger *slog.Logger, request requestLogRequest, record
 	if recovered != nil {
 		attrs = append(attrs, slog.Bool(logkey.Panicked, true))
 	}
-	logger.LogAttrs(request.context, level, "request completed", attrs...)
+	logger.LogAttrs(request.Context(), level, "request completed", attrs...)
 	if recovered != nil {
 		panic(recovered)
 	}
