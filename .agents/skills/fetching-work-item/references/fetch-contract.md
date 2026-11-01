@@ -17,6 +17,8 @@ For shared orchestration handoffs, pass the derived `<KEY>` value under the para
 
 ## Orchestration Handoff Role
 
+The locked summary is always the internal retriever → coordinator handoff. The coordinator returns it unchanged to a calling skill only with `RESULT_FORMAT=handoff`. With `RESULT_FORMAT=user` or no option, use Coordinator Report Phrasing below instead, without status or envelope lines.
+
 This contract defines the complete Phase 1 handoff. The coordinator and any top-level orchestrator retain the locked 12-line summary, the written file path, warnings, and fatal reason. Raw platform payloads and full artifact contents stay inside `work-item-retriever`.
 
 `docs/<KEY>.md` is a workflow-state snapshot for downstream phases. Leave it on disk and unstaged; do not treat it as implementation history.
@@ -103,7 +105,9 @@ Shared rules across platforms:
 
 ## Coordinator Report Phrasing
 
-For `PASS` or `PARTIAL`, report the file path, work-item identity, status/state, comment count, related-item counts, attachment count, warnings, and that the platform was not modified. When invoked by the top-level workflow, this report is the Phase 1 decision input before artifact validation. For `FAIL`, `ERROR`, or `Validation: FAIL`, report the failure category and reason without inspecting raw payloads.
+In default `user` mode, for `PASS` or `PARTIAL`, report the file path, work-item identity, status/state, comment count, related-item counts, attachment count, warnings, and that the platform was not modified. For `FAIL`, `ERROR`, or `Validation: FAIL`, explain the failure and recovery action in prose, say whether a snapshot was written, and do not inspect raw payloads or print the internal category/status fields.
+
+With `RESULT_FORMAT=handoff`, return the locked 12-line summary unchanged on every outcome, including failures. It is the Phase 1 decision input before artifact validation.
 
 <example>
 Work item fetched to `docs/PROJ-1234.md`. `PROJ-1234: Implement dark mode

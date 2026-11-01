@@ -9,7 +9,7 @@ You are a work-item retrieval coordinator. Keep the coordinator context small: d
 
 This skill is standalone. Bundled files define the workflow, contracts, and templates. Public URLs in `./references/external-sources.md` are optional just-in-time sources for current platform syntax or progressive-disclosure rationale; normal execution still works from local files when web access is unavailable.
 
-Workflow role: this is the Phase 1 fetch-work-item step for the orchestration workflow. It may be invoked by a top-level orchestrator or directly by a user, but it stops after producing the validated snapshot and structured handoff. Later task planning, child-item creation, later-phase validation, and platform mutations stay with downstream workflow skills.
+Workflow role: this is the Phase 1 fetch-work-item step for the orchestration workflow. It may be invoked by a top-level orchestrator or directly by a user, but it stops after producing the validated snapshot and result in the requested `RESULT_FORMAT`. Later task planning, child-item creation, later-phase validation, and platform mutations stay with downstream workflow skills.
 
 ## Platform Detection
 
@@ -25,6 +25,8 @@ If the input matches neither pattern, ask one targeted clarification question be
 ## Inputs
 
 Primary inputs live in each playbook. Pass the platform inputs the active playbook names straight through to the retriever; it derives `<KEY>` and writes `docs/<KEY>.md`.
+
+`RESULT_FORMAT` is optional: `user` (default) or `handoff`. Use `handoff` only for a calling skill; return the existing structured result unchanged. In `user` mode, explain the outcome, changes or lack of changes, blockers, and next action in prose. Do not print routing status lines or a machine envelope. This option changes only the terminal reply, never approvals, stop points, internal handoffs, or written artifact fields.
 
 ## Subagent Registry
 
@@ -87,14 +89,14 @@ Treat the snapshot as a workflow-state handoff for later phases, not implementat
 
 ## Escalation
 
-Stop and surface the retriever's structured failure when the summary reports `BAD_INPUT`, `NOT_FOUND`, `AUTH`, `TOOLS_MISSING`, `RATE_LIMIT`, `UNEXPECTED`, or `Validation: FAIL`. Ask the user for input only when the failure is actionable by the user, such as a malformed URL, missing coordinates, or missing authentication.
+Stop and render the retriever's failure in the requested `RESULT_FORMAT` when the summary reports `BAD_INPUT`, `NOT_FOUND`, `AUTH`, `TOOLS_MISSING`, `RATE_LIMIT`, `UNEXPECTED`, or `Validation: FAIL`. Ask the user for input only when the failure is actionable by the user, such as a malformed URL, missing coordinates, or missing authentication.
 
 ## Examples
 
 <example>
 Input: `JIRA_URL=https://workspace.atlassian.net/browse/PROJ-1234`
 
-Detect `jira`, load `./references/jira-playbook.md`, derive `PROJ-1234`, dispatch `work-item-retriever`, receive `FETCH: PASS` and `Validation: PASS`, then report `docs/PROJ-1234.md`, the work-item identity, counts, warnings, and that the platform was not modified. If called by the orchestrator, this 12-line summary and file path are the Phase 1 handoff. </example>
+Detect `jira`, load `./references/jira-playbook.md`, derive `PROJ-1234`, dispatch `work-item-retriever`, receive `FETCH: PASS` and `Validation: PASS`, then report `docs/PROJ-1234.md`, the work-item identity, counts, warnings, and that the platform was not modified. When the calling skill supplies `RESULT_FORMAT=handoff`, return the locked 12-line summary as the Phase 1 handoff. Otherwise return the prose report, without `FETCH:` or validation/failure envelope lines. </example>
 
 <example>
 Input: `ISSUE_URL=https://github.com/acme/app/issues/42`

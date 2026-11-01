@@ -2,6 +2,8 @@
 
 The coordinator is the workflow's Phase 1 fetch-work-item step. It detects the platform from the combined platform input, loads the matching playbook, and derives the work-item identity per that playbook. Its authority is bounded: the coordinator reads this skill package and talks to the user, dispatches a single delegated `work-item-retriever`, interprets only the retriever's structured 12-line summary, and reports handoff state — raw platform payloads stay out of coordinator context. The trust model treats the active playbook as authoritative for platform-specific transport, capture rules, snapshot sections, summary fields, and rate-limit header names; the fetch contract as authoritative for summary semantics and the locked 12-line shape; and the shared retrieval playbook as authoritative for the pipeline and validation gate. Mutation limits are strict: read-only platform queries only, exactly one unstaged `docs/<KEY>.md` written, no platform mutations, no later workflow phases, and no local staging or commits.
 
+Terminal status and flag labels below are internal routing state. `RESULT_FORMAT=user` is the default: explain the result in prose without status lines or an envelope. Only `RESULT_FORMAT=handoff` returns the existing structured result to a calling skill. Approval previews and stop points do not change.
+
 ```mermaid
 flowchart TD
   START(["Start: JIRA_URL or ISSUE_URL/OWNER+REPO+ISSUE_NUMBER provided"]) --> DETECT["Detect platform and load matching playbook"]
