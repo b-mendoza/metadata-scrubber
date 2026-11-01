@@ -29,11 +29,11 @@ Associate a version with the loaded skill, not the host project's HEAD. Installe
 
 ## Output contract
 
-First line: `REPORTING_SKILL_ISSUES: PASS | BLOCKED | ERROR`, choosing one value. For each inventoried item give its kind, one-line finding, item status, result, and reason or supported URL. Item statuses use the same three values. Result is `CREATED`, `EXISTING`, `NOT_POSTED`, `UNCONFIRMED`, or `UNATTEMPTED`. `UNCONFIRMED` means a create was attempted and may have succeeded; it never means the issue is absent.
+State the outcome in plain prose, with no machine-readable status line or routing envelope. For each inventoried item explain its kind, finding, whether it was created, already covered, not posted, uncertain, or unattempted, and the reason or supported URL. Keep the status and result enums below as internal routing values only. An uncertain create may have succeeded; never claim the issue is absent.
 
 `PASS` means every item was created with a confirmed receipt or already clearly covered; a clean inventory also passes. `BLOCKED` means at least one item could not proceed and no creation error occurred. `ERROR` means any attempted create was denied, failed, or uncertain. Aggregate `ERROR > BLOCKED > PASS`.
 
-An `EXISTING` URL is a covering reference, never a receipt for this run. Keep confirmed created URLs even if a later item fails. For supported unposted items include `Title:`, the full redacted `Body:`, and exact `Command:` when these can be made safe. Otherwise give the reason without exposing unsafe content. Clearly mark later batch items `UNATTEMPTED` after a posting error. For a possible duplicate, retain the candidate URL and stated distinction in the item summary whether posted or omitted. State ignored pre-approval and search limitations. End with `Next step:`. Do not fix the affected skills.
+An `EXISTING` URL is a covering reference, never a receipt for this run. Keep confirmed created URLs even if a later item fails. For supported unposted items include `Title:`, the full redacted `Body:`, and exact `Command:` when these can be made safe. Otherwise give the reason without exposing unsafe content. Explain that later batch items were not attempted after a posting error. For a possible duplicate, retain the candidate URL and stated distinction in the item summary whether posted or omitted. State ignored pre-approval and search limitations. End with a plain-language next step. Do not fix the affected skills.
 
 ## Intake kinds and evidence
 
