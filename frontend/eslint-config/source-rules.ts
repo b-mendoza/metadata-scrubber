@@ -5,15 +5,35 @@ import globals from "globals";
 import { PLUGIN_NAMES, SEVERITY_LEVELS } from "./constants.ts";
 import { restrictedSyntax } from "./syntax-rules.ts";
 
+// The plugin message steers fixes to match() or _unsafeUnwrap(). Replace it
+// with the isErr() guard from docs/conventions.md. The rule logic is unchanged.
+const pluginMustUseResult = neverthrow.rules?.["must-use-result"];
+if (pluginMustUseResult == null) {
+  throw new Error(
+    "@ninoseki/eslint-plugin-neverthrow must provide must-use-result for the neverthrow policy.",
+  );
+}
+const mustUseResult = {
+  ...pluginMustUseResult,
+  meta: {
+    ...pluginMustUseResult.meta,
+    messages: {
+      mustUseResult:
+        "This code does not handle a neverthrow result, so its failure can disappear. Assign the result and check `isErr()`. Throw or return the error at the boundary: `const result = await operation(); if (result.isErr()) { throw result.error; } return result.value;`. You can also return the result to a caller that checks it. Do not use `match()`, `_unsafeUnwrap()`, or `_unsafeUnwrapErr()` for this repair.",
+    },
+  },
+};
+
 export const sourceRules = defineConfig(
   {
     files: ["**/*.{ts,tsx,mts,cts}"],
     plugins: {
-      [PLUGIN_NAMES.Neverthrow]: neverthrow,
+      [PLUGIN_NAMES.Neverthrow]: {
+        ...neverthrow,
+        rules: { "must-use-result": mustUseResult },
+      },
     },
     rules: {
-      // Use the isErr() guard in docs/conventions.md. This rule accepts it.
-      // The message lists _unsafeUnwrap, but that is not the intended repair.
       [`${PLUGIN_NAMES.Neverthrow}/must-use-result`]: SEVERITY_LEVELS.Error,
     },
   },
