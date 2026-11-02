@@ -222,6 +222,22 @@ export default defineConfig(
       [`${PLUGIN_NAMES.Unicorn}/prefer-regexp-test`]: [SEVERITY_LEVELS.Error],
     },
   },
+  {
+    // Keep directory checks after the bridge. TanStack route names stay exempt.
+    // Unicorn has no directories-only option, so file-name reports can repeat Oxlint.
+    ignores: ["src/routes/**"],
+    rules: {
+      [`${PLUGIN_NAMES.Unicorn}/filename-case`]: [
+        SEVERITY_LEVELS.Error,
+        {
+          case: "kebabCase",
+          checkDirectories: true,
+          // Unicorn checks paths relative to cwd. Check every folder below it.
+          directoryRoots: [],
+        },
+      ],
+    },
+  },
   // Native Oxlint lacks the full import policy. Extend the base after the bridge.
   ...importRestrictionRules,
   globalIgnores([
