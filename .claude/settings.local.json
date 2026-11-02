@@ -7,6 +7,14 @@
   "autoMemoryEnabled": false,
   "disableBundledSkills": true,
   "workflowSizeGuideline": "medium",
+  "enabledPlugins": {
+    "vercel-plugin@vercel": true,
+    "cloudflare@cloudflare": true,
+    "context7@context7-marketplace": true,
+    "posthog@posthog": true,
+    "chrome-devtools-mcp@chrome-devtools-plugins": true,
+    "notion-workspace-plugin@notion-plugin-marketplace": true
+  },
   "extraKnownMarketplaces": {
     "vercel": {
       "source": {
@@ -50,13 +58,5 @@
       },
       "autoUpdate": true
     }
-  },
-  "enabledPlugins": {
-    "vercel-plugin@vercel": true,
-    "cloudflare@cloudflare": true,
-    "context7@context7-marketplace": true,
-    "posthog@posthog": true,
-    "chrome-devtools-mcp@chrome-devtools-plugins": true,
-    "notion-workspace-plugin@notion-plugin-marketplace": true
   }
 }
