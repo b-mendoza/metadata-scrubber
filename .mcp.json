@@ -1,33 +1,8 @@
 {
   "mcpServers": {
-    "chrome-devtools": {
-      "args": [
-        "dlx",
-        "-y",
-        "chrome-devtools-mcp@latest",
-        "--no-usage-statistics"
-      ],
-      "command": "pnpm"
-    },
-    "cloudflare-api": {
-      "type": "http",
-      "url": "https://mcp.cloudflare.com/mcp"
-    },
-    "context7": {
-      "type": "http",
-      "url": "https://mcp.context7.com/mcp/oauth"
-    },
     "notion": {
       "type": "http",
       "url": "https://mcp.notion.com/mcp"
-    },
-    "posthog": {
-      "type": "http",
-      "url": "https://mcp.posthog.com/mcp"
-    },
-    "vercel": {
-      "type": "http",
-      "url": "https://mcp.vercel.com"
     }
   }
 }
