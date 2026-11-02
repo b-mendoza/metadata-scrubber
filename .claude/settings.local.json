@@ -37,11 +37,11 @@
       }
     },
     "posthog": {
+      "autoUpdate": true,
       "source": {
-        "source": "github",
-        "repo": "PostHog/ai-plugin"
-      },
-      "autoUpdate": true
+        "repo": "PostHog/ai-plugin",
+        "source": "github"
+      }
     },
     "chrome-devtools-plugins": {
       "source": {
