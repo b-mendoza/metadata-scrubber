@@ -15,6 +15,7 @@ const CONFIG_LOAD_TIMEOUT_MS = 30_000;
 const SYNTAX_RULE_IDS = new Set([
   "no-restricted-syntax",
   `${PLUGIN_NAMES.CorePolicy}/server-module-state`,
+  `${PLUGIN_NAMES.CorePolicy}/module-jsx`,
 ]);
 
 type SyntaxCase = readonly [
@@ -76,6 +77,24 @@ const cases: readonly SyntaxCase[] = [
     TWO_DIAGNOSTICS,
   ],
   [
+    "module JSX positive",
+    "src/fragment.mod.tsx",
+    "export const fragment = <>text</>;\n",
+    NO_DIAGNOSTICS,
+  ],
+  [
+    "module JSX positive",
+    "src/view.mod.tsx",
+    "export const view = <div />;\n",
+    NO_DIAGNOSTICS,
+  ],
+  [
+    "module JSX negative",
+    "src/b-empty.mod.tsx",
+    "export {};\n",
+    ONE_DIAGNOSTIC,
+  ],
+  [
     "global class scope",
     "eslint-config/constants.ts",
     "class Service {}",
@@ -126,6 +145,11 @@ describe("effective syntax policies after the Oxlint bridge", () => {
       `${PLUGIN_NAMES.CorePolicy}/server-module-state`,
       "src/policy.mod.server.ts",
       "let state = 0;",
+    ],
+    [
+      `${PLUGIN_NAMES.CorePolicy}/module-jsx`,
+      "src/policy.mod.tsx",
+      "export {};",
     ],
   ])(
     "keeps %s enabled after the bridge in %s",
