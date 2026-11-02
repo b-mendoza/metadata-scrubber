@@ -45,6 +45,13 @@
         "repo": "ChromeDevTools/chrome-devtools-mcp"
       },
       "autoUpdate": true
+    },
+    "notion-plugin-marketplace": {
+      "source": {
+        "source": "github",
+        "repo": "makenotion/claude-code-notion-plugin"
+      },
+      "autoUpdate": true
     }
   },
   "enabledPlugins": {
@@ -52,6 +59,7 @@
     "cloudflare@cloudflare": true,
     "context7@context7-marketplace": true,
     "posthog@posthog": true,
-    "chrome-devtools-mcp@chrome-devtools-plugins": true
+    "chrome-devtools-mcp@chrome-devtools-plugins": true,
+    "notion-workspace-plugin@notion-plugin-marketplace": true
   }
 }
