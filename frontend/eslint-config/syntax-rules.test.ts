@@ -15,6 +15,7 @@ const CONFIG_LOAD_TIMEOUT_MS = 30_000;
 const SYNTAX_RULE_IDS = new Set([
   "no-restricted-syntax",
   `${PLUGIN_NAMES.CorePolicy}/server-module-state`,
+  `${PLUGIN_NAMES.CorePolicy}/module-file-name`,
   `${PLUGIN_NAMES.CorePolicy}/module-jsx`,
 ]);
 
@@ -40,6 +41,12 @@ const createLinter = () =>
   });
 
 const cases: readonly SyntaxCase[] = [
+  [
+    "TSX server scope",
+    "src/state.mod.server.tsx",
+    "let value = 0;",
+    TWO_DIAGNOSTICS,
+  ],
   [
     "no-classes positive",
     "src/policy.mod.ts",
@@ -76,10 +83,60 @@ const cases: readonly SyntaxCase[] = [
     'export let requestCount = 0;\n\nvar requestTotal = 0,\n  requestLabel = "request";\nexport { requestTotal, requestLabel };\n',
     TWO_DIAGNOSTICS,
   ],
+  ["module filename positive", "outside.ts", "export {};\n", NO_DIAGNOSTICS],
   [
     "module JSX positive",
     "src/fragment.mod.tsx",
     "export const fragment = <>text</>;\n",
+    NO_DIAGNOSTICS,
+  ],
+  [
+    "module filename positive",
+    "src/plain.mod.server.test.ts",
+    "export {};\n",
+    NO_DIAGNOSTICS,
+  ],
+  [
+    "module filename positive",
+    "src/plain.mod.server.ts",
+    "export {};\n",
+    NO_DIAGNOSTICS,
+  ],
+  [
+    "module filename positive",
+    "src/plain.mod.test.ts",
+    "export {};\n",
+    NO_DIAGNOSTICS,
+  ],
+  [
+    "module filename positive",
+    "src/plain.mod.test.tsx",
+    "export {};\n",
+    NO_DIAGNOSTICS,
+  ],
+  [
+    "module filename positive",
+    "src/plain.mod.ts",
+    "export {};\n",
+    NO_DIAGNOSTICS,
+  ],
+  [
+    "module filename positive",
+    "src/router.tsx",
+    "export {};\n",
+    NO_DIAGNOSTICS,
+  ],
+  [
+    "module filename positive",
+    "src/routes/index.tsx",
+    "export {};\n",
+    NO_DIAGNOSTICS,
+  ],
+  ["module filename positive", "src/start.ts", "export {};\n", NO_DIAGNOSTICS],
+  [
+    "module filename positive",
+    "src/tests/setup-test-environment.ts",
+    "export {};\n",
     NO_DIAGNOSTICS,
   ],
   [
@@ -89,8 +146,44 @@ const cases: readonly SyntaxCase[] = [
     NO_DIAGNOSTICS,
   ],
   [
+    "module filename negative",
+    "src/a-plain.ts",
+    "export {};\n",
+    ONE_DIAGNOSTIC,
+  ],
+  [
     "module JSX negative",
     "src/b-empty.mod.tsx",
+    "export {};\n",
+    ONE_DIAGNOSTIC,
+  ],
+  [
+    "module filename negative",
+    "src/c-server.mod.server.tsx",
+    "export {};\n",
+    ONE_DIAGNOSTIC,
+  ],
+  [
+    "module filename negative",
+    "src/d-test.mod.test.server.ts",
+    "export {};\n",
+    ONE_DIAGNOSTIC,
+  ],
+  [
+    "module filename negative",
+    "src/nested/router.tsx",
+    "export {};\n",
+    ONE_DIAGNOSTIC,
+  ],
+  [
+    "module filename negative",
+    "src/tests/other-setup.ts",
+    "export {};\n",
+    ONE_DIAGNOSTIC,
+  ],
+  [
+    "module filename negative",
+    "src/tests/utils/helper.ts",
     "export {};\n",
     ONE_DIAGNOSTIC,
   ],
@@ -113,6 +206,12 @@ const cases: readonly SyntaxCase[] = [
     NO_DIAGNOSTICS,
   ],
   [
+    "database server scope",
+    "src/shared/database/store.server.ts",
+    "let value = 0;",
+    TWO_DIAGNOSTICS,
+  ],
+  [
     "middleware scope",
     "src/shared/middlewares/state.mod.ts",
     "let value = 0;",
@@ -126,10 +225,32 @@ const cases: readonly SyntaxCase[] = [
     NO_DIAGNOSTICS,
   ],
   [
+    "ordinary server suffix",
+    "src/store.server.ts",
+    "let value = 0;",
+    ONE_DIAGNOSTIC,
+  ],
+  [
     "server try restriction",
     "src/policy.mod.server.ts",
     "try {} catch {}",
     ONE_DIAGNOSTIC,
+  ],
+  [
+    "test JSX without JSX",
+    "src/policy.mod.test.tsx",
+    "export {};",
+    NO_DIAGNOSTICS,
+  ],
+  ["declaration extension", "src/policy.d.ts", "export {};", ONE_DIAGNOSTIC],
+  ["module CJS extension", "src/policy.cts", "export {};", ONE_DIAGNOSTIC],
+  ["module ESM extension", "src/policy.mts", "export {};", ONE_DIAGNOSTIC],
+  ["JavaScript filename", "src/policy.js", "export {};", NO_DIAGNOSTICS],
+  [
+    "route test exemption",
+    "src/routes/-policy.test.tsx",
+    "export {};",
+    NO_DIAGNOSTICS,
   ],
 ];
 
@@ -147,6 +268,11 @@ describe("effective syntax policies after the Oxlint bridge", () => {
       "let state = 0;",
     ],
     [
+      `${PLUGIN_NAMES.CorePolicy}/module-file-name`,
+      "src/policy.ts",
+      "export {};",
+    ],
+    [
       `${PLUGIN_NAMES.CorePolicy}/module-jsx`,
       "src/policy.mod.tsx",
       "export {};",
@@ -161,6 +287,10 @@ describe("effective syntax policies after the Oxlint bridge", () => {
       );
     },
   );
+
+  it("keeps the generated route tree ignored", async () => {
+    expect(await linter.isPathIgnored("src/routeTree.gen.ts")).toBe(true);
+  });
 
   it.each(cases)(
     "preserves %s in %s",

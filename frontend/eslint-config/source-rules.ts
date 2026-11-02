@@ -66,6 +66,32 @@ export const sourceRules = defineConfig(
     },
   },
   {
+    files: ["src/**/*.{ts,tsx,mts,cts}"],
+    ignores: [
+      "src/routes/**",
+      "src/router.tsx",
+      "src/start.ts",
+      "src/routeTree.gen.ts",
+      "src/tests/setup-test-environment.ts",
+      "src/**/*.mod.ts",
+      "src/**/*.mod.tsx",
+      "src/**/*.mod.server.ts",
+      "src/**/*.mod.test.ts",
+      "src/**/*.mod.test.tsx",
+      "src/**/*.mod.server.test.ts",
+    ],
+    rules: {
+      [`${PLUGIN_NAMES.CorePolicy}/module-file-name`]: [
+        SEVERITY_LEVELS.Error,
+        {
+          selector: "Program",
+          message:
+            "This source file does not use a module file name. Rename it to use .mod.ts, .mod.tsx, .mod.server.ts, .mod.test.ts, .mod.test.tsx, or .mod.server.test.ts and update its imports.",
+        },
+      ],
+    },
+  },
+  {
     files: ["src/**/*.mod.tsx"],
     ignores: ["src/routes/**"],
     rules: {

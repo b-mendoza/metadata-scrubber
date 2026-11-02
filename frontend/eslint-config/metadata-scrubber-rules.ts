@@ -31,8 +31,6 @@ export const metadataScrubberRules = defineConfig({
       SEVERITY_LEVELS.Error,
     [`${PLUGIN_NAMES.MetadataScrubber}/require-ky-json-schema`]:
       SEVERITY_LEVELS.Error,
-    [`${PLUGIN_NAMES.MetadataScrubber}/require-module-file-name`]:
-      SEVERITY_LEVELS.Error,
     [`${PLUGIN_NAMES.MetadataScrubber}/require-relative-backend-path`]:
       SEVERITY_LEVELS.Error,
     [`${PLUGIN_NAMES.MetadataScrubber}/require-strict-msw-server`]:
