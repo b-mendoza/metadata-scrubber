@@ -71,44 +71,32 @@ const getEnclosingHook = (
   return null;
 };
 
-const isServerReference = (
-  node: ESTree.Node,
-  {
-    server,
-    sourceCode,
-    seen = new Set<Variable>(),
-  }: {
-    server: Variable;
-    sourceCode: SourceCode;
-    seen?: Set<Variable>;
-  },
-): boolean => {
-  if (node.type !== "Identifier") return false;
-  const variable = getReferencedVariable(node, sourceCode);
-  if (variable === server) return true;
-  if (variable == null || seen.has(variable)) return false;
-  seen.add(variable);
-  return variable.defs.some((definition) => {
-    const initializer = getConstDeclaratorInitializer(definition);
-    return (
-      initializer != null &&
-      isServerReference(initializer, { server, sourceCode, seen })
-    );
-  });
-};
-
 const getLifecycleCalls = (
   calls: ESTree.CallExpression[],
   server: Variable,
   sourceCode: SourceCode,
 ) => {
+  const isServerReference = (
+    node: ESTree.Node,
+    seen = new Set<Variable>(),
+  ): boolean => {
+    if (node.type !== "Identifier") return false;
+    const variable = getReferencedVariable(node, sourceCode);
+    if (variable === server) return true;
+    if (variable == null || seen.has(variable)) return false;
+    seen.add(variable);
+    return variable.defs.some((definition) => {
+      const initializer = getConstDeclaratorInitializer(definition);
+      return initializer != null && isServerReference(initializer, seen);
+    });
+  };
   const listens: ESTree.CallExpression[] = [];
   let hasReset = false;
   let hasClose = false;
   const serverCalls = calls.filter(
     (call) =>
       call.callee.type === "MemberExpression" &&
-      isServerReference(call.callee.object, { server, sourceCode }),
+      isServerReference(call.callee.object),
   );
   for (const call of serverCalls) {
     const method = getStaticPropertyName(call.callee);
@@ -180,10 +168,11 @@ export default defineRule({
             server,
             context.sourceCode,
           );
+          const unsafeListens = listens.filter((call) => !isStrictListen(call));
           if (
             !hasReset ||
             !hasClose ||
-            listens.every((call) => !isStrictListen(call))
+            unsafeListens.length === listens.length
           ) {
             context.report({
               node: binding,
@@ -191,8 +180,7 @@ export default defineRule({
               data: { serverName: binding.name },
             });
           }
-          for (const call of listens) {
-            if (isStrictListen(call)) continue;
+          for (const call of unsafeListens) {
             context.report({
               node: call,
               messageId: "unsafeListen",
