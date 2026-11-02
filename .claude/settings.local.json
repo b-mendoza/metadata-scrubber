@@ -44,11 +44,11 @@
       }
     },
     "chrome-devtools-plugins": {
+      "autoUpdate": true,
       "source": {
-        "source": "github",
-        "repo": "ChromeDevTools/chrome-devtools-mcp"
-      },
-      "autoUpdate": true
+        "repo": "ChromeDevTools/chrome-devtools-mcp",
+        "source": "github"
+      }
     },
     "notion-plugin-marketplace": {
       "source": {
