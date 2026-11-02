@@ -1,6 +1,5 @@
 import { definePlugin } from "@oxlint/plugins";
 
-import noClasses from "./rules/no-classes.ts";
 import noDiscardedResult from "./rules/no-discarded-result.ts";
 import noExpectTypeOf from "./rules/no-expect-type-of.ts";
 import noLateRequestBodyRead from "./rules/no-late-request-body-read.ts";
@@ -26,7 +25,6 @@ export default definePlugin({
     name: "metadata-scrubber",
   },
   rules: {
-    "no-classes": noClasses,
     "no-discarded-result": noDiscardedResult,
     "no-expect-type-of": noExpectTypeOf,
     "no-late-request-body-read": noLateRequestBodyRead,

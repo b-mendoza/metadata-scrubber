@@ -8,7 +8,6 @@ Directory fixtures run from their own root, so their `src/` paths match real sou
 
 ## Rules
 
-- `no-classes` requires plain functions and objects instead of class declarations and class expressions. It also rejects classes that extend `Error`.
 - `no-discarded-result` rejects expression statements that discard known `neverthrow` results, including `await`, `void`, and result method chains. It resolves named and namespace imports, including renamed imports.
 - `no-expect-type-of` requires TypeScript contracts instead of Vitest `expectTypeOf(...)` calls, including renamed imports.
 - `no-late-request-body-read` rejects request body reads from Vitest mock call records. It follows the first call argument and its `request` property through local `const` aliases and destructuring. Read or clone the body in the MSW handler instead.

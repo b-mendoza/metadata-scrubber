@@ -4,8 +4,6 @@ type FixtureCase = readonly [
   expectedNegativeMessages: readonly string[],
 ];
 
-const NO_CLASSES_GUIDANCE =
-  "Replace it with plain functions and objects. Use a factory function such as `const createService = () => ({ run: () => true })` when code must create an object. Plain functions and objects keep dependencies and mutable state explicit. The rule has no class exceptions, including classes that extend `Error`.";
 const NO_DISCARDED_RESULT_GUIDANCE =
   "Assign the result and check `isErr()`. Throw or return the error at the boundary: `const result = await operation(); if (result.isErr()) { throw result.error; } return result.value;`.";
 const NO_EXPECT_TYPE_OF_GUIDANCE =
@@ -41,15 +39,6 @@ const REQUIRE_RELATIVE_BACKEND_PATH_GUIDANCE =
   'App bindings set the base URL; pass a relative path such as `"/api/health"` as the first argument.';
 
 export const fixtureCases: readonly FixtureCase[] = [
-  [
-    "no-classes",
-    "no-classes.ts",
-    [
-      `\`Service\` uses class syntax. ${NO_CLASSES_GUIDANCE}`,
-      `\`ServiceExpression\` uses class syntax. ${NO_CLASSES_GUIDANCE}`,
-      `\`ServiceError\` uses class syntax. ${NO_CLASSES_GUIDANCE}`,
-    ],
-  ],
   [
     "no-discarded-result",
     "no-discarded-result.server.ts",
