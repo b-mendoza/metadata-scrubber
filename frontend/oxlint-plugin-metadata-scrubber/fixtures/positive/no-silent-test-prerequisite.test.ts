@@ -1,6 +1,6 @@
 import { describe } from "node:test";
 
-import { expect, test } from "vitest";
+import { expect, test, test as check } from "vitest";
 
 describe.skip("non-Vitest describe", () => {});
 
@@ -28,3 +28,7 @@ test("keeps nested helper returns local", () => {
   functionDeclaration();
   expect(prerequisite).toBe(false);
 });
+
+// vitest/no-disabled-tests owns disabled test registration.
+check.skip("disabled alias", () => {});
+test.skip.each([false])("disabled parameterized test", () => {});

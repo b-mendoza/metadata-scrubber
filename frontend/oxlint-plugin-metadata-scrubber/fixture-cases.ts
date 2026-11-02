@@ -9,7 +9,7 @@ const NO_DISCARDED_RESULT_GUIDANCE =
 const NO_QUERY_CLIENT_PROPS_GUIDANCE =
   "In a route file, read `trpc` and `queryClient` with `Route.useRouteContext()`. In a component that lives in its own file, read them with `trpcContext.useTRPC()` and `useQueryClient()` from `@tanstack/react-query`. Remove this prop.";
 const NO_SILENT_TEST_PREREQUISITE_GUIDANCE =
-  "Remove `.skip` so the suite or test runs. Assert each test prerequisite with a Vitest `expect` assertion inside the test callback. Do not replace `.skip` with `.todo` or another disabled-test API. Disabled tests hide missing setup and let CI pass without required coverage. Import `expect` from `vitest` when the test file does not import it.";
+  "Then continue the test. Import `expect` from `vitest` when the test file does not import it.";
 const USE_EFFECT_IN_CUSTOM_HOOK_GUIDANCE =
   "Effects synchronize with external systems. Calculate derived values during render and handle user actions in event handlers. If external synchronization is necessary, put its setup and cleanup in a purpose-named hook such as `useUppyInstance`. Do not hide it in `useMount` or `useUnmount`. Read https://react.dev/learn/you-might-not-need-an-effect.";
 const USE_SHARED_RENDER_HELPER_GUIDANCE =
@@ -93,10 +93,8 @@ export const fixtureCases: readonly FixtureCase[] = [
     "no-silent-test-prerequisite",
     "no-silent-test-prerequisite.test.ts",
     [
-      `\`check.skip\` disables a suite or test. ${NO_SILENT_TEST_PREREQUISITE_GUIDANCE}`,
-      `\`test.skip.each([false])\` disables a suite or test. ${NO_SILENT_TEST_PREREQUISITE_GUIDANCE}`,
-      "The `!ready` test prerequisite guard uses a bare `return` in `test.each([false])`. This return makes the test pass without its behavior assertions. Replace the guard exit with `expect(ready).toBeTruthy()`. Then continue the test. Import `expect` from `vitest` when the test file does not import it.",
-      "The `value === undefined` test prerequisite guard uses a bare `return` in `test`. This return makes the test pass without its behavior assertions. Replace the guard exit with `expect((value === undefined)).toBeFalsy()`. Then continue the test. Import `expect` from `vitest` when the test file does not import it.",
+      `The \`!ready\` test prerequisite guard uses a bare \`return\` in \`test.each([false])\`. This return makes the test pass without its behavior assertions. Replace the guard exit with \`expect(ready).toBeTruthy()\`. ${NO_SILENT_TEST_PREREQUISITE_GUIDANCE}`,
+      `The \`value === undefined\` test prerequisite guard uses a bare \`return\` in \`test\`. This return makes the test pass without its behavior assertions. Replace the guard exit with \`expect((value === undefined)).toBeFalsy()\`. ${NO_SILENT_TEST_PREREQUISITE_GUIDANCE}`,
     ],
   ],
   [

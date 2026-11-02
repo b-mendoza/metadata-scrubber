@@ -3,18 +3,12 @@ import { defineRule } from "@oxlint/plugins";
 
 import {
   getRuntimeImportDeclaration,
-  getStaticPropertyName,
   isFunction,
   isTestFile,
 } from "../utilities.ts";
 
 type TestApi = "describe" | "it" | "test";
 type TestCallback = ESTree.ArrowFunctionExpression | ESTree.Function;
-
-interface TestApiCallChain {
-  readonly hasSkip: boolean;
-  readonly rootApi: TestApi;
-}
 
 const NO_DEFINITIONS = 0;
 const TEST_FUNCTION_NAMES = new Set<TestApi>(["it", "test"]);
@@ -60,21 +54,15 @@ const getVitestTestApiReference = (
 const getTestApiCallChain = (
   node: ESTree.Expression | ESTree.Super,
   sourceCode: SourceCode,
-): TestApiCallChain | null => {
+): TestApi | null => {
   if (node.type === "Identifier") {
-    const rootApi = getVitestTestApiReference(node, sourceCode);
-    return rootApi == null ? null : { hasSkip: false, rootApi };
+    return getVitestTestApiReference(node, sourceCode);
   }
   if (node.type === "CallExpression") {
     return getTestApiCallChain(node.callee, sourceCode);
   }
   if (node.type !== "MemberExpression") return null;
-  const chain = getTestApiCallChain(node.object, sourceCode);
-  if (chain == null) return null;
-  return {
-    hasSkip: chain.hasSkip || getStaticPropertyName(node) === "skip",
-    rootApi: chain.rootApi,
-  };
+  return getTestApiCallChain(node.object, sourceCode);
 };
 
 const getTestCallback = (node: ESTree.CallExpression): TestCallback | null =>
@@ -110,11 +98,9 @@ export default defineRule({
   meta: {
     type: "problem",
     docs: {
-      description: "Disallow skipped tests and silent prerequisite guards.",
+      description: "Disallow silent prerequisite guards in test callbacks.",
     },
     messages: {
-      disabledTest:
-        "`{{ testApi }}` disables a suite or test. Remove `.skip` so the suite or test runs. Assert each test prerequisite with a Vitest `expect` assertion inside the test callback. Do not replace `.skip` with `.todo` or another disabled-test API. Disabled tests hide missing setup and let CI pass without required coverage. Import `expect` from `vitest` when the test file does not import it.",
       silentPrerequisiteGuard:
         "The `{{ guard }}` test prerequisite guard uses a bare `return` in `{{ testApi }}`. This return makes the test pass without its behavior assertions. Replace the guard exit with `{{ assertion }}`. Then continue the test. Import `expect` from `vitest` when the test file does not import it.",
     },
@@ -133,19 +119,10 @@ export default defineRule({
         ) {
           return;
         }
-        const testApi = context.sourceCode.getText(node.callee);
-        if (chain.hasSkip) {
-          context.report({
-            node,
-            messageId: "disabledTest",
-            data: { testApi },
-          });
-          return;
-        }
-        if (!TEST_FUNCTION_NAMES.has(chain.rootApi)) return;
+        if (!TEST_FUNCTION_NAMES.has(chain)) return;
         const callback = getTestCallback(node);
         if (callback == null) return;
-        testCallbacks.set(callback, testApi);
+        testCallbacks.set(callback, context.sourceCode.getText(node.callee));
       },
       ReturnStatement(node) {
         if (node.argument != null) return;

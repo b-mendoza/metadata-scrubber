@@ -1,7 +1,4 @@
-import { test, test as check } from "vitest";
-
-check.skip("skips through an imported alias", () => {});
-test.skip.each([false])("skips parameterized tests", () => {});
+import { test } from "vitest";
 
 test.each([false])("returns from a parameterized test", () => {
   const ready = false;
