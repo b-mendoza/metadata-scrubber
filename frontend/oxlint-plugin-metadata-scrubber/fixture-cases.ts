@@ -12,8 +12,6 @@ const NO_QUERY_CLIENT_PROPS_GUIDANCE =
   "In a route file, read `trpc` and `queryClient` with `Route.useRouteContext()`. In a component that lives in its own file, read them with `trpcContext.useTRPC()` and `useQueryClient()` from `@tanstack/react-query`. Remove this prop.";
 const NO_SILENT_TEST_PREREQUISITE_GUIDANCE =
   "Remove `.skip` so the suite or test runs. Assert each test prerequisite with a Vitest `expect` assertion inside the test callback. Do not replace `.skip` with `.todo` or another disabled-test API. Disabled tests hide missing setup and let CI pass without required coverage. Import `expect` from `vitest` when the test file does not import it.";
-const SEPARATE_TYPE_IMPORTS_GUIDANCE =
-  'Preserve each imported name and local alias. Keep runtime bindings in a separate import declaration. Type imports disappear from JavaScript. If no runtime import remains, keep a side-effect import when module initialization is required. Ky example: `import type { KyInstance, RetryOptions, ShouldRetryState } from "ky";` and `import ky, { HTTPError } from "ky";`.';
 const USE_EFFECT_IN_CUSTOM_HOOK_GUIDANCE =
   "Effects synchronize with external systems. Calculate derived values during render and handle user actions in event handlers. If external synchronization is necessary, put its setup and cleanup in a purpose-named hook such as `useUppyInstance`. Do not hide it in `useMount` or `useUnmount`. Read https://react.dev/learn/you-might-not-need-an-effect.";
 const USE_SHARED_RENDER_HELPER_GUIDANCE =
@@ -197,15 +195,6 @@ export const fixtureCases: readonly FixtureCase[] = [
       '`legacy.listen` does not set `onUnhandledFrame` to `"error"`. Call `legacy.listen({ onUnhandledFrame: "error" })`, `legacy.resetHandlers()` inside an `afterEach` callback, and `legacy.close()` inside an `afterAll` callback. Import the hooks from `vitest`.',
       '`noOptions` is missing strict MSW lifecycle calls. Call `noOptions.listen({ onUnhandledFrame: "error" })`, `noOptions.resetHandlers()` inside an `afterEach` callback, and `noOptions.close()` inside an `afterAll` callback. Import the hooks from `vitest`.',
       '`noOptions.listen` does not set `onUnhandledFrame` to `"error"`. Call `noOptions.listen({ onUnhandledFrame: "error" })`, `noOptions.resetHandlers()` inside an `afterEach` callback, and `noOptions.close()` inside an `afterAll` callback. Import the hooks from `vitest`.',
-    ],
-  ],
-  [
-    "separate-type-imports",
-    "separate-type-imports.ts",
-    [
-      `Move inline type bindings \`KyInstance, RetryOptions, ShouldRetryState\` from \`ky\` to a separate \`import type\` declaration. ${SEPARATE_TYPE_IMPORTS_GUIDANCE}`,
-      `Move inline type bindings \`KyInstance as Client\` from \`ky\` to a separate \`import type\` declaration. ${SEPARATE_TYPE_IMPORTS_GUIDANCE}`,
-      `Move inline type bindings \`KyInstance as AllInlineClient, RetryOptions as AllInlineRetryOptions\` from \`ky\` to a separate \`import type\` declaration. ${SEPARATE_TYPE_IMPORTS_GUIDANCE}`,
     ],
   ],
   [

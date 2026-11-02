@@ -12,7 +12,6 @@ import requireColocatedTest from "./rules/require-colocated-test.ts";
 import requireKyJsonSchema from "./rules/require-ky-json-schema.ts";
 import requireRelativeBackendPath from "./rules/require-relative-backend-path.ts";
 import requireStrictMswServer from "./rules/require-strict-msw-server.ts";
-import separateTypeImports from "./rules/separate-type-imports.ts";
 import useEffectInCustomHook from "./rules/use-effect-in-custom-hook.ts";
 import useSharedRenderHelper from "./rules/use-shared-render-helper.ts";
 
@@ -33,7 +32,6 @@ export default definePlugin({
     "require-ky-json-schema": requireKyJsonSchema,
     "require-relative-backend-path": requireRelativeBackendPath,
     "require-strict-msw-server": requireStrictMswServer,
-    "separate-type-imports": separateTypeImports,
     "use-effect-in-custom-hook": useEffectInCustomHook,
     "use-shared-render-helper": useSharedRenderHelper,
   },

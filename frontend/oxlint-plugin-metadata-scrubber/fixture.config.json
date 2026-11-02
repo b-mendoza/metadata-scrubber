@@ -13,7 +13,6 @@
     "metadata-scrubber/require-ky-json-schema": "error",
     "metadata-scrubber/require-relative-backend-path": "error",
     "metadata-scrubber/require-strict-msw-server": "error",
-    "metadata-scrubber/separate-type-imports": "error",
     "metadata-scrubber/use-effect-in-custom-hook": "error",
     "metadata-scrubber/use-shared-render-helper": "error"
   }
