@@ -3,8 +3,8 @@ import { defineRule } from "@oxlint/plugins";
 
 import {
   getConstInitializedDeclarator,
+  getImportName,
   getReferencedVariable,
-  getRuntimeImportDeclaration,
   getStaticPropertyName,
   isTestFile,
 } from "../utilities.ts";
@@ -91,22 +91,21 @@ const getPatternKind = (
 };
 
 const getImportKind = (definition: Definition): RecordKind | null => {
-  const declaration = getRuntimeImportDeclaration(definition);
-  if (declaration?.source.value !== "vitest") return null;
-  if (definition.node.type === "ImportNamespaceSpecifier") return "vitest";
-  if (definition.node.type !== "ImportSpecifier") {
-    return null;
+  const name = getImportName(definition, "vitest");
+  if (name === "*" && definition.node.type === "ImportNamespaceSpecifier") {
+    return "vitest";
   }
-  const { imported } = definition.node;
-  const name = imported.type === "Identifier" ? imported.name : imported.value;
   return name === "vi" ? "vi" : null;
 };
 
-const getVariableKind = (
-  variable: Variable,
+const getRecordReferenceKind = (
+  node: Extract<ESTree.Node, { type: "Identifier" }>,
   sourceCode: SourceCode,
   seen: Set<Variable>,
 ): RecordKind | null => {
+  const variable = getReferencedVariable(node, sourceCode);
+  if (variable == null || seen.has(variable)) return null;
+  seen.add(variable);
   for (const definition of variable.defs) {
     const imported = getImportKind(definition);
     if (imported != null) return imported;
@@ -147,29 +146,7 @@ const getRecordMemberKind = (
   return getMemberKind(kind, property);
 };
 
-const getRecordReferenceKind = (
-  node: Extract<ESTree.Node, { type: "Identifier" }>,
-  sourceCode: SourceCode,
-  seen: Set<Variable>,
-): RecordKind | null => {
-  const variable = getReferencedVariable(node, sourceCode);
-  if (variable == null || seen.has(variable)) return null;
-  seen.add(variable);
-  return getVariableKind(variable, sourceCode, seen);
-};
-
-const isRecordWrapper = (
-  node: ESTree.Node,
-): node is Extract<
-  ESTree.Node,
-  {
-    type:
-      | "ChainExpression"
-      | "TSAsExpression"
-      | "TSNonNullExpression"
-      | "TSSatisfiesExpression";
-  }
-> =>
+const isRecordWrapper = (node: ESTree.Node) =>
   node.type === "ChainExpression" ||
   node.type === "TSAsExpression" ||
   node.type === "TSNonNullExpression" ||
