@@ -5,6 +5,11 @@ import { SEVERITY_LEVELS } from "./constants.ts";
 // Scoped syntax rules must retain these global restrictions.
 export const restrictedSyntax = [
   {
+    selector: "ClassDeclaration, ClassExpression",
+    message:
+      "This declaration uses class syntax. Replace it with plain functions and objects. Use a factory function such as `const createService = () => ({ run: () => true })` when code must create an object. Plain functions and objects keep dependencies and mutable state explicit. The rule has no class exceptions, including classes that extend `Error`.",
+  },
+  {
     selector: "SwitchStatement",
     message: "Use a lookup map that raises an error for unknown keys instead.",
   },
