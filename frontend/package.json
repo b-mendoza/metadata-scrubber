@@ -56,6 +56,7 @@
     "@eslint-community/eslint-plugin-eslint-comments": "4.8.1",
     "@eslint-react/eslint-plugin": "5.28.8",
     "@eslint/js": "10.0.1",
+    "@ninoseki/eslint-plugin-neverthrow": "0.3.2",
     "@oxlint/plugins": "1.90.0",
     "@playwright/test": "1.64.1",
     "@tailwindcss/vite": "4.3.3",

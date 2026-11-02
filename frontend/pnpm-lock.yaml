@@ -236,6 +236,9 @@ importers:
       '@eslint/js':
         specifier: 10.0.1
         version: 10.0.1(eslint@10.14.0(jiti@2.7.0)(supports-color@7.2.0))
+      '@ninoseki/eslint-plugin-neverthrow':
+        specifier: 0.3.2
+        version: 0.3.2(@typescript-eslint/parser@8.72.1(eslint@10.14.0(jiti@2.7.0)(supports-color@7.2.0))(supports-color@7.2.0)(typescript@6.0.3))(eslint@10.14.0(jiti@2.7.0)(supports-color@7.2.0))(supports-color@7.2.0)(typescript@6.0.3)
       '@oxlint/plugins':
         specifier: 1.90.0
         version: 1.90.0
@@ -832,6 +835,14 @@ packages:
     peerDependencies:
       '@neodrag/core': 3.0.0-next.11
       solid-js: ^1.0.0
+
+  '@ninoseki/eslint-plugin-neverthrow@0.3.2':
+    resolution: {integrity: sha512-CtN6Ys/03EEkREOtcdRsCMWLuSUAqvUQ1NvriMgec3pWN+M0UEAq3z3Yjrv1xv7/BcMEsjXvHy0mPdHzvNVBLA==}
+    engines: {node: '>=24'}
+    peerDependencies:
+      '@typescript-eslint/parser': '>=8.0.0'
+      eslint: '>=10.0.3'
+      typescript: '>=4.8.4'
 
   '@oozcitak/dom@2.0.2':
     resolution: {integrity: sha512-GjpKhkSYC3Mj4+lfwEyI1dqnsKTgwGy48ytZEhm4A/xnH/8z9M3ZVXKr/YGQi3uCLs1AEBS+x5T2JPiueEDW8w==}
@@ -5662,6 +5673,15 @@ snapshots:
     dependencies:
       '@neodrag/core': 3.0.0-next.11
       solid-js: 1.9.18
+
+  '@ninoseki/eslint-plugin-neverthrow@0.3.2(@typescript-eslint/parser@8.72.1(eslint@10.14.0(jiti@2.7.0)(supports-color@7.2.0))(supports-color@7.2.0)(typescript@6.0.3))(eslint@10.14.0(jiti@2.7.0)(supports-color@7.2.0))(supports-color@7.2.0)(typescript@6.0.3)':
+    dependencies:
+      '@typescript-eslint/parser': 8.72.1(eslint@10.14.0(jiti@2.7.0)(supports-color@7.2.0))(supports-color@7.2.0)(typescript@6.0.3)
+      '@typescript-eslint/utils': 8.72.1(eslint@10.14.0(jiti@2.7.0)(supports-color@7.2.0))(supports-color@7.2.0)(typescript@6.0.3)
+      eslint: 10.14.0(jiti@2.7.0)(supports-color@7.2.0)
+      typescript: 6.0.3
+    transitivePeerDependencies:
+      - supports-color
 
   '@oozcitak/dom@2.0.2':
     dependencies:

@@ -1,3 +1,4 @@
+import neverthrow from "@ninoseki/eslint-plugin-neverthrow";
 import { defineConfig } from "eslint/config";
 import globals from "globals";
 
@@ -5,6 +6,17 @@ import { PLUGIN_NAMES, SEVERITY_LEVELS } from "./constants.ts";
 import { restrictedSyntax } from "./syntax-rules.ts";
 
 export const sourceRules = defineConfig(
+  {
+    files: ["**/*.{ts,tsx,mts,cts}"],
+    plugins: {
+      [PLUGIN_NAMES.Neverthrow]: neverthrow,
+    },
+    rules: {
+      // Use the isErr() guard in docs/conventions.md. This rule accepts it.
+      // The message lists _unsafeUnwrap, but that is not the intended repair.
+      [`${PLUGIN_NAMES.Neverthrow}/must-use-result`]: SEVERITY_LEVELS.Error,
+    },
+  },
   // Source files can mix browser and Node code. shared-node-browser omits window and process.
   // Oxlint needs explicit globs because it does not support extglobs.
   {
