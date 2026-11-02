@@ -16,6 +16,7 @@
  * unicorn/no-array-callback-reference: oxlint skips member-expression receivers.
  * no-misleading-character-class: oxlint skips RegExp patterns held in constants.
  * unicorn/prefer-regexp-test: oxlint skips match calls on string literals.
+ * unicorn/filename-case: oxlint skips directory names. ESLint checks outside src/routes/.
  * neverthrow/must-use-result: this type-aware rule needs ESLint type information.
  * Keep @eslint-community/eslint-plugin-eslint-comments in ESLint:
  * all six enabled rules can throw RangeError in oxlint when they report directives.
