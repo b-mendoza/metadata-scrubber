@@ -23,11 +23,11 @@
       }
     },
     "cloudflare": {
+      "autoUpdate": true,
       "source": {
-        "source": "github",
-        "repo": "cloudflare/skills"
-      },
-      "autoUpdate": true
+        "repo": "cloudflare/skills",
+        "source": "github"
+      }
     },
     "context7-marketplace": {
       "source": {
