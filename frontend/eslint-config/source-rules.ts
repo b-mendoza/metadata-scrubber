@@ -65,4 +65,18 @@ export const sourceRules = defineConfig(
       ],
     },
   },
+  {
+    files: ["src/**/*.mod.tsx"],
+    ignores: ["src/routes/**"],
+    rules: {
+      [`${PLUGIN_NAMES.CorePolicy}/module-jsx`]: [
+        SEVERITY_LEVELS.Error,
+        {
+          selector: "Program:not(:has(JSXElement, JSXFragment))",
+          message:
+            "This .mod.tsx file contains no JSX. Rename it to .mod.ts and update its imports.",
+        },
+      ],
+    },
+  },
 );
