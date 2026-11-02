@@ -7,6 +7,7 @@ export const PLUGIN_NAMES = {
   ImportX: "import-x",
   JSXA11yX: "jsx-a11y-x",
   MetadataScrubber: "metadata-scrubber",
+  Neverthrow: "neverthrow",
   Node: "n",
   NoUnsanitized: "no-unsanitized",
   Promise: "promise",
