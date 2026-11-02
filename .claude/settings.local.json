@@ -7,12 +7,7 @@
   "autoMemoryEnabled": false,
   "disableBundledSkills": true,
   "enabledMcpjsonServers": [
-    "chrome-devtools",
-    "cloudflare-api",
-    "context7",
-    "notion",
-    "posthog",
-    "vercel"
+    "notion"
   ],
   "workflowSizeGuideline": "medium"
 }
