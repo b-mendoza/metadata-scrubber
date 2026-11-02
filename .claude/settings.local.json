@@ -6,7 +6,6 @@
   },
   "autoMemoryEnabled": false,
   "disableBundledSkills": true,
-  "workflowSizeGuideline": "medium",
   "enabledPlugins": {
     "chrome-devtools-mcp@chrome-devtools-plugins": true,
     "cloudflare@cloudflare": true,
@@ -58,5 +57,6 @@
       },
       "autoUpdate": true
     }
-  }
+  },
+  "workflowSizeGuideline": "medium"
 }
