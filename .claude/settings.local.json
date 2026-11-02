@@ -15,10 +15,10 @@
     "vercel-plugin@vercel": true
   },
   "extraKnownMarketplaces": {
-    "vercel": {
+    "chrome-devtools-plugins": {
       "autoUpdate": true,
       "source": {
-        "repo": "vercel/vercel-plugin",
+        "repo": "ChromeDevTools/chrome-devtools-mcp",
         "source": "github"
       }
     },
@@ -36,6 +36,13 @@
         "source": "github"
       }
     },
+    "notion-plugin-marketplace": {
+      "autoUpdate": true,
+      "source": {
+        "repo": "makenotion/claude-code-notion-plugin",
+        "source": "github"
+      }
+    },
     "posthog": {
       "autoUpdate": true,
       "source": {
@@ -43,17 +50,10 @@
         "source": "github"
       }
     },
-    "chrome-devtools-plugins": {
+    "vercel": {
       "autoUpdate": true,
       "source": {
-        "repo": "ChromeDevTools/chrome-devtools-mcp",
-        "source": "github"
-      }
-    },
-    "notion-plugin-marketplace": {
-      "autoUpdate": true,
-      "source": {
-        "repo": "makenotion/claude-code-notion-plugin",
+        "repo": "vercel/vercel-plugin",
         "source": "github"
       }
     }
