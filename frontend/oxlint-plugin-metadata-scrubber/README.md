@@ -60,7 +60,7 @@ These restrictions do not check parent `Suspense` or error boundaries. They do n
 - The strict MSW rule checks calls in one file. It accepts direct hook callbacks. It does not prove execution order or whether conditional setup runs.
 - The late-body rule follows local `const` aliases from imported Vitest `vi.fn`, `vi.spyOn`, and `vi.mocked`. It checks the first call argument and its `request` property. It does not prove that a first argument is a Fetch `Request`. It does not follow mutable aliases, returned values, or cross-file helpers.
 
-- The discarded-result rule follows direct `neverthrow` imports and known result-producing methods. It does not follow stored results. Results returned from user functions need type information. Assigning a result passes this rule; the rule does not prove that later code handles it.
+- The discarded-result rule follows direct `neverthrow` imports and known result-producing methods. It does not follow stored results. Results returned from user functions need type information. Assigning a result passes this custom rule. The type-aware `neverthrow/must-use-result` rule in ESLint covers stored results and results from user functions. Use the `isErr()` guard from `docs/conventions.md` to handle the result.
 
 - The HTTP rules follow resolved imports, direct binding reads, object destructuring, and local `const` aliases. They do not follow cross-file data flow.
 - The signal rule checks the options syntax, not the signal value or its source. The path rule checks the static prefix, not interpolated values.
