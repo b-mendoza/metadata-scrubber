@@ -8,12 +8,12 @@
   "disableBundledSkills": true,
   "workflowSizeGuideline": "medium",
   "enabledPlugins": {
-    "vercel-plugin@vercel": true,
+    "chrome-devtools-mcp@chrome-devtools-plugins": true,
     "cloudflare@cloudflare": true,
     "context7@context7-marketplace": true,
+    "notion-workspace-plugin@notion-plugin-marketplace": true,
     "posthog@posthog": true,
-    "chrome-devtools-mcp@chrome-devtools-plugins": true,
-    "notion-workspace-plugin@notion-plugin-marketplace": true
+    "vercel-plugin@vercel": true
   },
   "extraKnownMarketplaces": {
     "vercel": {
