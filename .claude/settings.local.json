@@ -6,7 +6,6 @@
   },
   "autoMemoryEnabled": false,
   "disableBundledSkills": true,
-  "enabledMcpjsonServers": [],
   "workflowSizeGuideline": "medium",
   "extraKnownMarketplaces": {
     "vercel": {
