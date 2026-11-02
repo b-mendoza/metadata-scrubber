@@ -33,6 +33,7 @@ import eslintPluginZod from "eslint-plugin-zod";
 import tseslint from "typescript-eslint";
 
 import { PLUGIN_NAMES, SEVERITY_LEVELS } from "./eslint-config/constants.ts";
+import { corePolicyRules } from "./eslint-config/core-policy-rules.ts";
 import { directiveCommentRules } from "./eslint-config/directive-comment-rules.ts";
 import { importRestrictionRules } from "./eslint-config/import-restriction-rules.ts";
 import { importXRules } from "./eslint-config/import-x-rules.ts";
@@ -87,6 +88,7 @@ export default defineConfig(
   e18e.configs.recommended,
   sonarjsConfigs.recommended,
   ...metadataScrubberRules,
+  ...corePolicyRules,
   eslintReact.configs["strict-type-checked"],
   reactHooks.configs.flat["recommended-latest"],
   reactYouMightNotNeedAnEffect.configs.strict,

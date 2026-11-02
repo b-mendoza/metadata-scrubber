@@ -1,5 +1,6 @@
 export const PLUGIN_NAMES = {
   BetterTailwindcss: "better-tailwindcss",
+  CorePolicy: "core-policy",
   E18e: "e18e",
   ESLintCommunityComments: "@eslint-community/eslint-comments",
   ESLintReact: "@eslint-react",
