@@ -1,6 +1,7 @@
 import { defineConfig } from "eslint/config";
 
-import { SEVERITY_LEVELS } from "./constants.ts";
+import { PLUGIN_NAMES, SEVERITY_LEVELS } from "./constants.ts";
+import { testFiles } from "./test-rules.ts";
 
 // Each query API needs its own repair message, including source re-exports.
 const restrictedQueryImports = [
@@ -55,6 +56,9 @@ const sourceRestrictedImportPatterns = [
       "Relative source imports depend on the caller's directory. Replace ./ or ../ with the #/ alias and the path from src/.",
   },
 ];
+
+const staticTypeAssertionMessage =
+  "expectTypeOf tests a static type. Remove this assertion. Put the expected type on the production declaration with `: ExpectedType`, or constrain the value with `satisfies ExpectedType`. TypeScript checks this contract during the type check. Use Vitest `expect(...)` only for runtime behavior.";
 
 export const importRestrictionRules = defineConfig(
   {
@@ -169,6 +173,28 @@ export const importRestrictionRules = defineConfig(
             },
           ],
         },
+      ],
+    },
+  },
+  {
+    files: testFiles,
+    rules: {
+      [`${PLUGIN_NAMES.CorePolicy}/test-type-assertion-import`]: [
+        SEVERITY_LEVELS.Error,
+        {
+          paths: [
+            {
+              name: "vitest",
+              importNames: ["expectTypeOf"],
+              allowTypeImports: true,
+              message: staticTypeAssertionMessage,
+            },
+          ],
+        },
+      ],
+      "no-restricted-globals": [
+        SEVERITY_LEVELS.Error,
+        { name: "expectTypeOf", message: staticTypeAssertionMessage },
       ],
     },
   },

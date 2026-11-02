@@ -3,6 +3,11 @@ import path from "node:path";
 import { ESLint } from "eslint";
 import { beforeAll, describe, expect, it } from "vitest";
 
+import { PLUGIN_NAMES } from "./constants.ts";
+
+const NO_DIAGNOSTICS = 0;
+const ONE_DIAGNOSTIC = 1;
+
 const CONFIG_LOAD_TIMEOUT_MS = 30_000;
 
 const createLinter = () =>
@@ -17,7 +22,12 @@ const createLinter = () =>
     overrideConfig: {
       languageOptions: { parserOptions: { projectService: false } },
     },
-    ruleFilter: ({ ruleId }) => ruleId === "no-restricted-imports",
+    ruleFilter: ({ ruleId }) =>
+      [
+        "no-restricted-imports",
+        "no-restricted-globals",
+        `${PLUGIN_NAMES.CorePolicy}/test-type-assertion-import`,
+      ].includes(ruleId),
   });
 
 describe("effective import restrictions after the Oxlint bridge", () => {
@@ -132,4 +142,83 @@ describe("effective import restrictions after the Oxlint bridge", () => {
     expect.assert(result != null);
     expect(result.messages).toEqual([]);
   });
+  it.each([
+    [
+      "positive",
+      'import { strictEqual as expectTypeOf } from "node:assert";\n\nimport { expect, test } from "vitest";\n\ntest("allows a non-Vitest function with the same name", () => {\n  expectTypeOf("value", "value");\n});\n\ntest("allows a parameter with the same name", () => {\n  const callLocalExpectation = (\n    expectTypeOf: (value: unknown) => unknown,\n  ): unknown => expectTypeOf("value");\n\n  expect(callLocalExpectation((value) => value)).toBe("value");\n});\n',
+      NO_DIAGNOSTICS,
+    ],
+    [
+      "negative",
+      'import { expectTypeOf as assertType, test } from "vitest";\n\ntest("re-tests a static type through an alias", () => {\n  assertType("value").toEqualTypeOf<string>();\n});\n',
+      ONE_DIAGNOSTIC,
+    ],
+  ])("preserves the expectTypeOf %s fixture", async (_name, code, count) => {
+    const [result] = await linter.lintText(code, {
+      filePath: "src/policy.mod.test.ts",
+    });
+    expect.assert(result != null);
+    expect(result.messages).toHaveLength(count);
+    expect(
+      result.messages.every(
+        ({ ruleId }) =>
+          ruleId === `${PLUGIN_NAMES.CorePolicy}/test-type-assertion-import`,
+      ),
+    ).toBe(true);
+  });
+
+  it.each([
+    [
+      "src/policy.mod.test.ts",
+      'import * as vitest from "vitest";',
+      ONE_DIAGNOSTIC,
+    ],
+    [
+      "src/policy.mod.test.ts",
+      'import type { expectTypeOf } from "vitest";',
+      NO_DIAGNOSTICS,
+    ],
+    [
+      "src/policy.mod.test.ts",
+      'import type * as vitest from "vitest";',
+      NO_DIAGNOSTICS,
+    ],
+    ["src/policy.mod.test.ts", 'expectTypeOf("value");', ONE_DIAGNOSTIC],
+    [
+      "src/policy.mod.ts",
+      'import { expectTypeOf } from "vitest";',
+      NO_DIAGNOSTICS,
+    ],
+    ["eslint-config/policy.test.ts", 'expectTypeOf("value");', ONE_DIAGNOSTIC],
+    [
+      "scripts/policy.test.ts",
+      'import { expectTypeOf } from "vitest";',
+      ONE_DIAGNOSTIC,
+    ],
+    [
+      "src/policy.mod.server.test.ts",
+      'import { expectTypeOf } from "vitest";',
+      ONE_DIAGNOSTIC,
+    ],
+    [
+      "src/routes/-policy.test.tsx",
+      'import { expectTypeOf } from "vitest";',
+      ONE_DIAGNOSTIC,
+    ],
+    ["src/policy.test.mts", 'expectTypeOf("value");', ONE_DIAGNOSTIC],
+  ])(
+    "checks static type assertions in %s: %s",
+    async (filePath, code, count) => {
+      const [result] = await linter.lintText(code, { filePath });
+      expect.assert(result != null);
+      expect(result.messages).toHaveLength(count);
+      expect(
+        result.messages.every(({ message }) =>
+          message.includes(
+            "Put the expected type on the production declaration",
+          ),
+        ),
+      ).toBe(true);
+    },
+  );
 });

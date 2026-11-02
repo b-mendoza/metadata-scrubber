@@ -1,7 +1,6 @@
 import { definePlugin } from "@oxlint/plugins";
 
 import noDiscardedResult from "./rules/no-discarded-result.ts";
-import noExpectTypeOf from "./rules/no-expect-type-of.ts";
 import noLateRequestBodyRead from "./rules/no-late-request-body-read.ts";
 import noModuleScopeHttpClient from "./rules/no-module-scope-http-client.ts";
 import noQueryClientProps from "./rules/no-query-client-props.ts";
@@ -21,7 +20,6 @@ export default definePlugin({
   },
   rules: {
     "no-discarded-result": noDiscardedResult,
-    "no-expect-type-of": noExpectTypeOf,
     "no-late-request-body-read": noLateRequestBodyRead,
     "no-module-scope-http-client": noModuleScopeHttpClient,
     "no-query-client-props": noQueryClientProps,

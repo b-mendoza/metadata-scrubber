@@ -5,7 +5,7 @@ import testingLibrary from "eslint-plugin-testing-library";
 import { PLUGIN_NAMES, SEVERITY_LEVELS } from "./constants.ts";
 import { restrictedSyntax } from "./syntax-rules.ts";
 
-const testFiles = [
+export const testFiles = [
   "**/*.test.{ts,tsx,mts,mtsx,cts,ctsx,js,jsx,mjs,mjsx,cjs,cjsx}",
 ];
 

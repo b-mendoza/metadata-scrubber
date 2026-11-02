@@ -6,8 +6,6 @@ type FixtureCase = readonly [
 
 const NO_DISCARDED_RESULT_GUIDANCE =
   "Assign the result and check `isErr()`. Throw or return the error at the boundary: `const result = await operation(); if (result.isErr()) { throw result.error; } return result.value;`.";
-const NO_EXPECT_TYPE_OF_GUIDANCE =
-  "Remove this assertion. Put the expected type on the production declaration with `: ExpectedType`, or constrain the value with `satisfies ExpectedType`. TypeScript checks this contract during the type check. Use Vitest `expect(...)` only for runtime behavior.";
 const NO_QUERY_CLIENT_PROPS_GUIDANCE =
   "In a route file, read `trpc` and `queryClient` with `Route.useRouteContext()`. In a component that lives in its own file, read them with `trpcContext.useTRPC()` and `useQueryClient()` from `@tanstack/react-query`. Remove this prop.";
 const NO_SILENT_TEST_PREREQUISITE_GUIDANCE =
@@ -47,11 +45,6 @@ export const fixtureCases: readonly FixtureCase[] = [
       `\`results.ok\` discards a neverthrow result. ${NO_DISCARDED_RESULT_GUIDANCE}`,
       `\`results.ResultAsync.combine\` discards a neverthrow result. ${NO_DISCARDED_RESULT_GUIDANCE}`,
     ],
-  ],
-  [
-    "no-expect-type-of",
-    "no-expect-type-of.test.ts",
-    [`\`assertType(...)\` tests a static type. ${NO_EXPECT_TYPE_OF_GUIDANCE}`],
   ],
   [
     "no-late-request-body-read",
