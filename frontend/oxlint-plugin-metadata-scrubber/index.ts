@@ -4,7 +4,6 @@ import noDiscardedResult from "./rules/no-discarded-result.ts";
 import noExpectTypeOf from "./rules/no-expect-type-of.ts";
 import noLateRequestBodyRead from "./rules/no-late-request-body-read.ts";
 import noModuleScopeHttpClient from "./rules/no-module-scope-http-client.ts";
-import noMutableModuleStateInServerCode from "./rules/no-mutable-module-state-in-server-code.ts";
 import noQueryClientProps from "./rules/no-query-client-props.ts";
 import noSilentTestPrerequisite from "./rules/no-silent-test-prerequisite.ts";
 import noTestLocalObjectType from "./rules/no-test-local-object-type.ts";
@@ -28,7 +27,6 @@ export default definePlugin({
     "no-expect-type-of": noExpectTypeOf,
     "no-late-request-body-read": noLateRequestBodyRead,
     "no-module-scope-http-client": noModuleScopeHttpClient,
-    "no-mutable-module-state-in-server-code": noMutableModuleStateInServerCode,
     "no-query-client-props": noQueryClientProps,
     "no-silent-test-prerequisite": noSilentTestPrerequisite,
     "no-test-local-object-type": noTestLocalObjectType,

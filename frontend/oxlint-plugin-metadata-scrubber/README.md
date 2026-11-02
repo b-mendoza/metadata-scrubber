@@ -12,7 +12,6 @@ Directory fixtures run from their own root, so their `src/` paths match real sou
 - `no-expect-type-of` requires TypeScript contracts instead of Vitest `expectTypeOf(...)` calls, including renamed imports.
 - `no-late-request-body-read` rejects request body reads from Vitest mock call records. It follows the first call argument and its `request` property through local `const` aliases and destructuring. Read or clone the body in the MSW handler instead.
 - `no-module-scope-http-client` rejects module-scope `ky.create`, `ky.extend`, and calls to imported factories from `#/shared/libs/ky/`. It follows import aliases and local `const` aliases. Test files remain exempt because test setup can own a shared client without serving requests.
-- `no-mutable-module-state-in-server-code` rejects module-scope `let` and `var` declarations in server modules.
 - `no-query-client-props` rejects `trpc` and `queryClient` props. It also rejects other prop names when their values resolve to route clients or query hooks. It allows the imported tRPC providers and `QueryClientProvider` setup.
 - `no-silent-test-prerequisite` rejects `.skip` calls on Vitest test APIs, including chains such as `test.skip.each(...)`. It also rejects bare test prerequisite returns in test callbacks.
 - `no-test-local-object-type` rejects direct object-literal type aliases and interfaces in test files. It allows function aliases, imported types, and schema-derived types.
@@ -75,4 +74,4 @@ These restrictions do not check parent `Suspense` or error boundaries. They do n
 - The Effect rule tracks static member names and immutable namespace aliases. It does not prove arbitrary runtime data flow.
 - The Effect rule checks the nearest function owner. It cannot prove that external synchronization is necessary or that the hook name describes its purpose.
 - The type-import rule does not establish whether module initialization is required.
-- The module-state rule checks only `let` and `var`. The HTTP client rule also checks known client factories at module scope, including `const` initializers. It does not follow local factory wrappers.
+- The HTTP client rule checks known client factories at module scope, including `const` initializers. It does not follow local factory wrappers.

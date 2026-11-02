@@ -3,15 +3,19 @@ import path from "node:path";
 import { ESLint } from "eslint";
 import { beforeAll, describe, expect, it } from "vitest";
 
-import { SEVERITY_LEVELS } from "./constants.ts";
+import { PLUGIN_NAMES, SEVERITY_LEVELS } from "./constants.ts";
 
 const NO_DIAGNOSTICS = 0;
 const THREE_DIAGNOSTICS = 3;
 const LIFECYCLE_DIAGNOSTICS = 14;
+const TWO_DIAGNOSTICS = 2;
 const ONE_DIAGNOSTIC = 1;
 
 const CONFIG_LOAD_TIMEOUT_MS = 30_000;
-const SYNTAX_RULE_IDS = new Set(["no-restricted-syntax"]);
+const SYNTAX_RULE_IDS = new Set([
+  "no-restricted-syntax",
+  `${PLUGIN_NAMES.CorePolicy}/server-module-state`,
+]);
 
 type SyntaxCase = readonly [
   name: string,
@@ -60,6 +64,18 @@ const cases: readonly SyntaxCase[] = [
     LIFECYCLE_DIAGNOSTICS,
   ],
   [
+    "no-mutable-module-state-in-server-code positive",
+    "src/policy.mod.server.ts",
+    "export const requestCount = 0;\n\nexport const handleRequest = () => {\n  let localCount = 0;\n  localCount += 1;\n  return localCount;\n};\n",
+    NO_DIAGNOSTICS,
+  ],
+  [
+    "no-mutable-module-state-in-server-code negative",
+    "src/policy.mod.server.ts",
+    'export let requestCount = 0;\n\nvar requestTotal = 0,\n  requestLabel = "request";\nexport { requestTotal, requestLabel };\n',
+    TWO_DIAGNOSTICS,
+  ],
+  [
     "global class scope",
     "eslint-config/constants.ts",
     "class Service {}",
@@ -77,6 +93,25 @@ const cases: readonly SyntaxCase[] = [
     "function useMountain() {}\nconst useOnceMore = 1;\nconst useMountedState = () => {};\nconst useInitialValue = () => {};",
     NO_DIAGNOSTICS,
   ],
+  [
+    "middleware scope",
+    "src/shared/middlewares/state.mod.ts",
+    "let value = 0;",
+    ONE_DIAGNOSTIC,
+  ],
+  ["API scope", "src/routes/api/state.ts", "var value = 0;", ONE_DIAGNOSTIC],
+  [
+    "client mutable state",
+    "src/policy.mod.ts",
+    "let value = 0;",
+    NO_DIAGNOSTICS,
+  ],
+  [
+    "server try restriction",
+    "src/policy.mod.server.ts",
+    "try {} catch {}",
+    ONE_DIAGNOSTIC,
+  ],
 ];
 
 describe("effective syntax policies after the Oxlint bridge", () => {
@@ -85,6 +120,23 @@ describe("effective syntax policies after the Oxlint bridge", () => {
   beforeAll(async () => {
     await linter.calculateConfigForFile("eslint.config.ts");
   }, CONFIG_LOAD_TIMEOUT_MS);
+
+  it.each([
+    [
+      `${PLUGIN_NAMES.CorePolicy}/server-module-state`,
+      "src/policy.mod.server.ts",
+      "let state = 0;",
+    ],
+  ])(
+    "keeps %s enabled after the bridge in %s",
+    async (ruleId, filePath, code) => {
+      const [result] = await linter.lintText(code, { filePath });
+      expect.assert(result != null);
+      expect(result.messages).toContainEqual(
+        expect.objectContaining({ ruleId, severity: SEVERITY_LEVELS.Error }),
+      );
+    },
+  );
 
   it.each(cases)(
     "preserves %s in %s",
