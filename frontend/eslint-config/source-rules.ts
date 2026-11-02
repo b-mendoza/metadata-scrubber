@@ -46,4 +46,23 @@ export const sourceRules = defineConfig(
       ],
     },
   },
+  {
+    files: [
+      "src/**/*.mod.server.{ts,tsx}",
+      "src/shared/database/**/*.server.{ts,tsx}",
+      "src/routes/api/**/*.{ts,tsx}",
+      "src/shared/middlewares/**/*.{ts,tsx}",
+    ],
+    rules: {
+      [`${PLUGIN_NAMES.CorePolicy}/server-module-state`]: [
+        SEVERITY_LEVELS.Error,
+        {
+          selector:
+            "Program > VariableDeclaration[kind=/^(let|var)$/], Program > ExportNamedDeclaration > VariableDeclaration[kind=/^(let|var)$/]",
+          message:
+            "Concurrent server requests share this module-scope let or var state. Move request-local mutation into request scope. Put request dependencies in `appBindingsMiddleware` and read them with `getAppBindings()`. Use `const` only when no request changes the value or its contents. Do not move the mutation into a module-scope object or array.",
+        },
+      ],
+    },
+  },
 );

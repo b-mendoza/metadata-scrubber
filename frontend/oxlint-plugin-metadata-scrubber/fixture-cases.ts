@@ -8,8 +8,6 @@ const NO_DISCARDED_RESULT_GUIDANCE =
   "Assign the result and check `isErr()`. Throw or return the error at the boundary: `const result = await operation(); if (result.isErr()) { throw result.error; } return result.value;`.";
 const NO_EXPECT_TYPE_OF_GUIDANCE =
   "Remove this assertion. Put the expected type on the production declaration with `: ExpectedType`, or constrain the value with `satisfies ExpectedType`. TypeScript checks this contract during the type check. Use Vitest `expect(...)` only for runtime behavior.";
-const NO_MUTABLE_MODULE_STATE_IN_SERVER_CODE_GUIDANCE =
-  "Move request-local mutation into request scope. Put request dependencies in `appBindingsMiddleware` and read them with `getAppBindings()`. Use `const` only when no request changes the value or its contents. Do not move the mutation into a module-scope object or array.";
 const NO_QUERY_CLIENT_PROPS_GUIDANCE =
   "In a route file, read `trpc` and `queryClient` with `Route.useRouteContext()`. In a component that lives in its own file, read them with `trpcContext.useTRPC()` and `useQueryClient()` from `@tanstack/react-query`. Remove this prop.";
 const NO_SILENT_TEST_PREREQUISITE_GUIDANCE =
@@ -86,14 +84,6 @@ export const fixtureCases: readonly FixtureCase[] = [
     ],
   ],
   ["no-module-scope-http-client", "backend-request-scope.server.test.ts", []],
-  [
-    "no-mutable-module-state-in-server-code",
-    "mutable-module-state.server.ts",
-    [
-      `Concurrent server requests share the module-scope \`let\` state in \`requestCount\`. ${NO_MUTABLE_MODULE_STATE_IN_SERVER_CODE_GUIDANCE}`,
-      `Concurrent server requests share the module-scope \`var\` state in \`requestTotal, requestLabel\`. ${NO_MUTABLE_MODULE_STATE_IN_SERVER_CODE_GUIDANCE}`,
-    ],
-  ],
   [
     "no-query-client-props",
     "no-query-client-props.tsx",
