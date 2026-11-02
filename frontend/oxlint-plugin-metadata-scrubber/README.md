@@ -20,7 +20,6 @@ Directory fixtures run from their own root, so their `src/` paths match real sou
 - `require-ky-json-schema` rejects zero-argument `.json()` calls chained on tracked backend requests and direct Ky requests. It requires `.json(schema)` so Ky validates the response.
 - `require-relative-backend-path` requires a string literal or template literal with a leading single `/` on backend method calls in non-test server modules. It rejects identifiers, absolute URLs, and prefixes that start with `//` or `/\`.
 - `require-strict-msw-server` requires `listen({ onUnhandledFrame: "error" })`, `resetHandlers()` in `afterEach`, and `close()` in `afterAll` for an MSW server. MSW 3 uses `onUnhandledFrame`, not `onUnhandledRequest`. It resolves renamed and namespace imports and local server aliases.
-- `separate-type-imports` rejects inline `type` specifiers and requires separate `import type` declarations. It reports once per declaration, including declarations with only inline type specifiers. Standalone named, default, and namespace type imports remain allowed.
 - `use-effect-in-custom-hook` requires direct React `useEffect` calls inside the nearest named custom hook. It rejects runtime extraction of the Effect reference. Renamed imports, static React members, and immutable namespace aliases retain their React binding. Nested callbacks need their own valid owner. Type-only uses remain allowed.
 - `use-shared-render-helper` rejects named runtime `render` imports from `@testing-library/react` and `@testing-library/react/pure` in tests. It also rejects direct `render` calls on imported namespaces from those packages. Use the shared `renderComponent` helper instead.
 
@@ -69,5 +68,4 @@ These restrictions do not check parent `Suspense` or error boundaries. They do n
 - The JSON rule checks immediate chains only. It does not prove that an argument is a Zod schema or inspect a response saved for a later `.json()` call.
 - The Effect rule tracks static member names and immutable namespace aliases. It does not prove arbitrary runtime data flow.
 - The Effect rule checks the nearest function owner. It cannot prove that external synchronization is necessary or that the hook name describes its purpose.
-- The type-import rule does not establish whether module initialization is required.
 - The HTTP client rule checks known client factories at module scope, including `const` initializers. It does not follow local factory wrappers.
