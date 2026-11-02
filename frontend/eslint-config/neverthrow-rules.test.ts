@@ -76,5 +76,10 @@ describe("neverthrow policy after the Oxlint bridge", () => {
         ({ severity }) => severity === SEVERITY_LEVELS.Error,
       ),
     ).toBe(true);
+    expect(
+      result.messages.every(({ message }) =>
+        message.includes("if (result.isErr()) { throw result.error; }"),
+      ),
+    ).toBe(true);
   });
 });
