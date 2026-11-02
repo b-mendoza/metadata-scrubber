@@ -9,6 +9,7 @@ import {
   getReferencedVariable,
   getStaticPropertyName,
   isFunction,
+  isTransparentExpression,
   unwrapHttpExpression,
 } from "../utilities.ts";
 
@@ -132,22 +133,22 @@ const getContextPath = (
     : null;
 };
 
-const getOuterExpression = (node: ESTree.Node): ESTree.Node => {
-  let expression = node;
-  let { parent }: { parent: ESTree.Node | null } = expression;
-  while (
-    parent != null &&
-    unwrapHttpExpression(parent) === unwrapHttpExpression(expression)
-  ) {
+const getOuterExpression = (node: ESTree.CallExpression): ESTree.Expression => {
+  let expression: ESTree.Expression = node;
+  let { parent } = expression;
+  // Keep angle-bracket assertions opaque, as unwrapHttpExpression does.
+  while (isTransparentExpression(parent) && parent.type !== "TSTypeAssertion") {
     expression = parent;
     ({ parent } = expression);
   }
   return expression;
 };
 
-const getChainedCall = (node: ESTree.Node): ESTree.CallExpression | null => {
+const getChainedCall = (
+  node: ESTree.Expression,
+): ESTree.CallExpression | null => {
   const { parent } = node;
-  if (parent?.type !== "MemberExpression" || parent.object !== node) {
+  if (parent.type !== "MemberExpression" || parent.object !== node) {
     return null;
   }
   return parent.parent.type === "CallExpression" &&
@@ -179,52 +180,31 @@ const hasRejectionHandler = (
   );
 };
 
-const getPromiseChain = (
-  call: ESTree.CallExpression,
-  sourceCode: SourceCode,
-) => {
-  let expression = getOuterExpression(call);
-  let hasCatch = false;
-  let chained = getChainedCall(expression);
-  while (chained != null) {
-    hasCatch ||= hasRejectionHandler(chained, sourceCode);
-    expression = getOuterExpression(chained);
-    chained = getChainedCall(expression);
-  }
-  return { expression, hasCatch };
-};
-
-const isWaitedExpression = (expression: ESTree.Node, loader: Loader): boolean =>
-  expression.parent?.type === "AwaitExpression" ||
-  expression.parent?.type === "ReturnStatement" ||
+const isWaitedExpression = (
+  expression: ESTree.Expression,
+  loader: Loader,
+): boolean =>
+  expression.parent.type === "AwaitExpression" ||
+  expression.parent.type === "ReturnStatement" ||
   (loader.type === "ArrowFunctionExpression" && loader.body === expression);
 
-const getAwaitedConstVariable = (
-  expression: ESTree.Node,
+const isNeededByLaterQuery = (
+  expression: ESTree.Expression,
+  loader: Loader,
   sourceCode: SourceCode,
-): Variable | undefined => {
+): boolean => {
   const awaited = expression.parent;
-  if (awaited?.type !== "AwaitExpression") return;
+  if (awaited.type !== "AwaitExpression") return false;
   const declaration = awaited.parent;
   if (
     declaration.type !== "VariableDeclarator" ||
-    declaration.init !== awaited ||
     declaration.id.type !== "Identifier" ||
     declaration.parent.type !== "VariableDeclaration" ||
     declaration.parent.kind !== "const"
   ) {
-    return;
+    return false;
   }
   const [variable] = sourceCode.getDeclaredVariables(declaration);
-  return variable;
-};
-
-const isNeededByLaterQuery = (
-  expression: ESTree.Node,
-  loader: Loader,
-  sourceCode: SourceCode,
-): boolean => {
-  const variable = getAwaitedConstVariable(expression, sourceCode);
   const [, queryEnd] = expression.range;
   return (
     variable?.references.some((reference) => {
@@ -255,13 +235,20 @@ const getPromiseUse = (
   loader: Loader,
   sourceCode: SourceCode,
 ): "wait" | "uncaught" | null => {
-  const { expression, hasCatch } = getPromiseChain(call, sourceCode);
+  let expression = getOuterExpression(call);
+  let hasCatch = false;
+  let chained = getChainedCall(expression);
+  while (chained != null) {
+    hasCatch ||= hasRejectionHandler(chained, sourceCode);
+    expression = getOuterExpression(chained);
+    chained = getChainedCall(expression);
+  }
   const { parent } = expression;
   if (isWaitedExpression(expression, loader)) {
     return isNeededByLaterQuery(expression, loader, sourceCode) ? null : "wait";
   }
   return !hasCatch &&
-    parent?.type === "UnaryExpression" &&
+    parent.type === "UnaryExpression" &&
     parent.operator === "void"
     ? "uncaught"
     : null;
