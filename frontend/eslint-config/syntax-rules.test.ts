@@ -15,6 +15,7 @@ const CONFIG_LOAD_TIMEOUT_MS = 30_000;
 const SYNTAX_RULE_IDS = new Set([
   "no-restricted-syntax",
   `${PLUGIN_NAMES.CorePolicy}/server-module-state`,
+  `${PLUGIN_NAMES.CorePolicy}/test-object-type`,
   `${PLUGIN_NAMES.CorePolicy}/module-file-name`,
   `${PLUGIN_NAMES.CorePolicy}/module-jsx`,
 ]);
@@ -47,6 +48,20 @@ const cases: readonly SyntaxCase[] = [
     "let value = 0;",
     TWO_DIAGNOSTICS,
   ],
+
+  [
+    "tooling test network restriction",
+    "e2e/policy.test.ts",
+    "page.route('/api', handler); interface Body {}",
+    TWO_DIAGNOSTICS,
+  ],
+  [
+    "tooling test rule contract",
+    "oxlint-plugin-metadata-scrubber/rules/policy.test.ts",
+    "export default {}; interface Body {}",
+    TWO_DIAGNOSTICS,
+  ],
+
   [
     "no-classes positive",
     "src/policy.mod.ts",
@@ -81,6 +96,18 @@ const cases: readonly SyntaxCase[] = [
     "no-mutable-module-state-in-server-code negative",
     "src/policy.mod.server.ts",
     'export let requestCount = 0;\n\nvar requestTotal = 0,\n  requestLabel = "request";\nexport { requestTotal, requestLabel };\n',
+    TWO_DIAGNOSTICS,
+  ],
+  [
+    "no-test-local-object-type positive",
+    "src/policy.mod.test.ts",
+    'import type { ZodString as Inputs } from "zod";\nimport type * as contracts from "zod";\n\nexport type CreateUpload = (input: contracts.output<Inputs>) => void;\nexport type Upload = contracts.output<Inputs>;\n',
+    NO_DIAGNOSTICS,
+  ],
+  [
+    "no-test-local-object-type negative",
+    "src/policy.mod.test.ts",
+    "export type Upload = { storageKey: string };\nexport interface ResponseBody {\n  status: string;\n}\n",
     TWO_DIAGNOSTICS,
   ],
   ["module filename positive", "outside.ts", "export {};\n", NO_DIAGNOSTICS],
@@ -219,6 +246,18 @@ const cases: readonly SyntaxCase[] = [
   ],
   ["API scope", "src/routes/api/state.ts", "var value = 0;", ONE_DIAGNOSTIC],
   [
+    "server test overlap",
+    "src/shared/database/store.server.test.ts",
+    "interface Body {}\nexpect(value instanceof Error);",
+    THREE_DIAGNOSTICS,
+  ],
+  [
+    "middleware test overlap",
+    "src/shared/middlewares/state.mod.test.ts",
+    "let value = 0;\ntype Body = {};\nexpect(value instanceof Error);",
+    THREE_DIAGNOSTICS,
+  ],
+  [
     "client mutable state",
     "src/policy.mod.ts",
     "let value = 0;",
@@ -235,6 +274,24 @@ const cases: readonly SyntaxCase[] = [
     "src/policy.mod.server.ts",
     "try {} catch {}",
     ONE_DIAGNOSTIC,
+  ],
+  [
+    "source type declaration",
+    "src/policy.mod.ts",
+    "interface Body {}",
+    NO_DIAGNOSTICS,
+  ],
+  [
+    "tooling test types",
+    "eslint-config/policy.test.ts",
+    "interface Body {}",
+    ONE_DIAGNOSTIC,
+  ],
+  [
+    "test suffix scope",
+    "src/policy.test.mts",
+    "interface Body {}",
+    TWO_DIAGNOSTICS,
   ],
   [
     "test JSX without JSX",
@@ -266,6 +323,11 @@ describe("effective syntax policies after the Oxlint bridge", () => {
       `${PLUGIN_NAMES.CorePolicy}/server-module-state`,
       "src/policy.mod.server.ts",
       "let state = 0;",
+    ],
+    [
+      `${PLUGIN_NAMES.CorePolicy}/test-object-type`,
+      "src/policy.mod.test.ts",
+      "interface Body {}",
     ],
     [
       `${PLUGIN_NAMES.CorePolicy}/module-file-name`,

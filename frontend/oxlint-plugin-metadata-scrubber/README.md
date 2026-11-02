@@ -14,7 +14,6 @@ Directory fixtures run from their own root, so their `src/` paths match real sou
 - `no-module-scope-http-client` rejects module-scope `ky.create`, `ky.extend`, and calls to imported factories from `#/shared/libs/ky/`. It follows import aliases and local `const` aliases. Test files remain exempt because test setup can own a shared client without serving requests.
 - `no-query-client-props` rejects `trpc` and `queryClient` props. It also rejects other prop names when their values resolve to route clients or query hooks. It allows the imported tRPC providers and `QueryClientProvider` setup.
 - `no-silent-test-prerequisite` rejects `.skip` calls on Vitest test APIs, including chains such as `test.skip.each(...)`. It also rejects bare test prerequisite returns in test callbacks.
-- `no-test-local-object-type` rejects direct object-literal type aliases and interfaces in test files. It allows function aliases, imported types, and schema-derived types.
 - `prefetch-route-data-without-waiting` rejects awaited or returned route query calls. It allows an awaited query result in a plain `const` binding when a later tracked query reads that binding in its arguments. Both queries must use the route context query client in the same loader. It also rejects tracked query calls discarded with `void` without a `.catch` handler. It tracks the loader context through local `const` aliases and destructuring.
 - `require-backend-request-signal` requires an options object literal on backend method calls in non-test server modules. An explicit `signal` must follow all spreads and dynamic keys so they cannot replace it.
 - `require-colocated-test` requires each source test outside `src/tests/` to sit beside a source module whose stem is a prefix of the test stem. It uses the longest matching stem. When stems tie, it prefers a module that matches the test's server suffix, then file-name order. It maps `-root.test.tsx` to `__root.tsx`. A test of a `.server` module must end with `.server.test.ts` so Vitest uses Node.
@@ -62,7 +61,6 @@ These restrictions do not check parent `Suspense` or error boundaries. They do n
 
 - The strict MSW rule checks calls in one file. It accepts direct hook callbacks. It does not prove execution order or whether conditional setup runs.
 - The late-body rule follows local `const` aliases from imported Vitest `vi.fn`, `vi.spyOn`, and `vi.mocked`. It checks the first call argument and its `request` property. It does not prove that a first argument is a Fetch `Request`. It does not follow mutable aliases, returned values, or cross-file helpers.
-- The object-type rule checks syntax, not schema equivalence. It does not prove that a type needs a schema or that an imported type is schema-derived.
 
 - The discarded-result rule follows direct `neverthrow` imports and known result-producing methods. It does not follow stored results. Results returned from user functions need type information. Assigning a result passes this rule; the rule does not prove that later code handles it.
 

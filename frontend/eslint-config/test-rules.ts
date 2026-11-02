@@ -5,7 +5,25 @@ import testingLibrary from "eslint-plugin-testing-library";
 import { PLUGIN_NAMES, SEVERITY_LEVELS } from "./constants.ts";
 import { restrictedSyntax } from "./syntax-rules.ts";
 
+const testFiles = [
+  "**/*.test.{ts,tsx,mts,mtsx,cts,ctsx,js,jsx,mjs,mjsx,cjs,cjsx}",
+];
+
 export const testRules = defineConfig(
+  {
+    files: testFiles,
+    rules: {
+      [`${PLUGIN_NAMES.CorePolicy}/test-object-type`]: [
+        SEVERITY_LEVELS.Error,
+        {
+          selector:
+            "TSTypeAliasDeclaration[typeAnnotation.type='TSTypeLiteral'], TSInterfaceDeclaration",
+          message:
+            "This declaration defines a test-local object type. Export a schema-derived type beside its schema, such as `export type X = z.output<typeof xSchema>`, and import it into this test. Do not keep a parallel test-only object type.",
+        },
+      ],
+    },
+  },
   {
     files: ["src/**/*.test.ts", "src/**/*.test.tsx"],
     ...testingLibrary.configs["flat/react"],

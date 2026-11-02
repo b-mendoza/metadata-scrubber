@@ -21,8 +21,6 @@ export const metadataScrubberRules = defineConfig({
       SEVERITY_LEVELS.Error,
     [`${PLUGIN_NAMES.MetadataScrubber}/no-silent-test-prerequisite`]:
       SEVERITY_LEVELS.Error,
-    [`${PLUGIN_NAMES.MetadataScrubber}/no-test-local-object-type`]:
-      SEVERITY_LEVELS.Error,
     [`${PLUGIN_NAMES.MetadataScrubber}/prefetch-route-data-without-waiting`]:
       SEVERITY_LEVELS.Error,
     [`${PLUGIN_NAMES.MetadataScrubber}/require-backend-request-signal`]:
