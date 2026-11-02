@@ -3,7 +3,7 @@ import path from "node:path";
 import { ESLint } from "eslint";
 import { beforeAll, describe, expect, it } from "vitest";
 
-import { PLUGIN_NAMES } from "./constants.ts";
+import { PLUGIN_NAMES, SEVERITY_LEVELS } from "./constants.ts";
 
 const NO_DIAGNOSTICS = 0;
 const ONE_DIAGNOSTIC = 1;
@@ -100,7 +100,10 @@ describe("effective import restrictions after the Oxlint bridge", () => {
 
     expect.assert(result != null);
     expect(result.messages).toEqual([
-      expect.objectContaining({ ruleId: "no-restricted-imports", severity: 2 }),
+      expect.objectContaining({
+        ruleId: "no-restricted-imports",
+        severity: SEVERITY_LEVELS.Error,
+      }),
     ]);
   });
 
