@@ -51,11 +51,11 @@
       }
     },
     "notion-plugin-marketplace": {
+      "autoUpdate": true,
       "source": {
-        "source": "github",
-        "repo": "makenotion/claude-code-notion-plugin"
-      },
-      "autoUpdate": true
+        "repo": "makenotion/claude-code-notion-plugin",
+        "source": "github"
+      }
     }
   },
   "workflowSizeGuideline": "medium"
