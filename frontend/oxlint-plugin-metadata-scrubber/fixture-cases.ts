@@ -8,8 +8,6 @@ const NO_DISCARDED_RESULT_GUIDANCE =
   "Assign the result and check `isErr()`. Throw or return the error at the boundary: `const result = await operation(); if (result.isErr()) { throw result.error; } return result.value;`.";
 const NO_EXPECT_TYPE_OF_GUIDANCE =
   "Remove this assertion. Put the expected type on the production declaration with `: ExpectedType`, or constrain the value with `satisfies ExpectedType`. TypeScript checks this contract during the type check. Use Vitest `expect(...)` only for runtime behavior.";
-const NO_LIFECYCLE_HOOK_NAMES_GUIDANCE =
-  "Name the hook for the external system it keeps in sync, for example `useUppyDashboard`.";
 const NO_MUTABLE_MODULE_STATE_IN_SERVER_CODE_GUIDANCE =
   "Move request-local mutation into request scope. Put request dependencies in `appBindingsMiddleware` and read them with `getAppBindings()`. Use `const` only when no request changes the value or its contents. Do not move the mutation into a module-scope object or array.";
 const NO_QUERY_CLIENT_PROPS_GUIDANCE =
@@ -73,26 +71,6 @@ export const fixtureCases: readonly FixtureCase[] = [
       `\`request.clone()\` reads a request body from a Vitest mock record. Ky can consume the body first. ${NO_LATE_REQUEST_BODY_READ_GUIDANCE}`,
       `\`input.json()\` reads a request body from a Vitest mock record. Ky can consume the body first. ${NO_LATE_REQUEST_BODY_READ_GUIDANCE}`,
       `\`handler.mock.calls[index]?.[0].request.json()\` reads a request body from a Vitest mock record. Ky can consume the body first. ${NO_LATE_REQUEST_BODY_READ_GUIDANCE}`,
-    ],
-  ],
-  [
-    "no-lifecycle-hook-names",
-    "no-lifecycle-hook-names.ts",
-    [
-      `\`useMount\` describes mount timing instead of synchronized work. ${NO_LIFECYCLE_HOOK_NAMES_GUIDANCE}`,
-      `\`useOnMount\` describes mount timing instead of synchronized work. ${NO_LIFECYCLE_HOOK_NAMES_GUIDANCE}`,
-      `\`useUnmount\` describes mount timing instead of synchronized work. ${NO_LIFECYCLE_HOOK_NAMES_GUIDANCE}`,
-      `\`useOnUnmount\` describes mount timing instead of synchronized work. ${NO_LIFECYCLE_HOOK_NAMES_GUIDANCE}`,
-      `\`useDidMount\` describes mount timing instead of synchronized work. ${NO_LIFECYCLE_HOOK_NAMES_GUIDANCE}`,
-      `\`useWillUnmount\` describes mount timing instead of synchronized work. ${NO_LIFECYCLE_HOOK_NAMES_GUIDANCE}`,
-      `\`useEffectOnce\` describes mount timing instead of synchronized work. ${NO_LIFECYCLE_HOOK_NAMES_GUIDANCE}`,
-      `\`useOnce\` describes mount timing instead of synchronized work. ${NO_LIFECYCLE_HOOK_NAMES_GUIDANCE}`,
-      `\`useInit\` describes mount timing instead of synchronized work. ${NO_LIFECYCLE_HOOK_NAMES_GUIDANCE}`,
-      `\`useInitialize\` describes mount timing instead of synchronized work. ${NO_LIFECYCLE_HOOK_NAMES_GUIDANCE}`,
-      `\`useFirstRender\` describes mount timing instead of synchronized work. ${NO_LIFECYCLE_HOOK_NAMES_GUIDANCE}`,
-      `\`useMountUploader\` describes mount timing instead of synchronized work. ${NO_LIFECYCLE_HOOK_NAMES_GUIDANCE}`,
-      `\`useMount2\` describes mount timing instead of synchronized work. ${NO_LIFECYCLE_HOOK_NAMES_GUIDANCE}`,
-      `\`useMount_uploader\` describes mount timing instead of synchronized work. ${NO_LIFECYCLE_HOOK_NAMES_GUIDANCE}`,
     ],
   ],
   [

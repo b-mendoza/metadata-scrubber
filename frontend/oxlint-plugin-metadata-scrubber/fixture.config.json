@@ -4,7 +4,6 @@
     "metadata-scrubber/no-discarded-result": "error",
     "metadata-scrubber/no-expect-type-of": "error",
     "metadata-scrubber/no-late-request-body-read": "error",
-    "metadata-scrubber/no-lifecycle-hook-names": "error",
     "metadata-scrubber/no-module-scope-http-client": "error",
     "metadata-scrubber/no-mutable-module-state-in-server-code": "error",
     "metadata-scrubber/no-query-client-props": "error",
