@@ -16,11 +16,11 @@
   },
   "extraKnownMarketplaces": {
     "vercel": {
+      "autoUpdate": true,
       "source": {
-        "source": "github",
-        "repo": "vercel/vercel-plugin"
-      },
-      "autoUpdate": true
+        "repo": "vercel/vercel-plugin",
+        "source": "github"
+      }
     },
     "cloudflare": {
       "source": {
