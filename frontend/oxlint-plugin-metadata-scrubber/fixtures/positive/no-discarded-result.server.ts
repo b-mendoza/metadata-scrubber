@@ -13,12 +13,10 @@ export const returnResult = () => ok("value");
 
 Result.fromThrowable(() => "value", mapFailure);
 ResultAsync.fromThrowable(load, mapFailure);
-ok("value").isErr();
 ok("value").match(
   (item) => item,
   () => "fallback",
 );
-void ResultAsync.fromSafePromise(load()).then((result) => result.isErr());
 localOk("value", "value");
 
 export const shadowed = (ok: (item: string) => string) => {
