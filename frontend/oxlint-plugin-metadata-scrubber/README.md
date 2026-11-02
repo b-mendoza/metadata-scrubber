@@ -19,7 +19,6 @@ Directory fixtures run from their own root, so their `src/` paths match real sou
 - `require-backend-request-signal` requires an options object literal on backend method calls in non-test server modules. An explicit `signal` must follow all spreads and dynamic keys so they cannot replace it.
 - `require-colocated-test` requires each source test outside `src/tests/` to sit beside a source module whose stem is a prefix of the test stem. It uses the longest matching stem. When stems tie, it prefers a module that matches the test's server suffix, then file-name order. It maps `-root.test.tsx` to `__root.tsx`. A test of a `.server` module must end with `.server.test.ts` so Vitest uses Node.
 - `require-ky-json-schema` rejects zero-argument `.json()` calls chained on tracked backend requests and direct Ky requests. It requires `.json(schema)` so Ky validates the response.
-- `require-module-file-name` requires the six module suffixes under `src/`: `.mod.ts`, `.mod.tsx`, `.mod.server.ts`, `.mod.test.ts`, `.mod.test.tsx`, and `.mod.server.test.ts`. It rejects a non-test `.mod.tsx` file without JSX. It also checks shared test helpers.
 - `require-relative-backend-path` requires a string literal or template literal with a leading single `/` on backend method calls in non-test server modules. It rejects identifiers, absolute URLs, and prefixes that start with `//` or `/\`.
 - `require-strict-msw-server` requires `listen({ onUnhandledFrame: "error" })`, `resetHandlers()` in `afterEach`, and `close()` in `afterAll` for an MSW server. MSW 3 uses `onUnhandledFrame`, not `onUnhandledRequest`. It resolves renamed and namespace imports and local server aliases.
 - `separate-type-imports` rejects inline `type` specifiers and requires separate `import type` declarations. It reports once per declaration, including declarations with only inline type specifiers. Standalone named, default, and namespace type imports remain allowed.
@@ -56,7 +55,6 @@ These restrictions do not check parent `Suspense` or error boundaries. They do n
 
 - ESLint's cache can keep a stale result for `require-colocated-test` after sibling files change. The uncached Oxlint pass in `pnpm lint` runs the same check on every run.
 - The colocated-test rule matches file names, not imports or test behavior. If no sibling matches, it searches the source tree to suggest a move. When no module matches anywhere, it gives a naming example instead of inventing a target path.
-- The file-name rule detects JSX syntax, not whether a file renders a component. It does not prove server-only execution.
 
 - The prefetch rule checks inline loaders in inline route options. It does not follow stored promises. It does not prove that a `.catch` callback handles every failure.
 - Only the operator can mark route data as required. The prefetch rule allows an awaited query when the `await` directly initializes a plain `const` binding. A later tracked query in the same loader must read that binding in its arguments. The rule still checks the later query for waits and missing error handlers. It does not follow result aliases or prove that the later query needs the result.
