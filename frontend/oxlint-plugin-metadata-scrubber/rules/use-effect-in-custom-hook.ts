@@ -3,6 +3,7 @@ import { defineRule } from "@oxlint/plugins";
 
 import {
   getConstDeclaratorInitializer,
+  getImportName,
   getReferencedVariable,
   getRuntimeImportDeclaration,
   getStaticPropertyName,
@@ -45,16 +46,6 @@ const isWriteOnlyTarget = (node: ESTree.Node): boolean => {
     : (parent.type === "ForInStatement" || parent.type === "ForOfStatement") &&
         parent.left === expression;
 };
-
-const getImportedName = (specifier: ESTree.ImportSpecifier): string => {
-  const { imported } = specifier;
-  return imported.type === "Identifier" ? imported.name : imported.value;
-};
-
-const isReactEffectImport = (definition: Definition): boolean =>
-  getRuntimeImportDeclaration(definition)?.source.value === "react" &&
-  definition.node.type === "ImportSpecifier" &&
-  getImportedName(definition.node) === "useEffect";
 
 const isReactNamespaceImport = (definition: Definition): boolean =>
   getRuntimeImportDeclaration(definition)?.source.value === "react" &&
@@ -101,18 +92,14 @@ const isTypePosition = (node: ESTree.Node): boolean => {
 };
 
 const hasHookOwner = (node: ESTree.Node): boolean => {
-  let ancestor: ESTree.Node | null = node.parent;
-  while (ancestor != null) {
-    if (isFunction(ancestor)) {
-      const { parent } = getOutermostExpression(ancestor);
-      return parent?.type === "VariableDeclarator" &&
-        parent.id.type === "Identifier"
-        ? HOOK_NAME_PATTERN.test(parent.id.name)
-        : ancestor.id != null && HOOK_NAME_PATTERN.test(ancestor.id.name);
-    }
-    ancestor = ancestor.parent;
-  }
-  return false;
+  let owner: ESTree.Node | null = node.parent;
+  while (owner != null && !isFunction(owner)) owner = owner.parent;
+  if (owner == null) return false;
+  const { parent } = getOutermostExpression(owner);
+  return parent?.type === "VariableDeclarator" &&
+    parent.id.type === "Identifier"
+    ? HOOK_NAME_PATTERN.test(parent.id.name)
+    : owner.id != null && HOOK_NAME_PATTERN.test(owner.id.name);
 };
 
 const getStaticKeyValue = (node: ESTree.Node): string | null => {
@@ -185,7 +172,7 @@ export default defineRule({
         if (
           binding == null ||
           binding.defs.every(
-            (definition) => !isReactEffectImport(definition),
+            (definition) => getImportName(definition, "react") !== "useEffect",
           ) ||
           binding.references.every(
             (reference) => reference.identifier !== node || !reference.isRead(),
