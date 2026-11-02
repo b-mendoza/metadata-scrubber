@@ -23,8 +23,6 @@ const NO_LATE_REQUEST_BODY_READ_GUIDANCE =
   "Read or clone it inside the MSW handler and store the value: `const bodies: unknown[] = []; const handler = vi.fn<HttpResponseResolver>(async ({ request }) => { bodies.push(await request.json()); return HttpResponse.json(response); });`. Import `vi` from `vitest` and `HttpResponseResolver` and `HttpResponse` from `msw`.";
 const NO_MODULE_SCOPE_HTTP_CLIENT_GUIDANCE =
   "Create clients in `appBindingsMiddleware` for each request and read them with `getAppBindings()`.";
-const NO_TEST_LOCAL_OBJECT_TYPE_GUIDANCE =
-  "Export a schema-derived type beside its schema, such as `export type X = z.output<typeof xSchema>`, and import it into this test. Do not keep a parallel test-only object type.";
 const PREFETCH_ROUTE_DATA_WITHOUT_WAITING_GUIDANCE =
   "Do not return the query promise. Await a route query only when a later optional route query needs its result: assign the result to a `const` and pass it to that later query.";
 const REQUIRE_BACKEND_REQUEST_SIGNAL_GUIDANCE =
@@ -108,14 +106,6 @@ export const fixtureCases: readonly FixtureCase[] = [
       `\`test.skip.each([false])\` disables a suite or test. ${NO_SILENT_TEST_PREREQUISITE_GUIDANCE}`,
       "The `!ready` test prerequisite guard uses a bare `return` in `test.each([false])`. This return makes the test pass without its behavior assertions. Replace the guard exit with `expect(ready).toBeTruthy()`. Then continue the test. Import `expect` from `vitest` when the test file does not import it.",
       "The `value === undefined` test prerequisite guard uses a bare `return` in `test`. This return makes the test pass without its behavior assertions. Replace the guard exit with `expect((value === undefined)).toBeFalsy()`. Then continue the test. Import `expect` from `vitest` when the test file does not import it.",
-    ],
-  ],
-  [
-    "no-test-local-object-type",
-    "no-test-local-object-type.test.ts",
-    [
-      `\`Upload\` declares a test-local object type. ${NO_TEST_LOCAL_OBJECT_TYPE_GUIDANCE}`,
-      `\`ResponseBody\` declares a test-local object type. ${NO_TEST_LOCAL_OBJECT_TYPE_GUIDANCE}`,
     ],
   ],
   [

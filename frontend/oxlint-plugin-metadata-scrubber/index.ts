@@ -6,7 +6,6 @@ import noLateRequestBodyRead from "./rules/no-late-request-body-read.ts";
 import noModuleScopeHttpClient from "./rules/no-module-scope-http-client.ts";
 import noQueryClientProps from "./rules/no-query-client-props.ts";
 import noSilentTestPrerequisite from "./rules/no-silent-test-prerequisite.ts";
-import noTestLocalObjectType from "./rules/no-test-local-object-type.ts";
 import prefetchRouteDataWithoutWaiting from "./rules/prefetch-route-data-without-waiting.ts";
 import requireBackendRequestSignal from "./rules/require-backend-request-signal.ts";
 import requireColocatedTest from "./rules/require-colocated-test.ts";
@@ -28,7 +27,6 @@ export default definePlugin({
     "no-module-scope-http-client": noModuleScopeHttpClient,
     "no-query-client-props": noQueryClientProps,
     "no-silent-test-prerequisite": noSilentTestPrerequisite,
-    "no-test-local-object-type": noTestLocalObjectType,
     "prefetch-route-data-without-waiting": prefetchRouteDataWithoutWaiting,
     "require-backend-request-signal": requireBackendRequestSignal,
     "require-colocated-test": requireColocatedTest,
