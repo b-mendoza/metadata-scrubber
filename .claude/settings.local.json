@@ -6,9 +6,7 @@
   },
   "autoMemoryEnabled": false,
   "disableBundledSkills": true,
-  "enabledMcpjsonServers": [
-    "notion"
-  ],
+  "enabledMcpjsonServers": [],
   "workflowSizeGuideline": "medium",
   "extraKnownMarketplaces": {
     "vercel": {
