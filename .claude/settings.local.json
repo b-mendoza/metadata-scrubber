@@ -30,11 +30,11 @@
       }
     },
     "context7-marketplace": {
+      "autoUpdate": true,
       "source": {
-        "source": "github",
-        "repo": "upstash/context7"
-      },
-      "autoUpdate": true
+        "repo": "upstash/context7",
+        "source": "github"
+      }
     },
     "posthog": {
       "source": {
