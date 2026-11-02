@@ -2,12 +2,20 @@ import type { Linter } from "eslint";
 
 import { SEVERITY_LEVELS } from "./constants.ts";
 
+const lifecycleHookNamePattern =
+  "^use(Mount|OnMount|Unmount|OnUnmount|DidMount|WillUnmount|EffectOnce|Once|Init|Initialize|FirstRender)([A-Z0-9_]|$)";
+
 // Scoped syntax rules must retain these global restrictions.
 export const restrictedSyntax = [
   {
     selector: "ClassDeclaration, ClassExpression",
     message:
       "This declaration uses class syntax. Replace it with plain functions and objects. Use a factory function such as `const createService = () => ({ run: () => true })` when code must create an object. Plain functions and objects keep dependencies and mutable state explicit. The rule has no class exceptions, including classes that extend `Error`.",
+  },
+  {
+    selector: `FunctionDeclaration[id.name=/${lifecycleHookNamePattern}/], VariableDeclarator[id.type='Identifier'][id.name=/${lifecycleHookNamePattern}/][init.type=/^(ArrowFunctionExpression|FunctionExpression)$/]`,
+    message:
+      "This hook name describes mount timing instead of synchronized work. Name the hook for the external system it keeps in sync, for example `useUppyDashboard`.",
   },
   {
     selector: "SwitchStatement",

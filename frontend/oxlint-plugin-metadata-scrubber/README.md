@@ -12,7 +12,6 @@ Directory fixtures run from their own root, so their `src/` paths match real sou
 - `no-expect-type-of` requires TypeScript contracts instead of Vitest `expectTypeOf(...)` calls, including renamed imports.
 - `no-late-request-body-read` rejects request body reads from Vitest mock call records. It follows the first call argument and its `request` property through local `const` aliases and destructuring. Read or clone the body in the MSW handler instead.
 - `no-module-scope-http-client` rejects module-scope `ky.create`, `ky.extend`, and calls to imported factories from `#/shared/libs/ky/`. It follows import aliases and local `const` aliases. Test files remain exempt because test setup can own a shared client without serving requests.
-- `no-lifecycle-hook-names` rejects function declarations and function-valued variable declarations with mount-timing hook names. A suffix must start with an uppercase letter, digit, or underscore. It rejects `useMountUploader` but allows `useMountedState`, which describes state rather than mount timing.
 - `no-mutable-module-state-in-server-code` rejects module-scope `let` and `var` declarations in server modules.
 - `no-query-client-props` rejects `trpc` and `queryClient` props. It also rejects other prop names when their values resolve to route clients or query hooks. It allows the imported tRPC providers and `QueryClientProvider` setup.
 - `no-silent-test-prerequisite` rejects `.skip` calls on Vitest test APIs, including chains such as `test.skip.each(...)`. It also rejects bare test prerequisite returns in test callbacks.
@@ -69,7 +68,6 @@ These restrictions do not check parent `Suspense` or error boundaries. They do n
 - The object-type rule checks syntax, not schema equivalence. It does not prove that a type needs a schema or that an imported type is schema-derived.
 
 - The discarded-result rule follows direct `neverthrow` imports and known result-producing methods. It does not follow stored results. Results returned from user functions need type information. Assigning a result passes this rule; the rule does not prove that later code handles it.
-- The lifecycle-name rule checks a fixed list of timing names at word boundaries. It does not check object methods, wrapped function initializers, or other timing words. It cannot prove that an allowed name describes the external system.
 
 - The HTTP rules follow resolved imports, direct binding reads, object destructuring, and local `const` aliases. They do not follow cross-file data flow.
 - The signal rule checks the options syntax, not the signal value or its source. The path rule checks the static prefix, not interpolated values.

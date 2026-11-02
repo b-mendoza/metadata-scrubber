@@ -7,6 +7,7 @@ import { SEVERITY_LEVELS } from "./constants.ts";
 
 const NO_DIAGNOSTICS = 0;
 const THREE_DIAGNOSTICS = 3;
+const LIFECYCLE_DIAGNOSTICS = 14;
 const ONE_DIAGNOSTIC = 1;
 
 const CONFIG_LOAD_TIMEOUT_MS = 30_000;
@@ -47,10 +48,34 @@ const cases: readonly SyntaxCase[] = [
     THREE_DIAGNOSTICS,
   ],
   [
+    "no-lifecycle-hook-names positive",
+    "src/policy.mod.ts",
+    'export function useUppyDashboard() {}\nexport const useUploadProgress = () => {};\nexport const useMountedState = function () {};\nexport function useInitialValue() {}\nexport const useMount = "an event name, not a hook";\n',
+    NO_DIAGNOSTICS,
+  ],
+  [
+    "no-lifecycle-hook-names negative",
+    "src/policy.mod.ts",
+    "export function useMount() {}\nexport const useOnMount = () => {};\nexport const useUnmount = function () {};\nexport function useOnUnmount() {}\nexport const useDidMount = () => {};\nexport const useWillUnmount = function () {};\nexport const useEffectOnce = () => {};\nexport const useOnce = function () {};\nexport function useInit() {}\nexport const useInitialize = () => {};\nexport const useFirstRender = function () {};\n\nexport function useMountUploader() {}\nexport const useMount2 = () => {};\nexport const useMount_uploader = () => {};\n",
+    LIFECYCLE_DIAGNOSTICS,
+  ],
+  [
     "global class scope",
     "eslint-config/constants.ts",
     "class Service {}",
     ONE_DIAGNOSTIC,
+  ],
+  [
+    "global lifecycle scope",
+    "eslint-config/constants.ts",
+    "const useMount = () => {};",
+    ONE_DIAGNOSTIC,
+  ],
+  [
+    "lifecycle suffix boundaries",
+    "src/policy.mod.ts",
+    "function useMountain() {}\nconst useOnceMore = 1;\nconst useMountedState = () => {};\nconst useInitialValue = () => {};",
+    NO_DIAGNOSTICS,
   ],
 ];
 
