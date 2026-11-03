@@ -47,6 +47,7 @@
     }
   },
   "ignorePatterns": [
+    "src/routes/**",
     ".output/",
     "coverage/",
     "oxlint-plugin-metadata-scrubber/fixtures/",
