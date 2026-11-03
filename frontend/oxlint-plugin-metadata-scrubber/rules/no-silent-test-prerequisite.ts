@@ -1,36 +1,22 @@
 import type { ESTree, Scope, SourceCode, Variable } from "@oxlint/plugins";
 import { defineRule } from "@oxlint/plugins";
 
-import {
-  getRuntimeImportDeclaration,
-  isFunction,
-  isTestFile,
-} from "../utilities.ts";
+import { getImportName, isFunction, isTestFile } from "../utilities.ts";
 
-type TestApi = "describe" | "it" | "test";
+type TestApi = "it" | "test";
 type TestCallback = ESTree.ArrowFunctionExpression | ESTree.Function;
 
 const NO_DEFINITIONS = 0;
-const TEST_FUNCTION_NAMES = new Set<TestApi>(["it", "test"]);
-
-const getImportedName = (specifier: ESTree.ImportSpecifier): string => {
-  const { imported } = specifier;
-  return imported.type === "Identifier" ? imported.name : imported.value;
-};
 
 const isTestApiName = (name: string): name is TestApi =>
-  ["describe", "it", "test"].includes(name);
+  name === "it" || name === "test";
 
 const getVitestTestApiImport = (variable: Variable): TestApi | null => {
   for (const definition of variable.defs) {
-    if (
-      getRuntimeImportDeclaration(definition)?.source.value !== "vitest" ||
-      definition.node.type !== "ImportSpecifier"
-    ) {
-      continue;
+    const importedName = getImportName(definition, "vitest");
+    if (importedName != null && isTestApiName(importedName)) {
+      return importedName;
     }
-    const importedName = getImportedName(definition.node);
-    if (isTestApiName(importedName)) return importedName;
   }
   return null;
 };
@@ -119,7 +105,6 @@ export default defineRule({
         ) {
           return;
         }
-        if (!TEST_FUNCTION_NAMES.has(chain)) return;
         const callback = getTestCallback(node);
         if (callback == null) return;
         testCallbacks.set(callback, context.sourceCode.getText(node.callee));
