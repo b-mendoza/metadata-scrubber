@@ -46,6 +46,11 @@
       "entryPoint": "src/app.css"
     }
   },
+  // Do not add "src/routes/**" to this list. eslint.config.ts reads this file
+  // with buildFromOxlintConfigFile(), which makes each pattern a global ESLint
+  // ignore. ESLint then skips every route file, and the route cases in
+  // eslint-config/*.test.ts fail. To skip routes for one rule, use
+  // "excludeFiles" in that rule's override.
   "ignorePatterns": [
     ".output/",
     "coverage/",
