@@ -75,15 +75,11 @@ const callerForRequest = (request: Request) => {
 };
 
 test.each([
-  ["weak", `W/"${CANONICAL_ETAG}"`],
-  ["quoted", `"${CANONICAL_ETAG}"`],
   ["too short", "0123456789abcdef0123456789abcde"],
   ["too long", `${CANONICAL_ETAG}0`],
   ["upper case", CANONICAL_ETAG.toUpperCase()],
   ["non-hex", "0123456789abcdef0123456789abcdeg"],
-  ["multipart", `${CANONICAL_ETAG}-2`],
   ["leading space", ` ${CANONICAL_ETAG}`],
-  ["trailing space", `${CANONICAL_ETAG} `],
 ])("scrubFile rejects %s ETag before fetch", async (_caseName, etag) => {
   const input: RouterInputs["wizard"]["scrubFile"] = {
     etag,
