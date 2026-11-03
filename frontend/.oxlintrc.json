@@ -1772,6 +1772,34 @@
           }
         ]
       }
+    },
+    {
+      "files": [
+        "**/*.test.{ts,tsx,mts,mtsx,cts,ctsx,js,jsx,mjs,mjsx,cjs,cjsx}"
+      ],
+      "rules": {
+        "core-policy/test-type-assertion-import": [
+          "error",
+          {
+            "paths": [
+              {
+                "name": "vitest",
+                "importNames": ["expectTypeOf"],
+                "allowTypeImports": true,
+                "message": "expectTypeOf tests a static type. Remove this assertion. Put the expected type on the production declaration with `: ExpectedType`, or constrain the value with `satisfies ExpectedType`. TypeScript checks this contract during the type check. Use Vitest `expect(...)` only for runtime behavior."
+              }
+            ]
+          }
+        ],
+        "no-restricted-globals": [
+          "error",
+          {
+            "name": "expectTypeOf",
+            "message": "expectTypeOf tests a static type. Remove this assertion. Put the expected type on the production declaration with `: ExpectedType`, or constrain the value with `satisfies ExpectedType`. TypeScript checks this contract during the type check. Use Vitest `expect(...)` only for runtime behavior."
+          }
+        ]
+      },
+      "jsPlugins": ["./eslint-config/core-policy-rules.ts"]
     }
   ]
 }
