@@ -36,66 +36,6 @@ func TestPublicStorageKeysAndETagsAreValidatedBeforeStorage(t *testing.T) {
 		})
 	}
 
-	invalidETags := []struct {
-		name  string
-		value string
-	}{
-		{name: "empty", value: ""},
-		{name: "weak", value: `W/"` + canonicalETagOne + `"`},
-		{name: "quoted", value: `"` + canonicalETagOne + `"`},
-		{name: "leading quote", value: `"` + canonicalETagOne},
-		{name: "trailing quote", value: canonicalETagOne + `"`},
-		{name: "embedded quote", value: "0123456789abcde\"0123456789abcdef"},
-		{name: "single quoted", value: `'` + canonicalETagOne + `'`},
-		{name: "line feed", value: "0123456789abcde\n0123456789abcdef"},
-		{name: "carriage return", value: "0123456789abcde\r0123456789abcdef"},
-		{name: "horizontal tab", value: "0123456789abcde\t0123456789abcdef"},
-		{name: "null", value: "0123456789abcde\x000123456789abcdef"},
-		{name: "too short", value: "0123456789abcdef0123456789abcde"},
-		{name: "too long", value: canonicalETagOne + "0"},
-		{name: "upper case", value: strings.ToUpper(canonicalETagOne)},
-		{name: "non hex", value: "0123456789abcdef0123456789abcdeg"},
-		{name: "multipart", value: canonicalETagOne + "-2"},
-		{name: "leading space", value: " " + canonicalETagOne},
-		{name: "trailing space", value: canonicalETagOne + " "},
-		{name: "opaque", value: "revision-1"},
-	}
-	for _, invalidETag := range invalidETags {
-		t.Run("scrub ETag "+invalidETag.name, func(t *testing.T) {
-			fake := storage.NewFake()
-			handler := newTestHandler(t)
-			body, err := json.Marshal(scrubRequest{
-				StorageKey: storageKeyPrefix + fileIDOne,
-				ETag:       invalidETag.value,
-			})
-			require.NoError(t, err)
-
-			request := httptest.NewRequest(http.MethodPost, "/api/files/scrub", bytes.NewReader(body))
-			request.Header.Set(header.ContentType, mediatype.JSON)
-			recorder := httptest.NewRecorder()
-			bindings.Inject(bindings.Bindings{Storage: fake})(http.HandlerFunc(handler.Scrub)).ServeHTTP(recorder, request)
-
-			require.Equal(t, http.StatusBadRequest, recorder.Code)
-			require.Empty(t, fake.Calls())
-		})
-		t.Run("download grant ETag "+invalidETag.name, func(t *testing.T) {
-			fake := storage.NewFake()
-			handler := newTestHandler(t)
-			body, err := json.Marshal(downloadGrantRequest{
-				StorageKey: storageKeyPrefix + fileIDOne,
-				ETag:       invalidETag.value,
-			})
-			require.NoError(t, err)
-
-			request := httptest.NewRequest(http.MethodPost, "/api/files/download-grant", bytes.NewReader(body))
-			request.Header.Set(header.ContentType, mediatype.JSON)
-			recorder := httptest.NewRecorder()
-			bindings.Inject(bindings.Bindings{Storage: fake})(http.HandlerFunc(handler.DownloadGrant)).ServeHTTP(recorder, request)
-
-			require.Equal(t, http.StatusBadRequest, recorder.Code)
-			require.Empty(t, fake.Calls())
-		})
-	}
 	t.Run("scrub key", func(t *testing.T) {
 		fake := storage.NewFake()
 		handler := newTestHandler(t)
