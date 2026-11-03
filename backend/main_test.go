@@ -291,14 +291,20 @@ func TestRequestErrorLogsReceiveValidatedAnalyticsBindings(t *testing.T) {
 
 	require.Panics(t, func() { server.Handler.ServeHTTP(httptest.NewRecorder(), request) })
 
-	require.Len(t, logs.errorBindings, 1)
-	require.Equal(t, "browser-id", logs.errorBindings[0].PostHogDistinctID)
-	require.Equal(t, "browser-session", logs.errorBindings[0].PostHogSessionID)
+	require.Equal(t, []requestErrorLogRecord{
+		{Message: "request completed", DistinctID: "browser-id", SessionID: "browser-session"},
+	}, logs.records)
+}
+
+type requestErrorLogRecord struct {
+	Message    string
+	DistinctID string
+	SessionID  string
 }
 
 type contextLogHandler struct {
 	slog.Handler
-	errorBindings []bindings.Bindings
+	records []requestErrorLogRecord
 }
 
 func (*contextLogHandler) Enabled(context.Context, slog.Level) bool { return true }
@@ -306,7 +312,11 @@ func (*contextLogHandler) Enabled(context.Context, slog.Level) bool { return tru
 func (observer *contextLogHandler) Handle(ctx context.Context, record slog.Record) error {
 	if record.Level >= slog.LevelError {
 		requestBindings, _ := bindings.FromContext(ctx)
-		observer.errorBindings = append(observer.errorBindings, requestBindings)
+		observer.records = append(observer.records, requestErrorLogRecord{
+			Message:    record.Message,
+			DistinctID: requestBindings.PostHogDistinctID,
+			SessionID:  requestBindings.PostHogSessionID,
+		})
 	}
 	return nil
 }
