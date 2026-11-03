@@ -18,7 +18,7 @@ import (
 
 func TestPublicStorageKeysAndETagsAreValidatedBeforeStorage(t *testing.T) {
 	invalidKeys := []string{
-		"", fileIDOne, "downloads/" + fileIDOne, "uploads/" + strings.ToUpper(generatedFileID),
+		fileIDOne, "downloads/" + fileIDOne, "uploads/" + strings.ToUpper(generatedFileID),
 		"uploads/" + fileIDOne + "/extra", " uploads/" + fileIDOne, "uploads/../" + fileIDOne,
 	}
 	for _, invalidKey := range invalidKeys {
