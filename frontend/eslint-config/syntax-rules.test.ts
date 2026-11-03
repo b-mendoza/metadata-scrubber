@@ -17,6 +17,7 @@ const SYNTAX_RULE_IDS = new Set([
   `${PLUGIN_NAMES.CorePolicy}/server-try-catch`,
   `${PLUGIN_NAMES.CorePolicy}/test-instanceof-assertion`,
   `${PLUGIN_NAMES.CorePolicy}/rule-contract`,
+  `${PLUGIN_NAMES.CorePolicy}/e2e-network-mock`,
   `${PLUGIN_NAMES.CorePolicy}/server-module-state`,
   `${PLUGIN_NAMES.CorePolicy}/test-object-type`,
   `${PLUGIN_NAMES.CorePolicy}/module-file-name`,
