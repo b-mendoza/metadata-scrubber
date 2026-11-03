@@ -1358,6 +1358,11 @@
     },
     {
       "files": ["src/**/*.{ts,tsx,mts,cts}"],
+      // The "Program" selector matches every file. Oxlint overrides do not
+      // support the ESLint "ignores" key, so this list does that job. Keep it
+      // the same as the "ignores" list for module-file-name in
+      // eslint-config/source-rules.ts. Without it, oxlint reports each valid
+      // *.mod.* file and each exempt entry file.
       "excludeFiles": [
         "src/routes/**",
         "src/router.tsx",
