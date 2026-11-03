@@ -69,9 +69,8 @@ export const toolingRules = defineConfig(
   {
     files: ["e2e/**"],
     rules: {
-      "no-restricted-syntax": [
+      [`${PLUGIN_NAMES.CorePolicy}/e2e-network-mock`]: [
         SEVERITY_LEVELS.Error,
-        ...restrictedSyntax,
         {
           selector:
             "CallExpression[callee.type='MemberExpression']:matches([callee.property.name=/^(route|routeFromHAR|routeWebSocket)$/], [callee.property.value=/^(route|routeFromHAR|routeWebSocket)$/])",
