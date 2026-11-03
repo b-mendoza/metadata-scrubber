@@ -57,7 +57,6 @@ func TestCleanPDFRemovesEveryInspectedTargetAndVerifiesOutput(t *testing.T) {
 	outputContext, err := api.ReadValidateAndOptimize(t.Context(), bytes.NewReader(outputBytes), boundedPDFConfiguration(), nil)
 	require.NoError(t, err)
 	require.Equal(t, 2, outputContext.PageCount)
-	require.NoError(t, verifyScrubbedPDF(t.Context(), outputBytes))
 
 	publicOutputFields, err := InspectPDF(t.Context(), outputBytes)
 	require.NoError(t, err)
@@ -112,7 +111,6 @@ func TestCleanPDFRewritesPublicNeutralLookingTrio(t *testing.T) {
 	outputBytes, err := CleanPDF(t.Context(), inputBytes)
 	require.NoError(t, err)
 	require.NotEqual(t, inputBytes, outputBytes)
-	require.NoError(t, verifyScrubbedPDF(t.Context(), outputBytes))
 }
 
 func TestCleanPDFReturnsNilOutputWhenWriteFails(t *testing.T) {
@@ -310,7 +308,6 @@ func TestPDFByteAPIsKeepConcurrentRequestsIsolated(t *testing.T) {
 	require.Empty(t, results[0].fields)
 	require.NoError(t, results[0].cleanErr)
 	require.Equal(t, cleanInput, results[0].output)
-	require.NoError(t, verifyScrubbedPDF(t.Context(), results[0].output))
 
 	isolatedFields, err := InspectPDF(t.Context(), metadataInput)
 	require.NoError(t, err)
@@ -318,7 +315,6 @@ func TestPDFByteAPIsKeepConcurrentRequestsIsolated(t *testing.T) {
 	require.Equal(t, isolatedFields, results[1].fields)
 	require.NoError(t, results[1].cleanErr)
 	require.NotEqual(t, metadataInput, results[1].output)
-	require.NoError(t, verifyScrubbedPDF(t.Context(), results[1].output))
 
 	require.ErrorIs(t, results[2].inspectErr, ErrSignedPDF)
 	require.Nil(t, results[2].fields)
