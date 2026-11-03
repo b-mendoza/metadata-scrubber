@@ -1446,6 +1446,19 @@
       "jsPlugins": ["./eslint-config/core-policy-rules.ts"]
     },
     {
+      "files": ["e2e/**"],
+      "rules": {
+        "core-policy/e2e-network-mock": [
+          "error",
+          {
+            "selector": "CallExpression[callee.type='MemberExpression']:matches([callee.property.name=/^(route|routeFromHAR|routeWebSocket)$/], [callee.property.value=/^(route|routeFromHAR|routeWebSocket)$/])",
+            "message": "route, routeFromHAR, and routeWebSocket replace real network behavior in an end-to-end test. Remove the mocking call and use the real frontend and backend services."
+          }
+        ]
+      },
+      "jsPlugins": ["./eslint-config/core-policy-rules.ts"]
+    },
+    {
       "files": [
         "**/*.test.{ts,tsx,mts,mtsx,cts,ctsx,js,jsx,mjs,mjsx,cjs,cjsx}"
       ],
