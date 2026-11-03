@@ -15,6 +15,7 @@ const CONFIG_LOAD_TIMEOUT_MS = 30_000;
 const SYNTAX_RULE_IDS = new Set([
   "no-restricted-syntax",
   `${PLUGIN_NAMES.CorePolicy}/server-try-catch`,
+  `${PLUGIN_NAMES.CorePolicy}/test-instanceof-assertion`,
   `${PLUGIN_NAMES.CorePolicy}/server-module-state`,
   `${PLUGIN_NAMES.CorePolicy}/test-object-type`,
   `${PLUGIN_NAMES.CorePolicy}/module-file-name`,
