@@ -174,47 +174,57 @@ func TestNewServerSharesOneCapacityTwoGateAcrossDryRunAndScrubMisses(t *testing.
 	require.NoError(t, err)
 
 	dryRunResponses := make(chan *httptest.ResponseRecorder, 2)
-	go collectDryRunServerResponse(dryRunResponses, server, firstDryRunBody)
-	go collectDryRunServerResponse(dryRunResponses, server, secondDryRunBody)
+	go func() {
+		request := httptest.NewRequest(http.MethodPost, "/api/files/dry-run", bytes.NewReader(firstDryRunBody))
+		request.Header.Set(header.ContentType, mediatype.JSON)
+		recorder := httptest.NewRecorder()
+		server.Handler.ServeHTTP(recorder, request)
+		dryRunResponses <- recorder
+	}()
+	go func() {
+		request := httptest.NewRequest(http.MethodPost, "/api/files/dry-run", bytes.NewReader(secondDryRunBody))
+		request.Header.Set(header.ContentType, mediatype.JSON)
+		recorder := httptest.NewRecorder()
+		server.Handler.ServeHTTP(recorder, request)
+		dryRunResponses <- recorder
+	}()
 	for range 2 {
-		<-observer.started
+		select {
+		case <-observer.started:
+		case <-time.After(time.Second):
+			require.FailNow(t, "timed out waiting for dry-run download")
+		}
 	}
 
-	scrubContext, cancel := context.WithTimeout(context.Background(), 50*time.Millisecond)
-	defer cancel()
-	scrubHTTPRequest := httptest.NewRequestWithContext(scrubContext, http.MethodPost, "/api/files/scrub", bytes.NewReader(scrubBody))
-	scrubResponse := httptest.NewRecorder()
-	scrubHTTPRequest.Header.Set(header.ContentType, mediatype.JSON)
-	server.Handler.ServeHTTP(scrubResponse, scrubHTTPRequest)
-	require.Equal(t, http.StatusRequestTimeout, scrubResponse.Code, scrubResponse.Body.String())
-	sourceKey, err := storage.SourceObjectKey(thirdFileID)
-	require.NoError(t, err)
-	sanitizedKey, err := storage.SanitizedObjectKey(thirdFileID, reviewedETag)
-	require.NoError(t, err)
-	// The observer holds both dry-run downloads before the fake records them.
-	require.Equal(t, []storage.FakeCall{
-		{Operation: storage.FakeSourceExists, FileID: thirdFileID, ObjectKey: sourceKey},
-		{Operation: storage.FakeSanitizedExists, FileID: thirdFileID, SourceETag: reviewedETag, ObjectKey: sanitizedKey},
-	}, fake.Calls())
-	select {
-	case fileID := <-observer.started:
-		require.FailNow(t, "scrub miss entered a separate gate", "unexpected download for %s", fileID)
-	default:
-	}
+	t.Run("scrub miss waits for dry-run permits", func(t *testing.T) {
+		scrubContext, cancel := context.WithTimeout(context.Background(), 50*time.Millisecond)
+		defer cancel()
+		scrubHTTPRequest := httptest.NewRequestWithContext(scrubContext, http.MethodPost, "/api/files/scrub", bytes.NewReader(scrubBody))
+		scrubResponse := httptest.NewRecorder()
+		scrubHTTPRequest.Header.Set(header.ContentType, mediatype.JSON)
+		server.Handler.ServeHTTP(scrubResponse, scrubHTTPRequest)
+		require.Equal(t, http.StatusRequestTimeout, scrubResponse.Code, scrubResponse.Body.String())
+		sourceKey, err := storage.SourceObjectKey(thirdFileID)
+		require.NoError(t, err)
+		sanitizedKey, err := storage.SanitizedObjectKey(thirdFileID, reviewedETag)
+		require.NoError(t, err)
+		// The observer holds both dry-run downloads before the fake records them.
+		require.Equal(t, []storage.FakeCall{
+			{Operation: storage.FakeSourceExists, FileID: thirdFileID, ObjectKey: sourceKey},
+			{Operation: storage.FakeSanitizedExists, FileID: thirdFileID, SourceETag: reviewedETag, ObjectKey: sanitizedKey},
+		}, fake.Calls())
+		require.Empty(t, observer.started, "scrub miss entered a separate gate")
+	})
 
 	close(observer.release)
 	for range 2 {
-		recorder := <-dryRunResponses
-		require.Equal(t, http.StatusOK, recorder.Code, recorder.Body.String())
+		select {
+		case recorder := <-dryRunResponses:
+			require.Equal(t, http.StatusOK, recorder.Code, recorder.Body.String())
+		case <-time.After(time.Second):
+			require.FailNow(t, "timed out waiting for dry-run response")
+		}
 	}
-}
-
-func collectDryRunServerResponse(responses chan *httptest.ResponseRecorder, server *http.Server, requestBody []byte) {
-	request := httptest.NewRequest(http.MethodPost, "/api/files/dry-run", bytes.NewReader(requestBody))
-	request.Header.Set(header.ContentType, mediatype.JSON)
-	recorder := httptest.NewRecorder()
-	server.Handler.ServeHTTP(recorder, request)
-	responses <- recorder
 }
 
 type blockingServerStorage struct {
