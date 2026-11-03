@@ -6,4 +6,3 @@ type TestingT interface {
 }
 
 func Contains(t TestingT, s any, contains any, msgAndArgs ...any) bool    { return true }
-func NotContains(t TestingT, s any, contains any, msgAndArgs ...any) bool { return true }
