@@ -120,14 +120,7 @@ type HttpBindingKind =
   | "factory";
 
 export const unwrapHttpExpression = (node: ESTree.Node): ESTree.Node => {
-  if (
-    node.type === "ParenthesizedExpression" ||
-    node.type === "TSAsExpression" ||
-    node.type === "TSInstantiationExpression" ||
-    node.type === "TSNonNullExpression" ||
-    node.type === "TSSatisfiesExpression" ||
-    node.type === "ChainExpression"
-  ) {
+  if (isTransparentExpression(node) && node.type !== "TSTypeAssertion") {
     return unwrapHttpExpression(node.expression);
   }
   return node;
