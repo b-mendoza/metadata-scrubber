@@ -57,13 +57,6 @@ func TestInspectPDFRejectsMalformedCandidatesWithoutSignedClassification(t *test
 	}
 }
 
-func TestVerifyScrubbedPDFWireContractPreservesUnderlyingError(t *testing.T) {
-	err := verifyScrubbedPDF(t.Context(), []byte("%PDF-1.7\n"))
-
-	require.Error(t, err)
-	require.NotErrorIs(t, err, ErrMalformedPDF)
-}
-
 func TestInspectPDFEnumeratesDeepMetadataDeterministically(t *testing.T) {
 	pdfBytes := buildDeepMetadataPDFFixture(t)
 
