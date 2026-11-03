@@ -2,14 +2,14 @@
  * Never edit .oxlintrc.json.
  * The user updates .oxlintrc.json after each rule change in these files.
  * A new rule stays undefined in oxlint until the user updates that file.
- * Core no-restricted-syntax keeps these policies in ESLint only:
- * class syntax, lifecycle hook names, mutable server module state,
- * test-local object types, module file names, and JSX-only TSX modules.
- * Oxlint has no no-restricted-syntax rule.
- * Each scoped no-restricted-syntax or no-restricted-imports policy uses its own
- * alias rule id of the core rule. ESLint replaces a rule's whole array when a
- * later block matches. Separate ids keep each scoped policy independent.
- * Older no-restricted-syntax blocks must still spread restrictedSyntax.
+ * Oxlint has no native no-restricted-syntax rule. The core-policy aliases run
+ * through its jsPlugin. The global no-restricted-syntax list stays in ESLint:
+ * classes, lifecycle hook names, switch, dynamic Query imports, and IIFEs.
+ * Each scoped syntax or import policy uses its own core-policy alias id.
+ * ESLint replaces a rule's whole array when a later block matches.
+ * Separate ids keep each scoped policy independent.
+ * eslint-plugin-oxlint turns off only native Oxlint rules.
+ * metadata-scrubber/* and core-policy/* stay enabled in ESLint.
  * Keep these rules in ESLint only:
  * promise/prefer-catch: oxlint skips void promise.then(a, b).
  * unicorn/prefer-string-raw: oxlint skips values with identifier property keys.
