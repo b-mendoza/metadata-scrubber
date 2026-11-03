@@ -1,8 +1,10 @@
 package telemetry
 
 import (
+	"bufio"
 	"bytes"
 	"context"
+	"encoding/json"
 	"errors"
 	"log/slog"
 	"net/http"
@@ -89,7 +91,19 @@ func TestCaptureReportsQueueFailureOnlyToLocalLogger(t *testing.T) {
 
 	bound.ServeHTTP(httptest.NewRecorder(), request)
 
-	require.Contains(t, output.String(), "could not enqueue PostHog event")
+	type logRecord struct {
+		Message string `json:"msg"`
+		Level   string `json:"level"`
+	}
+	var records []logRecord
+	scanner := bufio.NewScanner(bytes.NewReader(output.Bytes()))
+	for scanner.Scan() {
+		var record logRecord
+		require.NoError(t, json.Unmarshal(scanner.Bytes(), &record))
+		records = append(records, record)
+	}
+	require.NoError(t, scanner.Err())
+	require.Equal(t, []logRecord{{Message: "could not enqueue PostHog event", Level: "WARN"}}, records)
 	require.NotContains(t, output.String(), "browser-id")
 }
 
@@ -114,8 +128,24 @@ func TestLogFanoutPreservesStdoutAndCapturesOnlyErrorExceptions(t *testing.T) {
 	bound.ServeHTTP(httptest.NewRecorder(), request)
 	logger.Error("process error")
 
-	require.NotContains(t, output.String(), "debug record")
-	require.Equal(t, 4, bytes.Count(output.Bytes(), []byte("\n")))
+	type logRecord struct {
+		Message string `json:"msg"`
+		Level   string `json:"level"`
+	}
+	var records []logRecord
+	scanner := bufio.NewScanner(bytes.NewReader(output.Bytes()))
+	for scanner.Scan() {
+		var record logRecord
+		require.NoError(t, json.Unmarshal(scanner.Bytes(), &record))
+		records = append(records, record)
+	}
+	require.NoError(t, scanner.Err())
+	require.Equal(t, []logRecord{
+		{Message: "info record", Level: "INFO"},
+		{Message: "warning record", Level: "WARN"},
+		{Message: "error record", Level: "ERROR"},
+		{Message: "process error", Level: "ERROR"},
+	}, records)
 	require.Equal(t, []exportedLogRecord{
 		{Body: "debug record", Severity: otellog.SeverityDebug},
 		{Body: "info record", Severity: otellog.SeverityInfo},
