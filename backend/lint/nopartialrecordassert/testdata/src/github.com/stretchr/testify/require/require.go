@@ -15,5 +15,4 @@ func Containsf(t TestingT, s any, contains any, msg string, args ...any)    {}
 func NotContains(t TestingT, s any, contains any, msgAndArgs ...any)        {}
 func NotContainsf(t TestingT, s any, contains any, msg string, args ...any) {}
 func Equal(t TestingT, expected any, actual any, msgAndArgs ...any)         {}
-func (*Assertions) Contains(s any, contains any, msgAndArgs ...any)         {}
 func (*Assertions) NotContains(s any, contains any, msgAndArgs ...any)      {}
