@@ -127,6 +127,23 @@ test.each([
   expect(handler).not.toHaveBeenCalled();
 });
 
+test("createUpload rejects zero fileSizeBytes before fetch", async () => {
+  const input: RouterInputs["wizard"]["createUpload"] = {
+    fileName: "report.pdf",
+    fileSizeBytes: 0,
+  };
+  const handler = vi.fn<HttpResponseResolver>(() => HttpResponse.error());
+  server.use(http.all("*", handler));
+  const request = new Request(FRONTEND_URL);
+
+  await expect(
+    callerForRequest(request).createUpload(input),
+  ).rejects.toMatchObject({
+    code: "BAD_REQUEST",
+  });
+  expect(handler).not.toHaveBeenCalled();
+});
+
 test("dryRun rejects an invalid storage key before fetch", async () => {
   const input: RouterInputs["wizard"]["dryRun"] = {
     storageKey: "source/not-public",
