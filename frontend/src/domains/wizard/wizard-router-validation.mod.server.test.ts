@@ -101,7 +101,7 @@ test.each([
   ["path traversal", "../report.pdf"],
   ["leading white space", " report.pdf"],
   ["trailing white space", "report.pdf "],
-  ["blank", " "],
+  ["empty file name", ""],
   ["backslash", String.raw`report\.pdf`],
   ["ASCII control U+0001", "report\u{0001}.pdf"],
   ["DEL U+007F", "report\u{007F}.pdf"],
