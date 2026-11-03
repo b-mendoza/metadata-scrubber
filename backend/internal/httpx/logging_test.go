@@ -71,46 +71,40 @@ func TestRequestLoggerDefaultsStatusToOKWhenHandlerOnlyWritesBody(t *testing.T) 
 func TestRequestLoggerLogsPanickedRequests(t *testing.T) {
 	t.Parallel()
 
-	var logs bytes.Buffer
-	logger := slog.New(slog.NewJSONHandler(&logs, nil))
-	handler := httpx.RequestLogger(logger)(http.HandlerFunc(func(_ http.ResponseWriter, _ *http.Request) {
-		panic("panic-value-sensitive-marker")
-	}))
+	testCases := []struct {
+		name          string
+		writtenStatus int
+		wantStatus    int
+	}{
+		{name: "no header", wantStatus: http.StatusInternalServerError},
+		{name: "header written", writtenStatus: http.StatusCreated, wantStatus: http.StatusCreated},
+	}
+	for _, testCase := range testCases {
+		t.Run(testCase.name, func(t *testing.T) {
+			t.Parallel()
 
-	request := httptest.NewRequest(http.MethodGet, "/api/health", http.NoBody)
-	require.PanicsWithValue(t, "panic-value-sensitive-marker", func() {
-		handler.ServeHTTP(httptest.NewRecorder(), request)
-	})
+			var logs bytes.Buffer
+			logger := slog.New(slog.NewJSONHandler(&logs, nil))
+			handler := httpx.RequestLogger(logger)(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+				if testCase.writtenStatus != 0 {
+					w.WriteHeader(testCase.writtenStatus)
+				}
+				panic("panic-value-sensitive-marker")
+			}))
 
-	records := readJSONLogRecords(t, logs.Bytes())
-	require.Equal(t, []logRecord{
-		{Msg: "request started", Level: "INFO", Method: http.MethodGet, Path: "/api/health", RemoteAddr: request.RemoteAddr},
-		{Msg: "request completed", Level: "ERROR", Method: http.MethodGet, Path: "/api/health", Status: new(http.StatusInternalServerError), Bytes: new(0), DurationRecorded: true, Panicked: new(true)},
-	}, records)
-	require.NotContains(t, logs.String(), "panic-value-sensitive-marker")
-}
+			request := httptest.NewRequest(http.MethodGet, "/api/health", http.NoBody)
+			require.PanicsWithValue(t, "panic-value-sensitive-marker", func() {
+				handler.ServeHTTP(httptest.NewRecorder(), request)
+			})
 
-func TestRequestLoggerLogsPanickedRequestsAfterWritingHeader(t *testing.T) {
-	t.Parallel()
-
-	var logs bytes.Buffer
-	logger := slog.New(slog.NewJSONHandler(&logs, nil))
-	handler := httpx.RequestLogger(logger)(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
-		w.WriteHeader(http.StatusCreated)
-		panic("panic-value-sensitive-marker")
-	}))
-
-	request := httptest.NewRequest(http.MethodGet, "/api/health", http.NoBody)
-	require.PanicsWithValue(t, "panic-value-sensitive-marker", func() {
-		handler.ServeHTTP(httptest.NewRecorder(), request)
-	})
-
-	records := readJSONLogRecords(t, logs.Bytes())
-	require.Equal(t, []logRecord{
-		{Msg: "request started", Level: "INFO", Method: http.MethodGet, Path: "/api/health", RemoteAddr: request.RemoteAddr},
-		{Msg: "request completed", Level: "ERROR", Method: http.MethodGet, Path: "/api/health", Status: new(http.StatusCreated), Bytes: new(0), DurationRecorded: true, Panicked: new(true)},
-	}, records)
-	require.NotContains(t, logs.String(), "panic-value-sensitive-marker")
+			records := readJSONLogRecords(t, logs.Bytes())
+			require.Equal(t, []logRecord{
+				{Msg: "request started", Level: "INFO", Method: http.MethodGet, Path: "/api/health", RemoteAddr: request.RemoteAddr},
+				{Msg: "request completed", Level: "ERROR", Method: http.MethodGet, Path: "/api/health", Status: new(testCase.wantStatus), Bytes: new(0), DurationRecorded: true, Panicked: new(true)},
+			}, records)
+			require.NotContains(t, logs.String(), "panic-value-sensitive-marker")
+		})
+	}
 }
 
 type logRecord struct {
