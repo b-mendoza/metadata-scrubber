@@ -5,9 +5,6 @@ import { beforeAll, describe, expect, it } from "vitest";
 
 import { PLUGIN_NAMES, SEVERITY_LEVELS } from "./constants.ts";
 
-const NO_DIAGNOSTICS = 0;
-const ONE_DIAGNOSTIC = 1;
-
 const CONFIG_LOAD_TIMEOUT_MS = 30_000;
 
 const createLinter = () =>
@@ -147,74 +144,78 @@ describe("effective import restrictions after the Oxlint bridge", () => {
   });
   it.each([
     [
-      "positive",
-      'import { strictEqual as expectTypeOf } from "node:assert";\n\nimport { expect, test } from "vitest";\n\ntest("allows a non-Vitest function with the same name", () => {\n  expectTypeOf("value", "value");\n});\n\ntest("allows a parameter with the same name", () => {\n  const callLocalExpectation = (\n    expectTypeOf: (value: unknown) => unknown,\n  ): unknown => expectTypeOf("value");\n\n  expect(callLocalExpectation((value) => value)).toBe("value");\n});\n',
-      NO_DIAGNOSTICS,
+      "allows non-Vitest imports and parameters named expectTypeOf",
+      'import { strictEqual as expectTypeOf } from "node:assert";\nexpectTypeOf("value", "value");\nconst callLocalExpectation = (expectTypeOf: (value: unknown) => unknown) => expectTypeOf("value");',
+      [],
     ],
     [
-      "negative",
-      'import { expectTypeOf as assertType, test } from "vitest";\n\ntest("re-tests a static type through an alias", () => {\n  assertType("value").toEqualTypeOf<string>();\n});\n',
-      ONE_DIAGNOSTIC,
+      "rejects aliased Vitest type assertion imports",
+      'import { expectTypeOf as assertType } from "vitest";\nassertType("value").toEqualTypeOf<string>();',
+      [`${PLUGIN_NAMES.CorePolicy}/test-type-assertion-import`],
     ],
-  ])("preserves the expectTypeOf %s fixture", async (_name, code, count) => {
+  ])("%s", async (_name, code, ruleIds) => {
     const [result] = await linter.lintText(code, {
       filePath: "src/policy.mod.test.ts",
     });
     expect.assert(result != null);
-    expect(result.messages).toHaveLength(count);
-    expect(
-      result.messages.every(
-        ({ ruleId }) =>
-          ruleId === `${PLUGIN_NAMES.CorePolicy}/test-type-assertion-import`,
-      ),
-    ).toBe(true);
+    expect(result.messages.map(({ ruleId }) => ruleId)).toEqual(ruleIds);
+    expect(result.messages.map(({ severity }) => severity)).toEqual(
+      ruleIds.map(() => SEVERITY_LEVELS.Error),
+    );
   });
 
   it.each([
     [
       "src/policy.mod.test.ts",
       'import * as vitest from "vitest";',
-      ONE_DIAGNOSTIC,
+      [`${PLUGIN_NAMES.CorePolicy}/test-type-assertion-import`],
     ],
     [
       "src/policy.mod.test.ts",
       'import type { expectTypeOf } from "vitest";',
-      NO_DIAGNOSTICS,
+      [],
     ],
+    ["src/policy.mod.test.ts", 'import type * as vitest from "vitest";', []],
     [
       "src/policy.mod.test.ts",
-      'import type * as vitest from "vitest";',
-      NO_DIAGNOSTICS,
+      'expectTypeOf("value");',
+      ["no-restricted-globals"],
     ],
-    ["src/policy.mod.test.ts", 'expectTypeOf("value");', ONE_DIAGNOSTIC],
+    ["src/policy.mod.ts", 'import { expectTypeOf } from "vitest";', []],
     [
-      "src/policy.mod.ts",
-      'import { expectTypeOf } from "vitest";',
-      NO_DIAGNOSTICS,
+      "eslint-config/policy.test.ts",
+      'expectTypeOf("value");',
+      ["no-restricted-globals"],
     ],
-    ["eslint-config/policy.test.ts", 'expectTypeOf("value");', ONE_DIAGNOSTIC],
     [
       "scripts/policy.test.ts",
       'import { expectTypeOf } from "vitest";',
-      ONE_DIAGNOSTIC,
+      [`${PLUGIN_NAMES.CorePolicy}/test-type-assertion-import`],
     ],
     [
       "src/policy.mod.server.test.ts",
       'import { expectTypeOf } from "vitest";',
-      ONE_DIAGNOSTIC,
+      [`${PLUGIN_NAMES.CorePolicy}/test-type-assertion-import`],
     ],
     [
       "src/routes/-policy.test.tsx",
       'import { expectTypeOf } from "vitest";',
-      ONE_DIAGNOSTIC,
+      [`${PLUGIN_NAMES.CorePolicy}/test-type-assertion-import`],
     ],
-    ["src/policy.test.mts", 'expectTypeOf("value");', ONE_DIAGNOSTIC],
+    [
+      "src/policy.test.mts",
+      'expectTypeOf("value");',
+      ["no-restricted-globals"],
+    ],
   ])(
     "checks static type assertions in %s: %s",
-    async (filePath, code, count) => {
+    async (filePath, code, ruleIds) => {
       const [result] = await linter.lintText(code, { filePath });
       expect.assert(result != null);
-      expect(result.messages).toHaveLength(count);
+      expect(result.messages.map(({ ruleId }) => ruleId)).toEqual(ruleIds);
+      expect(result.messages.map(({ severity }) => severity)).toEqual(
+        ruleIds.map(() => SEVERITY_LEVELS.Error),
+      );
       expect(
         result.messages.every(({ message }) =>
           message.includes(
