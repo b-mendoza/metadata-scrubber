@@ -68,18 +68,6 @@ const loveConfigs = defineConfig(
   love,
 );
 
-const noUnsanitizedConfigs = defineConfig({
-  // @ts-expect-error TS2322: eslint-plugin-no-unsanitized configs use @types/eslint 9 LanguageOptions without a string index signature.
-  plugins: {
-    [PLUGIN_NAMES.NoUnsanitized]: noUnsanitized,
-  },
-  rules: {
-    // HTML sinks need sanitized values to prevent injection.
-    [`${PLUGIN_NAMES.NoUnsanitized}/method`]: SEVERITY_LEVELS.Error,
-    [`${PLUGIN_NAMES.NoUnsanitized}/property`]: SEVERITY_LEVELS.Error,
-  },
-});
-
 const oxlintConfigs = defineConfig(
   // @ts-expect-error TS2345: eslint-plugin-oxlint returns configs with @types/eslint 9 LanguageOptions without a string index signature.
   oxlint.buildFromOxlintConfigFile("./.oxlintrc.json", {
@@ -113,7 +101,17 @@ export default defineConfig(
   eslintPluginZod.configs.strict,
   eslintPluginZod.configs.stylistic,
   ...regexpRules,
-  ...noUnsanitizedConfigs,
+  {
+    // @ts-expect-error TS2322: eslint-plugin-no-unsanitized configs use @types/eslint 9 LanguageOptions without a string index signature.
+    plugins: {
+      [PLUGIN_NAMES.NoUnsanitized]: noUnsanitized,
+    },
+    rules: {
+      // HTML sinks need sanitized values to prevent injection.
+      [`${PLUGIN_NAMES.NoUnsanitized}/method`]: SEVERITY_LEVELS.Error,
+      [`${PLUGIN_NAMES.NoUnsanitized}/property`]: SEVERITY_LEVELS.Error,
+    },
+  },
   ...tailwindcssRules,
   ...reactRules,
   {
