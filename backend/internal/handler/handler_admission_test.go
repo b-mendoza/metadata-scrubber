@@ -52,90 +52,77 @@ func TestSaturatedAdmissionReturnsRetryable503WithoutDownloadingWaitingSource(t 
 	}
 	observer.waitForDownloads(t)
 
-	scenario := saturatedAdmissionTest{handler: handler, observer: observer, fake: fake}
-	t.Run("retry delay", scenario.testRetryDelay)
-	t.Run("canceled wait", scenario.testCanceledWait)
-	t.Run("exact cache hit", scenario.testExactCacheHit)
+	t.Run("retry delay", func(t *testing.T) {
+		jitterValues := []int{0, 2}
+		jitterCalls := 0
+		handler.admissionJitter = func() int {
+			value := jitterValues[jitterCalls]
+			jitterCalls++
+			return value
+		}
+		for _, wantHeader := range []string{"2", "4"} {
+			startedAt := time.Now()
+			body, err := json.Marshal(dryRunRequest{StorageKey: storageKeyPrefix + fileIDThree})
+			require.NoError(t, err)
+			request := httptest.NewRequest(http.MethodPost, "/api/files/dry-run", bytes.NewReader(body))
+			request.Header.Set(header.ContentType, mediatype.JSON)
+			recorder := httptest.NewRecorder()
+			bindings.Inject(bindings.Bindings{Storage: observer})(http.HandlerFunc(handler.DryRun)).ServeHTTP(recorder, request)
+			elapsed := time.Since(startedAt)
+
+			require.Equal(t, http.StatusServiceUnavailable, recorder.Code, recorder.Body.String())
+			require.Equal(t, wantHeader, recorder.Header().Get(header.RetryAfter))
+			require.Equal(t, admissionTimeoutMessage, errorMessage(t, recorder))
+			require.GreaterOrEqual(t, elapsed, handler.admissionTimeout)
+			require.False(t, observer.downloadObserved(fileIDThree))
+		}
+		require.Equal(t, 2, jitterCalls)
+	})
+
+	t.Run("canceled wait", func(t *testing.T) {
+		ctx, cancel := context.WithCancel(context.Background())
+		cancel()
+		body, err := json.Marshal(dryRunRequest{StorageKey: storageKeyPrefix + fileIDThree})
+		require.NoError(t, err)
+		request := httptest.NewRequestWithContext(ctx, http.MethodPost, "/api/files/dry-run", bytes.NewReader(body))
+		request.Header.Set(header.ContentType, mediatype.JSON)
+		recorder := httptest.NewRecorder()
+		bindings.Inject(bindings.Bindings{Storage: observer})(http.HandlerFunc(handler.DryRun)).ServeHTTP(recorder, request)
+
+		require.Equal(t, http.StatusRequestTimeout, recorder.Code)
+		require.Equal(t, cancellationMessage, errorMessage(t, recorder))
+		require.Empty(t, recorder.Header().Get(header.RetryAfter))
+		require.False(t, observer.downloadObserved(fileIDThree))
+	})
+
+	t.Run("exact cache hit", func(t *testing.T) {
+		require.NoError(t, fake.SetSanitized(fileIDThree, canonicalETagThree, []byte("clean")))
+		var cleanCalls atomic.Int64
+		handler.clean = func(context.Context, []byte) ([]byte, error) {
+			cleanCalls.Add(1)
+			return nil, nil
+		}
+		body, err := json.Marshal(scrubRequest{StorageKey: storageKeyPrefix + fileIDThree, ETag: canonicalETagThree})
+		require.NoError(t, err)
+		request := httptest.NewRequest(http.MethodPost, "/api/files/scrub", bytes.NewReader(body))
+		request.Header.Set(header.ContentType, mediatype.JSON)
+		recorder := httptest.NewRecorder()
+		bindings.Inject(bindings.Bindings{Storage: observer})(http.HandlerFunc(handler.Scrub)).ServeHTTP(recorder, request)
+
+		require.Equal(t, http.StatusOK, recorder.Code, recorder.Body.String())
+		require.Zero(t, cleanCalls.Load())
+		require.False(t, observer.downloadObserved(fileIDThree))
+		var operations []storage.FakeOperation
+		for _, call := range fake.Calls() {
+			if call.FileID == fileIDThree {
+				operations = append(operations, call.Operation)
+			}
+		}
+		require.Equal(t, []storage.FakeOperation{storage.FakeSourceExists, storage.FakeSanitizedExists, storage.FakePresignSanitizedDownload}, operations)
+	})
 
 	close(observer.downloadRelease)
 	requireResponsesSuccess(t, holderResponses)
-}
-
-type saturatedAdmissionTest struct {
-	handler  *Handler
-	observer *blockingStorage
-	fake     *storage.Fake
-}
-
-func (scenario saturatedAdmissionTest) testRetryDelay(t *testing.T) {
-	jitterValues := []int{0, 2}
-	jitterCalls := 0
-	scenario.handler.admissionJitter = func() int {
-		value := jitterValues[jitterCalls]
-		jitterCalls++
-		return value
-	}
-	for index, wantHeader := range []string{"2", "4"} {
-		startedAt := time.Now()
-		body, err := json.Marshal(dryRunRequest{StorageKey: storageKeyPrefix + fileIDThree})
-		require.NoError(t, err)
-		request := httptest.NewRequest(http.MethodPost, "/api/files/dry-run", bytes.NewReader(body))
-		request.Header.Set(header.ContentType, mediatype.JSON)
-		recorder := httptest.NewRecorder()
-		bindings.Inject(bindings.Bindings{Storage: scenario.observer})(http.HandlerFunc(scenario.handler.DryRun)).ServeHTTP(recorder, request)
-		elapsed := time.Since(startedAt)
-
-		require.Equal(t, http.StatusServiceUnavailable, recorder.Code, recorder.Body.String())
-		require.Equal(t, wantHeader, recorder.Header().Get(header.RetryAfter))
-		require.Equal(t, admissionTimeoutMessage, errorMessage(t, recorder))
-		if index == 0 {
-			require.GreaterOrEqual(t, elapsed, scenario.handler.admissionTimeout)
-		}
-		require.False(t, scenario.observer.downloadObserved(fileIDThree))
-	}
-	require.Equal(t, 2, jitterCalls)
-}
-
-func (scenario saturatedAdmissionTest) testCanceledWait(t *testing.T) {
-	ctx, cancel := context.WithCancel(context.Background())
-	cancel()
-	body, err := json.Marshal(dryRunRequest{StorageKey: storageKeyPrefix + fileIDThree})
-	require.NoError(t, err)
-	request := httptest.NewRequestWithContext(ctx, http.MethodPost, "/api/files/dry-run", bytes.NewReader(body))
-	request.Header.Set(header.ContentType, mediatype.JSON)
-	recorder := httptest.NewRecorder()
-	bindings.Inject(bindings.Bindings{Storage: scenario.observer})(http.HandlerFunc(scenario.handler.DryRun)).ServeHTTP(recorder, request)
-
-	require.Equal(t, http.StatusRequestTimeout, recorder.Code)
-	require.Equal(t, cancellationMessage, errorMessage(t, recorder))
-	require.Empty(t, recorder.Header().Get(header.RetryAfter))
-	require.False(t, scenario.observer.downloadObserved(fileIDThree))
-}
-
-func (scenario saturatedAdmissionTest) testExactCacheHit(t *testing.T) {
-	require.NoError(t, scenario.fake.SetSanitized(fileIDThree, canonicalETagThree, []byte("clean")))
-	var cleanCalls atomic.Int64
-	scenario.handler.clean = func(context.Context, []byte) ([]byte, error) {
-		cleanCalls.Add(1)
-		return nil, nil
-	}
-	body, err := json.Marshal(scrubRequest{StorageKey: storageKeyPrefix + fileIDThree, ETag: canonicalETagThree})
-	require.NoError(t, err)
-	request := httptest.NewRequest(http.MethodPost, "/api/files/scrub", bytes.NewReader(body))
-	request.Header.Set(header.ContentType, mediatype.JSON)
-	recorder := httptest.NewRecorder()
-	bindings.Inject(bindings.Bindings{Storage: scenario.observer})(http.HandlerFunc(scenario.handler.Scrub)).ServeHTTP(recorder, request)
-
-	require.Equal(t, http.StatusOK, recorder.Code, recorder.Body.String())
-	require.Zero(t, cleanCalls.Load())
-	require.False(t, scenario.observer.downloadObserved(fileIDThree))
-	var operations []storage.FakeOperation
-	for _, call := range scenario.fake.Calls() {
-		if call.FileID == fileIDThree {
-			operations = append(operations, call.Operation)
-		}
-	}
-	require.Equal(t, []storage.FakeOperation{storage.FakeSourceExists, storage.FakeSanitizedExists, storage.FakePresignSanitizedDownload}, operations)
 }
 
 func TestDryRunAndScrubReleasePermitsAfterPanic(t *testing.T) {
