@@ -1429,6 +1429,23 @@
       }
     },
     {
+      "files": ["oxlint-plugin-metadata-scrubber/rules/*.ts"],
+      "rules": {
+        "core-policy/rule-contract": [
+          "error",
+          {
+            "selector": "CallExpression[callee.object.name='context']:matches([callee.property.name='report'], [callee.property.value='report']) > ObjectExpression > Property:matches([key.name='message'], [key.value='message'])",
+            "message": "context.report uses inline message text instead of a shared template. Add the template to meta.messages, then report with messageId and data so diagnostics stay consistent."
+          },
+          {
+            "selector": "ExportDefaultDeclaration:not([declaration.type='CallExpression'][declaration.callee.name='defineRule'])",
+            "message": "This default export does not show the defineRule call that checks the rule contract. Use export default defineRule({ meta, create }) so the export states that contract."
+          }
+        ]
+      },
+      "jsPlugins": ["./eslint-config/core-policy-rules.ts"]
+    },
+    {
       "files": [
         "**/*.test.{ts,tsx,mts,mtsx,cts,ctsx,js,jsx,mjs,mjsx,cjs,cjsx}"
       ],
