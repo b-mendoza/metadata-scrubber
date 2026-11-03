@@ -1,4 +1,3 @@
-import { defineConfig } from "eslint/config";
 import { builtinRules } from "eslint/use-at-your-own-risk";
 
 import { PLUGIN_NAMES } from "./constants.ts";
@@ -33,9 +32,3 @@ const corePolicyPlugin = {
 };
 
 export default corePolicyPlugin;
-
-export const corePolicyRules = defineConfig({
-  plugins: {
-    [PLUGIN_NAMES.CorePolicy]: corePolicyPlugin,
-  },
-});
