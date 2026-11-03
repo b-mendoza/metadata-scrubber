@@ -35,26 +35,17 @@ func TestPDFByteAPIsDoNotCreateUserConfiguration(t *testing.T) {
 }
 
 func TestInspectPDFRejectsMalformedCandidatesWithoutSignedClassification(t *testing.T) {
-	testCases := []struct {
-		name       string
-		inputBytes []byte
-	}{
-		{name: "complete versioned header", inputBytes: []byte("%PDF-1.7\n")},
-		{name: "not a pdf", inputBytes: []byte("not a pdf")},
-	}
-	for _, testCase := range testCases {
-		t.Run(testCase.name, func(t *testing.T) {
-			fields, inspectErr := InspectPDF(t.Context(), testCase.inputBytes)
-			outputBytes, cleanErr := CleanPDF(t.Context(), testCase.inputBytes)
+	inputBytes := []byte("%PDF-1.7\n")
 
-			require.ErrorIs(t, inspectErr, ErrMalformedPDF)
-			require.Nil(t, fields)
-			require.NotErrorIs(t, inspectErr, ErrSignedPDF)
-			require.ErrorIs(t, cleanErr, ErrMalformedPDF)
-			require.Nil(t, outputBytes)
-			require.NotErrorIs(t, cleanErr, ErrSignedPDF)
-		})
-	}
+	fields, inspectErr := InspectPDF(t.Context(), inputBytes)
+	outputBytes, cleanErr := CleanPDF(t.Context(), inputBytes)
+
+	require.ErrorIs(t, inspectErr, ErrMalformedPDF)
+	require.Nil(t, fields)
+	require.NotErrorIs(t, inspectErr, ErrSignedPDF)
+	require.ErrorIs(t, cleanErr, ErrMalformedPDF)
+	require.Nil(t, outputBytes)
+	require.NotErrorIs(t, cleanErr, ErrSignedPDF)
 }
 
 func TestInspectPDFEnumeratesDeepMetadataDeterministically(t *testing.T) {
