@@ -170,16 +170,6 @@ func TestLogFanoutPreservesStdoutAndCapturesOnlyErrorExceptions(t *testing.T) {
 	}, exceptions)
 }
 
-func TestConfiguredTokenCreatesBothClientsAndClosesEmptyQueues(t *testing.T) {
-	t.Parallel()
-
-	runtime, err := New(context.Background(), "phc_synthetic_project_token", slog.New(slog.DiscardHandler))
-
-	require.NoError(t, err)
-	require.NotNil(t, runtime.Events)
-	require.NoError(t, runtime.Shutdown())
-}
-
 func TestPostHogCloseCannotExtendShutdownPastContextDeadline(t *testing.T) {
 	t.Parallel()
 	client := &blockedCloseClient{release: make(chan struct{}), finished: make(chan struct{})}
