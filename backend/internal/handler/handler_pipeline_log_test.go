@@ -22,18 +22,27 @@ import (
 
 func TestPipelineLogsRecordRequiredSuccessFacts(t *testing.T) {
 	fake := storage.NewFake()
-	require.NoError(t, fake.SetSource(fileIDOne, storage.SourceObject{PDFBytes: []byte("%PDF-one"), ETag: canonicalETagOne}))
+	require.NoError(t, fake.SetSource(fileIDOne, storage.SourceObject{
+		PDFBytes: []byte("%PDF-source-bytes-secret"),
+		Metadata: map[string]string{"private-object-marker": "private-metadata-marker"},
+		ETag:     "eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee",
+	}))
 	require.NoError(t, fake.SetSource(fileIDTwo, storage.SourceObject{PDFBytes: []byte("%PDF-two"), ETag: canonicalETagTwo}))
+	objectStorage := &sensitiveGrantStorage{Storage: fake}
+	var rawLogs bytes.Buffer
 	logs := &pipelineLogHandler{Handler: slog.DiscardHandler}
 	handler := newTestHandler(t)
-	handler.logger = slog.New(logs)
+	handler.inspect = func(context.Context, []byte) ([]scrub.Field, error) {
+		return []scrub.Field{{Name: "title", Preview: "metadata-preview-secret", Action: scrub.ActionRemove}}, nil
+	}
+	handler.logger = slog.New(slog.NewMultiHandler(logs, slog.NewJSONHandler(&rawLogs, nil)))
 
-	uploadBody, err := json.Marshal(uploadRequest{FileName: "report.pdf", FileSizeBytes: 1})
+	uploadBody, err := json.Marshal(uploadRequest{FileName: "request-name-secret.pdf", FileSizeBytes: 1})
 	require.NoError(t, err)
 	uploadRequest := httptest.NewRequest(http.MethodPost, "/api/files/upload", bytes.NewReader(uploadBody))
 	uploadRequest.Header.Set(header.ContentType, mediatype.JSON)
 	uploadRecorder := httptest.NewRecorder()
-	bindings.Inject(bindings.Bindings{Storage: fake})(http.HandlerFunc(handler.Upload)).ServeHTTP(uploadRecorder, uploadRequest)
+	bindings.Inject(bindings.Bindings{Storage: objectStorage})(http.HandlerFunc(handler.Upload)).ServeHTTP(uploadRecorder, uploadRequest)
 	require.Equal(t, http.StatusOK, uploadRecorder.Code, uploadRecorder.Body.String())
 	var grantedUpload uploadResponse
 	require.NoError(t, json.Unmarshal(uploadRecorder.Body.Bytes(), &grantedUpload))
@@ -43,7 +52,7 @@ func TestPipelineLogsRecordRequiredSuccessFacts(t *testing.T) {
 	dryRunRequest := httptest.NewRequest(http.MethodPost, "/api/files/dry-run", bytes.NewReader(dryRunBody))
 	dryRunRequest.Header.Set(header.ContentType, mediatype.JSON)
 	dryRunRecorder := httptest.NewRecorder()
-	bindings.Inject(bindings.Bindings{Storage: fake})(http.HandlerFunc(handler.DryRun)).ServeHTTP(dryRunRecorder, dryRunRequest)
+	bindings.Inject(bindings.Bindings{Storage: objectStorage})(http.HandlerFunc(handler.DryRun)).ServeHTTP(dryRunRecorder, dryRunRequest)
 	require.Equal(t, http.StatusOK, dryRunRecorder.Code, dryRunRecorder.Body.String())
 
 	scrubBody, err := json.Marshal(scrubRequest{StorageKey: storageKeyPrefix + fileIDTwo, ETag: canonicalETagTwo})
@@ -51,7 +60,7 @@ func TestPipelineLogsRecordRequiredSuccessFacts(t *testing.T) {
 	scrubRequest := httptest.NewRequest(http.MethodPost, "/api/files/scrub", bytes.NewReader(scrubBody))
 	scrubRequest.Header.Set(header.ContentType, mediatype.JSON)
 	scrubRecorder := httptest.NewRecorder()
-	bindings.Inject(bindings.Bindings{Storage: fake})(http.HandlerFunc(handler.Scrub)).ServeHTTP(scrubRecorder, scrubRequest)
+	bindings.Inject(bindings.Bindings{Storage: objectStorage})(http.HandlerFunc(handler.Scrub)).ServeHTTP(scrubRecorder, scrubRequest)
 	require.Equal(t, http.StatusOK, scrubRecorder.Code, scrubRecorder.Body.String())
 
 	require.Equal(t, []pipelineLogRecord{
@@ -62,6 +71,24 @@ func TestPipelineLogsRecordRequiredSuccessFacts(t *testing.T) {
 		{Message: "pipeline stage", Stage: "scrubbed", Level: slog.LevelInfo, StorageKeyDigest: storageKeyDigestTwo, Outcome: "success", DurationRecorded: true},
 		{Message: "pipeline stage", Stage: "presigned", Level: slog.LevelInfo, StorageKeyDigest: storageKeyDigestTwo, Outcome: "success", DurationRecorded: true},
 	}, logs.records)
+	raw := rawLogs.String()
+	require.Contains(t, raw, `"storage_key_digest":"`+storageKeyDigestOne+`"`)
+	for _, secret := range []string{
+		string(grantedUpload.StorageKey),
+		storageKeyPrefix + fileIDOne,
+		storageKeyPrefix + fileIDTwo,
+		"source-bytes-secret",
+		"private-object-marker",
+		"private-metadata-marker",
+		"metadata-preview-secret",
+		"eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee",
+		canonicalETagTwo,
+		"request-name-secret",
+		"upload-url-secret",
+		"credential-secret",
+	} {
+		require.NotContains(t, raw, secret)
+	}
 }
 
 func TestPipelineLogsRecordFailureCacheHitAndShortCircuitFacts(t *testing.T) {
@@ -175,55 +202,6 @@ func TestPipelineLogsRecordFailureCacheHitAndShortCircuitFacts(t *testing.T) {
 }
 
 func TestPipelineLogsExcludeSeededSensitiveValues(t *testing.T) {
-	t.Run("successful requests", func(t *testing.T) {
-		fake := storage.NewFake()
-		require.NoError(t, fake.SetSource(fileIDOne, storage.SourceObject{
-			PDFBytes: []byte("%PDF-source-bytes-secret"),
-			Metadata: map[string]string{"private-object-marker": "private-metadata-marker"},
-			ETag:     "eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee",
-		}))
-		objectStorage := &sensitiveGrantStorage{Storage: fake}
-		var logs bytes.Buffer
-		handler := newTestHandler(t)
-		handler.inspect = func(context.Context, []byte) ([]scrub.Field, error) {
-			return []scrub.Field{{Name: "title", Preview: "metadata-preview-secret", Action: scrub.ActionRemove}}, nil
-		}
-		handler.logger = slog.New(slog.NewJSONHandler(&logs, nil))
-		uploadBody, err := json.Marshal(uploadRequest{FileName: "request-name-secret.pdf", FileSizeBytes: 1})
-		require.NoError(t, err)
-		uploadRequest := httptest.NewRequest(http.MethodPost, "/api/files/upload", bytes.NewReader(uploadBody))
-		uploadRequest.Header.Set(header.ContentType, mediatype.JSON)
-		uploadRecorder := httptest.NewRecorder()
-		bindings.Inject(bindings.Bindings{Storage: objectStorage})(http.HandlerFunc(handler.Upload)).ServeHTTP(uploadRecorder, uploadRequest)
-		dryRunBody, err := json.Marshal(dryRunRequest{StorageKey: storageKeyPrefix + fileIDOne})
-		require.NoError(t, err)
-		dryRunHTTPRequest := httptest.NewRequest(http.MethodPost, "/api/files/dry-run", bytes.NewReader(dryRunBody))
-		dryRunHTTPRequest.Header.Set(header.ContentType, mediatype.JSON)
-		dryRunRecorder := httptest.NewRecorder()
-		bindings.Inject(bindings.Bindings{Storage: objectStorage})(http.HandlerFunc(handler.DryRun)).ServeHTTP(dryRunRecorder, dryRunHTTPRequest)
-
-		require.Equal(t, http.StatusOK, uploadRecorder.Code, uploadRecorder.Body.String())
-		var grantedUpload uploadResponse
-		require.NoError(t, json.Unmarshal(uploadRecorder.Body.Bytes(), &grantedUpload))
-		require.Equal(t, http.StatusOK, dryRunRecorder.Code, dryRunRecorder.Body.String())
-		rawLogs := logs.String()
-		require.Contains(t, rawLogs, `"storage_key_digest":"`+storageKeyDigestOne+`"`)
-		for _, secret := range []string{
-			string(grantedUpload.StorageKey),
-			storageKeyPrefix + fileIDOne,
-			"source-bytes-secret",
-			"private-object-marker",
-			"private-metadata-marker",
-			"metadata-preview-secret",
-			"eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee",
-			"request-name-secret",
-			"upload-url-secret",
-			"credential-secret",
-		} {
-			require.NotContains(t, rawLogs, secret)
-		}
-	})
-
 	t.Run("dependency failure", func(t *testing.T) {
 		fake := storage.NewFake()
 		fake.SetFailure(storage.FakeDownloadSource, errors.New("dependency-error-sensitive-marker"))
