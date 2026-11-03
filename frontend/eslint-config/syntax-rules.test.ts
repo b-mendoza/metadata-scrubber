@@ -17,6 +17,7 @@ const RULE_IDS = {
   TestObjectType: `${PLUGIN_NAMES.CorePolicy}/test-object-type`,
   ModuleFileName: `${PLUGIN_NAMES.CorePolicy}/module-file-name`,
   ModuleJSX: `${PLUGIN_NAMES.CorePolicy}/module-jsx`,
+  FilenameCase: `${PLUGIN_NAMES.Unicorn}/filename-case`,
 };
 const SYNTAX_RULE_IDS = new Set(Object.values(RULE_IDS));
 
@@ -317,7 +318,7 @@ const cases: readonly SyntaxCase[] = [
   ],
 ];
 
-describe("effective syntax policies after the Oxlint bridge", () => {
+describe("effective syntax and filename policies after the Oxlint bridge", () => {
   const linter = createLinter();
 
   beforeAll(async () => {
@@ -340,4 +341,41 @@ describe("effective syntax policies after the Oxlint bridge", () => {
       );
     },
   );
+
+  it.each([
+    [
+      "allows kebab-case folder and file names",
+      "src/good-folder/good-file.mod.ts",
+      [],
+    ],
+    [
+      "rejects PascalCase folder names",
+      "src/BadFolder/good-file.mod.ts",
+      [RULE_IDS.FilenameCase],
+    ],
+    [
+      "rejects snake_case folder names",
+      "src/bad_folder/good-file.mod.ts",
+      [RULE_IDS.FilenameCase],
+    ],
+    [
+      "rejects deep PascalCase folder names",
+      "src/shared/libs/BadFolder/nested/good-file.mod.ts",
+      [RULE_IDS.FilenameCase],
+    ],
+    [
+      "rejects PascalCase folder names outside src",
+      "eslint-config/BadFolder/good-file.ts",
+      [RULE_IDS.FilenameCase],
+    ],
+    ["allows route folder names", "src/routes/BadFolder/index.tsx", []],
+  ])("%s in %s", async (_name, filePath, ruleIds) => {
+    const [result] = await linter.lintText("export {};", { filePath });
+
+    expect.assert(result != null);
+    expect(result.messages.map(({ ruleId }) => ruleId)).toEqual(ruleIds);
+    expect(result.messages.map(({ severity }) => severity)).toEqual(
+      ruleIds.map(() => SEVERITY_LEVELS.Error),
+    );
+  });
 });
