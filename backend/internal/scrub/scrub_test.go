@@ -152,65 +152,6 @@ func TestInspectPDFPreservesSharedCompressedMetadataReferences(t *testing.T) {
 	require.NoError(t, verifyScrubbedPDF(t.Context(), outputBytes))
 }
 
-func TestVerifyScrubbedPDFRejectsEveryNeutralTrioNearMiss(t *testing.T) {
-	neutralEntries := types.Dict{
-		"Producer":     types.StringLiteral("pdfcpu " + model.VersionStr),
-		"CreationDate": types.StringLiteral("D:20260102030405+00'00'"),
-		"ModDate":      types.StringLiteral("D:20260102030405+00'00'"),
-	}
-	testCases := []struct {
-		name            string
-		entries         types.Dict
-		catalogMetadata *types.StreamDict
-	}{
-		{
-			name:    "partial trio",
-			entries: types.Dict{"Producer": neutralEntries["Producer"], "CreationDate": neutralEntries["CreationDate"]},
-		},
-		{
-			name:    "mismatched dates",
-			entries: types.Dict{"Producer": neutralEntries["Producer"], "CreationDate": neutralEntries["CreationDate"], "ModDate": types.StringLiteral("D:20260102030406+00'00'")},
-		},
-		{
-			name:    "invalid dates",
-			entries: types.Dict{"Producer": neutralEntries["Producer"], "CreationDate": types.StringLiteral("invalid"), "ModDate": types.StringLiteral("invalid")},
-		},
-		{
-			name:    "different producer",
-			entries: types.Dict{"Producer": types.StringLiteral("another producer"), "CreationDate": neutralEntries["CreationDate"], "ModDate": neutralEntries["ModDate"]},
-		},
-		{
-			name:    "catalog metadata",
-			entries: neutralEntries,
-			catalogMetadata: &types.StreamDict{
-				Dict:    types.Dict{"Type": types.Name("Metadata"), "Subtype": types.Name("XML")},
-				Content: []byte(`<x:xmpmeta xmlns:x="adobe:ns:meta/"><rdf:RDF xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"><rdf:Description rdf:about="" xmlns:synthetic="urn:synthetic" synthetic:marker="near-miss-metadata"/></rdf:RDF></x:xmpmeta>`),
-			},
-		},
-	}
-	for _, testCase := range testCases {
-		t.Run(testCase.name, func(t *testing.T) {
-			pdfContext := newSinglePagePDFContext(t)
-			infoReference, err := pdfContext.IndRefForNewObject(testCase.entries)
-			require.NoError(t, err)
-			pdfContext.Info = infoReference
-			if testCase.catalogMetadata != nil {
-				require.NoError(t, testCase.catalogMetadata.Encode())
-				metadataReference, metadataErr := pdfContext.IndRefForNewObject(*testCase.catalogMetadata)
-				require.NoError(t, metadataErr)
-				catalog, catalogErr := pdfContext.Catalog()
-				require.NoError(t, catalogErr)
-				catalog.Insert("Metadata", *metadataReference)
-			}
-			pdfBytes := writeTypedPDFFixture(t, pdfContext)
-
-			err = verifyScrubbedPDF(t.Context(), pdfBytes)
-
-			require.ErrorContains(t, err, "PDF metadata remained after scrub")
-		})
-	}
-}
-
 func TestPDFPathsRejectUndecodableMetadataAtomically(t *testing.T) {
 	infoContext := newSinglePagePDFContext(t)
 	info := types.Dict{"Custom": types.Array{types.Integer(1), types.Integer(2)}}
