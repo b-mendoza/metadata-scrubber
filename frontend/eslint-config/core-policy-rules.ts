@@ -14,16 +14,23 @@ if (restrictedSyntaxRule == null || restrictedImportsRule == null) {
   );
 }
 
+const corePolicyPlugin = {
+  meta: {
+    name: PLUGIN_NAMES.CorePolicy,
+  },
+  rules: {
+    "server-module-state": restrictedSyntaxRule,
+    "test-object-type": restrictedSyntaxRule,
+    "module-file-name": restrictedSyntaxRule,
+    "module-jsx": restrictedSyntaxRule,
+    "test-type-assertion-import": restrictedImportsRule,
+  },
+};
+
+export default corePolicyPlugin;
+
 export const corePolicyRules = defineConfig({
   plugins: {
-    [PLUGIN_NAMES.CorePolicy]: {
-      rules: {
-        "server-module-state": restrictedSyntaxRule,
-        "test-object-type": restrictedSyntaxRule,
-        "module-file-name": restrictedSyntaxRule,
-        "module-jsx": restrictedSyntaxRule,
-        "test-type-assertion-import": restrictedImportsRule,
-      },
-    },
+    [PLUGIN_NAMES.CorePolicy]: corePolicyPlugin,
   },
 });
