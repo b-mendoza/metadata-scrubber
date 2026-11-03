@@ -44,9 +44,8 @@ export const toolingRules = defineConfig(
     files: ["oxlint-plugin-metadata-scrubber/rules/*.ts"],
     rules: {
       // Shared message templates keep diagnostics consistent and testable.
-      "no-restricted-syntax": [
+      [`${PLUGIN_NAMES.CorePolicy}/rule-contract`]: [
         SEVERITY_LEVELS.Error,
-        ...restrictedSyntax,
         {
           selector:
             "CallExpression[callee.object.name='context']:matches([callee.property.name='report'], [callee.property.value='report']) > ObjectExpression > Property:matches([key.name='message'], [key.value='message'])",
