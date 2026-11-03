@@ -143,27 +143,87 @@ func TestCleanPDFReturnsNilOutputWhenPostWriteVerificationFails(t *testing.T) {
 	require.NoError(t, err)
 	pdfContext.Info = infoReference
 	inputBytes := writeTypedPDFFixture(t, pdfContext)
+	neutralEntries := types.Dict{
+		"Producer":     types.StringLiteral("pdfcpu " + model.VersionStr),
+		"CreationDate": types.StringLiteral("D:20260102030405+00'00'"),
+		"ModDate":      types.StringLiteral("D:20260102030405+00'00'"),
+	}
 
 	testCases := []struct {
-		name    string
-		written []byte
+		name            string
+		entries         types.Dict
+		catalogMetadata *types.StreamDict
+		written         []byte
+		wantErrContains string
 	}{
-		{name: "remaining metadata", written: inputBytes},
-		{name: "malformed output", written: inputBytes[:bytes.IndexByte(inputBytes, '\n')+1]},
+		{
+			name:            "remaining metadata",
+			written:         inputBytes,
+			wantErrContains: "PDF metadata remained after scrub",
+		},
+		{
+			name:            "partial trio",
+			entries:         types.Dict{"Producer": neutralEntries["Producer"], "CreationDate": neutralEntries["CreationDate"]},
+			wantErrContains: "PDF metadata remained after scrub",
+		},
+		{
+			name:            "mismatched dates",
+			entries:         types.Dict{"Producer": neutralEntries["Producer"], "CreationDate": neutralEntries["CreationDate"], "ModDate": types.StringLiteral("D:20260102030406+00'00'")},
+			wantErrContains: "PDF metadata remained after scrub",
+		},
+		{
+			name:            "invalid dates",
+			entries:         types.Dict{"Producer": neutralEntries["Producer"], "CreationDate": types.StringLiteral("invalid"), "ModDate": types.StringLiteral("invalid")},
+			wantErrContains: "PDF metadata remained after scrub",
+		},
+		{
+			name:            "different producer",
+			entries:         types.Dict{"Producer": types.StringLiteral("another producer"), "CreationDate": neutralEntries["CreationDate"], "ModDate": neutralEntries["ModDate"]},
+			wantErrContains: "PDF metadata remained after scrub",
+		},
+		{
+			name:    "catalog metadata",
+			entries: neutralEntries,
+			catalogMetadata: &types.StreamDict{
+				Dict:    types.Dict{"Type": types.Name("Metadata"), "Subtype": types.Name("XML")},
+				Content: []byte(`<x:xmpmeta xmlns:x="adobe:ns:meta/"><rdf:RDF xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"><rdf:Description rdf:about="" xmlns:synthetic="urn:synthetic" synthetic:marker="near-miss-metadata"/></rdf:RDF></x:xmpmeta>`),
+			},
+			wantErrContains: "PDF metadata remained after scrub",
+		},
+		{
+			name:            "malformed output",
+			written:         inputBytes[:bytes.IndexByte(inputBytes, '\n')+1],
+			wantErrContains: "",
+		},
 	}
 	for _, testCase := range testCases {
 		t.Run(testCase.name, func(t *testing.T) {
+			written := testCase.written
+			if testCase.entries != nil {
+				outputContext := newSinglePagePDFContext(t)
+				outputInfoReference, infoErr := outputContext.IndRefForNewObject(testCase.entries)
+				require.NoError(t, infoErr)
+				outputContext.Info = outputInfoReference
+				if testCase.catalogMetadata != nil {
+					require.NoError(t, testCase.catalogMetadata.Encode())
+					metadataReference, metadataErr := outputContext.IndRefForNewObject(*testCase.catalogMetadata)
+					require.NoError(t, metadataErr)
+					catalog, catalogErr := outputContext.Catalog()
+					require.NoError(t, catalogErr)
+					catalog.Insert("Metadata", *metadataReference)
+				}
+				written = writeTypedPDFFixture(t, outputContext)
+			}
+
 			outputBytes, err := cleanPDF(t.Context(), inputBytes, func(_ context.Context, _ *model.Context, writer io.Writer) error {
-				_, writeErr := writer.Write(testCase.written)
+				_, writeErr := writer.Write(written)
 				return writeErr
 			})
 
 			require.Error(t, err)
 			require.NotErrorIs(t, err, ErrMalformedPDF)
 			require.Nil(t, outputBytes)
-			if testCase.name == "remaining metadata" {
-				require.ErrorContains(t, err, "PDF metadata remained after scrub")
-			}
+			require.ErrorContains(t, err, testCase.wantErrContains)
 		})
 	}
 }
