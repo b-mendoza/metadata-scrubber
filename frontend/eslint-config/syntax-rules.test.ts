@@ -5,31 +5,26 @@ import { beforeAll, describe, expect, it } from "vitest";
 
 import { PLUGIN_NAMES, SEVERITY_LEVELS } from "./constants.ts";
 
-const NO_DIAGNOSTICS = 0;
-const THREE_DIAGNOSTICS = 3;
-const LIFECYCLE_DIAGNOSTICS = 14;
-const TWO_DIAGNOSTICS = 2;
-const ONE_DIAGNOSTIC = 1;
-
 const CONFIG_LOAD_TIMEOUT_MS = 30_000;
-const SYNTAX_RULE_IDS = new Set([
-  "no-restricted-syntax",
-  `${PLUGIN_NAMES.CorePolicy}/server-try-catch`,
-  `${PLUGIN_NAMES.CorePolicy}/test-instanceof-assertion`,
-  `${PLUGIN_NAMES.CorePolicy}/rule-contract`,
-  `${PLUGIN_NAMES.CorePolicy}/e2e-network-mock`,
-  `${PLUGIN_NAMES.CorePolicy}/playwright-web-server`,
-  `${PLUGIN_NAMES.CorePolicy}/server-module-state`,
-  `${PLUGIN_NAMES.CorePolicy}/test-object-type`,
-  `${PLUGIN_NAMES.CorePolicy}/module-file-name`,
-  `${PLUGIN_NAMES.CorePolicy}/module-jsx`,
-]);
+const RULE_IDS = {
+  RestrictedSyntax: "no-restricted-syntax",
+  ServerTryCatch: `${PLUGIN_NAMES.CorePolicy}/server-try-catch`,
+  TestInstanceofAssertion: `${PLUGIN_NAMES.CorePolicy}/test-instanceof-assertion`,
+  RuleContract: `${PLUGIN_NAMES.CorePolicy}/rule-contract`,
+  E2ENetworkMock: `${PLUGIN_NAMES.CorePolicy}/e2e-network-mock`,
+  PlaywrightWebServer: `${PLUGIN_NAMES.CorePolicy}/playwright-web-server`,
+  ServerModuleState: `${PLUGIN_NAMES.CorePolicy}/server-module-state`,
+  TestObjectType: `${PLUGIN_NAMES.CorePolicy}/test-object-type`,
+  ModuleFileName: `${PLUGIN_NAMES.CorePolicy}/module-file-name`,
+  ModuleJSX: `${PLUGIN_NAMES.CorePolicy}/module-jsx`,
+};
+const SYNTAX_RULE_IDS = new Set(Object.values(RULE_IDS));
 
 type SyntaxCase = readonly [
   name: string,
   filePath: string,
   code: string,
-  count: number,
+  ruleIds: readonly string[],
 ];
 
 const createLinter = () =>
@@ -48,271 +43,277 @@ const createLinter = () =>
 
 const cases: readonly SyntaxCase[] = [
   [
-    "TSX server scope",
+    "rejects mutable state and a server TSX module",
     "src/state.mod.server.tsx",
     "let value = 0;",
-    TWO_DIAGNOSTICS,
+    [RULE_IDS.ModuleFileName, RULE_IDS.ServerModuleState],
   ],
-
   [
-    "tooling test network restriction",
+    "rejects network mocks and local object types in end-to-end tests",
     "e2e/policy.test.ts",
     "page.route('/api', handler); interface Body {}",
-    TWO_DIAGNOSTICS,
+    [RULE_IDS.E2ENetworkMock, RULE_IDS.TestObjectType],
   ],
   [
-    "tooling test rule contract",
+    "rejects default rule exports and local object types in rule tests",
     "oxlint-plugin-metadata-scrubber/rules/policy.test.ts",
     "export default {}; interface Body {}",
-    TWO_DIAGNOSTICS,
+    [RULE_IDS.RuleContract, RULE_IDS.TestObjectType],
   ],
-
   [
-    "no-classes positive",
+    "allows factories and Error instances",
     "src/policy.mod.ts",
-    "export const createService = () => ({ run: () => true });\n\nexport const createServiceError = (message: string, cause: unknown) =>\n  new Error(message, { cause });\n",
-    NO_DIAGNOSTICS,
+    "export const createService = () => ({ run: () => true });\nexport const createServiceError = (message: string, cause: unknown) => new Error(message, { cause });",
+    [],
   ],
   [
-    "no-classes negative",
+    "rejects class declarations, expressions, and Error subclasses",
     "src/policy.mod.ts",
-    "export class Service {}\n\nexport const ServiceExpression = class {};\n\nexport class ServiceError extends Error {}\n",
-    THREE_DIAGNOSTICS,
+    "export class Service {}\nexport const ServiceExpression = class {};\nexport class ServiceError extends Error {}",
+    [
+      RULE_IDS.RestrictedSyntax,
+      RULE_IDS.RestrictedSyntax,
+      RULE_IDS.RestrictedSyntax,
+    ],
   ],
   [
-    "no-lifecycle-hook-names positive",
+    "allows behavior hook names and non-function lifecycle names",
     "src/policy.mod.ts",
-    'export function useUppyDashboard() {}\nexport const useUploadProgress = () => {};\nexport const useMountedState = function () {};\nexport function useInitialValue() {}\nexport const useMount = "an event name, not a hook";\n',
-    NO_DIAGNOSTICS,
+    'export function useUppyDashboard() {}\nexport const useUploadProgress = () => {};\nexport const useMountedState = function () {};\nexport function useInitialValue() {}\nexport const useMount = "event";',
+    [],
   ],
   [
-    "no-lifecycle-hook-names negative",
+    "rejects lifecycle hook names and their suffixes",
     "src/policy.mod.ts",
-    "export function useMount() {}\nexport const useOnMount = () => {};\nexport const useUnmount = function () {};\nexport function useOnUnmount() {}\nexport const useDidMount = () => {};\nexport const useWillUnmount = function () {};\nexport const useEffectOnce = () => {};\nexport const useOnce = function () {};\nexport function useInit() {}\nexport const useInitialize = () => {};\nexport const useFirstRender = function () {};\n\nexport function useMountUploader() {}\nexport const useMount2 = () => {};\nexport const useMount_uploader = () => {};\n",
-    LIFECYCLE_DIAGNOSTICS,
+    "export function useMount() {}\nexport const useOnMount = () => {};\nexport const useUnmount = function () {};\nexport function useOnUnmount() {}\nexport const useDidMount = () => {};\nexport const useWillUnmount = function () {};\nexport const useEffectOnce = () => {};\nexport const useOnce = function () {};\nexport function useInit() {}\nexport const useInitialize = () => {};\nexport const useFirstRender = function () {};\nexport function useMountUploader() {}\nexport const useMount2 = () => {};\nexport const useMount_uploader = () => {};",
+    [
+      RULE_IDS.RestrictedSyntax,
+      RULE_IDS.RestrictedSyntax,
+      RULE_IDS.RestrictedSyntax,
+      RULE_IDS.RestrictedSyntax,
+      RULE_IDS.RestrictedSyntax,
+      RULE_IDS.RestrictedSyntax,
+      RULE_IDS.RestrictedSyntax,
+      RULE_IDS.RestrictedSyntax,
+      RULE_IDS.RestrictedSyntax,
+      RULE_IDS.RestrictedSyntax,
+      RULE_IDS.RestrictedSyntax,
+      RULE_IDS.RestrictedSyntax,
+      RULE_IDS.RestrictedSyntax,
+      RULE_IDS.RestrictedSyntax,
+    ],
   ],
   [
-    "no-mutable-module-state-in-server-code positive",
+    "allows constants and function-local mutable state in server modules",
     "src/policy.mod.server.ts",
-    "export const requestCount = 0;\n\nexport const handleRequest = () => {\n  let localCount = 0;\n  localCount += 1;\n  return localCount;\n};\n",
-    NO_DIAGNOSTICS,
+    "export const requestCount = 0;\nexport const handleRequest = () => { let localCount = 0; localCount += 1; return localCount; };",
+    [],
   ],
   [
-    "no-mutable-module-state-in-server-code negative",
+    "rejects module-level let and var declarations in server modules",
     "src/policy.mod.server.ts",
-    'export let requestCount = 0;\n\nvar requestTotal = 0,\n  requestLabel = "request";\nexport { requestTotal, requestLabel };\n',
-    TWO_DIAGNOSTICS,
+    'export let requestCount = 0;\nvar requestTotal = 0, requestLabel = "request";\nexport { requestTotal, requestLabel };',
+    [RULE_IDS.ServerModuleState, RULE_IDS.ServerModuleState],
   ],
   [
-    "no-test-local-object-type positive",
+    "allows schema-derived types and function type aliases in tests",
     "src/policy.mod.test.ts",
-    'import type { ZodString as Inputs } from "zod";\nimport type * as contracts from "zod";\n\nexport type CreateUpload = (input: contracts.output<Inputs>) => void;\nexport type Upload = contracts.output<Inputs>;\n',
-    NO_DIAGNOSTICS,
+    'import type { ZodString as Inputs } from "zod";\nimport type * as contracts from "zod";\nexport type CreateUpload = (input: contracts.output<Inputs>) => void;\nexport type Upload = contracts.output<Inputs>;',
+    [],
   ],
   [
-    "no-test-local-object-type negative",
+    "rejects local object aliases and interfaces in tests",
     "src/policy.mod.test.ts",
-    "export type Upload = { storageKey: string };\nexport interface ResponseBody {\n  status: string;\n}\n",
-    TWO_DIAGNOSTICS,
+    "export type Upload = { storageKey: string };\nexport interface ResponseBody { status: string; }",
+    [RULE_IDS.TestObjectType, RULE_IDS.TestObjectType],
   ],
-  ["module filename positive", "outside.ts", "export {};\n", NO_DIAGNOSTICS],
+  ["allows module names outside src", "outside.ts", "export {};", []],
   [
-    "module JSX positive",
+    "allows JSX fragments in modules",
     "src/fragment.mod.tsx",
-    "export const fragment = <>text</>;\n",
-    NO_DIAGNOSTICS,
+    "export const fragment = <>text</>;",
+    [],
   ],
   [
-    "module filename positive",
+    "allows server test names",
     "src/plain.mod.server.test.ts",
-    "export {};\n",
-    NO_DIAGNOSTICS,
+    "export {};",
+    [],
   ],
+  ["allows the router entry file", "src/router.tsx", "export {};", []],
+  ["allows route file names", "src/routes/index.tsx", "export {};", []],
+  ["allows the start entry file", "src/start.ts", "export {};", []],
   [
-    "module filename positive",
-    "src/plain.mod.server.ts",
-    "export {};\n",
-    NO_DIAGNOSTICS,
-  ],
-  [
-    "module filename positive",
-    "src/plain.mod.test.ts",
-    "export {};\n",
-    NO_DIAGNOSTICS,
-  ],
-  [
-    "module filename positive",
-    "src/plain.mod.test.tsx",
-    "export {};\n",
-    NO_DIAGNOSTICS,
-  ],
-  [
-    "module filename positive",
-    "src/plain.mod.ts",
-    "export {};\n",
-    NO_DIAGNOSTICS,
-  ],
-  [
-    "module filename positive",
-    "src/router.tsx",
-    "export {};\n",
-    NO_DIAGNOSTICS,
-  ],
-  [
-    "module filename positive",
-    "src/routes/index.tsx",
-    "export {};\n",
-    NO_DIAGNOSTICS,
-  ],
-  ["module filename positive", "src/start.ts", "export {};\n", NO_DIAGNOSTICS],
-  [
-    "module filename positive",
+    "allows the test setup file",
     "src/tests/setup-test-environment.ts",
-    "export {};\n",
-    NO_DIAGNOSTICS,
+    "export {};",
+    [],
   ],
   [
-    "module JSX positive",
+    "allows JSX elements in modules",
     "src/view.mod.tsx",
-    "export const view = <div />;\n",
-    NO_DIAGNOSTICS,
+    "export const view = <div />;",
+    [],
   ],
   [
-    "module filename negative",
+    "rejects source names without mod",
     "src/a-plain.ts",
-    "export {};\n",
-    ONE_DIAGNOSTIC,
+    "export {};",
+    [RULE_IDS.ModuleFileName],
   ],
   [
-    "module JSX negative",
+    "rejects TSX modules without JSX",
     "src/b-empty.mod.tsx",
-    "export {};\n",
-    ONE_DIAGNOSTIC,
+    "export {};",
+    [RULE_IDS.ModuleJSX],
   ],
   [
-    "module filename negative",
+    "rejects server TSX names",
     "src/c-server.mod.server.tsx",
-    "export {};\n",
-    ONE_DIAGNOSTIC,
+    "export {};",
+    [RULE_IDS.ModuleFileName],
   ],
   [
-    "module filename negative",
+    "rejects the test.server suffix order",
     "src/d-test.mod.test.server.ts",
-    "export {};\n",
-    ONE_DIAGNOSTIC,
+    "export {};",
+    [RULE_IDS.ModuleFileName],
   ],
   [
-    "module filename negative",
+    "rejects nested router names without mod",
     "src/nested/router.tsx",
-    "export {};\n",
-    ONE_DIAGNOSTIC,
+    "export {};",
+    [RULE_IDS.ModuleFileName],
   ],
   [
-    "module filename negative",
+    "rejects other setup names without mod",
     "src/tests/other-setup.ts",
-    "export {};\n",
-    ONE_DIAGNOSTIC,
+    "export {};",
+    [RULE_IDS.ModuleFileName],
   ],
   [
-    "module filename negative",
+    "rejects test helper names without mod",
     "src/tests/utils/helper.ts",
-    "export {};\n",
-    ONE_DIAGNOSTIC,
+    "export {};",
+    [RULE_IDS.ModuleFileName],
   ],
   [
-    "global class scope",
+    "rejects classes in tooling",
     "eslint-config/constants.ts",
     "class Service {}",
-    ONE_DIAGNOSTIC,
+    [RULE_IDS.RestrictedSyntax],
   ],
   [
-    "global lifecycle scope",
+    "rejects lifecycle hook names in tooling",
     "eslint-config/constants.ts",
     "const useMount = () => {};",
-    ONE_DIAGNOSTIC,
+    [RULE_IDS.RestrictedSyntax],
   ],
   [
-    "lifecycle suffix boundaries",
+    "allows lifecycle near-matches and non-function names",
     "src/policy.mod.ts",
     "function useMountain() {}\nconst useOnceMore = 1;\nconst useMountedState = () => {};\nconst useInitialValue = () => {};",
-    NO_DIAGNOSTICS,
+    [],
   ],
   [
-    "database server scope",
+    "rejects mutable state and missing mod in database server modules",
     "src/shared/database/store.server.ts",
     "let value = 0;",
-    TWO_DIAGNOSTICS,
+    [RULE_IDS.ModuleFileName, RULE_IDS.ServerModuleState],
   ],
   [
-    "middleware scope",
+    "rejects mutable state in middleware modules",
     "src/shared/middlewares/state.mod.ts",
     "let value = 0;",
-    ONE_DIAGNOSTIC,
+    [RULE_IDS.ServerModuleState],
   ],
-  ["API scope", "src/routes/api/state.ts", "var value = 0;", ONE_DIAGNOSTIC],
   [
-    "server test overlap",
+    "rejects mutable state in API routes",
+    "src/routes/api/state.ts",
+    "var value = 0;",
+    [RULE_IDS.ServerModuleState],
+  ],
+  [
+    "keeps filename and test policies in server tests",
     "src/shared/database/store.server.test.ts",
     "interface Body {}\nexpect(value instanceof Error);",
-    THREE_DIAGNOSTICS,
+    [
+      RULE_IDS.ModuleFileName,
+      RULE_IDS.TestObjectType,
+      RULE_IDS.TestInstanceofAssertion,
+    ],
   ],
   [
-    "middleware test overlap",
+    "keeps state and test policies in middleware tests",
     "src/shared/middlewares/state.mod.test.ts",
     "let value = 0;\ntype Body = {};\nexpect(value instanceof Error);",
-    THREE_DIAGNOSTICS,
+    [
+      RULE_IDS.ServerModuleState,
+      RULE_IDS.TestObjectType,
+      RULE_IDS.TestInstanceofAssertion,
+    ],
   ],
   [
-    "client mutable state",
+    "allows mutable state in client modules",
     "src/policy.mod.ts",
     "let value = 0;",
-    NO_DIAGNOSTICS,
+    [],
   ],
   [
-    "ordinary server suffix",
+    "rejects missing mod in ordinary server names",
     "src/store.server.ts",
     "let value = 0;",
-    ONE_DIAGNOSTIC,
+    [RULE_IDS.ModuleFileName],
   ],
   [
-    "server try restriction",
+    "rejects try statements in server modules",
     "src/policy.mod.server.ts",
     "try {} catch {}",
-    ONE_DIAGNOSTIC,
+    [RULE_IDS.ServerTryCatch],
   ],
   [
-    "source type declaration",
+    "allows object types outside tests",
     "src/policy.mod.ts",
     "interface Body {}",
-    NO_DIAGNOSTICS,
+    [],
   ],
   [
-    "tooling test types",
+    "rejects local object types in tooling tests",
     "eslint-config/policy.test.ts",
     "interface Body {}",
-    ONE_DIAGNOSTIC,
+    [RULE_IDS.TestObjectType],
   ],
   [
-    "test suffix scope",
+    "keeps test policies for mts files",
     "src/policy.test.mts",
     "interface Body {}",
-    TWO_DIAGNOSTICS,
+    [RULE_IDS.ModuleFileName, RULE_IDS.TestObjectType],
   ],
+  ["allows TSX tests without JSX", "src/policy.mod.test.tsx", "export {};", []],
   [
-    "test JSX without JSX",
-    "src/policy.mod.test.tsx",
+    "rejects declaration names without mod",
+    "src/policy.d.ts",
     "export {};",
-    NO_DIAGNOSTICS,
+    [RULE_IDS.ModuleFileName],
   ],
-  ["declaration extension", "src/policy.d.ts", "export {};", ONE_DIAGNOSTIC],
-  ["module CJS extension", "src/policy.cts", "export {};", ONE_DIAGNOSTIC],
-  ["module ESM extension", "src/policy.mts", "export {};", ONE_DIAGNOSTIC],
-  ["JavaScript filename", "src/policy.js", "export {};", NO_DIAGNOSTICS],
   [
-    "route test exemption",
+    "rejects CJS names without mod",
+    "src/policy.cts",
+    "export {};",
+    [RULE_IDS.ModuleFileName],
+  ],
+  [
+    "rejects ESM names without mod",
+    "src/policy.mts",
+    "export {};",
+    [RULE_IDS.ModuleFileName],
+  ],
+  ["allows JavaScript names without mod", "src/policy.js", "export {};", []],
+  [
+    "allows route test names without mod",
     "src/routes/-policy.test.tsx",
     "export {};",
-    NO_DIAGNOSTICS,
+    [],
   ],
 ];
 
@@ -323,57 +324,20 @@ describe("effective syntax policies after the Oxlint bridge", () => {
     await linter.calculateConfigForFile("eslint.config.ts");
   }, CONFIG_LOAD_TIMEOUT_MS);
 
-  it.each([
-    [
-      `${PLUGIN_NAMES.CorePolicy}/server-module-state`,
-      "src/policy.mod.server.ts",
-      "let state = 0;",
-    ],
-    [
-      `${PLUGIN_NAMES.CorePolicy}/test-object-type`,
-      "src/policy.mod.test.ts",
-      "interface Body {}",
-    ],
-    [
-      `${PLUGIN_NAMES.CorePolicy}/module-file-name`,
-      "src/policy.ts",
-      "export {};",
-    ],
-    [
-      `${PLUGIN_NAMES.CorePolicy}/module-jsx`,
-      "src/policy.mod.tsx",
-      "export {};",
-    ],
-  ])(
-    "keeps %s enabled after the bridge in %s",
-    async (ruleId, filePath, code) => {
-      const [result] = await linter.lintText(code, { filePath });
-      expect.assert(result != null);
-      expect(result.messages).toContainEqual(
-        expect.objectContaining({ ruleId, severity: SEVERITY_LEVELS.Error }),
-      );
-    },
-  );
-
   it("keeps the generated route tree ignored", async () => {
     expect(await linter.isPathIgnored("src/routeTree.gen.ts")).toBe(true);
   });
 
   it.each(cases)(
-    "preserves %s in %s",
-    async (...[_name, filePath, code, count]: SyntaxCase) => {
+    "%s in %s",
+    async (...[_name, filePath, code, ruleIds]: SyntaxCase) => {
       const [result] = await linter.lintText(code, { filePath });
 
       expect.assert(result != null);
-      expect(result.messages).toHaveLength(count);
-      expect(
-        result.messages.every(
-          ({ ruleId, severity }) =>
-            ruleId != null &&
-            SYNTAX_RULE_IDS.has(ruleId) &&
-            severity === SEVERITY_LEVELS.Error,
-        ),
-      ).toBe(true);
+      expect(result.messages.map(({ ruleId }) => ruleId)).toEqual(ruleIds);
+      expect(result.messages.map(({ severity }) => severity)).toEqual(
+        ruleIds.map(() => SEVERITY_LEVELS.Error),
+      );
     },
   );
 });
