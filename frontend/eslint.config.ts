@@ -200,11 +200,8 @@ export default defineConfig(
   ...sourceRules,
   ...toolingRules,
   ...testRules,
-  /**
-   * This Oxlint entry turns off ESLint rules that the bridge
-   * maps to enabled Oxlint rules.
-   * The bridge leaves metadata-scrubber rules enabled in ESLint.
-   */
+  // The bridge turns off ESLint rules that map to enabled native Oxlint rules.
+  // metadata-scrubber/* and core-policy/* stay enabled in ESLint.
   ...oxlintConfigs,
   {
     // Keep this block after the bridge, even when .oxlintrc.json enables these rules.
