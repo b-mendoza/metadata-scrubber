@@ -5,8 +5,7 @@ import { SEVERITY_LEVELS } from "./constants.ts";
 const lifecycleHookNamePattern =
   "^use(Mount|OnMount|Unmount|OnUnmount|DidMount|WillUnmount|EffectOnce|Once|Init|Initialize|FirstRender)([A-Z0-9_]|$)";
 
-// Scoped syntax rules must retain these global restrictions.
-export const restrictedSyntax = [
+const restrictedSyntax = [
   {
     selector: "ClassDeclaration, ClassExpression",
     message:
