@@ -6,11 +6,9 @@ import (
 	"encoding/json"
 	"errors"
 	"log/slog"
-	"maps"
 	"net/http"
 	"net/http/httptest"
 	"os"
-	"slices"
 	"testing"
 
 	"github.com/stretchr/testify/require"
@@ -44,18 +42,15 @@ func TestDryRunReturnsReviewedRevisionAndBackendOwnedFields(t *testing.T) {
 	bindings.Inject(bindings.Bindings{Storage: fake})(http.HandlerFunc(handler.DryRun)).ServeHTTP(recorder, request)
 
 	require.Equal(t, http.StatusOK, recorder.Code, recorder.Body.String())
-	var response map[string]json.RawMessage
+	var response dryRunResponse
 	require.NoError(t, json.Unmarshal(recorder.Body.Bytes(), &response))
-	require.ElementsMatch(t, []string{"etag", "fields"}, slices.Collect(maps.Keys(response)))
-	var fields []map[string]json.RawMessage
-	require.NoError(t, json.Unmarshal(response["fields"], &fields))
-	require.Len(t, fields, 2)
-	for index, wantAction := range []string{"remove", "replace"} {
-		require.ElementsMatch(t, []string{"name", "label", "preview", "originalByteSize", "action"}, slices.Collect(maps.Keys(fields[index])))
-		var action publicFieldAction
-		require.NoError(t, json.Unmarshal(fields[index]["action"], &action))
-		require.Equal(t, publicFieldAction(wantAction), action)
-	}
+	require.Equal(t, dryRunResponse{
+		ETag: canonicalETagOne,
+		Fields: []publicField{
+			{Name: "title", Label: "Title", Preview: "private", OriginalByteSize: 7, Action: publicFieldActionRemove},
+			{Name: "producer", Label: "Producer", Preview: "publisher", OriginalByteSize: 9, Action: publicFieldActionReplace},
+		},
+	}, response)
 	require.Equal(t, 1, inspectCalls)
 
 	calls := fake.Calls()
