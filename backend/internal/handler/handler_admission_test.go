@@ -42,7 +42,13 @@ func TestSaturatedAdmissionReturnsRetryable503WithoutDownloadingWaitingSource(t 
 	for _, fileID := range []string{fileIDOne, fileIDTwo} {
 		body, err := json.Marshal(dryRunRequest{StorageKey: storageKey(storageKeyPrefix + fileID)})
 		require.NoError(t, err)
-		go serveAdmissionDryRun(body, handler, observer, holderResponses)
+		go func() {
+			request := httptest.NewRequest(http.MethodPost, "/api/files/dry-run", bytes.NewReader(body))
+			request.Header.Set(header.ContentType, mediatype.JSON)
+			recorder := httptest.NewRecorder()
+			bindings.Inject(bindings.Bindings{Storage: observer})(http.HandlerFunc(handler.DryRun)).ServeHTTP(recorder, request)
+			holderResponses <- recorder
+		}()
 	}
 	observer.waitForDownloads(t)
 
@@ -159,18 +165,32 @@ func TestDryRunAndScrubReleasePermitsAfterPanic(t *testing.T) {
 		bindings.Inject(bindings.Bindings{Storage: fake})(http.HandlerFunc(handler.Scrub)).ServeHTTP(scrubRecorder, scrubHTTPRequest)
 	})
 
-	handler.inspect = func(context.Context, []byte) ([]scrub.Field, error) { return nil, nil }
-	handler.clean = func(_ context.Context, input []byte) ([]byte, error) { return bytes.Clone(input), nil }
-	followUpResponses := make(chan *httptest.ResponseRecorder, 2)
-	followUpDryRunBody, err := json.Marshal(dryRunRequest{StorageKey: storageKeyPrefix + fileIDTwo})
-	require.NoError(t, err)
-	go serveAdmissionDryRun(followUpDryRunBody, handler, observer, followUpResponses)
-	followUpScrubBody, err := json.Marshal(scrubRequest{StorageKey: storageKeyPrefix + fileIDThree, ETag: canonicalETagThree})
-	require.NoError(t, err)
-	go serveAdmissionScrub(followUpScrubBody, handler, observer, followUpResponses)
-	observer.waitForDownloads(t)
-	close(observer.downloadRelease)
-	requireResponsesSuccess(t, followUpResponses)
+	t.Run("follow-up requests", func(t *testing.T) {
+		handler.inspect = func(context.Context, []byte) ([]scrub.Field, error) { return nil, nil }
+		handler.clean = func(_ context.Context, input []byte) ([]byte, error) { return bytes.Clone(input), nil }
+		followUpResponses := make(chan *httptest.ResponseRecorder, 2)
+		followUpDryRunBody, err := json.Marshal(dryRunRequest{StorageKey: storageKeyPrefix + fileIDTwo})
+		require.NoError(t, err)
+		go func() {
+			request := httptest.NewRequest(http.MethodPost, "/api/files/dry-run", bytes.NewReader(followUpDryRunBody))
+			request.Header.Set(header.ContentType, mediatype.JSON)
+			recorder := httptest.NewRecorder()
+			bindings.Inject(bindings.Bindings{Storage: observer})(http.HandlerFunc(handler.DryRun)).ServeHTTP(recorder, request)
+			followUpResponses <- recorder
+		}()
+		followUpScrubBody, err := json.Marshal(scrubRequest{StorageKey: storageKeyPrefix + fileIDThree, ETag: canonicalETagThree})
+		require.NoError(t, err)
+		go func() {
+			request := httptest.NewRequest(http.MethodPost, "/api/files/scrub", bytes.NewReader(followUpScrubBody))
+			request.Header.Set(header.ContentType, mediatype.JSON)
+			recorder := httptest.NewRecorder()
+			bindings.Inject(bindings.Bindings{Storage: observer})(http.HandlerFunc(handler.Scrub)).ServeHTTP(recorder, request)
+			followUpResponses <- recorder
+		}()
+		observer.waitForDownloads(t)
+		close(observer.downloadRelease)
+		requireResponsesSuccess(t, followUpResponses)
+	})
 }
 
 func TestScrubReleasesPermitBeforeUploadingSanitizedBytes(t *testing.T) {
@@ -186,7 +206,13 @@ func TestScrubReleasesPermitBeforeUploadingSanitizedBytes(t *testing.T) {
 	firstResponse := make(chan *httptest.ResponseRecorder, 1)
 	body, err := json.Marshal(scrubRequest{StorageKey: storageKeyPrefix + fileIDOne, ETag: canonicalETagOne})
 	require.NoError(t, err)
-	go serveAdmissionScrub(body, handler, observer, firstResponse)
+	go func() {
+		request := httptest.NewRequest(http.MethodPost, "/api/files/scrub", bytes.NewReader(body))
+		request.Header.Set(header.ContentType, mediatype.JSON)
+		recorder := httptest.NewRecorder()
+		bindings.Inject(bindings.Bindings{Storage: observer})(http.HandlerFunc(handler.Scrub)).ServeHTTP(recorder, request)
+		firstResponse <- recorder
+	}()
 	select {
 	case <-observer.uploadStarted:
 	case <-time.After(time.Second):
@@ -197,7 +223,13 @@ func TestScrubReleasesPermitBeforeUploadingSanitizedBytes(t *testing.T) {
 	for _, fileID := range []string{fileIDTwo, fileIDThree} {
 		body, err := json.Marshal(dryRunRequest{StorageKey: storageKey(storageKeyPrefix + fileID)})
 		require.NoError(t, err)
-		go serveAdmissionDryRun(body, handler, observer, holderResponses)
+		go func() {
+			request := httptest.NewRequest(http.MethodPost, "/api/files/dry-run", bytes.NewReader(body))
+			request.Header.Set(header.ContentType, mediatype.JSON)
+			recorder := httptest.NewRecorder()
+			bindings.Inject(bindings.Bindings{Storage: observer})(http.HandlerFunc(handler.DryRun)).ServeHTTP(recorder, request)
+			holderResponses <- recorder
+		}()
 	}
 	observer.waitForDownloads(t)
 
@@ -299,20 +331,4 @@ func requireResponsesSuccess(t *testing.T, responses <-chan *httptest.ResponseRe
 			require.FailNow(t, "timed out waiting for holder response")
 		}
 	}
-}
-
-func serveAdmissionDryRun(body []byte, handler *Handler, observer *blockingStorage, responses chan *httptest.ResponseRecorder) {
-	request := httptest.NewRequest(http.MethodPost, "/api/files/dry-run", bytes.NewReader(body))
-	request.Header.Set(header.ContentType, mediatype.JSON)
-	recorder := httptest.NewRecorder()
-	bindings.Inject(bindings.Bindings{Storage: observer})(http.HandlerFunc(handler.DryRun)).ServeHTTP(recorder, request)
-	responses <- recorder
-}
-
-func serveAdmissionScrub(body []byte, handler *Handler, observer *blockingStorage, responses chan *httptest.ResponseRecorder) {
-	request := httptest.NewRequest(http.MethodPost, "/api/files/scrub", bytes.NewReader(body))
-	request.Header.Set(header.ContentType, mediatype.JSON)
-	recorder := httptest.NewRecorder()
-	bindings.Inject(bindings.Bindings{Storage: observer})(http.HandlerFunc(handler.Scrub)).ServeHTTP(recorder, request)
-	responses <- recorder
 }
