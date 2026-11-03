@@ -19,6 +19,11 @@ const corePolicyPlugin = {
     name: PLUGIN_NAMES.CorePolicy,
   },
   rules: {
+    "server-try-catch": restrictedSyntaxRule,
+    "test-instanceof-assertion": restrictedSyntaxRule,
+    "rule-contract": restrictedSyntaxRule,
+    "e2e-network-mock": restrictedSyntaxRule,
+    "playwright-web-server": restrictedSyntaxRule,
     "server-module-state": restrictedSyntaxRule,
     "test-object-type": restrictedSyntaxRule,
     "module-file-name": restrictedSyntaxRule,
