@@ -3,7 +3,6 @@ import { defineConfig } from "eslint/config";
 import globals from "globals";
 
 import { PLUGIN_NAMES, SEVERITY_LEVELS } from "./constants.ts";
-import { restrictedSyntax } from "./syntax-rules.ts";
 
 // The plugin message steers fixes to match() or _unsafeUnwrap(). Replace it
 // with the isErr() guard from docs/conventions.md. The rule logic is unchanged.
@@ -67,9 +66,8 @@ export const sourceRules = defineConfig(
     files: ["src/**/*.server.ts"],
     rules: {
       // A broad catch can map programming errors as dependency failures.
-      "no-restricted-syntax": [
+      [`${PLUGIN_NAMES.CorePolicy}/server-try-catch`]: [
         SEVERITY_LEVELS.Error,
-        ...restrictedSyntax,
         {
           selector: "TryStatement",
           message:
