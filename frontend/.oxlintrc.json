@@ -1459,6 +1459,19 @@
       "jsPlugins": ["./eslint-config/core-policy-rules.ts"]
     },
     {
+      "files": ["playwright.config.ts"],
+      "rules": {
+        "core-policy/playwright-web-server": [
+          "error",
+          {
+            "selector": "Property:matches([key.name='webServer'], [key.value='webServer'])",
+            "message": "A webServer property makes Playwright start services. Remove webServer from defineConfig and start the frontend and backend before running the suite."
+          }
+        ]
+      },
+      "jsPlugins": ["./eslint-config/core-policy-rules.ts"]
+    },
+    {
       "files": [
         "**/*.test.{ts,tsx,mts,mtsx,cts,ctsx,js,jsx,mjs,mjsx,cjs,cjsx}"
       ],
