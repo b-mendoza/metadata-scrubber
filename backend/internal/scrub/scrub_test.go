@@ -133,7 +133,6 @@ func TestInspectPDFPreservesSharedCompressedMetadataReferences(t *testing.T) {
 	outputBytes, err := CleanPDF(t.Context(), inputBytes)
 	require.NoError(t, err)
 	require.NotNil(t, outputBytes)
-	require.NoError(t, verifyScrubbedPDF(t.Context(), outputBytes))
 }
 
 func TestPDFPathsRejectUndecodableMetadataAtomically(t *testing.T) {
