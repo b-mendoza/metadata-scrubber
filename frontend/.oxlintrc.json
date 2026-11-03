@@ -1378,6 +1378,19 @@
       "jsPlugins": ["./eslint-config/core-policy-rules.ts"]
     },
     {
+      "files": ["src/**/*.mod.tsx"],
+      "rules": {
+        "core-policy/module-jsx": [
+          "error",
+          {
+            "selector": "Program:not(:has(JSXElement, JSXFragment))",
+            "message": "This .mod.tsx file contains no JSX. Rename it to .mod.ts and update its imports."
+          }
+        ]
+      },
+      "jsPlugins": ["./eslint-config/core-policy-rules.ts"]
+    },
+    {
       "files": [
         "e2e/**/*.ts",
         "playwright.config.ts",
