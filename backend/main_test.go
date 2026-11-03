@@ -69,20 +69,18 @@ func TestNewServerAppliesSettingsAndLogsRequests(t *testing.T) {
 		Status  int    `json:"status"`
 	}
 
-	var completionRecord serverLogRecord
+	var records []serverLogRecord
 	scanner := bufio.NewScanner(bytes.NewReader(logs.Bytes()))
 	for scanner.Scan() {
 		var record serverLogRecord
 		require.NoError(t, json.Unmarshal(scanner.Bytes(), &record))
-		if record.Message == "request completed" {
-			completionRecord = record
-			break
-		}
+		records = append(records, record)
 	}
 	require.NoError(t, scanner.Err())
-	require.Equal(t, "request completed", completionRecord.Message)
-	require.Equal(t, "/api/health", completionRecord.Path)
-	require.Equal(t, http.StatusOK, completionRecord.Status)
+	require.Equal(t, []serverLogRecord{
+		{Message: "request started", Path: "/api/health"},
+		{Message: "request completed", Path: "/api/health", Status: http.StatusOK},
+	}, records)
 }
 
 func TestNewServerHandlesCORSPreflight(t *testing.T) {
