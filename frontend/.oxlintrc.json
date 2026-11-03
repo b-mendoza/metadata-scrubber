@@ -1502,6 +1502,13 @@
         "vitest/valid-expect": "error",
         "vitest/valid-expect-in-promise": "error",
         "vitest/valid-title": "error",
+        "core-policy/test-instanceof-assertion": [
+          "error",
+          {
+            "selector": "CallExpression[callee.name='expect'] > BinaryExpression.arguments[operator='instanceof']",
+            "message": "expect(value instanceof Type) does not narrow value for later assertions. Use expect.assert(value instanceof Type) first, then assert on the narrowed value."
+          }
+        ],
         "vitest/no-conditional-tests": "error",
         "vitest/prefer-each": "error",
         "vitest/warn-todo": "error",
@@ -1529,7 +1536,10 @@
         "sonarjs/async-test-assertions": "off",
         "sonarjs/prefer-specific-assertions": "off"
       },
-      "jsPlugins": ["eslint-plugin-sonarjs"],
+      "jsPlugins": [
+        "./eslint-config/core-policy-rules.ts",
+        "eslint-plugin-sonarjs"
+      ],
       "plugins": ["vitest"]
     },
     {
