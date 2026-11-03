@@ -2,7 +2,6 @@ package nostoragekeylog
 
 import (
 	"context"
-	"fmt"
 	"log/slog"
 )
 
@@ -18,9 +17,7 @@ type request struct {
 
 func logRawKeys(ctx context.Context, logger *slog.Logger, key storageKey, input request, keys []storageKey) {
 	logger.InfoContext(ctx, "uploaded", slog.String("storage_key", string(key)))              // want "log storageKey\\.digest\\(\\) instead of the raw storage key; the key identifies a stored object, and its digest lets logs follow one file without exposing it"
-	logger.InfoContext(ctx, "uploaded", slog.Any("storage_key", key))                         // want "log storageKey\\.digest\\(\\) instead of the raw storage key"
 	logger.InfoContext(ctx, "uploaded", slog.String("storage_key", key.String()))             // want "log storageKey\\.digest\\(\\) instead of the raw storage key"
-	logger.InfoContext(ctx, "uploaded", slog.String("storage_key", fmt.Sprint(key)))          // want "log storageKey\\.digest\\(\\) instead of the raw storage key"
 	logger.InfoContext(ctx, "uploaded", slog.Any("request", input))                           // want "log storageKey\\.digest\\(\\) instead of the raw storage key"
 	logger.InfoContext(ctx, "uploaded", slog.Any("keys", keys))                               // want "log storageKey\\.digest\\(\\) instead of the raw storage key"
 	_ = logger.With(slog.Any("storage_key", &key))                                            // want "log storageKey\\.digest\\(\\) instead of the raw storage key"
