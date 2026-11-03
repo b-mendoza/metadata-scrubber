@@ -261,17 +261,6 @@ func TestSignatureTypeInspectionReturnsMalformedValuesAsErrors(t *testing.T) {
 	}
 }
 
-func buildSignedTimestampPDFFixture(t *testing.T) []byte {
-	t.Helper()
-	signedContext := newSinglePagePDFContext(t)
-	timestampReference, err := signedContext.IndRefForNewObject(types.Dict{"Type": types.Name("DocTimeStamp")})
-	require.NoError(t, err)
-	catalog, err := signedContext.Catalog()
-	require.NoError(t, err)
-	catalog.Insert("SyntheticTimestamp", *timestampReference)
-	return writeTypedPDFFixture(t, signedContext)
-}
-
 type concurrentPDFResult struct {
 	fields     []Field
 	inspectErr error
@@ -284,7 +273,13 @@ func TestPDFByteAPIsKeepConcurrentRequestsIsolated(t *testing.T) {
 	cleanInput := writeTypedPDFFixture(t, cleanContext)
 	metadataInput := buildDeepMetadataPDFFixture(t)
 
-	signedInput := buildSignedTimestampPDFFixture(t)
+	signedContext := newSinglePagePDFContext(t)
+	timestampReference, err := signedContext.IndRefForNewObject(types.Dict{"Type": types.Name("DocTimeStamp")})
+	require.NoError(t, err)
+	catalog, err := signedContext.Catalog()
+	require.NoError(t, err)
+	catalog.Insert("SyntheticTimestamp", *timestampReference)
+	signedInput := writeTypedPDFFixture(t, signedContext)
 
 	inputs := [][]byte{cleanInput, metadataInput, signedInput}
 	results := make([]concurrentPDFResult, len(inputs))
