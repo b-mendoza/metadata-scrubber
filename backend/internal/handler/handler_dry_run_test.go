@@ -120,22 +120,23 @@ func TestConstructedDryRunRejectsStructurallySignedPDFFixtureWithoutMutation(t *
 
 func TestDryRunClassifiesContentAndDependencyFailuresWithoutLeakingDetails(t *testing.T) {
 	tests := []struct {
-		name        string
-		pdfBytes    []byte
-		storageErr  error
-		inspectErr  error
-		wantStatus  int
-		wantMessage string
+		name             string
+		pdfBytes         []byte
+		storageErr       error
+		inspectErr       error
+		wantStatus       int
+		wantMessage      string
+		wantInspectCalls int
 	}{
-		{name: "spoofed content", pdfBytes: []byte("not-pdf"), wantStatus: http.StatusUnsupportedMediaType, wantMessage: "file is not a PDF"},
-		{name: "malformed candidate", pdfBytes: []byte("%PDF-"), inspectErr: scrub.ErrMalformedPDF, wantStatus: http.StatusBadRequest, wantMessage: "invalid PDF"},
-		{name: "caller cancellation", pdfBytes: []byte("%PDF-canceled"), inspectErr: context.Canceled, wantStatus: http.StatusRequestTimeout, wantMessage: cancellationMessage},
-		{name: "caller deadline", pdfBytes: []byte("%PDF-deadline"), inspectErr: context.DeadlineExceeded, wantStatus: http.StatusRequestTimeout, wantMessage: cancellationMessage},
-		{name: "oversized PDF input", pdfBytes: []byte("%PDF-large"), inspectErr: scrub.ErrInputTooLarge, wantStatus: http.StatusRequestEntityTooLarge, wantMessage: "source file exceeds 10 MiB limit"},
-		{name: "inspection limit", pdfBytes: []byte("%PDF-large"), inspectErr: scrub.ErrInspectionLimit, wantStatus: http.StatusBadRequest, wantMessage: "PDF metadata exceeds inspection limits"},
-		{name: "missing source", storageErr: storage.ErrSourceNotFound, wantStatus: http.StatusNotFound, wantMessage: "source file not found"},
-		{name: "oversized source", storageErr: storage.ErrSourceObjectTooLarge, wantStatus: http.StatusRequestEntityTooLarge, wantMessage: "source file exceeds 10 MiB limit"},
-		{name: "dependency failure", storageErr: errors.New("provider-secret"), wantStatus: http.StatusInternalServerError, wantMessage: "could not inspect PDF"},
+		{name: "spoofed content", wantInspectCalls: 0, pdfBytes: []byte("not-pdf"), wantStatus: http.StatusUnsupportedMediaType, wantMessage: "file is not a PDF"},
+		{name: "malformed candidate", wantInspectCalls: 1, pdfBytes: []byte("%PDF-"), inspectErr: scrub.ErrMalformedPDF, wantStatus: http.StatusBadRequest, wantMessage: "invalid PDF"},
+		{name: "caller cancellation", wantInspectCalls: 1, pdfBytes: []byte("%PDF-canceled"), inspectErr: context.Canceled, wantStatus: http.StatusRequestTimeout, wantMessage: cancellationMessage},
+		{name: "caller deadline", wantInspectCalls: 1, pdfBytes: []byte("%PDF-deadline"), inspectErr: context.DeadlineExceeded, wantStatus: http.StatusRequestTimeout, wantMessage: cancellationMessage},
+		{name: "oversized PDF input", wantInspectCalls: 1, pdfBytes: []byte("%PDF-large"), inspectErr: scrub.ErrInputTooLarge, wantStatus: http.StatusRequestEntityTooLarge, wantMessage: "source file exceeds 10 MiB limit"},
+		{name: "inspection limit", wantInspectCalls: 1, pdfBytes: []byte("%PDF-large"), inspectErr: scrub.ErrInspectionLimit, wantStatus: http.StatusBadRequest, wantMessage: "PDF metadata exceeds inspection limits"},
+		{name: "missing source", wantInspectCalls: 0, storageErr: storage.ErrSourceNotFound, wantStatus: http.StatusNotFound, wantMessage: "source file not found"},
+		{name: "oversized source", wantInspectCalls: 0, storageErr: storage.ErrSourceObjectTooLarge, wantStatus: http.StatusRequestEntityTooLarge, wantMessage: "source file exceeds 10 MiB limit"},
+		{name: "dependency failure", wantInspectCalls: 0, storageErr: errors.New("provider-secret"), wantStatus: http.StatusInternalServerError, wantMessage: "could not inspect PDF"},
 	}
 
 	for _, testCase := range tests {
@@ -162,9 +163,7 @@ func TestDryRunClassifiesContentAndDependencyFailuresWithoutLeakingDetails(t *te
 			require.Equal(t, testCase.wantMessage, errorMessage(t, recorder))
 			require.NotContains(t, recorder.Body.String(), "provider-secret")
 			require.NotContains(t, recorder.Body.String(), "dddddddddddddddddddddddddddddddd")
-			if len(testCase.pdfBytes) == 0 || !bytes.HasPrefix(testCase.pdfBytes, []byte("%PDF-")) {
-				require.Zero(t, inspectCalls)
-			}
+			require.Equal(t, testCase.wantInspectCalls, inspectCalls)
 		})
 	}
 }
