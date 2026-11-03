@@ -199,9 +199,7 @@ func TestPipelineLogsRecordFailureCacheHitAndShortCircuitFacts(t *testing.T) {
 			{Message: "pipeline stage", Stage: "presigned", Level: slog.LevelInfo, StorageKeyDigest: storageKeyDigestOne, Outcome: "cache-hit", DurationRecorded: true},
 		}, logs.records)
 	})
-}
 
-func TestPipelineLogsExcludeSeededSensitiveValues(t *testing.T) {
 	t.Run("dependency failure", func(t *testing.T) {
 		fake := storage.NewFake()
 		fake.SetFailure(storage.FakeDownloadSource, errors.New("dependency-error-sensitive-marker"))
