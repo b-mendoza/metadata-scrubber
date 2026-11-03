@@ -27,7 +27,10 @@ import {
   UNSUPPORTED_MEDIA_TYPE_STATUS_CODE,
 } from "#/shared/constants/http/status-codes/status-codes.mod";
 import { createWorkflowHttpClient } from "#/shared/libs/ky/workflow-http-client.mod.server";
-import type { RouterInputs } from "#/shared/libs/trpc/client/client.mod";
+import type {
+  RouterInputs,
+  RouterOutputs,
+} from "#/shared/libs/trpc/client/client.mod";
 import {
   createCallerFactory,
   createTRPCRequestContext,
@@ -221,8 +224,12 @@ test("createUpload rejects an invalid backend upload URL", async () => {
     fileName: "report.pdf",
     fileSizeBytes: ONE_BYTE,
   };
+  const response: RouterOutputs["wizard"]["createUpload"] = {
+    storageKey: STORAGE_KEY,
+    uploadUrl: "ftp://uploads.test/source.pdf",
+  };
   const handler = vi.fn<HttpResponseResolver>(() =>
-    HttpResponse.json({ storageKey: STORAGE_KEY, uploadUrl: "not-a-url" }),
+    HttpResponse.json(response),
   );
   server.use(http.post("https://backend.test/api/uploads", handler));
   const request = new Request(FRONTEND_URL);
