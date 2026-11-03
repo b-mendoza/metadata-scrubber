@@ -3,7 +3,6 @@ import { defineConfig } from "eslint/config";
 import testingLibrary from "eslint-plugin-testing-library";
 
 import { PLUGIN_NAMES, SEVERITY_LEVELS } from "./constants.ts";
-import { restrictedSyntax } from "./syntax-rules.ts";
 
 export const testFiles = [
   "**/*.test.{ts,tsx,mts,mtsx,cts,ctsx,js,jsx,mjs,mjsx,cjs,cjsx}",
@@ -54,9 +53,8 @@ export const testRules = defineConfig(
       ...vitest.configs.recommended.rules,
 
       // Boolean matchers do not narrow the error for later assertions.
-      "no-restricted-syntax": [
+      [`${PLUGIN_NAMES.CorePolicy}/test-instanceof-assertion`]: [
         SEVERITY_LEVELS.Error,
-        ...restrictedSyntax,
         {
           selector:
             "CallExpression[callee.name='expect'] > BinaryExpression.arguments[operator='instanceof']",
