@@ -11,8 +11,6 @@ func run(callback func()) {
 func inlineLiterals(instance *handler, callbacks map[string]func()) {
 	run(func() {})
 	instance.callback = func() {}
-	callbacks["name"] = func() {}
 	_ = func() {}
 	_ = handler{callback: func() {}}
-	go func() {}()
 }
