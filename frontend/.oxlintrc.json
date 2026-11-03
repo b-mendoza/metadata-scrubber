@@ -1339,6 +1339,19 @@
       }
     },
     {
+      "files": ["src/**/*.server.ts"],
+      "rules": {
+        "core-policy/server-try-catch": [
+          "error",
+          {
+            "selector": "TryStatement",
+            "message": "A server try/catch can catch programming errors as dependency failures. Await ResultAsync.fromPromise for the dependency call, check result.isErr(), then throw result.error at the tRPC boundary."
+          }
+        ]
+      },
+      "jsPlugins": ["./eslint-config/core-policy-rules.ts"]
+    },
+    {
       "files": [
         "src/**/*.mod.server.{ts,tsx}",
         "src/shared/database/**/*.server.{ts,tsx}",
