@@ -142,7 +142,10 @@ test("dryRun rejects an invalid storage key before fetch", async () => {
 });
 
 test("the scrub input schema rejects a missing ETag", () => {
-  const isValid = scrubFileInputSchema.validate({ storageKey: STORAGE_KEY });
+  const input: Pick<RouterInputs["wizard"]["scrubFile"], "storageKey"> = {
+    storageKey: STORAGE_KEY,
+  };
+  const isValid = scrubFileInputSchema.validate(input);
 
   expect(isValid).toBe(false);
 });
