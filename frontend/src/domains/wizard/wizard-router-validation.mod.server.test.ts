@@ -263,11 +263,12 @@ test("scrubFile rejects an invalid backend success payload", async () => {
     etag: CANONICAL_ETAG,
     storageKey: STORAGE_KEY,
   };
+  const response: RouterOutputs["wizard"]["scrubFile"] = {
+    result: { downloadUrl: "ftp://downloads.test/sanitized.pdf" },
+    status: "done",
+  };
   const handler = vi.fn<HttpResponseResolver>(() =>
-    HttpResponse.json({
-      result: { downloadUrl: "not-a-url" },
-      status: "done",
-    }),
+    HttpResponse.json(response),
   );
   server.use(http.post("https://backend.test/api/files/scrub", handler));
   const request = new Request(FRONTEND_URL);
