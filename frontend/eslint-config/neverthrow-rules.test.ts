@@ -7,7 +7,7 @@ import { SEVERITY_LEVELS } from "./constants.ts";
 
 const NO_DIAGNOSTICS = 0;
 const ONE_DIAGNOSTIC = 1;
-const CONFIG_LOAD_TIMEOUT_MS = 30_000;
+const TYPED_LINT_SETUP_TIMEOUT_MS = 30_000;
 const RULE_ID = "neverthrow/must-use-result";
 
 type ResultCase = readonly [name: string, code: string, count: number];
@@ -57,8 +57,9 @@ describe("neverthrow policy after the Oxlint bridge", () => {
   });
 
   beforeAll(async () => {
-    await linter.calculateConfigForFile(import.meta.filename);
-  }, CONFIG_LOAD_TIMEOUT_MS);
+    // The first typed lint builds the TypeScript program. Build it here, not in the first test.
+    await linter.lintText("", { filePath: import.meta.filename });
+  }, TYPED_LINT_SETUP_TIMEOUT_MS);
 
   it.each(cases)("checks %s", async (...[_name, code, count]: ResultCase) => {
     // This existing file belongs to tsconfig.node.json. Keep production type information.
