@@ -203,9 +203,10 @@ func TestPipelineLogsRecordFailureCacheHitAndShortCircuitFacts(t *testing.T) {
 	t.Run("dependency failure", func(t *testing.T) {
 		fake := storage.NewFake()
 		fake.SetFailure(storage.FakeDownloadSource, errors.New("dependency-error-sensitive-marker"))
-		var logs bytes.Buffer
+		var rawLogs bytes.Buffer
+		logs := &pipelineLogHandler{Handler: slog.DiscardHandler}
 		handler := newTestHandler(t)
-		handler.logger = slog.New(slog.NewJSONHandler(&logs, nil))
+		handler.logger = slog.New(slog.NewMultiHandler(logs, slog.NewJSONHandler(&rawLogs, nil)))
 		body, err := json.Marshal(dryRunRequest{StorageKey: storageKeyPrefix + fileIDTwo})
 		require.NoError(t, err)
 		request := httptest.NewRequest(http.MethodPost, "/api/files/dry-run", bytes.NewReader(body))
@@ -214,9 +215,12 @@ func TestPipelineLogsRecordFailureCacheHitAndShortCircuitFacts(t *testing.T) {
 		bindings.Inject(bindings.Bindings{Storage: fake})(http.HandlerFunc(handler.DryRun)).ServeHTTP(response, request)
 
 		require.Equal(t, http.StatusInternalServerError, response.Code, response.Body.String())
-		require.NotContains(t, logs.String(), storageKeyPrefix+fileIDTwo)
-		require.NotContains(t, logs.String(), "dependency-error-sensitive-marker")
-		require.NotContains(t, logs.String(), `"error":`)
+		require.Equal(t, []pipelineLogRecord{
+			{Message: "pipeline stage", Stage: "dry-run", Level: slog.LevelError, StorageKeyDigest: storageKeyDigestTwo, Outcome: "failed", DurationRecorded: true},
+		}, logs.records)
+		require.NotContains(t, rawLogs.String(), storageKeyPrefix+fileIDTwo)
+		require.NotContains(t, rawLogs.String(), "dependency-error-sensitive-marker")
+		require.NotContains(t, rawLogs.String(), `"error":`)
 	})
 
 	t.Run("upload failure", func(t *testing.T) {
