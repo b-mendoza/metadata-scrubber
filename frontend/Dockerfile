@@ -4,7 +4,7 @@ FROM node:26.13.0-alpine@sha256:c6ad9e9c1d80f6eb607c26b4b0a132ff7a2344fad1c78ea3
 ENV PNPM_HOME="/pnpm"
 ENV PATH="/opt/pnpm:$PATH"
 WORKDIR /app
-COPY --from=ghcr.io/pnpm/pnpm:12.17.0-alpine@sha256:b3e3037c4c598f472ba681f5239631e39ac2c01b9d8e6681d57d02067979ac7d /opt/pnpm /opt/pnpm
+COPY --from=ghcr.io/pnpm/pnpm:12.18.0-alpine@sha256:937d5b248145cd59aaf3d78dd0fd45f95e65b942585c370a0a11d53ab937ed98 /opt/pnpm /opt/pnpm
 
 COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
 RUN --mount=type=cache,target=/pnpm/store pnpm install --frozen-lockfile
