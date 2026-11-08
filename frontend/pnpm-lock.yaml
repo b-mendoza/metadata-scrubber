@@ -226,7 +226,7 @@ importers:
     devDependencies:
       '@e18e/eslint-plugin':
         specifier: 0.8.1
-        version: 0.8.1(eslint@10.14.0(jiti@2.7.0)(supports-color@7.2.0))(oxlint@1.91.0(oxlint-tsgolint@7.0.2005))
+        version: 0.8.1(eslint@10.14.0(jiti@2.7.0)(supports-color@7.2.0))(oxlint@1.91.0(oxlint-tsgolint@7.0.2006))
       '@eslint-community/eslint-plugin-eslint-comments':
         specifier: 4.8.1
         version: 4.8.1(eslint@10.14.0(jiti@2.7.0)(supports-color@7.2.0))
@@ -316,7 +316,7 @@ importers:
         version: 158.0.0(eslint@10.14.0(jiti@2.7.0)(supports-color@7.2.0))(supports-color@7.2.0)(typescript@6.0.3)
       eslint-plugin-better-tailwindcss:
         specifier: 4.10.0
-        version: 4.10.0(eslint@10.14.0(jiti@2.7.0)(supports-color@7.2.0))(oxlint@1.91.0(oxlint-tsgolint@7.0.2005))(tailwindcss@4.3.4)(typescript@6.0.3)
+        version: 4.10.0(eslint@10.14.0(jiti@2.7.0)(supports-color@7.2.0))(oxlint@1.91.0(oxlint-tsgolint@7.0.2006))(tailwindcss@4.3.4)(typescript@6.0.3)
       eslint-plugin-import-x:
         specifier: 4.17.1
         version: 4.17.1(@typescript-eslint/utils@8.72.1(eslint@10.14.0(jiti@2.7.0)(supports-color@7.2.0))(supports-color@7.2.0)(typescript@6.0.3))(eslint@10.14.0(jiti@2.7.0)(supports-color@7.2.0))(supports-color@7.2.0)
@@ -328,7 +328,7 @@ importers:
         version: 4.1.5(eslint@10.14.0(jiti@2.7.0)(supports-color@7.2.0))
       eslint-plugin-oxlint:
         specifier: 1.90.0
-        version: 1.90.0(oxlint@1.91.0(oxlint-tsgolint@7.0.2005))
+        version: 1.90.0(oxlint@1.91.0(oxlint-tsgolint@7.0.2006))
       eslint-plugin-react-hooks:
         specifier: 7.1.1
         version: 7.1.1(eslint@10.14.0(jiti@2.7.0)(supports-color@7.2.0))(supports-color@7.2.0)
@@ -352,7 +352,7 @@ importers:
         version: 79.0.0(eslint@10.14.0(jiti@2.7.0)(supports-color@7.2.0))(supports-color@7.2.0)(typescript@6.0.3)
       eslint-plugin-zod:
         specifier: 5.2.2
-        version: 5.2.2(eslint@10.14.0(jiti@2.7.0)(supports-color@7.2.0))(oxlint@1.91.0(oxlint-tsgolint@7.0.2005))(zod@4.6.7)
+        version: 5.2.2(eslint@10.14.0(jiti@2.7.0)(supports-color@7.2.0))(oxlint@1.91.0(oxlint-tsgolint@7.0.2006))(zod@4.6.7)
       globals:
         specifier: 17.14.0
         version: 17.14.0
@@ -385,13 +385,13 @@ importers:
         version: 0.76.0
       oxlint:
         specifier: 1.91.0
-        version: 1.91.0(oxlint-tsgolint@7.0.2005)
+        version: 1.91.0(oxlint-tsgolint@7.0.2006)
       oxlint-tsgolint:
-        specifier: 7.0.2005
-        version: 7.0.2005
+        specifier: 7.0.2006
+        version: 7.0.2006
       react-doctor:
         specifier: 0.9.22
-        version: 0.9.22(@opentelemetry/core@2.12.0(@opentelemetry/api@1.9.1))(eslint@10.14.0(jiti@2.7.0)(supports-color@7.2.0))(oxlint-tsgolint@7.0.2005)(react@19.3.1)(supports-color@7.2.0)
+        version: 0.9.22(@opentelemetry/core@2.12.0(@opentelemetry/api@1.9.1))(eslint@10.14.0(jiti@2.7.0)(supports-color@7.2.0))(oxlint-tsgolint@7.0.2006)(react@19.3.1)(supports-color@7.2.0)
       tsrs:
         specifier: 0.20.1-ts7.1.0-beta
         version: 0.20.1-ts7.1.0-beta
@@ -1576,33 +1576,33 @@ packages:
     cpu: [x64]
     os: [win32]
 
-  '@oxlint-tsgolint/darwin-arm64@7.0.2005':
-    resolution: {integrity: sha512-VqDZxcZVjlonNLuuvraVNgDQt+1ndwa4yJo8OqsK4HYh/61ba9IlMStCVfi/aaIqRoDhNbAKC8gdcTrXqnb+Ug==}
+  '@oxlint-tsgolint/darwin-arm64@7.0.2006':
+    resolution: {integrity: sha512-uc0MEHXZUDW23Zmo5X28eSNeSnP17jKnh9GiehpVZqhfy99ks8spyXT5Llar3tjDN7ppnQN0Qd9FK6WNkdD+fQ==}
     cpu: [arm64]
     os: [darwin]
 
-  '@oxlint-tsgolint/darwin-x64@7.0.2005':
-    resolution: {integrity: sha512-4kUfLRNYoVpv0Tm3jPYrvxyfOc/LmdvFC3pKZ4tL6K7lA7K/VS81SAtmxRzbYXYSyb3SBWhwsuX+df4neqzxxA==}
+  '@oxlint-tsgolint/darwin-x64@7.0.2006':
+    resolution: {integrity: sha512-+x1/pa3S3VMC9cif8XKTOCQUuqRT+wu1Ix+FK5svXa2xbXCuE7+4S0SfmuSnK/mk9AI5+xBxZFhILxmCPUZ1hA==}
     cpu: [x64]
     os: [darwin]
 
-  '@oxlint-tsgolint/linux-arm64@7.0.2005':
-    resolution: {integrity: sha512-rhUNcPsBlKvhXtrbhbBUidtRBRdJ8fbEHN9H5Q5N59gby18ruGuDA7KUxl7oRnUzp797uykYQhkBDm+0KpfK/Q==}
+  '@oxlint-tsgolint/linux-arm64@7.0.2006':
+    resolution: {integrity: sha512-90v7HX8m54kHXn5DpjNEN18Fb7xwJMREe/wji3USyAf9pTMv7a3qZ3cPoLViIcIzxPLmkcYZIs1j1H3Z2gbVLA==}
     cpu: [arm64]
     os: [linux]
 
-  '@oxlint-tsgolint/linux-x64@7.0.2005':
-    resolution: {integrity: sha512-tKs9yinDQZOHygM0e8EJnjTU3mzJtdfkOZP6Udu82iLMePUSHOhTJ9zzU/mSd1hQxURI4LTRRiFhfzC+PzwdNA==}
+  '@oxlint-tsgolint/linux-x64@7.0.2006':
+    resolution: {integrity: sha512-/k0wsEqHiA5dWBJYuld3Vecv6bIhKCasxpho/aFkvh870Qox33MuTkKUGWIVm/njAxw7W4pu1a/Xfa3jwuKuPQ==}
     cpu: [x64]
     os: [linux]
 
-  '@oxlint-tsgolint/win32-arm64@7.0.2005':
-    resolution: {integrity: sha512-VYPnu1gjfbSv+ROhuyNfMs382D4zQU2ZRc8Uc3nuEZo1k2kf+1KfTrg4hrlWh73h9GI+dUWyo+DYCQzUBlPwcQ==}
+  '@oxlint-tsgolint/win32-arm64@7.0.2006':
+    resolution: {integrity: sha512-CQT5sqcLZLNZSWLzUUEjQmp74UX8h1agp3ZJ8pfRktHbx6gfBa8a7CjrnRrZ9VXlwnXVkpw7m5KBO6y+S5MQRA==}
     cpu: [arm64]
     os: [win32]
 
-  '@oxlint-tsgolint/win32-x64@7.0.2005':
-    resolution: {integrity: sha512-ekU89cTGy9fpQzuvxIsFHrnoP8XoFjGIRgPEW6eqgY2NYjGy9pwpjF79o04WXRMJFKRrcaVqkZXUUBdLsqpQDw==}
+  '@oxlint-tsgolint/win32-x64@7.0.2006':
+    resolution: {integrity: sha512-VZsGowXcp3vQNkjoGeVCOTf4aGrRpRk6bBJWhefnJVPr6z+dX+LKqqHfwaqnFvg66Q2iJpXqklRW38YO21ee+Q==}
     cpu: [x64]
     os: [win32]
 
@@ -4274,8 +4274,8 @@ packages:
     resolution: {integrity: sha512-kf9MwCpK3YlAWYUyX5Zx7XYrdIbA/4lQD2QREIqC8DvmNb2I+wP8zyjL4NeGl2FO2EC1sLuYvW8ir4Ooq1Xd2A==}
     engines: {node: ^20.19.0 || >=22.13.0}
 
-  oxlint-tsgolint@7.0.2005:
-    resolution: {integrity: sha512-6ccPGu4u4J9bwYPHXBFPee3RZrX3BboRdU7k14zRDDB1lvN3O7J/vPRFdaEfa1+CWx4xnQQOp4ctoaF66oO0uw==}
+  oxlint-tsgolint@7.0.2006:
+    resolution: {integrity: sha512-5B3UtH71kycPHUC1kFEIffivEAs49SUmkJuHZOZnTY0NPj4legp0bcsCQucuLVNCoJzDucS68P2C4WIhP+LypQ==}
     hasBin: true
 
   oxlint@1.81.0:
@@ -5146,14 +5146,14 @@ snapshots:
 
   '@dual-bundle/import-meta-resolve@4.2.1': {}
 
-  '@e18e/eslint-plugin@0.8.1(eslint@10.14.0(jiti@2.7.0)(supports-color@7.2.0))(oxlint@1.91.0(oxlint-tsgolint@7.0.2005))':
+  '@e18e/eslint-plugin@0.8.1(eslint@10.14.0(jiti@2.7.0)(supports-color@7.2.0))(oxlint@1.91.0(oxlint-tsgolint@7.0.2006))':
     dependencies:
       empathic: 2.1.0
       module-replacements: 3.4.0
       verkit: 0.4.1
     optionalDependencies:
       eslint: 10.14.0(jiti@2.7.0)(supports-color@7.2.0)
-      oxlint: 1.91.0(oxlint-tsgolint@7.0.2005)
+      oxlint: 1.91.0(oxlint-tsgolint@7.0.2006)
 
   '@emnapi/core@1.11.2':
     dependencies:
@@ -5883,22 +5883,22 @@ snapshots:
   '@oxfmt/binding-win32-x64-msvc@0.76.0':
     optional: true
 
-  '@oxlint-tsgolint/darwin-arm64@7.0.2005':
+  '@oxlint-tsgolint/darwin-arm64@7.0.2006':
     optional: true
 
-  '@oxlint-tsgolint/darwin-x64@7.0.2005':
+  '@oxlint-tsgolint/darwin-x64@7.0.2006':
     optional: true
 
-  '@oxlint-tsgolint/linux-arm64@7.0.2005':
+  '@oxlint-tsgolint/linux-arm64@7.0.2006':
     optional: true
 
-  '@oxlint-tsgolint/linux-x64@7.0.2005':
+  '@oxlint-tsgolint/linux-x64@7.0.2006':
     optional: true
 
-  '@oxlint-tsgolint/win32-arm64@7.0.2005':
+  '@oxlint-tsgolint/win32-arm64@7.0.2006':
     optional: true
 
-  '@oxlint-tsgolint/win32-x64@7.0.2005':
+  '@oxlint-tsgolint/win32-x64@7.0.2006':
     optional: true
 
   '@oxlint/binding-android-arm-eabi@1.81.0':
@@ -7400,7 +7400,7 @@ snapshots:
     optionalDependencies:
       unrs-resolver: 1.13.0
 
-  eslint-plugin-better-tailwindcss@4.10.0(eslint@10.14.0(jiti@2.7.0)(supports-color@7.2.0))(oxlint@1.91.0(oxlint-tsgolint@7.0.2005))(tailwindcss@4.3.4)(typescript@6.0.3):
+  eslint-plugin-better-tailwindcss@4.10.0(eslint@10.14.0(jiti@2.7.0)(supports-color@7.2.0))(oxlint@1.91.0(oxlint-tsgolint@7.0.2006))(tailwindcss@4.3.4)(typescript@6.0.3):
     dependencies:
       '@eslint/css-tree': 4.1.2
       '@valibot/to-json-schema': 1.8.0(valibot@1.5.0(typescript@6.0.3))
@@ -7413,7 +7413,7 @@ snapshots:
       valibot: 1.5.0(typescript@6.0.3)
     optionalDependencies:
       eslint: 10.14.0(jiti@2.7.0)(supports-color@7.2.0)
-      oxlint: 1.91.0(oxlint-tsgolint@7.0.2005)
+      oxlint: 1.91.0(oxlint-tsgolint@7.0.2006)
     transitivePeerDependencies:
       - '@eslint/css'
       - typescript
@@ -7472,10 +7472,10 @@ snapshots:
     dependencies:
       eslint: 10.14.0(jiti@2.7.0)(supports-color@7.2.0)
 
-  eslint-plugin-oxlint@1.90.0(oxlint@1.91.0(oxlint-tsgolint@7.0.2005)):
+  eslint-plugin-oxlint@1.90.0(oxlint@1.91.0(oxlint-tsgolint@7.0.2006)):
     dependencies:
       jsonc-parser: 3.3.1
-      oxlint: 1.91.0(oxlint-tsgolint@7.0.2005)
+      oxlint: 1.91.0(oxlint-tsgolint@7.0.2006)
 
   eslint-plugin-promise@7.3.0(eslint@10.14.0(jiti@2.7.0)(supports-color@7.2.0)):
     dependencies:
@@ -7670,13 +7670,13 @@ snapshots:
     transitivePeerDependencies:
       - supports-color
 
-  eslint-plugin-zod@5.2.2(eslint@10.14.0(jiti@2.7.0)(supports-color@7.2.0))(oxlint@1.91.0(oxlint-tsgolint@7.0.2005))(zod@4.6.7):
+  eslint-plugin-zod@5.2.2(eslint@10.14.0(jiti@2.7.0)(supports-color@7.2.0))(oxlint@1.91.0(oxlint-tsgolint@7.0.2006))(zod@4.6.7):
     dependencies:
       '@eslint-zod/utils': 6.4.0
       '@typescript-eslint/types': 8.72.1
     optionalDependencies:
       eslint: 10.14.0(jiti@2.7.0)(supports-color@7.2.0)
-      oxlint: 1.91.0(oxlint-tsgolint@7.0.2005)
+      oxlint: 1.91.0(oxlint-tsgolint@7.0.2006)
       zod: 4.6.7
 
   eslint-scope@9.1.2:
@@ -8465,16 +8465,16 @@ snapshots:
       lightningcss: 1.33.0
       oxc-parser: 0.148.0
 
-  oxlint-tsgolint@7.0.2005:
+  oxlint-tsgolint@7.0.2006:
     optionalDependencies:
-      '@oxlint-tsgolint/darwin-arm64': 7.0.2005
-      '@oxlint-tsgolint/darwin-x64': 7.0.2005
-      '@oxlint-tsgolint/linux-arm64': 7.0.2005
-      '@oxlint-tsgolint/linux-x64': 7.0.2005
-      '@oxlint-tsgolint/win32-arm64': 7.0.2005
-      '@oxlint-tsgolint/win32-x64': 7.0.2005
+      '@oxlint-tsgolint/darwin-arm64': 7.0.2006
+      '@oxlint-tsgolint/darwin-x64': 7.0.2006
+      '@oxlint-tsgolint/linux-arm64': 7.0.2006
+      '@oxlint-tsgolint/linux-x64': 7.0.2006
+      '@oxlint-tsgolint/win32-arm64': 7.0.2006
+      '@oxlint-tsgolint/win32-x64': 7.0.2006
 
-  oxlint@1.81.0(oxlint-tsgolint@7.0.2005):
+  oxlint@1.81.0(oxlint-tsgolint@7.0.2006):
     optionalDependencies:
       '@oxlint/binding-android-arm-eabi': 1.81.0
       '@oxlint/binding-android-arm64': 1.81.0
@@ -8495,9 +8495,9 @@ snapshots:
       '@oxlint/binding-win32-arm64-msvc': 1.81.0
       '@oxlint/binding-win32-ia32-msvc': 1.81.0
       '@oxlint/binding-win32-x64-msvc': 1.81.0
-      oxlint-tsgolint: 7.0.2005
+      oxlint-tsgolint: 7.0.2006
 
-  oxlint@1.91.0(oxlint-tsgolint@7.0.2005):
+  oxlint@1.91.0(oxlint-tsgolint@7.0.2006):
     optionalDependencies:
       '@oxlint/binding-android-arm-eabi': 1.91.0
       '@oxlint/binding-android-arm64': 1.91.0
@@ -8518,7 +8518,7 @@ snapshots:
       '@oxlint/binding-win32-arm64-msvc': 1.91.0
       '@oxlint/binding-win32-ia32-msvc': 1.91.0
       '@oxlint/binding-win32-x64-msvc': 1.91.0
-      oxlint-tsgolint: 7.0.2005
+      oxlint-tsgolint: 7.0.2006
 
   p-limit@3.1.0:
     dependencies:
@@ -8616,7 +8616,7 @@ snapshots:
 
   quote-js-string@0.1.0: {}
 
-  react-doctor@0.9.22(@opentelemetry/core@2.12.0(@opentelemetry/api@1.9.1))(eslint@10.14.0(jiti@2.7.0)(supports-color@7.2.0))(oxlint-tsgolint@7.0.2005)(react@19.3.1)(supports-color@7.2.0):
+  react-doctor@0.9.22(@opentelemetry/core@2.12.0(@opentelemetry/api@1.9.1))(eslint@10.14.0(jiti@2.7.0)(supports-color@7.2.0))(oxlint-tsgolint@7.0.2006)(react@19.3.1)(supports-color@7.2.0):
     dependencies:
       '@astrojs/compiler': 4.0.0
       '@sentry/node': 10.78.0(@opentelemetry/core@2.12.0(@opentelemetry/api@1.9.1))(supports-color@7.2.0)
@@ -8630,7 +8630,7 @@ snapshots:
       magicast: 0.5.5
       oxc-parser: 0.148.0
       oxc-resolver: 11.24.2
-      oxlint: 1.81.0(oxlint-tsgolint@7.0.2005)
+      oxlint: 1.81.0(oxlint-tsgolint@7.0.2006)
       oxlint-plugin-react-doctor: 0.9.22
       playwright-core: 1.64.1
       prompts: 2.4.2
