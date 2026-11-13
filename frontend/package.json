@@ -54,7 +54,7 @@
   "devDependencies": {
     "@e18e/eslint-plugin": "0.8.1",
     "@eslint-community/eslint-plugin-eslint-comments": "4.8.1",
-    "@eslint-react/eslint-plugin": "5.28.8",
+    "@eslint-react/eslint-plugin": "5.30.1",
     "@eslint/js": "10.0.1",
     "@ninoseki/eslint-plugin-neverthrow": "0.3.2",
     "@oxlint/plugins": "1.92.0",
