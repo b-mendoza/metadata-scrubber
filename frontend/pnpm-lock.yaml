@@ -237,8 +237,8 @@ importers:
         specifier: 10.0.1
         version: 10.0.1(eslint@10.15.0(jiti@2.7.0)(supports-color@7.2.0))
       '@ninoseki/eslint-plugin-neverthrow':
-        specifier: 0.3.2
-        version: 0.3.2(@typescript-eslint/parser@8.72.2(eslint@10.15.0(jiti@2.7.0)(supports-color@7.2.0))(supports-color@7.2.0)(typescript@6.0.3))(eslint@10.15.0(jiti@2.7.0)(supports-color@7.2.0))(supports-color@7.2.0)(typescript@6.0.3)
+        specifier: 0.4.0
+        version: 0.4.0(@typescript-eslint/parser@8.72.2(eslint@10.15.0(jiti@2.7.0)(supports-color@7.2.0))(supports-color@7.2.0)(typescript@6.0.3))(eslint@10.15.0(jiti@2.7.0)(supports-color@7.2.0))(supports-color@7.2.0)(typescript@6.0.3)
       '@oxlint/plugins':
         specifier: 1.93.0
         version: 1.93.0
@@ -788,8 +788,8 @@ packages:
       '@neodrag/core': 3.0.0-next.11
       solid-js: ^1.0.0
 
-  '@ninoseki/eslint-plugin-neverthrow@0.3.2':
-    resolution: {integrity: sha512-CtN6Ys/03EEkREOtcdRsCMWLuSUAqvUQ1NvriMgec3pWN+M0UEAq3z3Yjrv1xv7/BcMEsjXvHy0mPdHzvNVBLA==}
+  '@ninoseki/eslint-plugin-neverthrow@0.4.0':
+    resolution: {integrity: sha512-2RoeIpC6NGr4YSAjD2Qn/8s1v27Y6bNQ9IGVmtnQv7LlGEgaxxam/RozDSjQCoEa1eVNQ4x9mK+LJBht445m3A==}
     engines: {node: '>=24'}
     peerDependencies:
       '@typescript-eslint/parser': '>=8.0.0'
@@ -5625,10 +5625,10 @@ snapshots:
       '@neodrag/core': 3.0.0-next.11
       solid-js: 1.9.18
 
-  '@ninoseki/eslint-plugin-neverthrow@0.3.2(@typescript-eslint/parser@8.72.2(eslint@10.15.0(jiti@2.7.0)(supports-color@7.2.0))(supports-color@7.2.0)(typescript@6.0.3))(eslint@10.15.0(jiti@2.7.0)(supports-color@7.2.0))(supports-color@7.2.0)(typescript@6.0.3)':
+  '@ninoseki/eslint-plugin-neverthrow@0.4.0(@typescript-eslint/parser@8.72.2(eslint@10.15.0(jiti@2.7.0)(supports-color@7.2.0))(supports-color@7.2.0)(typescript@6.0.3))(eslint@10.15.0(jiti@2.7.0)(supports-color@7.2.0))(supports-color@7.2.0)(typescript@6.0.3)':
     dependencies:
       '@typescript-eslint/parser': 8.72.2(eslint@10.15.0(jiti@2.7.0)(supports-color@7.2.0))(supports-color@7.2.0)(typescript@6.0.3)
-      '@typescript-eslint/utils': 8.72.1(eslint@10.15.0(jiti@2.7.0)(supports-color@7.2.0))(supports-color@7.2.0)(typescript@6.0.3)
+      '@typescript-eslint/utils': 8.72.2(eslint@10.15.0(jiti@2.7.0)(supports-color@7.2.0))(supports-color@7.2.0)(typescript@6.0.3)
       eslint: 10.15.0(jiti@2.7.0)(supports-color@7.2.0)
       typescript: 6.0.3
     transitivePeerDependencies:
